@@ -4,7 +4,11 @@ const elements = {
   date: document.querySelector("#clockDate"),
   departures: document.querySelector("#departures"),
   status: document.querySelector("#dataStatus"),
-  slideStatus: document.querySelector("#slideStatus")
+  slideStatus: document.querySelector("#slideStatus"),
+  serviceAlerts: document.querySelector("#serviceAlerts"),
+  serviceAlertSummary: document.querySelector("#serviceAlertSummary"),
+  serviceAlertFreshness: document.querySelector("#serviceAlertFreshness"),
+  serviceAlertCount: document.querySelector("#serviceAlertCount")
 };
 
 const cacheKey = "nyc-ferry-did-data-v2";
@@ -12,6 +16,7 @@ const PAGE_SIZE = 4;
 const TIMES_PER_DIRECTION = 4;
 let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
+let serviceAlerts = null;
 let slideIndex = 0;
 let slideTimer = null;
 
@@ -157,6 +162,60 @@ function startSlideshow() {
   slideTimer = setInterval(() => { slideIndex += 1; render(); }, seconds * 1000);
 }
 
+function ageLabel(timestamp) {
+  const ageMs = timestamp ? Date.now() - Date.parse(timestamp) : Number.NaN;
+  if (!Number.isFinite(ageMs) || ageMs < 60_000) return "just now";
+  if (ageMs < 3_600_000) return `${Math.floor(ageMs / 60_000)} min ago`;
+  return `${Math.floor(ageMs / 3_600_000)} hr ago`;
+}
+
+function renderServiceAlerts() {
+  const alerts = serviceAlerts?.alerts || [];
+  const unavailable = Boolean(serviceAlerts && !serviceAlerts.available && alerts.length === 0);
+  const stale = Boolean(serviceAlerts?.stale);
+  elements.serviceAlerts.classList.toggle("loading", !serviceAlerts);
+  elements.serviceAlerts.classList.toggle("active", alerts.length > 0);
+  elements.serviceAlerts.classList.toggle("stale", stale && !unavailable);
+  elements.serviceAlerts.classList.toggle("unavailable", unavailable);
+
+  if (!serviceAlerts) return;
+  if (unavailable) {
+    elements.serviceAlertSummary.textContent = "Live service alerts are temporarily unavailable.";
+    elements.serviceAlertFreshness.textContent = "Retrying automatically";
+    elements.serviceAlertCount.hidden = true;
+    return;
+  }
+  if (alerts.length === 0) {
+    elements.serviceAlertSummary.textContent = "No active NYC Ferry service alerts.";
+    elements.serviceAlertFreshness.textContent = `${stale ? "Saved update" : "Updated"} ${ageLabel(serviceAlerts.feedTimestamp || serviceAlerts.fetchedAt)}`;
+    elements.serviceAlertCount.hidden = true;
+    return;
+  }
+  const first = alerts[0];
+  const detail = first.description && first.description !== first.header
+    ? `${first.header} — ${first.description}`
+    : first.header || first.description || "NYC Ferry service alert";
+  elements.serviceAlertSummary.textContent = alerts.length > 1 ? `${detail} · ${alerts.length - 1} more active` : detail;
+  elements.serviceAlertFreshness.textContent = `${stale ? "Saved alert" : "Updated"} ${ageLabel(serviceAlerts.feedTimestamp || serviceAlerts.fetchedAt)}`;
+  elements.serviceAlertCount.textContent = String(alerts.length);
+  elements.serviceAlertCount.hidden = false;
+}
+
+async function loadServiceAlerts() {
+  try {
+    const response = await fetch("/api/alerts", { cache: "no-store" });
+    if (!response.ok) throw new Error();
+    serviceAlerts = await response.json();
+    localStorage.setItem(`${cacheKey}-alerts`, JSON.stringify(serviceAlerts));
+  } catch {
+    const saved = localStorage.getItem(`${cacheKey}-alerts`);
+    serviceAlerts = saved
+      ? { ...JSON.parse(saved), stale: true }
+      : { available: false, stale: true, fetchedAt: null, alerts: [] };
+  }
+  renderServiceAlerts();
+}
+
 function updateClock() {
   const now = new Date();
   const timeZone = data?.meta?.timezone || "America/New_York";
@@ -201,6 +260,7 @@ async function load() {
   updateClock();
   startSlideshow();
   loadRealtime();
+  loadServiceAlerts();
 }
 
 load().catch(() => {
@@ -208,6 +268,7 @@ load().catch(() => {
 });
 setInterval(updateClock, 15_000);
 setInterval(loadRealtime, 15_000);
+setInterval(loadServiceAlerts, 60_000);
 if ("serviceWorker" in navigator) {
   let reloadingForUpdate = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
@@ -215,7 +276,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=11", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=12", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }
