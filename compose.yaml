@@ -1,0 +1,18 @@
+services:
+  display:
+    build: .
+    image: nyc-ferry-did-reborn:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8090:8090"
+    volumes:
+      - ./state:/app/state
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8090
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8090/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

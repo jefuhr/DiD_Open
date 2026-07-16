@@ -1,0 +1,19 @@
+{
+  "name": "nyc-ferry-did-reborn",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline-first NYC Ferry landing departure display.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "node scripts/build-data.js",
+    "prestart": "node scripts/build-data.js",
+    "start": "node server.js",
+    "predev": "node scripts/build-data.js",
+    "dev": "node --watch server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "gtfs-realtime-bindings": "2.1.0"
+  }
+}
