@@ -94,7 +94,7 @@ function routeDirectionGroups(now = new Date()) {
       if (update?.canceled) continue;
       const delay = update?.delaySeconds || 0;
       const delta = offset * 86400 + departure.seconds + delay - current.seconds;
-      if (delta < -60 || delta > departureWindowSeconds) continue;
+      if (delta < -60) continue;
       const key = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}|${departure.destination}`;
       const group = groups.get(key) || {
         key, routeId: departure.routeId, directionId: departure.directionId,
@@ -105,10 +105,17 @@ function routeDirectionGroups(now = new Date()) {
     }
   }
 
-  return [...groups.values()].map((group) => ({
-    ...group,
-    departures: group.departures.sort((left, right) => left.delta - right.delta).slice(0, TIMES_PER_DIRECTION)
-  })).sort((left, right) => {
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      departures: group.departures.sort((left, right) => left.delta - right.delta)
+    }))
+    .filter((group) => group.departures[0]?.delta <= departureWindowSeconds)
+    .map((group) => ({
+      ...group,
+      departures: group.departures.slice(0, TIMES_PER_DIRECTION)
+    }))
+    .sort((left, right) => {
     const routeOrder = left.routeId.localeCompare(right.routeId);
     if (routeOrder) return routeOrder;
     const variantOrder = { A: 0, B: 1, LOCAL: 2 };
@@ -116,7 +123,7 @@ function routeDirectionGroups(now = new Date()) {
     if (variantDifference) return variantDifference;
     const directionOrder = String(left.directionId).localeCompare(String(right.directionId));
     return directionOrder || left.destination.localeCompare(right.destination);
-  });
+    });
 }
 
 function departureCell(item) {
@@ -284,7 +291,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=15", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=16", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

@@ -20,7 +20,7 @@ Use a number from `2` through `24`. Number `1` is intentionally unused. The land
 
 `slideSeconds` controls how long each set of four route directions remains on screen. It accepts values from `3` through `300` seconds.
 
-`departureWindowMinutes` controls how far ahead the board looks for service. A route-direction group is hidden when it has no departure within that many minutes. The default `180` means three hours; accepted values are `1` through `1440`.
+`departureWindowMinutes` controls whether a route-direction group appears. Its next departure must be within that many minutes. Once the group qualifies, the board displays its next four remaining departures even when the later departures fall outside the window. The default `180` means three hours; accepted values are `1` through `1440`.
 
 The board displays four route-and-destination groups at a time and automatically advances until every direction has been shown. Each group contains its next four departure times and the assigned boat name when that assignment is available from the live feed.
 
