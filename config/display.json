@@ -1,4 +1,5 @@
 {
   "landingNumber": 16,
-  "slideSeconds": 12
+  "slideSeconds": 12,
+  "departureWindowMinutes": 180
 }

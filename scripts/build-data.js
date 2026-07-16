@@ -38,9 +38,14 @@ function color(value, fallback) {
   return /^[0-9a-f]{6}$/i.test(value || "") ? `#${value.toUpperCase()}` : fallback;
 }
 
-function destination(stopTime, trip, finalStop) {
-  return (stopTime.stop_headsign || trip.trip_headsign || finalStop?.stop_name || "Destination unavailable")
-    .replace(/\s*\(E R [AB]\)$/i, "").replace(/\s+/g, " ").trim();
+function destinationInfo(stopTime, trip, finalStop, routeId) {
+  const raw = (stopTime.stop_headsign || trip.trip_headsign || finalStop?.stop_name || "Destination unavailable")
+    .replace(/\s+/g, " ").trim();
+  const variantMatch = raw.match(/\s*\(E R ([AB])\)$/i);
+  return {
+    destination: raw.replace(/\s*\(E R [AB]\)$/i, "").trim(),
+    variant: routeId === "ER" ? (variantMatch?.[1]?.toUpperCase() || "LOCAL") : null
+  };
 }
 
 export async function buildDisplayData({ root = ROOT, landingNumber: landingOverride } = {}) {
@@ -61,6 +66,10 @@ export async function buildDisplayData({ root = ROOT, landingNumber: landingOver
   const slideSeconds = Number(display.slideSeconds);
   if (!Number.isFinite(slideSeconds) || slideSeconds < 3 || slideSeconds > 300) {
     throw new Error(`config/display.json slideSeconds must be between 3 and 300; received ${display.slideSeconds}.`);
+  }
+  const departureWindowMinutes = Number(display.departureWindowMinutes);
+  if (!Number.isFinite(departureWindowMinutes) || departureWindowMinutes < 1 || departureWindowMinutes > 1440) {
+    throw new Error(`config/display.json departureWindowMinutes must be between 1 and 1440; received ${display.departureWindowMinutes}.`);
   }
 
   const routes = parseCsv(routesRaw), stops = parseCsv(stopsRaw), trips = parseCsv(tripsRaw), stopTimes = parseCsv(timesRaw);
@@ -87,10 +96,12 @@ export async function buildDisplayData({ root = ROOT, landingNumber: landingOver
       const departureTime = current.departure_time || current.arrival_time;
       if (!departureTime) continue;
       const finalStop = stopsById.get(times.at(-1).stop_id);
+      const destination = destinationInfo(current, trip, finalStop, trip.route_id);
       departures.push({
         tripId, routeId: trip.route_id, serviceId: trip.service_id, directionId: trip.direction_id,
         stopId: current.stop_id, departureTime, seconds: timeToSeconds(departureTime),
-        destination: destination(current, trip, finalStop), nextStop: stopsById.get(times[index + 1].stop_id)?.stop_name || null,
+        destination: destination.destination, variant: destination.variant,
+        nextStop: stopsById.get(times[index + 1].stop_id)?.stop_name || null,
         mode: route.route_type === "3" ? "bus" : "ferry"
       });
     }
@@ -105,7 +116,7 @@ export async function buildDisplayData({ root = ROOT, landingNumber: landingOver
   const feed = parseCsv(feedRaw)[0] || {}, agency = parseCsv(agencyRaw)[0] || {};
   return {
     meta: {
-      schemaVersion: 2, generatedAt: new Date().toISOString(), landingNumber, slideSeconds,
+      schemaVersion: 3, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
       landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds: landingConfig.stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },
       timezone: agency.agency_timezone || "America/New_York", feedVersion: feed.feed_version,

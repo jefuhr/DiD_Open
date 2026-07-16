@@ -11,13 +11,16 @@ Edit the single number in [`config/display.json`](./config/display.json):
 ```json
 {
   "landingNumber": 16,
-  "slideSeconds": 12
+  "slideSeconds": 12,
+  "departureWindowMinutes": 180
 }
 ```
 
 Use a number from `2` through `24`. Number `1` is intentionally unused. The landing names and GTFS stop mappings live in [`config/landings.json`](./config/landings.json). Rockaway (`18`) includes the ferry landing and the connected shuttle-bus stop.
 
 `slideSeconds` controls how long each set of four route directions remains on screen. It accepts values from `3` through `300` seconds.
+
+`departureWindowMinutes` controls how far ahead the board looks for service. A route-direction group is hidden when it has no departure within that many minutes. The default `180` means three hours; accepted values are `1` through `1440`.
 
 The board displays four route-and-destination groups at a time and automatically advances until every direction has been shown. Each group contains its next four departure times and the assigned boat name when that assignment is available from the live feed.
 

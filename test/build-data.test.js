@@ -30,8 +30,20 @@ test("routes retain their official abbreviations and colors", async () => {
 test("display data includes the configured slideshow interval and all directions", async () => {
   const data = await buildDisplayData({ landingNumber: 16 });
   assert.equal(data.meta.slideSeconds, 12);
+  assert.equal(data.meta.departureWindowMinutes, 180);
   const directions = new Set(data.departures.map((item) => `${item.routeId}|${item.directionId}|${item.destination}`));
   assert.ok(directions.size > 4, "Pier 11 should require more than one four-route slide");
+});
+
+test("East River departures are split into A, B, and Local variants", async () => {
+  const data = await buildDisplayData({ landingNumber: 16 });
+  const variants = new Set(
+    data.departures.filter((item) => item.routeId === "ER").map((item) => item.variant)
+  );
+  assert.deepEqual([...variants].sort(), ["A", "B", "LOCAL"]);
+  for (const variant of variants) {
+    assert.ok(data.departures.some((item) => item.routeId === "ER" && item.variant === variant));
+  }
 });
 
 test("landing 1 remains unused", async () => {

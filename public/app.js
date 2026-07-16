@@ -78,6 +78,7 @@ function directionLabel(directionId) {
 
 function routeDirectionGroups(now = new Date()) {
   const current = zonedParts(now, data.meta.timezone);
+  const departureWindowSeconds = (Number(data.meta.departureWindowMinutes) || 180) * 60;
   const updates = new Map((realtime.updates || []).map((item) => [`${item.tripId}|${item.stopId}`, item]));
   const vehicles = new Map((realtime.vehicles || []).map((item) => [String(item.tripId), item]));
   const groups = new Map();
@@ -93,11 +94,11 @@ function routeDirectionGroups(now = new Date()) {
       if (update?.canceled) continue;
       const delay = update?.delaySeconds || 0;
       const delta = offset * 86400 + departure.seconds + delay - current.seconds;
-      if (delta < -60) continue;
-      const key = `${departure.routeId}|${departure.directionId}|${departure.destination}`;
+      if (delta < -60 || delta > departureWindowSeconds) continue;
+      const key = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}|${departure.destination}`;
       const group = groups.get(key) || {
         key, routeId: departure.routeId, directionId: departure.directionId,
-        destination: departure.destination, departures: []
+        destination: departure.destination, variant: departure.variant || null, departures: []
       };
       group.departures.push({ ...departure, delay, delta, boatName: vehicles.get(String(departure.tripId))?.boatName || null });
       groups.set(key, group);
@@ -110,6 +111,9 @@ function routeDirectionGroups(now = new Date()) {
   })).sort((left, right) => {
     const routeOrder = left.routeId.localeCompare(right.routeId);
     if (routeOrder) return routeOrder;
+    const variantOrder = { A: 0, B: 1, LOCAL: 2 };
+    const variantDifference = (variantOrder[left.variant] ?? 3) - (variantOrder[right.variant] ?? 3);
+    if (variantDifference) return variantDifference;
     const directionOrder = String(left.directionId).localeCompare(String(right.directionId));
     return directionOrder || left.destination.localeCompare(right.destination);
   });
@@ -143,12 +147,16 @@ function render() {
   elements.departures.innerHTML = visible.map((group) => {
     const route = data.routes[group.routeId] || {};
     const routeClass = String(group.routeId || "default").replace(/[^A-Za-z0-9_-]/g, "");
+    const variantClass = group.variant ? ` variant-${group.variant.toLowerCase()}` : "";
+    const variantLabel = group.variant === "LOCAL" ? "Local" : group.variant;
+    const routeName = group.variant ? `${route.name || "East River"} ${variantLabel}` : (route.name || "NYC Ferry");
+    const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(variantLabel)}</small>` : "";
     const slots = [...group.departures];
     while (slots.length < TIMES_PER_DIRECTION) slots.push(null);
-    return `<article class="departure route-${routeClass}">
+    return `<article class="departure route-${routeClass}${variantClass}">
       <div class="route">
-        <span class="route-badge">${escapeHtml(route.shortName || group.routeId)}</span>
-        <span class="route-name">${escapeHtml(route.name || "NYC Ferry")}</span>
+        <span class="route-badge"><b>${escapeHtml(route.shortName || group.routeId)}</b>${variantBadge}</span>
+        <span class="route-name">${escapeHtml(routeName)}</span>
       </div>
       <div class="destination"><strong>${escapeHtml(group.destination)}</strong><span>${directionLabel(group.directionId)}</span></div>
       <div class="departure-slots">${slots.map((item) => item ? departureCell(item) : `<div class="departure-slot unavailable"><span>No scheduled trip</span></div>`).join("")}</div>
@@ -276,7 +284,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=12", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=15", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }
