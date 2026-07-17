@@ -82,6 +82,7 @@ function routeDirectionGroups(now = new Date()) {
   const updates = new Map((realtime.updates || []).map((item) => [`${item.tripId}|${item.stopId}`, item]));
   const vehicles = new Map((realtime.vehicles || []).map((item) => [String(item.tripId), item]));
   const groups = new Map();
+  const lastDepartures = new Map();
 
   for (let offset = -1; offset <= 0; offset += 1) {
     const serviceDate = addDays(current.dateKey, offset);
@@ -94,6 +95,12 @@ function routeDirectionGroups(now = new Date()) {
       if (update?.canceled) continue;
       const delay = update?.delaySeconds || 0;
       const delta = offset * 86400 + departure.seconds + delay - current.seconds;
+      const slotKey = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}`;
+      const scheduledMoment = offset * 86400 + departure.seconds;
+      const previousLast = lastDepartures.get(slotKey);
+      if (!previousLast || scheduledMoment > previousLast.scheduledMoment) {
+        lastDepartures.set(slotKey, { tripId: String(departure.tripId), scheduledMoment });
+      }
       if (delta < -60) continue;
       const key = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}|${departure.destination}`;
       const group = groups.get(key) || {
@@ -108,7 +115,12 @@ function routeDirectionGroups(now = new Date()) {
   return [...groups.values()]
     .map((group) => ({
       ...group,
-      departures: group.departures.sort((left, right) => left.delta - right.delta)
+      departures: group.departures
+        .sort((left, right) => left.delta - right.delta)
+        .map((departure) => ({
+          ...departure,
+          isLastOfDay: lastDepartures.get(`${departure.routeId}|${departure.variant || ""}|${departure.directionId}`)?.tripId === String(departure.tripId)
+        }))
     }))
     .filter((group) => group.departures[0]?.delta <= departureWindowSeconds)
     .map((group) => ({
@@ -128,10 +140,12 @@ function routeDirectionGroups(now = new Date()) {
 
 function departureCell(item) {
   const delayLabel = Math.abs(item.delay) >= 60 ? `<span class="live-delay">${item.delay > 0 ? "+" : ""}${Math.round(item.delay / 60)} min</span>` : "";
+  const lastLabel = item.isLastOfDay ? `<strong class="departure-last-badge" aria-label="Last departure of the day">LAST</strong>` : "";
   return `<div class="departure-slot">
     <div class="slot-time-row"><time>${adjustedTime(item.departureTime, item.delay)}</time>${delayLabel}</div>
     <span class="boat-name">${item.boatName ? escapeHtml(item.boatName) : ""}</span>
     <span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span>
+    ${lastLabel}
   </div>`;
 }
 
@@ -291,7 +305,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=16", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=17", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }
