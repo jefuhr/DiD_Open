@@ -147,7 +147,7 @@ function render() {
     : `${groups.length} route direction${groups.length === 1 ? "" : "s"}`;
 
   if (!visible.length) {
-    elements.departures.innerHTML = `<div class="empty"><div><strong>No upcoming service</strong><span>The display will update automatically.</span></div></div>`;
+    elements.departures.innerHTML = `<div class="empty"><div><strong>NO MORE BOATS!</strong><span>NYC Ferry service has concluded for the day.</span></div></div>`;
     return;
   }
 
