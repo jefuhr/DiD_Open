@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#001d41" />
     <title>NYC Ferry Departures</title>
     <link rel="icon" href="/assets/kiosk-icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=23" />
+    <link rel="stylesheet" href="/styles.css?v=24" />
   </head>
   <body>
     <main class="screen">
@@ -30,14 +30,16 @@
           <path d="M16 3 30 28H2L16 3Z" />
           <path d="M16 11v8m0 4v1" />
         </svg>
-        <span class="service-alert-copy">
-          <strong>Service alerts</strong>
+        <div class="service-alert-copy">
+          <div class="service-alert-heading">
+            <strong>Service alerts</strong>
+            <small id="serviceAlertFreshness">Realtime GTFS service updates</small>
+          </div>
           <span id="serviceAlertSummary">Checking NYC Ferry service…</span>
-          <small id="serviceAlertFreshness">Realtime GTFS service updates</small>
-        </span>
+        </div>
         <span class="service-alert-count" id="serviceAlertCount" hidden></span>
       </section>
     </main>
-    <script type="module" src="/app.js?v=23"></script>
+    <script type="module" src="/app.js?v=24"></script>
   </body>
 </html>

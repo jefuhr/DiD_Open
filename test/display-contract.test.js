@@ -45,14 +45,23 @@ test("shows fresh late and on-time status in the reserved badge row", async () =
   assert.match(css, /\.scheduled-badge\{color:var\(--navy\);background:#e6eef2/);
 });
 
-test("offline shell includes version 23 display assets", async () => {
+test("service alert freshness sits beside its heading", async () => {
+  const [index, css] = await Promise.all([
+    readFile(indexPath, "utf8"),
+    readFile(cssPath, "utf8")
+  ]);
+  assert.match(index, /class="service-alert-heading">\s*<strong>Service alerts<\/strong>\s*<small id="serviceAlertFreshness">/);
+  assert.match(css, /\.service-alert-heading\{display:flex;align-items:baseline/);
+});
+
+test("offline shell includes version 24 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=23/);
-  assert.match(index, /app\.js\?v=23/);
-  assert.match(worker, /nyc-ferry-did-shell-v23/);
-  assert.match(worker, /styles\.css\?v=23/);
-  assert.match(worker, /app\.js\?v=23/);
+  assert.match(index, /styles\.css\?v=24/);
+  assert.match(index, /app\.js\?v=24/);
+  assert.match(worker, /nyc-ferry-did-shell-v24/);
+  assert.match(worker, /styles\.css\?v=24/);
+  assert.match(worker, /app\.js\?v=24/);
 });
