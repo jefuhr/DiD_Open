@@ -77,6 +77,7 @@ export async function buildDisplayData({ root = ROOT, landingNumber: landingOver
   const stopsById = new Map(stops.map((item) => [item.stop_id, item]));
   const tripsById = new Map(trips.map((item) => [item.trip_id, item]));
   const selectedStops = new Set(landingConfig.stopIds);
+  const governorsIslandStops = new Set(landings["11"]?.stopIds || []);
   for (const stopId of selectedStops) if (!stopsById.has(stopId)) throw new Error(`Landing ${landingNumber} references missing GTFS stop ${stopId}.`);
 
   const timesByTrip = new Map();
@@ -97,16 +98,28 @@ export async function buildDisplayData({ root = ROOT, landingNumber: landingOver
       if (!departureTime) continue;
       const finalStop = stopsById.get(times.at(-1).stop_id);
       const destination = destinationInfo(current, trip, finalStop, trip.route_id);
+      const servesGovernorsIsland = trip.route_id === "SB" &&
+        times.slice(index).some((stopTime) => governorsIslandStops.has(stopTime.stop_id));
       departures.push({
         tripId, routeId: trip.route_id, serviceId: trip.service_id, directionId: trip.direction_id,
         stopId: current.stop_id, departureTime, seconds: timeToSeconds(departureTime),
         destination: destination.destination, variant: destination.variant,
         nextStop: stopsById.get(times[index + 1].stop_id)?.stop_name || null,
+        servesGovernorsIsland,
         mode: route.route_type === "3" ? "bus" : "ferry"
       });
     }
   }
   departures.sort((a, b) => a.seconds - b.seconds || a.routeId.localeCompare(b.routeId));
+  const usedTripIds = new Set(departures.map((item) => item.tripId));
+  const tripSchedules = Object.fromEntries([...usedTripIds].map((tripId) => [tripId, {
+    stops: (timesByTrip.get(tripId) || []).map((stopTime) => ({
+      stopId: stopTime.stop_id,
+      sequence: Number(stopTime.stop_sequence),
+      arrivalSeconds: stopTime.arrival_time ? timeToSeconds(stopTime.arrival_time) : null,
+      departureSeconds: stopTime.departure_time ? timeToSeconds(stopTime.departure_time) : null
+    }))
+  }]));
   const usedRouteIds = new Set(departures.map((item) => item.routeId));
   const routeData = Object.fromEntries(routes.filter((item) => usedRouteIds.has(item.route_id)).map((item) => [item.route_id, {
     id: item.route_id, shortName: item.route_short_name || item.route_id, name: item.route_long_name,
@@ -116,7 +129,7 @@ export async function buildDisplayData({ root = ROOT, landingNumber: landingOver
   const feed = parseCsv(feedRaw)[0] || {}, agency = parseCsv(agencyRaw)[0] || {};
   return {
     meta: {
-      schemaVersion: 3, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
+      schemaVersion: 5, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
       landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds: landingConfig.stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },
       timezone: agency.agency_timezone || "America/New_York", feedVersion: feed.feed_version,
@@ -125,7 +138,7 @@ export async function buildDisplayData({ root = ROOT, landingNumber: landingOver
     },
     calendars: parseCsv(calendarRaw).map((item) => ({ serviceId: item.service_id, weekdays: [item.sunday,item.monday,item.tuesday,item.wednesday,item.thursday,item.friday,item.saturday].map((v) => v === "1"), startDate: isoDate(item.start_date), endDate: isoDate(item.end_date) })),
     exceptions: parseCsv(datesRaw).map((item) => ({ serviceId: item.service_id, date: isoDate(item.date), added: item.exception_type === "1" })),
-    routes: routeData, departures
+    routes: routeData, departures, tripSchedules
   };
 }
 

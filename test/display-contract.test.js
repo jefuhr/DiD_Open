@@ -15,20 +15,44 @@ test("marks the final trip in each route-direction slot as LAST", async () => {
   assert.doesNotMatch(app, /const slotKey = .*destination/);
 });
 
+test("marks the final South Brooklyn trip serving Governors Island", async () => {
+  const app = await readFile(appPath, "utf8");
+  assert.match(app, /departure\.routeId === "SB" && departure\.servesGovernorsIsland/);
+  assert.match(app, /isLastGovernorsIsland: departure\.servesGovernorsIsland/);
+  assert.match(app, /Last South Brooklyn departure serving Governors Island/);
+  assert.match(app, /item\.isLastOfDay \|\| item\.isLastGovernorsIsland/);
+});
+
 test("uses the kiosk yellow LAST badge styling", async () => {
-  const css = await readFile(cssPath, "utf8");
+  const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
   assert.match(css, /--warning:#ffd100/);
+  assert.match(app, /<span class="departure-last-slot">\$\{lastLabel\}/);
+  assert.match(css, /\.departure-last-slot\{[^}]*min-height:/);
   assert.match(css, /\.departure-last-badge\{[^}]*background:var\(--warning\)[^}]*border:2px solid #d89a26[^}]*border-radius:8px/);
 });
 
-test("offline shell includes version 17 display assets", async () => {
+test("shows fresh late and on-time status in the reserved badge row", async () => {
+  const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
+  assert.match(app, /hasFreshTiming = !realtime\.stale && item\.hasLiveTiming/);
+  assert.match(app, /delaySeconds >= 60/);
+  assert.match(app, />\+\$\{Math\.max\(1, Math\.round\(delaySeconds \/ 60\)\)\} min<\/span>/);
+  assert.match(app, /class="on-time-badge"[^>]*>ON TIME<\/span>/);
+  assert.match(app, /class="scheduled-badge"[^>]*>SCHEDULED<\/span>/);
+  assert.match(app, /!isLast && !delayLabel && !onTimeLabel/);
+  assert.match(app, /departure-last-slot">\$\{lastLabel\}\$\{delayLabel \|\| onTimeLabel \|\| scheduledLabel\}/);
+  assert.match(css, /\.vessel-delay-badge\{background:#b83224\}/);
+  assert.match(css, /\.on-time-badge\{background:#218a4b\}/);
+  assert.match(css, /\.scheduled-badge\{color:var\(--navy\);background:#e6eef2/);
+});
+
+test("offline shell includes version 23 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=17/);
-  assert.match(index, /app\.js\?v=17/);
-  assert.match(worker, /nyc-ferry-did-shell-v17/);
-  assert.match(worker, /styles\.css\?v=17/);
-  assert.match(worker, /app\.js\?v=17/);
+  assert.match(index, /styles\.css\?v=23/);
+  assert.match(index, /app\.js\?v=23/);
+  assert.match(worker, /nyc-ferry-did-shell-v23/);
+  assert.match(worker, /styles\.css\?v=23/);
+  assert.match(worker, /app\.js\?v=23/);
 });

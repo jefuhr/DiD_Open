@@ -11,7 +11,7 @@ const elements = {
   serviceAlertCount: document.querySelector("#serviceAlertCount")
 };
 
-const cacheKey = "nyc-ferry-did-data-v2";
+const cacheKey = "nyc-ferry-did-data-v4";
 const PAGE_SIZE = 4;
 const TIMES_PER_DIRECTION = 4;
 let data;
@@ -83,6 +83,7 @@ function routeDirectionGroups(now = new Date()) {
   const vehicles = new Map((realtime.vehicles || []).map((item) => [String(item.tripId), item]));
   const groups = new Map();
   const lastDepartures = new Map();
+  const lastGovernorsIslandDepartures = new Map();
 
   for (let offset = -1; offset <= 0; offset += 1) {
     const serviceDate = addDays(current.dateKey, offset);
@@ -93,7 +94,9 @@ function routeDirectionGroups(now = new Date()) {
       if (calendarDate !== current.dateKey) continue;
       const update = updates.get(`${departure.tripId}|${departure.stopId}`);
       if (update?.canceled) continue;
-      const delay = update?.delaySeconds || 0;
+      const liveDelay = Number(update?.delaySeconds);
+      const hasLiveTiming = !realtime.stale && update?.delaySeconds != null && Number.isFinite(liveDelay);
+      const delay = hasLiveTiming ? liveDelay : 0;
       const delta = offset * 86400 + departure.seconds + delay - current.seconds;
       const slotKey = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}`;
       const scheduledMoment = offset * 86400 + departure.seconds;
@@ -101,13 +104,25 @@ function routeDirectionGroups(now = new Date()) {
       if (!previousLast || scheduledMoment > previousLast.scheduledMoment) {
         lastDepartures.set(slotKey, { tripId: String(departure.tripId), scheduledMoment });
       }
+      if (departure.routeId === "SB" && departure.servesGovernorsIsland) {
+        const previousIslandLast = lastGovernorsIslandDepartures.get(slotKey);
+        if (!previousIslandLast || scheduledMoment > previousIslandLast.scheduledMoment) {
+          lastGovernorsIslandDepartures.set(slotKey, { tripId: String(departure.tripId), scheduledMoment });
+        }
+      }
       if (delta < -60) continue;
       const key = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}|${departure.destination}`;
       const group = groups.get(key) || {
         key, routeId: departure.routeId, directionId: departure.directionId,
         destination: departure.destination, variant: departure.variant || null, departures: []
       };
-      group.departures.push({ ...departure, delay, delta, boatName: vehicles.get(String(departure.tripId))?.boatName || null });
+      group.departures.push({
+        ...departure,
+        delay,
+        delta,
+        hasLiveTiming,
+        boatName: vehicles.get(String(departure.tripId))?.boatName || null
+      });
       groups.set(key, group);
     }
   }
@@ -119,7 +134,9 @@ function routeDirectionGroups(now = new Date()) {
         .sort((left, right) => left.delta - right.delta)
         .map((departure) => ({
           ...departure,
-          isLastOfDay: lastDepartures.get(`${departure.routeId}|${departure.variant || ""}|${departure.directionId}`)?.tripId === String(departure.tripId)
+          isLastOfDay: lastDepartures.get(`${departure.routeId}|${departure.variant || ""}|${departure.directionId}`)?.tripId === String(departure.tripId),
+          isLastGovernorsIsland: departure.servesGovernorsIsland &&
+            lastGovernorsIslandDepartures.get(`${departure.routeId}|${departure.variant || ""}|${departure.directionId}`)?.tripId === String(departure.tripId)
         }))
     }))
     .filter((group) => group.departures[0]?.delta <= departureWindowSeconds)
@@ -139,13 +156,27 @@ function routeDirectionGroups(now = new Date()) {
 }
 
 function departureCell(item) {
-  const delayLabel = Math.abs(item.delay) >= 60 ? `<span class="live-delay">${item.delay > 0 ? "+" : ""}${Math.round(item.delay / 60)} min</span>` : "";
-  const lastLabel = item.isLastOfDay ? `<strong class="departure-last-badge" aria-label="Last departure of the day">LAST</strong>` : "";
+  const delaySeconds = Number(item.delay);
+  const hasFreshTiming = !realtime.stale && item.hasLiveTiming && Number.isFinite(delaySeconds);
+  const delayLabel = hasFreshTiming && delaySeconds >= 60
+    ? `<span class="vessel-delay-badge departure-delay-badge" dir="ltr" aria-label="Status: +${Math.max(1, Math.round(delaySeconds / 60))} min">+${Math.max(1, Math.round(delaySeconds / 60))} min</span>`
+    : "";
+  const onTimeLabel = hasFreshTiming && delaySeconds < 60
+    ? `<span class="on-time-badge" aria-label="Status: On time">ON TIME</span>`
+    : "";
+  const isLast = item.isLastOfDay || item.isLastGovernorsIsland;
+  const lastAria = item.isLastGovernorsIsland && !item.isLastOfDay
+    ? "Last South Brooklyn departure serving Governors Island"
+    : "Last departure of the day";
+  const lastLabel = isLast ? `<strong class="departure-last-badge" aria-label="${lastAria}">LAST</strong>` : "";
+  const scheduledLabel = !isLast && !delayLabel && !onTimeLabel
+    ? `<span class="scheduled-badge" aria-label="Status: Scheduled">SCHEDULED</span>`
+    : "";
   return `<div class="departure-slot">
-    <div class="slot-time-row"><time>${adjustedTime(item.departureTime, item.delay)}</time>${delayLabel}</div>
+    <div class="slot-time-row"><time>${adjustedTime(item.departureTime, item.delay)}</time></div>
     <span class="boat-name">${item.boatName ? escapeHtml(item.boatName) : ""}</span>
     <span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span>
-    ${lastLabel}
+    <span class="departure-last-slot">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}</span>
   </div>`;
 }
 
@@ -305,7 +336,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=17", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=23", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }
