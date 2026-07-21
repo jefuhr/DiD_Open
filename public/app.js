@@ -11,14 +11,22 @@ const elements = {
   serviceAlertCount: document.querySelector("#serviceAlertCount")
 };
 
-const cacheKey = "nyc-ferry-did-data-v4";
-const PAGE_SIZE = 4;
-const TIMES_PER_DIRECTION = 4;
+const cacheKey = "nyc-ferry-did-data-v5";
 let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
 let serviceAlerts = null;
 let slideIndex = 0;
 let slideTimer = null;
+
+function displayCount(key) {
+  const value = Number(data?.meta?.[key]);
+  return Number.isInteger(value) && value >= 1 && value <= 5 ? value : 4;
+}
+
+function applyDisplayCounts() {
+  document.documentElement.dataset.routesShown = String(displayCount("routesShown"));
+  document.documentElement.dataset.departuresShown = String(displayCount("departuresShown"));
+}
 
 function zonedParts(date = new Date(), timeZone = "America/New_York") {
   const values = Object.fromEntries(
@@ -142,7 +150,7 @@ function routeDirectionGroups(now = new Date()) {
     .filter((group) => group.departures[0]?.delta <= departureWindowSeconds)
     .map((group) => ({
       ...group,
-      departures: group.departures.slice(0, TIMES_PER_DIRECTION)
+      departures: group.departures.slice(0, displayCount("departuresShown"))
     }))
     .sort((left, right) => {
     const routeOrder = left.routeId.localeCompare(right.routeId);
@@ -182,13 +190,16 @@ function departureCell(item) {
 
 function render() {
   if (!data) return;
+  applyDisplayCounts();
+  const routesShown = displayCount("routesShown");
+  const departuresShown = displayCount("departuresShown");
   const groups = routeDirectionGroups();
-  const pageCount = Math.max(1, Math.ceil(groups.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(groups.length / routesShown));
   slideIndex %= pageCount;
-  const start = slideIndex * PAGE_SIZE;
-  const visible = groups.slice(start, start + PAGE_SIZE);
+  const start = slideIndex * routesShown;
+  const visible = groups.slice(start, start + routesShown);
   elements.slideStatus.textContent = pageCount > 1
-    ? `Routes ${start + 1}–${Math.min(start + PAGE_SIZE, groups.length)} of ${groups.length} · Page ${slideIndex + 1}/${pageCount}`
+    ? `Routes ${start + 1}–${Math.min(start + routesShown, groups.length)} of ${groups.length} · Page ${slideIndex + 1}/${pageCount}`
     : `${groups.length} route direction${groups.length === 1 ? "" : "s"}`;
 
   if (!visible.length) {
@@ -204,7 +215,7 @@ function render() {
     const routeName = group.variant ? `${route.name || "East River"} ${variantLabel}` : (route.name || "NYC Ferry");
     const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(variantLabel)}</small>` : "";
     const slots = [...group.departures];
-    while (slots.length < TIMES_PER_DIRECTION) slots.push(null);
+    while (slots.length < departuresShown) slots.push(null);
     return `<article class="departure route-${routeClass}${variantClass}">
       <div class="route">
         <span class="route-badge"><b>${escapeHtml(route.shortName || group.routeId)}</b>${variantBadge}</span>
@@ -336,7 +347,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=24", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=25", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

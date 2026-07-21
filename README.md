@@ -12,17 +12,21 @@ Edit the single number in [`config/display.json`](./config/display.json):
 {
   "landingNumber": 16,
   "slideSeconds": 12,
-  "departureWindowMinutes": 180
+  "departureWindowMinutes": 180,
+  "departuresShown": 4,
+  "routesShown": 4
 }
 ```
 
 Use a number from `2` through `24`. Number `1` is intentionally unused. The landing names and GTFS stop mappings live in [`config/landings.json`](./config/landings.json). Rockaway (`18`) includes the ferry landing and the connected shuttle-bus stop.
 
-`slideSeconds` controls how long each set of four route directions remains on screen. It accepts values from `3` through `300` seconds.
+`slideSeconds` controls how long each set of route directions remains on screen. It accepts values from `3` through `300` seconds.
 
-`departureWindowMinutes` controls whether a route-direction group appears. Its next departure must be within that many minutes. Once the group qualifies, the board displays its next four remaining departures even when the later departures fall outside the window. The default `180` means three hours; accepted values are `1` through `1440`.
+`departureWindowMinutes` controls whether a route-direction group appears. Its next departure must be within that many minutes. Once the group qualifies, the board displays the configured number of remaining departures even when later departures fall outside the window. The default `180` means three hours; accepted values are `1` through `1440`.
 
-The board displays four route-and-destination groups at a time and automatically advances until every direction has been shown. Each group contains its next four departure times and the assigned boat name when that assignment is available from the live feed.
+`departuresShown` controls how many departure columns appear in each route row. `routesShown` controls how many route-and-destination rows appear on each slideshow page. Both settings accept whole numbers from `1` through `5`; they can be set independently.
+
+The board automatically advances until every direction has been shown. Each group contains its configured number of departure times and the assigned boat name when that assignment is available from the live feed.
 
 After changing the number, restart the app. The `prestart` script rebuilds the local display data automatically.
 

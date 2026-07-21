@@ -1,5 +1,7 @@
 {
-  "landingNumber": 5,
+  "landingNumber": 16,
   "slideSeconds": 12,
-  "departureWindowMinutes": 90
+  "departureWindowMinutes": 90,
+  "departuresShown": 3,
+  "routesShown": 4
 }

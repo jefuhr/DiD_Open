@@ -54,14 +54,32 @@ test("service alert freshness sits beside its heading", async () => {
   assert.match(css, /\.service-alert-heading\{display:flex;align-items:baseline/);
 });
 
-test("offline shell includes version 24 display assets", async () => {
+test("route and departure counts drive the slideshow and grid", async () => {
+  const [app, css] = await Promise.all([
+    readFile(appPath, "utf8"),
+    readFile(cssPath, "utf8")
+  ]);
+  assert.match(app, /displayCount\("routesShown"\)/);
+  assert.match(app, /displayCount\("departuresShown"\)/);
+  assert.match(app, /dataset\.routesShown/);
+  assert.match(app, /dataset\.departuresShown/);
+  assert.doesNotMatch(app, /PAGE_SIZE|TIMES_PER_DIRECTION/);
+  assert.match(css, /repeat\(var\(--routes-shown\),minmax\(0,1fr\)\)/);
+  assert.match(css, /repeat\(var\(--departures-shown\),minmax\(0,1fr\)\)/);
+  for (let count = 1; count <= 5; count += 1) {
+    assert.match(css, new RegExp(`data-routes-shown="${count}"`));
+    assert.match(css, new RegExp(`data-departures-shown="${count}"`));
+  }
+});
+
+test("offline shell includes version 25 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=24/);
-  assert.match(index, /app\.js\?v=24/);
-  assert.match(worker, /nyc-ferry-did-shell-v24/);
-  assert.match(worker, /styles\.css\?v=24/);
-  assert.match(worker, /app\.js\?v=24/);
+  assert.match(index, /styles\.css\?v=25/);
+  assert.match(index, /app\.js\?v=25/);
+  assert.match(worker, /nyc-ferry-did-shell-v25/);
+  assert.match(worker, /styles\.css\?v=25/);
+  assert.match(worker, /app\.js\?v=25/);
 });

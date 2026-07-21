@@ -48,7 +48,12 @@ function destinationInfo(stopTime, trip, finalStop, routeId) {
   };
 }
 
-export async function buildDisplayData({ root = ROOT, landingNumber: landingOverride } = {}) {
+export async function buildDisplayData({
+  root = ROOT,
+  landingNumber: landingOverride,
+  departuresShown: departuresShownOverride,
+  routesShown: routesShownOverride
+} = {}) {
   const [displayRaw, landingsRaw, routesRaw, stopsRaw, tripsRaw, timesRaw, calendarRaw, datesRaw, feedRaw, agencyRaw] = await Promise.all([
     readFile(path.join(root, "config/display.json"), "utf8"), readFile(path.join(root, "config/landings.json"), "utf8"),
     readFile(path.join(root, "gtfs/routes.txt"), "utf8"), readFile(path.join(root, "gtfs/stops.txt"), "utf8"),
@@ -70,6 +75,14 @@ export async function buildDisplayData({ root = ROOT, landingNumber: landingOver
   const departureWindowMinutes = Number(display.departureWindowMinutes);
   if (!Number.isFinite(departureWindowMinutes) || departureWindowMinutes < 1 || departureWindowMinutes > 1440) {
     throw new Error(`config/display.json departureWindowMinutes must be between 1 and 1440; received ${display.departureWindowMinutes}.`);
+  }
+  const departuresShown = Number(departuresShownOverride ?? display.departuresShown);
+  if (!Number.isInteger(departuresShown) || departuresShown < 1 || departuresShown > 5) {
+    throw new Error(`config/display.json departuresShown must be a whole number from 1 through 5; received ${departuresShownOverride ?? display.departuresShown}.`);
+  }
+  const routesShown = Number(routesShownOverride ?? display.routesShown);
+  if (!Number.isInteger(routesShown) || routesShown < 1 || routesShown > 5) {
+    throw new Error(`config/display.json routesShown must be a whole number from 1 through 5; received ${routesShownOverride ?? display.routesShown}.`);
   }
 
   const routes = parseCsv(routesRaw), stops = parseCsv(stopsRaw), trips = parseCsv(tripsRaw), stopTimes = parseCsv(timesRaw);
@@ -129,7 +142,8 @@ export async function buildDisplayData({ root = ROOT, landingNumber: landingOver
   const feed = parseCsv(feedRaw)[0] || {}, agency = parseCsv(agencyRaw)[0] || {};
   return {
     meta: {
-      schemaVersion: 5, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
+      schemaVersion: 6, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
+      departuresShown, routesShown,
       landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds: landingConfig.stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },
       timezone: agency.agency_timezone || "America/New_York", feedVersion: feed.feed_version,
