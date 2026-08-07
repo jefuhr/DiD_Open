@@ -6,12 +6,12 @@
     <meta name="theme-color" content="#001d41" />
     <title>NYC Ferry Departures</title>
     <link rel="icon" href="/assets/kiosk-icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=25" />
+    <link rel="stylesheet" href="/styles.css?v=26" />
   </head>
   <body>
-    <main class="screen">
+    <main class="screen" id="screen">
       <header class="header">
-        <div class="brand"><img src="/assets/nyc-ferry-logo.png" alt="NYC Ferry" /><span>LIVE DEPARTURES</span></div>
+        <div class="brand"><img src="/assets/nyc-ferry-logo.png" alt="NYC Ferry" /><span id="displayMode">LIVE DEPARTURES</span></div>
         <div class="landing"><span>DEPARTING FROM</span><h1 id="landingName">NYC Ferry</h1></div>
         <div class="clock"><time id="clockTime">--:--</time><span id="clockDate">Loading schedule…</span></div>
       </header>
@@ -25,6 +25,13 @@
           <img src="/assets/ad.jpg" alt="Ferry Mart — check out the menu on the NYC Ferry app" />
         </aside>
       </div>
+      <section class="manual-override" id="manualOverride" hidden aria-live="assertive" aria-atomic="true">
+        <div class="manual-override-box" id="manualOverrideBox" data-size="short">
+          <span class="manual-override-label">Service notice</span>
+          <p id="manualOverrideMessage"></p>
+          <small id="manualOverrideUpdated"></small>
+        </div>
+      </section>
       <section class="service-alert-bar loading" id="serviceAlerts" aria-live="polite" aria-atomic="true">
         <svg class="service-alert-icon" width="48" height="48" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
           <path d="M16 3 30 28H2L16 3Z" />
@@ -40,6 +47,6 @@
         <span class="service-alert-count" id="serviceAlertCount" hidden></span>
       </section>
     </main>
-    <script type="module" src="/app.js?v=25"></script>
+    <script type="module" src="/app.js?v=26"></script>
   </body>
 </html>

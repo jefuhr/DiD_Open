@@ -6,6 +6,7 @@ const appPath = new URL("../public/app.js", import.meta.url);
 const cssPath = new URL("../public/styles.css", import.meta.url);
 const indexPath = new URL("../public/index.html", import.meta.url);
 const workerPath = new URL("../public/sw.js", import.meta.url);
+const serverPath = new URL("../server.js", import.meta.url);
 
 test("marks the final trip in each route-direction slot as LAST", async () => {
   const app = await readFile(appPath, "utf8");
@@ -72,14 +73,33 @@ test("route and departure counts drive the slideshow and grid", async () => {
   }
 });
 
-test("offline shell includes version 25 display assets", async () => {
+test("SFTP landing notices replace all GTFS display regions", async () => {
+  const [app, css, index, server] = await Promise.all([
+    readFile(appPath, "utf8"),
+    readFile(cssPath, "utf8"),
+    readFile(indexPath, "utf8"),
+    readFile(serverPath, "utf8")
+  ]);
+  assert.match(server, /createSftpOverridePoller/);
+  assert.match(server, /sftpOverridePoller\.start\(\)/);
+  assert.match(server, /url\.pathname === "\/api\/override"/);
+  assert.doesNotMatch(server, /request\.method === "POST"|KIOSK_OVERRIDE_TOKEN/);
+  assert.match(index, /id="manualOverride"[^>]*hidden[^>]*aria-live="assertive"/);
+  assert.match(app, /\/api\/override\?landingId=/);
+  assert.match(app, /setInterval\(loadManualOverride, 5_000\)/);
+  assert.match(app, /manualOverrideMessage\.textContent/);
+  assert.match(css, /\.screen\.override-active \.content,\.screen\.override-active \.service-alert-bar\{display:none\}/);
+  assert.match(css, /\.manual-override-box\{/);
+});
+
+test("offline shell includes version 26 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=25/);
-  assert.match(index, /app\.js\?v=25/);
-  assert.match(worker, /nyc-ferry-did-shell-v25/);
-  assert.match(worker, /styles\.css\?v=25/);
-  assert.match(worker, /app\.js\?v=25/);
+  assert.match(index, /styles\.css\?v=26/);
+  assert.match(index, /app\.js\?v=26/);
+  assert.match(worker, /nyc-ferry-did-shell-v26/);
+  assert.match(worker, /styles\.css\?v=26/);
+  assert.match(worker, /app\.js\?v=26/);
 });

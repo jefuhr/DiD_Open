@@ -1,4 +1,5 @@
 node_modules/
+state/
+secrets/
+.env
 .DS_Store
-state/*.json
-state/*.tmp

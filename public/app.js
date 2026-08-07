@@ -1,4 +1,6 @@
 const elements = {
+  screen: document.querySelector("#screen"),
+  displayMode: document.querySelector("#displayMode"),
   landing: document.querySelector("#landingName"),
   time: document.querySelector("#clockTime"),
   date: document.querySelector("#clockDate"),
@@ -8,13 +10,18 @@ const elements = {
   serviceAlerts: document.querySelector("#serviceAlerts"),
   serviceAlertSummary: document.querySelector("#serviceAlertSummary"),
   serviceAlertFreshness: document.querySelector("#serviceAlertFreshness"),
-  serviceAlertCount: document.querySelector("#serviceAlertCount")
+  serviceAlertCount: document.querySelector("#serviceAlertCount"),
+  manualOverride: document.querySelector("#manualOverride"),
+  manualOverrideBox: document.querySelector("#manualOverrideBox"),
+  manualOverrideMessage: document.querySelector("#manualOverrideMessage"),
+  manualOverrideUpdated: document.querySelector("#manualOverrideUpdated")
 };
 
 const cacheKey = "nyc-ferry-did-data-v5";
 let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
 let serviceAlerts = null;
+let manualOverride = { active: false, message: "", updatedAt: null };
 let slideIndex = 0;
 let slideTimer = null;
 
@@ -240,6 +247,43 @@ function ageLabel(timestamp) {
   return `${Math.floor(ageMs / 3_600_000)} hr ago`;
 }
 
+function renderManualOverride() {
+  const active = Boolean(manualOverride?.active && manualOverride.message);
+  elements.screen.classList.toggle("override-active", active);
+  elements.manualOverride.hidden = !active;
+  elements.displayMode.textContent = active ? "SERVICE NOTICE" : "LIVE DEPARTURES";
+  elements.manualOverrideMessage.textContent = active ? manualOverride.message : "";
+  const length = manualOverride?.message?.length || 0;
+  elements.manualOverrideBox.dataset.size = length > 700 ? "long" : length > 280 ? "medium" : "short";
+
+  const updatedAt = Date.parse(manualOverride?.updatedAt);
+  elements.manualOverrideUpdated.textContent = active && Number.isFinite(updatedAt)
+    ? `Updated ${new Intl.DateTimeFormat("en-US", {
+      timeZone: data?.meta?.timezone || "America/New_York",
+      month: "long", day: "numeric", hour: "numeric", minute: "2-digit"
+    }).format(new Date(updatedAt))}`
+    : "";
+
+  if (data) {
+    document.title = active
+      ? `${data.meta.landing.displayName} Service Notice`
+      : `${data.meta.landing.displayName} Departures`;
+  }
+}
+
+async function loadManualOverride() {
+  const landingId = data?.meta?.landingNumber;
+  if (!landingId) return;
+  try {
+    const response = await fetch(`/api/override?landingId=${encodeURIComponent(landingId)}`, { cache: "no-store" });
+    if (!response.ok) throw new Error();
+    manualOverride = await response.json();
+    renderManualOverride();
+  } catch {
+    // Preserve the last known state if the local server is temporarily unreachable.
+  }
+}
+
 function renderServiceAlerts() {
   const alerts = serviceAlerts?.alerts || [];
   const unavailable = Boolean(serviceAlerts && !serviceAlerts.available && alerts.length === 0);
@@ -326,8 +370,8 @@ async function load() {
     data = JSON.parse(saved);
   }
   elements.landing.textContent = data.meta.landing.displayName;
-  document.title = `${data.meta.landing.displayName} Departures`;
   slideIndex = 0;
+  await loadManualOverride();
   updateClock();
   startSlideshow();
   loadRealtime();
@@ -340,6 +384,7 @@ load().catch(() => {
 setInterval(updateClock, 15_000);
 setInterval(loadRealtime, 15_000);
 setInterval(loadServiceAlerts, 60_000);
+setInterval(loadManualOverride, 5_000);
 if ("serviceWorker" in navigator) {
   let reloadingForUpdate = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
@@ -347,7 +392,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=25", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=26", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }
