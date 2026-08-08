@@ -50,6 +50,8 @@ npm run build
 
 ## SFTP landing notices
 
+For the complete file contract and instructions for integrating another writing interface, see [`override.md`](./override.md).
+
 Power Automate does not call the kiosk. Instead, it updates a small JSON file on the existing SFTP server. Each kiosk makes an outbound, read-only SFTP connection and checks only the file matching the `landingNumber` in `config/display.json`. Landing 2 reads `/overrides/02.json`, landing 10 reads `/overrides/10.json`, and so on.
 
 An active notice hides the departure board, Ferry Mart advertisement, and GTFS service-alert strip, replacing them with a large NYC Ferry service-notice panel. A blank message restores the normal display. The last valid SFTP result is kept locally, so a temporary SFTP outage does not unexpectedly change the screen.
@@ -75,7 +77,8 @@ Configure [`config/sftp.json`](./config/sftp.json) on each kiosk:
   "hostKeySha256": "SHA256:paste_the_verified_server_fingerprint_here",
   "remoteDirectory": "/overrides",
   "pollSeconds": 10,
-  "readyTimeoutSeconds": 15
+  "readyTimeoutSeconds": 15,
+  "verboseErrors": true
 }
 ```
 
@@ -85,6 +88,7 @@ Configure [`config/sftp.json`](./config/sftp.json) on each kiosk:
 - `hostKeySha256` pins the SFTP server identity and is required when SFTP is enabled.
 - `pollSeconds` accepts 5 through 300 seconds. This controls how quickly a kiosk sees an update.
 - `readyTimeoutSeconds` accepts 1 through 60 seconds.
+- `verboseErrors` includes the underlying error stack in the Node console. The local health response always contains structured, credential-safe diagnostics.
 
 Restart Node after changing SFTP configuration. The notice itself updates without a restart.
 
