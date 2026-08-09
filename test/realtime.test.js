@@ -61,6 +61,60 @@ test("uses the nearest predicted stop for an active trip without a landing updat
   }]);
 });
 
+test("never exposes a rider departure earlier than the static schedule", () => {
+  const feed = { entity: [{ tripUpdate: {
+    trip: { tripId: "early-trip" },
+    stopTimeUpdate: [{ stopId: "20", departure: { delay: -300 } }]
+  } }] };
+  assert.deepEqual(normalizeTripUpdates(feed, ["20"]), [{
+    tripId: "early-trip",
+    stopId: "20",
+    delaySeconds: 0,
+    predictedEpochSeconds: null,
+    canceled: false
+  }]);
+});
+
+test("clamps an early absolute arrival prediction used as a departure fallback", () => {
+  const predictedEpochSeconds = Date.parse("2026-07-17T21:55:00Z") / 1000;
+  const feed = { entity: [{ tripUpdate: {
+    trip: { tripId: "early-arrival-trip" },
+    stopTimeUpdate: [{ stopId: "20", arrival: { time: predictedEpochSeconds } }]
+  } }] };
+  assert.deepEqual(normalizeTripUpdates(feed, ["20"], {
+    departures: [{ tripId: "early-arrival-trip", stopId: "20", seconds: 18 * 3600 }],
+    timeZone: "America/New_York"
+  }), [{
+    tripId: "early-arrival-trip",
+    stopId: "20",
+    delaySeconds: 0,
+    predictedEpochSeconds,
+    canceled: false
+  }]);
+});
+
+test("clamps an early delay inherited from another stop", () => {
+  const feed = { entity: [{ tripUpdate: {
+    trip: { tripId: "early-fallback-trip" },
+    stopTimeUpdate: [{ stopId: "17", departure: { delay: -180 } }]
+  } }] };
+  assert.deepEqual(normalizeTripUpdates(feed, ["11"], {
+    departures: [{ tripId: "early-fallback-trip", stopId: "11", seconds: 18 * 3600 + 24 * 60 }],
+    tripSchedules: {
+      "early-fallback-trip": { stops: [
+        { stopId: "17", sequence: 1, departureSeconds: 18 * 3600, arrivalSeconds: 18 * 3600 },
+        { stopId: "11", sequence: 4, departureSeconds: 18 * 3600 + 24 * 60, arrivalSeconds: 18 * 3600 + 24 * 60 }
+      ] }
+    }
+  }), [{
+    tripId: "early-fallback-trip",
+    stopId: "11",
+    delaySeconds: 0,
+    predictedEpochSeconds: null,
+    canceled: false
+  }]);
+});
+
 test("matches a live vehicle assignment to its boat name", () => {
   const feed = { entity: [{ vehicle: {
     trip: { tripId: "trip-1" },

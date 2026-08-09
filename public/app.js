@@ -111,7 +111,9 @@ function routeDirectionGroups(now = new Date()) {
       if (update?.canceled) continue;
       const liveDelay = Number(update?.delaySeconds);
       const hasLiveTiming = !realtime.stale && update?.delaySeconds != null && Number.isFinite(liveDelay);
-      const delay = hasLiveTiming ? liveDelay : 0;
+      // NYC Ferry boats may arrive ahead of schedule, but never depart early.
+      // Keep the published departure as the rider-facing floor even for old cached updates.
+      const delay = hasLiveTiming ? Math.max(0, liveDelay) : 0;
       const delta = offset * 86400 + departure.seconds + delay - current.seconds;
       const slotKey = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}`;
       const scheduledMoment = offset * 86400 + departure.seconds;
@@ -392,7 +394,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=26", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=27", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

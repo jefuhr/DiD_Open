@@ -46,6 +46,11 @@ test("shows fresh late and on-time status in the reserved badge row", async () =
   assert.match(css, /\.scheduled-badge\{color:var\(--navy\);background:#e6eef2/);
 });
 
+test("never displays a realtime departure earlier than its scheduled time", async () => {
+  const app = await readFile(appPath, "utf8");
+  assert.match(app, /const delay = hasLiveTiming \? Math\.max\(0, liveDelay\) : 0/);
+});
+
 test("service alert freshness sits beside its heading", async () => {
   const [index, css] = await Promise.all([
     readFile(indexPath, "utf8"),
@@ -92,14 +97,14 @@ test("SFTP landing notices replace all GTFS display regions", async () => {
   assert.match(css, /\.manual-override-box\{/);
 });
 
-test("offline shell includes version 26 display assets", async () => {
+test("offline shell includes version 27 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=26/);
-  assert.match(index, /app\.js\?v=26/);
-  assert.match(worker, /nyc-ferry-did-shell-v26/);
-  assert.match(worker, /styles\.css\?v=26/);
-  assert.match(worker, /app\.js\?v=26/);
+  assert.match(index, /styles\.css\?v=27/);
+  assert.match(index, /app\.js\?v=27/);
+  assert.match(worker, /nyc-ferry-did-shell-v27/);
+  assert.match(worker, /styles\.css\?v=27/);
+  assert.match(worker, /app\.js\?v=27/);
 });
