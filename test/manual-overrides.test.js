@@ -57,8 +57,8 @@ test("manual notice input is constrained to supported landing IDs and message si
   const statePath = await fixture(t);
   const service = createManualOverrideService({ statePath });
 
-  await assert.rejects(service.set(1, "Invalid"), /2 through 24/);
-  await assert.rejects(service.set(25, "Invalid"), /2 through 24/);
+  await assert.rejects(service.set(1, "Invalid"), /2 through 26/);
+  await assert.rejects(service.set(27, "Invalid"), /2 through 26/);
   await assert.rejects(service.set(2, null), /message must be a string/);
   await assert.rejects(service.set(2, "x".repeat(MAX_OVERRIDE_MESSAGE_LENGTH + 1)), /characters or fewer/);
 });

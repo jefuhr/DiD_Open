@@ -1,70 +1,109 @@
-# NYC Ferry DiD Reborn
+# nyc ferry did reborn
 
-An offline-first, landscape `16:9` departure display for NYC Ferry landings. It runs from a local Node server, calculates scheduled departures from the bundled GTFS feed, overlays NYC Ferry GTFS-Realtime trip updates, and keeps working when internet service is interrupted.
+an offline-first `16:9` departure display for NYC Ferry landings. a local Node server builds scheduled departures from the bundled GTFS feed, overlays NYC Ferry GTFS-Realtime trip updates, and keeps working when the internet drops.
 
-The Ferry Mart artwork is stored locally at [`public/assets/ad.jpg`](./public/assets/ad.jpg) and is included in the offline application cache.
+## run it
 
-## Choose the landing
-
-Edit the single number in [`config/display.json`](./config/display.json):
-
-```json
-{
-  "landingNumber": 16,
-  "slideSeconds": 12,
-  "departureWindowMinutes": 180,
-  "departuresShown": 4,
-  "routesShown": 4
-}
-```
-
-Use a number from `2` through `24`. Number `1` is intentionally unused. The landing names and GTFS stop mappings live in [`config/landings.json`](./config/landings.json). Rockaway (`18`) includes the ferry landing and the connected shuttle-bus stop.
-
-`slideSeconds` controls how long each set of route directions remains on screen. It accepts values from `3` through `300` seconds.
-
-`departureWindowMinutes` controls whether a route-direction group appears. Its next departure must be within that many minutes. Once the group qualifies, the board displays the configured number of remaining departures even when later departures fall outside the window. The default `180` means three hours; accepted values are `1` through `1440`.
-
-`departuresShown` controls how many departure columns appear in each route row. `routesShown` controls how many route-and-destination rows appear on each slideshow page. Both settings accept whole numbers from `1` through `5`; they can be set independently.
-
-The board automatically advances until every direction has been shown. Each group contains its configured number of departure times and the assigned boat name when that assignment is available from the live feed.
-
-After changing the number, restart the app. The `prestart` script rebuilds the local display data automatically.
-
-## Run locally
-
-Requires Node.js 22 or newer.
+needs Node.js 22 or newer.
 
 ```bash
 npm ci
 npm start
 ```
 
-Open `http://127.0.0.1:8090`. The device can launch Chromium at that address in kiosk mode. The server binds only to loopback unless `HOST=0.0.0.0` is set explicitly.
-
-Run validation with:
+open `http://127.0.0.1:8090`. the kiosk launches Chromium at that address. the server binds to loopback only unless you set `HOST=0.0.0.0`.
 
 ```bash
-npm test
-npm run build
+npm test        # run the test suite
+npm run build   # rebuild public/data/display-data.json
 ```
+
+`npm start` rebuilds the display data first, so restart the app after any config change.
+
+## settings
+
+everything lives in [`config/display.json`](./config/display.json):
+
+```json
+{
+  "landingNumber": 26,
+  "slideSeconds": 16,
+  "departureWindowMinutes": 500,
+  "departuresShown": 3,
+  "routesShown": 4,
+  "waterwayEnabled": true,
+  "busesEnabled": false
+}
+```
+
+| setting | range | what it does |
+|---|---|---|
+| `landingNumber` | `2`–`26` | which landing this kiosk shows. `1` is unused. |
+| `slideSeconds` | `3`–`300` | how long each page of routes stays on screen. |
+| `departureWindowMinutes` | `1`–`1440` | a route only appears if its next departure is within this many minutes. once it qualifies, the board still fills every departure column, even with later trips outside the window. |
+| `departuresShown` | `1`–`5` | departure columns per route row. |
+| `routesShown` | `1`–`5` | route rows per page. |
+| `waterwayEnabled` | `true` / `false` | merge in NY Waterway departures. see below. |
+| `busesEnabled` | `true` / `false` | show connecting shuttle buses. see below. |
+
+the board pages through every route direction on its own, then starts over. each departure shows its boat name when the live feed has that assignment.
+
+## landings
+
+[`config/landings.json`](./config/landings.json) is the source of truth for which landings exist and which GTFS stops they map to. the build validates against that file, not a hardcoded range, so adding a landing there (plus a matching `overrides/NN.json`) is all it takes.
+
+landings `2` through `24` are alphabetical. `25` and `26` were added later so existing kiosk numbers stayed put. Rockaway (`18`) covers both the ferry landing and the shuttle-bus stop next to it.
+
+## shuttle buses
+
+`busesEnabled: false` drops every bus route (GTFS `route_type` 3) from the board and leaves the ferries. it affects:
+
+- Rockaway (`18`) — removes the Rockaway East and Rockaway West shuttles.
+- any landing showing NY Waterway — removes their shuttle-bus routes, keeps their ferries.
+
+leave the key out entirely and it defaults to `true`.
+
+## NY Waterway
+
+landings that share a dock with NY Waterway can show its departures next to NYC Ferry's. the feed lives in [`gtfs/waterway/`](./gtfs/waterway) and is merged at build time by [`scripts/build-data.js`](./scripts/build-data.js).
+
+| landing | NYC Ferry stop | NY Waterway stop |
+|---|---|---|
+| `16` Wall St / Pier 11 | `87` Wall St/Pier 11 | `2439146` Pier 11 / Wall Street |
+| `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | `2729332` Brookfield Place/Battery Park City |
+| `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | `2439145` Midtown / W 39th Street |
+
+two switches control it, and either one off means no waterway data:
+
+- `waterwayEnabled` in `config/display.json` — the whole kiosk.
+- `waterwayStopIds` in `config/landings.json` — per landing. only landings with this array populated pull in waterway data.
+
+good to know:
+
+- every departure and route carries an `operator` (`"NY Waterway"` or `"NYC Ferry"`, from each feed's `agency.txt`), and the board prints a small operator label under the route name.
+- waterway ids are prefixed `wtr:` internally so they can't collide with NYC Ferry ids.
+- waterway routes with no rider-facing short name — just an internal all-digit route id — show the NY Waterway mark ([`public/assets/waterway.png`](./public/assets/waterway.png)) in the route badge. routes with a real short name keep it.
+- NY Waterway publishes no realtime feed here, so those rows show scheduled times only: no boat name, no delay badge. that's expected.
+
+to add another landing, find its `stop_id` in [`gtfs/waterway/stops.txt`](./gtfs/waterway/stops.txt) and add a `waterwayStopIds` array to that landing in `config/landings.json`.
 
 ## SFTP landing notices
 
-For the complete file contract and instructions for integrating another writing interface, see [`override.md`](./override.md).
+full file contract and integration notes: [`override.md`](./override.md).
 
-Power Automate does not call the kiosk. Instead, it updates a small JSON file on the existing SFTP server. Each kiosk makes an outbound, read-only SFTP connection and checks only the file matching the `landingNumber` in `config/display.json`. Landing 2 reads `/overrides/02.json`, landing 10 reads `/overrides/10.json`, and so on.
+Power Automate never calls the kiosk. it writes a small JSON file to an SFTP server, and each kiosk polls read-only for the one file matching its `landingNumber` — landing 2 reads `/overrides/02.json`, landing 10 reads `/overrides/10.json`.
 
-An active notice hides the departure board, Ferry Mart advertisement, and GTFS service-alert strip, replacing them with a large NYC Ferry service-notice panel. A blank message restores the normal display. The last valid SFTP result is kept locally, so a temporary SFTP outage does not unexpectedly change the screen.
+an active notice hides the departure board, the ad, and the service-alert strip, and replaces them with a full-screen notice panel. a blank message brings the normal display back. the last valid result is cached locally, so an SFTP outage never changes the screen on its own.
 
-### Prepare the SFTP server
+### set up the server
 
-1. Create `/overrides` on the SFTP server.
-2. Upload all 23 starter files from [`overrides/`](./overrides). They cover landing IDs 2 through 24 and start with blank messages.
-3. Give the Power Automate SFTP account permission to update those files.
-4. Give the kiosk SFTP account read-only permission. Do not give kiosk devices write access.
-5. Record the server's SHA256 host-key fingerprint. On a trusted administrator machine, it can be displayed with `ssh-keyscan -t ed25519 <host> | ssh-keygen -lf - -E sha256`. Confirm it through the server administrator before using it.
+1. create `/overrides` on the SFTP server.
+2. upload the 25 starter files from [`overrides/`](./overrides) — landings 2 through 26, all blank.
+3. give the Power Automate account write access to those files.
+4. give each kiosk account read-only access. kiosks must never have write access.
+5. record the server's SHA256 host-key fingerprint. from a trusted machine: `ssh-keyscan -t ed25519 <host> | ssh-keygen -lf - -E sha256`. confirm it with the server admin before using it.
 
-Configure [`config/sftp.json`](./config/sftp.json) on each kiosk:
+then configure [`config/sftp.json`](./config/sftp.json) on each kiosk:
 
 ```json
 {
@@ -82,23 +121,25 @@ Configure [`config/sftp.json`](./config/sftp.json) on each kiosk:
 }
 ```
 
-- `enabled` turns SFTP notice checks on or off.
-- `privateKeyPath` can be absolute or relative to the project folder. Private keys belong in the ignored `secrets/` folder and must never be committed or copied into the Docker image.
-- `privateKeyPassphraseEnv` names the environment variable containing the key passphrase. Leave the variable unset when the key has no passphrase.
-- `hostKeySha256` pins the SFTP server identity and is required when SFTP is enabled.
-- `pollSeconds` accepts 5 through 300 seconds. This controls how quickly a kiosk sees an update.
-- `readyTimeoutSeconds` accepts 1 through 60 seconds.
-- `verboseErrors` includes the underlying error stack in the Node console. The local health response always contains structured, credential-safe diagnostics.
+| key | notes |
+|---|---|
+| `enabled` | turns notice polling on or off. |
+| `privateKeyPath` | absolute, or relative to the project folder. keys belong in the ignored `secrets/` folder — never commit them or bake them into the image. |
+| `privateKeyPassphraseEnv` | name of the env var holding the key passphrase. leave the var unset if the key has none. |
+| `hostKeySha256` | pins the server identity. required when SFTP is enabled. |
+| `pollSeconds` | `5`–`300`. how fast a kiosk sees an update. |
+| `readyTimeoutSeconds` | `1`–`60`. |
+| `verboseErrors` | adds the underlying stack to the Node console. the health endpoint is always credential-safe either way. |
 
-Restart Node after changing SFTP configuration. The notice itself updates without a restart.
+restart Node after editing SFTP config. notices themselves apply without a restart.
 
-### Build the Power Automate instant flow
+### build the Power Automate flow
 
-1. Create an **Instant cloud flow** using **Manually trigger a flow**.
-2. Add a **Number** input named `landingId` and a **Text** input named `message`.
-3. Add a condition that allows only landing IDs from 2 through 24. Terminate the flow as failed when the value is outside that range.
-4. Add a **Compose** action named `File name`. Use `formatNumber(int(<landingId dynamic value>), '00')`, then append `.json`. Landing 2 must produce `02.json`.
-5. Add another **Compose** action named `Notice`. Build an object with these three properties, inserting the trigger's dynamic values:
+1. create an **instant cloud flow** with **manually trigger a flow**.
+2. add a **number** input `landingId` and a **text** input `message`.
+3. reject anything outside landings 2 through 26 — terminate the flow as failed.
+4. add a **compose** action `File name`: `formatNumber(int(<landingId>), '00')` then append `.json`, so landing 2 gives `02.json`.
+5. add a **compose** action `Notice` with three properties, filled from the trigger (`updatedAt` uses `utcNow()`):
 
    ```json
    {
@@ -108,13 +149,11 @@ Restart Node after changing SFTP configuration. The notice itself updates withou
    }
    ```
 
-   Set `updatedAt` with the `utcNow()` expression. Power Automate should supply the number and message dynamically; the values above are only an example.
+6. add **SFTP - SSH: get file metadata using path**, path `/overrides/` + the `File name` output.
+7. add **SFTP - SSH: update file**, using that file id and `string(outputs('Notice'))` as the content.
+8. save and test. the kiosk updates within `pollSeconds`.
 
-6. Add **SFTP - SSH: Get file metadata using path**. Set the path to `/overrides/` followed by the `File name` output.
-7. Add **SFTP - SSH: Update file**. Use the file ID returned by the metadata action and use `string(outputs('Notice'))` as the file content.
-8. Save and test with a valid landing ID. The matching kiosk should update within `pollSeconds`.
-
-To clear a notice, run the same flow with an empty `message`. Do not delete the landing file. The flow should overwrite it with a valid object whose message is blank:
+to clear a notice, run the same flow with an empty `message` — don't delete the file:
 
 ```json
 {
@@ -124,20 +163,25 @@ To clear a notice, run the same flow with an empty `message`. Do not delete the 
 }
 ```
 
-The application accepts messages up to 2,000 characters. A malformed file, mismatched landing ID, failed host-key check, or unavailable SFTP server is ignored and the last locally cached state remains on screen.
+messages can be up to 2,000 characters. a malformed file, wrong landing id, failed host-key check, or unreachable server is ignored, and the cached state stays on screen.
 
-## Local resilience
+## offline behavior
 
-- The complete schedule, landing map, fonts, logo, display code, and advertisement live on the device.
-- The last successful realtime trip-update response is written atomically to `state/realtime.json`.
-- Live vehicle assignments are matched to the local vessel roster so the display can show boat names beside departure times.
-- The bottom strip uses the live NYC Ferry GTFS-Realtime alert feed and saves the last successful alert snapshot to `state/service-alerts.json`.
-- The last valid SFTP notice is stored atomically in `state/manual-overrides.json` and survives server restarts.
-- The service worker caches the screen shell, advertisement, and API responses.
-- The browser keeps a final schedule and realtime snapshot in local storage.
-- If NYC Ferry realtime is unavailable, the display continues using the saved live snapshot and then the local scheduled times.
+- the schedule, landing map, fonts, logo, display code, and ad all live on the device.
+- the last good realtime response is written atomically to `state/realtime.json`.
+- live vehicle assignments are matched against the local vessel roster to get boat names.
+- the alert strip uses the live GTFS-Realtime alert feed and caches to `state/service-alerts.json`.
+- the last valid SFTP notice is stored in `state/manual-overrides.json` and survives restarts.
+- the service worker caches the shell, the ad, and API responses; the browser also keeps a last snapshot in local storage.
+- if realtime is unavailable, the board falls back to the saved snapshot, then to bundled scheduled times.
 
-Replace the files in [`gtfs/`](./gtfs) when a new published schedule is issued, then restart the app. The display shows schedule data only from the bundled feed, so deployments remain reproducible and do not depend on downloading GTFS at boot.
+the ad artwork is [`public/assets/ad.jpg`](./public/assets/ad.jpg), cached offline with everything else.
+
+## updating the schedule
+
+replace the files in [`gtfs/`](./gtfs) (or [`gtfs/waterway/`](./gtfs/waterway)) when a new feed is published, then restart. the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
+
+any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `28`) in both files — `test/display-contract.test.js` checks that they agree.
 
 ## Docker
 
@@ -145,7 +189,7 @@ Replace the files in [`gtfs/`](./gtfs) when a new published schedule is issued, 
 docker compose up --build -d
 ```
 
-The compose service restarts automatically and stores realtime snapshots in the local `./state` directory. If SFTP is enabled, mount the private key read-only into the path configured in `config/sftp.json`; for the sample relative path, add this second volume:
+the service restarts on its own and keeps snapshots in `./state`. with SFTP enabled, mount the private key read-only at the path in `config/sftp.json`:
 
 ```yaml
 volumes:
@@ -153,4 +197,4 @@ volumes:
   - ./secrets/id_ed25519:/app/secrets/id_ed25519:ro
 ```
 
-If the key is encrypted, provide `NYCF_SFTP_KEY_PASSPHRASE` to the container through the deployment's secret-management mechanism.
+if the key is encrypted, pass `NYCF_SFTP_KEY_PASSPHRASE` in through the deployment's secret management.

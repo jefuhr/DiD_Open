@@ -17,7 +17,7 @@ const elements = {
   manualOverrideUpdated: document.querySelector("#manualOverrideUpdated")
 };
 
-const cacheKey = "nyc-ferry-did-data-v5";
+const cacheKey = "nyc-ferry-did-data-v6";
 let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
 let serviceAlerts = null;
@@ -223,14 +223,30 @@ function render() {
     const variantLabel = group.variant === "LOCAL" ? "Local" : group.variant;
     const routeName = group.variant ? `${route.name || "East River"} ${variantLabel}` : (route.name || "NYC Ferry");
     const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(variantLabel)}</small>` : "";
+    // Other-operator routes (e.g. NY Waterway service merged in when config/display.json's
+    // waterwayEnabled is on) get their own official GTFS color and a small operator label so
+    // they're never mistaken for NYC Ferry service.
+    const isOtherOperator = Boolean(route.operator) && route.operator !== (data.meta.agencyName || "NYC Ferry");
+    const operatorBadge = isOtherOperator ? `<small class="route-operator">${escapeHtml(route.operator)}</small>` : "";
+    // Several NY Waterway routes have no public-facing short name, only an internal all-digit GTFS
+    // route id (e.g. 10216). Those read as noise on a passenger display, so the badge shows the
+    // NY Waterway mark instead. Waterway routes that do have a real short name (W44, Greenwich)
+    // keep it, and NYC Ferry badges are untouched.
+    const useWaterwayLogo = String(group.routeId || "").startsWith("wtr:") && /^\d+$/.test(route.shortName || "");
+    const badgeContent = useWaterwayLogo
+      ? `<img class="route-badge-logo" src="assets/waterway.png" alt="NY Waterway">`
+      : `<b>${escapeHtml(route.shortName || group.routeId)}</b>`;
+    const routeStyle = /^#[0-9A-Fa-f]{6}$/.test(route.color || "")
+      ? ` style="--route-color:${route.color};--route-text:${/^#[0-9A-Fa-f]{6}$/.test(route.textColor || "") ? route.textColor : "#FFFFFF"}"`
+      : "";
     const slots = [...group.departures];
     while (slots.length < departuresShown) slots.push(null);
-    return `<article class="departure route-${routeClass}${variantClass}">
+    return `<article class="departure route-${routeClass}${variantClass}"${routeStyle}>
       <div class="route">
-        <span class="route-badge"><b>${escapeHtml(route.shortName || group.routeId)}</b>${variantBadge}</span>
-        <span class="route-name">${escapeHtml(routeName)}</span>
+        <span class="route-badge${useWaterwayLogo ? " route-badge-image" : ""}">${badgeContent}${variantBadge}</span>
+        <span class="route-name">${escapeHtml(routeName)}${operatorBadge}</span>
       </div>
-      <div class="destination"><strong>${escapeHtml(group.destination)}</strong><span>${directionLabel(group.directionId)}</span></div>
+      <div class="destination"><strong>${escapeHtml(group.destination)}</strong><span>${isOtherOperator ? "" : directionLabel(group.directionId)}</span></div>
       <div class="departure-slots">${slots.map((item) => item ? departureCell(item) : `<div class="departure-slot unavailable"><span>No scheduled trip</span></div>`).join("")}</div>
     </article>`;
   }).join("");
@@ -394,7 +410,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=27", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=28", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

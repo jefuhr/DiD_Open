@@ -26,13 +26,13 @@ The kiosk landing comes from `landingNumber` in [`config/display.json`](./config
 
 ## Remote file layout
 
-The remote directory is configured with `remoteDirectory`. Inside that directory there must be one two-digit JSON file for every landing ID from 2 through 24:
+The remote directory is configured with `remoteDirectory`. Inside that directory there must be one two-digit JSON file for every landing ID from 2 through 26:
 
 ```text
 <remoteDirectory>/02.json
 <remoteDirectory>/03.json
 ...
-<remoteDirectory>/24.json
+<remoteDirectory>/26.json
 ```
 
 Upload-ready starter files are provided in [`overrides/`](./overrides).
@@ -62,8 +62,10 @@ Upload-ready starter files are provided in [`overrides/`](./overrides).
 | 22 | St. George | `22.json` |
 | 23 | Stuyvesant Cove | `23.json` |
 | 24 | Sunset Park | `24.json` |
+| 25 | Battery Park City | `25.json` |
+| 26 | Pier 79 | `26.json` |
 
-Landing ID 1 is intentionally unused.
+Landing ID 1 is intentionally unused. IDs 2 through 24 are ordered alphabetically; 25 and 26 were added later and appended so existing kiosk numbering stayed stable.
 
 ## JSON contract
 
@@ -79,7 +81,7 @@ Files must contain UTF-8 encoded JSON with this shape:
 
 | Field | Required | Rules |
 |---|---|---|
-| `landingId` | Yes | Whole number from 2 through 24. It must match the file name and the intended landing. |
+| `landingId` | Yes | Whole number from 2 through 26. It must match the file name and the intended landing. |
 | `message` | Yes | String containing 0 through 2,000 characters. Leading and trailing whitespace is removed by the kiosk. An empty or whitespace-only value clears the notice. |
 | `updatedAt` | Recommended | A valid ISO 8601 date-time string, normally the UTC time of the write. Use a value such as `new Date().toISOString()` or Power Automate's `utcNow()`. It can be `null` when the message is blank. |
 
@@ -115,7 +117,7 @@ Do not delete or rename the landing file to clear a notice. A missing, unreadabl
 
 An additional interface should perform the following steps:
 
-1. Require the operator to choose a landing ID from 2 through 24.
+1. Require the operator to choose a landing ID from 2 through 26.
 2. Accept a message of no more than 2,000 characters.
 3. Confirm that a blank message means **clear the current notice**.
 4. Generate the two-digit file name with `String(landingId).padStart(2, "0") + ".json"`.
@@ -324,7 +326,7 @@ Manually trigger a flow
   landingId: Number
   message: Text
         |
-Validate landingId is 2 through 24
+Validate landingId is 2 through 26
         |
 Compose two-digit file name
         |

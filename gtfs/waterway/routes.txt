@@ -1,0 +1,37 @@
+route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color,continuous_pickup,continuous_drop_off,route_sort_order
+10218,815,,Paulus Hook - Pier 11 / Wall St,,4,https://www.nywaterway.com/PalHo-Pier11WallStRoute.aspx,FFE628,000000,1,1,29
+South Amboy,815,South Amboy,,,3,,3f69b3,,,,
+Intra-site/Jacobs Bulls Ferry,815,Intra-site/Jacobs Bulls Ferry,,,3,,b78dc0,,,,
+10216,815,,Paulus Hook - Midtown / W 39th St,,4,http://www.nywaterway.com/PaulusHookRoute-Copy2.aspx,DF2727,000000,1,1,3
+77347,815,,South Amboy - Pier 11/Wall St.,,4,https://www.nywaterway.com/AdvisoryDetails.aspx?aid=831,57aa33,,1,1,0
+32379,815,,42nd St,,3,,00befd,000000,1,1,11
+10220,815,,Hoboken / 14th St - Brookfield Place,,4,https://www.nywaterway.com/Hoboken14th-WFCRoute.aspx,2065B5,000000,1,1,23
+32392,815,,57th St,,3,,00befd,000000,1,1,13
+10221,815,,Hoboken / NJ Transit Terminal - Brookfield Place,,4,https://www.nywaterway.com/HobokenNJTT-WFCRoute.aspx#weekday,2065B5,000000,1,1,24
+32453,815,,Downtown Local,,3,,00befd,000000,1,1,15
+10226,815,,Liberty Harbor - Pier 11 / Wall St,,4,https://www.nywaterway.com/LbryHarMarin-Pier11WallStRoute.aspx#weekday,FEE828,000000,1,1,30
+19751,815,,Edgewater - Pier 11/Wall St,,3,,00befd,000000,1,1,10
+32460,815,,Weehawken Township Shuttle,,3,,00befd,000000,1,1,19
+Edgewater Town North,815,Edgewater Town North,,,3,,29CBCC,,,,
+10213,815,,Haverstraw - Ossining,,4,http://www.nywaterway.com/HaverstrawToOssiningRoute.aspx,EB7F28,000000,1,1,2
+10232,815,,Port Imperial - Midtown / W 39th St,,4,https://www.nywaterway.com/PortImperialWeehawkenRoute.aspx#weekday,E60024,000000,1,1,33
+10231,815,,Lincoln Harbor - Midtown / W 39th St,,4,https://www.nywaterway.com/LincolnHarborWeehawkenRoute.aspx#weekday,E60024,000000,1,1,36
+JKF Blvd./Gorge Rd,815,JKF Blvd./Gorge Rd,,,3,,FB6E8A,,,,
+Edgewater Town South,815,Edgewater Town South,,,3,,B58EF6,,,,
+19750,815,,Edgewater - Brookfield Place,,3,https://www.nywaterway.com/EdgewaterBPT.aspx,00befd,000000,1,1,9
+10222,815,,Port Imperial - Brookfield Place,,4,https://www.nywaterway.com/PortImpWee-WFCRoute.aspx#weekday,2065B5,000000,1,1,22
+32382,815,,34th St,,3,,00befd,000000,1,1,12
+32452,815,,50th St,,3,,00befd,000000,1,1,14
+74376,815,,Port Liberte - Pier 11/Wall St,,3,,00befd,000000,1,1,20
+Fort Lee/Cliffside Park Town,815,Fort Lee/Cliffside Park Town,,,3,,dbebf8,,,,
+10229,815,,Edgewater - Midtown / W 39th St,,4,http://www.nywaterway.com/EdgewaterFerryLanding.aspx,E60024,000000,1,1,5
+10227,815,,Port Imperial - Pier 11  / Wall St,,4,https://www.nywaterway.com/PortImpWee-Pier11WallStRoute.aspx#weekday,FEE828,000000,1,1,26
+10225,815,,Hoboken / NJ Transit Terminal - Pier 11 / Wall St,,4,https://www.nywaterway.com/HobNJTT-Pier11WallStRoute.aspx#weekday,FEE828,000000,1,1,28
+10234,815,,Hoboken / NJ Transit Terminal - Midtown / W 39th St,,4,http://www.nywaterway.com/Hoboken-NJTT-MidtownRoute.aspx,E60024,000000,1,1,6
+76080,815,,Hoboken / 14th St - Pier 11 / Wall St,,3,https://www.nywaterway.com/Hoboken14-Pier11.aspx#weekday,fee828,000000,1,1,27
+10217,815,,Paulus Hook - Brookfield Place,,4,https://www.nywaterway.com/PaulusHook-WTCRoute.aspx#weekday,2164AF,000000,1,1,25
+10230,815,,Hoboken / 14th St - Midtown / W 39th St,,4,https://www.nywaterway.com/Hoboken14thRoute.aspx#weekday,E60024,000000,1,1,35
+77357,815,,Newburgh - Beacon - Winter Bus,,3,http://www.nywaterway.com/NewburghToBeaconRoute.aspx,eb7f28,000000,1,1,0
+77359,815,W44,W44/59th St,,3,,6a1266,,1,1,0
+59th St,815,59th St,,,3,,671f69,,,,
+Greenwich,815,Greenwich,,,3,,7ac142,,,,

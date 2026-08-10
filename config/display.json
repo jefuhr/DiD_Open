@@ -1,7 +1,9 @@
 {
-  "landingNumber": 7,
-  "slideSeconds": 12,
-  "departureWindowMinutes": 900,
+  "landingNumber": 26,
+  "slideSeconds": 16,
+  "departureWindowMinutes": 500,
   "departuresShown": 3,
-  "routesShown": 4
+  "routesShown": 4,
+  "waterwayEnabled": true,
+  "busesEnabled": false
 }

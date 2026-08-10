@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { buildDisplayData } from "../scripts/build-data.js";
 
 test("every configured landing builds departures", async () => {
-  for (let landingNumber = 2; landingNumber <= 24; landingNumber += 1) {
+  for (let landingNumber = 2; landingNumber <= 26; landingNumber += 1) {
     const data = await buildDisplayData({ landingNumber });
     assert.equal(data.meta.landingNumber, landingNumber);
     assert.ok(data.departures.length > 0, `Landing ${landingNumber} has no departures`);
@@ -12,9 +12,35 @@ test("every configured landing builds departures", async () => {
 });
 
 test("Rockaway includes ferry and bus service", async () => {
-  const data = await buildDisplayData({ landingNumber: 18 });
+  const data = await buildDisplayData({ landingNumber: 18, busesEnabled: true });
+  assert.equal(data.meta.busesEnabled, true);
   assert.ok(data.departures.some((item) => item.mode === "ferry"));
   assert.ok(data.departures.some((item) => item.mode === "bus"));
+});
+
+test("busesEnabled false drops the Rockaway shuttles and keeps the ferries", async () => {
+  const data = await buildDisplayData({ landingNumber: 18, busesEnabled: false });
+  assert.equal(data.meta.busesEnabled, false);
+  assert.equal(data.departures.some((item) => item.mode === "bus"), false);
+  assert.ok(data.departures.some((item) => item.mode === "ferry"));
+  for (const route of Object.values(data.routes)) assert.equal(route.mode, "ferry");
+});
+
+test("busesEnabled false drops the NY Waterway shuttles at Pier 79", async () => {
+  const withBuses = await buildDisplayData({ landingNumber: 26, waterwayEnabled: true, busesEnabled: true });
+  assert.ok(withBuses.departures.some((item) => item.operator === "NY Waterway" && item.mode === "bus"));
+
+  const data = await buildDisplayData({ landingNumber: 26, waterwayEnabled: true, busesEnabled: false });
+  assert.equal(data.departures.some((item) => item.mode === "bus"), false);
+  // The waterway merge itself stays on; only its bus routes are removed.
+  assert.equal(data.meta.waterway.enabled, true);
+  assert.ok(data.departures.some((item) => item.operator === "NY Waterway" && item.mode === "ferry"));
+  for (const route of Object.values(data.routes)) assert.equal(route.mode, "ferry");
+});
+
+test("config/display.json declares busesEnabled as a boolean", async () => {
+  const display = JSON.parse(await readFile(new URL("../config/display.json", import.meta.url), "utf8"));
+  assert.equal(typeof display.busesEnabled, "boolean");
 });
 
 test("routes retain their official abbreviations and colors", async () => {
@@ -35,7 +61,7 @@ test("display data includes the configured slideshow interval and all directions
   assert.equal(data.meta.departureWindowMinutes, display.departureWindowMinutes);
   assert.equal(data.meta.departuresShown, display.departuresShown);
   assert.equal(data.meta.routesShown, display.routesShown);
-  assert.equal(data.meta.schemaVersion, 6);
+  assert.equal(data.meta.schemaVersion, 7);
   assert.ok(data.tripSchedules[data.departures[0].tripId]?.stops.length > 1);
   const directions = new Set(data.departures.map((item) => `${item.routeId}|${item.directionId}|${item.destination}`));
   assert.ok(directions.size > 4, "Pier 11 should require more than one four-route slide");
@@ -88,4 +114,38 @@ test("East River departures are split into A, B, and Local variants", async () =
 
 test("landing 1 remains unused", async () => {
   await assert.rejects(() => buildDisplayData({ landingNumber: 1 }), /active landing/);
+});
+
+test("NY Waterway departures are merged in at Pier 11 when enabled", async () => {
+  const data = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true });
+  assert.equal(data.meta.waterway.enabled, true);
+  assert.equal(data.meta.waterway.agencyName, "NY Waterway");
+  const waterwayDepartures = data.departures.filter((item) => item.operator === "NY Waterway");
+  assert.ok(waterwayDepartures.length > 0, "Pier 11 should include NY Waterway departures");
+  for (const departure of waterwayDepartures) {
+    assert.match(departure.tripId, /^wtr:/);
+    assert.match(departure.routeId, /^wtr:/);
+    assert.match(departure.stopId, /^wtr:/);
+    assert.ok(data.tripSchedules[departure.tripId]?.stops.length > 1);
+    assert.ok(data.routes[departure.routeId]);
+    assert.equal(data.routes[departure.routeId].operator, "NY Waterway");
+  }
+  // Namespacing must not disturb NYC Ferry's own departures or route ids.
+  assert.ok(data.departures.some((item) => item.operator === "NYC Ferry"));
+  assert.ok(data.routes.SB);
+  assert.equal(data.routes.SB.operator, "NYC Ferry");
+});
+
+test("NY Waterway departures are omitted when waterwayEnabled is false", async () => {
+  const data = await buildDisplayData({ landingNumber: 16, waterwayEnabled: false });
+  assert.equal(data.meta.waterway.enabled, false);
+  assert.equal(data.meta.waterway.agencyName, null);
+  assert.equal(data.departures.some((item) => item.operator === "NY Waterway"), false);
+  assert.equal(data.meta.schemaVersion, 7);
+});
+
+test("NY Waterway departures are omitted for landings without a waterwayStopIds mapping", async () => {
+  const data = await buildDisplayData({ landingNumber: 7, waterwayEnabled: true });
+  assert.equal(data.meta.waterway.enabled, false);
+  assert.equal(data.departures.some((item) => item.operator === "NY Waterway"), false);
 });

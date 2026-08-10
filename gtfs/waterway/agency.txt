@@ -1,0 +1,2 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url,agency_email
+815,NY Waterway,http://www.nywaterway.com/Commuters.aspx,America/New_York,en,800-533-3779,https://www.nywaterway.com/GetTickets.aspx,

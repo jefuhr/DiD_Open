@@ -97,14 +97,14 @@ test("SFTP landing notices replace all GTFS display regions", async () => {
   assert.match(css, /\.manual-override-box\{/);
 });
 
-test("offline shell includes version 27 display assets", async () => {
+test("offline shell includes version 28 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=27/);
-  assert.match(index, /app\.js\?v=27/);
-  assert.match(worker, /nyc-ferry-did-shell-v27/);
-  assert.match(worker, /styles\.css\?v=27/);
-  assert.match(worker, /app\.js\?v=27/);
+  assert.match(index, /styles\.css\?v=28/);
+  assert.match(index, /app\.js\?v=28/);
+  assert.match(worker, /nyc-ferry-did-shell-v28/);
+  assert.match(worker, /styles\.css\?v=28/);
+  assert.match(worker, /app\.js\?v=28/);
 });
