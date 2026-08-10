@@ -28,6 +28,29 @@ below `820px` the board becomes a scrolling stack of route cards. each route dir
 └──────────────────────────────────┘
 ```
 
+### switching landings
+
+the hamburger in the top left opens a drawer listing every landing in
+[`config/landings.json`](./config/landings.json), sorted by name with its landing number beside
+it. tap one and the board switches; the choice is saved on the device and survives a reload, so
+an agent who works one landing sets it once. `Done`, the Escape key, or a tap outside the drawer
+all close it.
+
+this is the one place the mobile branch changes the server. the build still bakes
+`config/display.json`'s `landingNumber` into `public/data/display-data.json`, and
+`/api/display-data` with no parameters still serves exactly that file — the kiosk contract is
+untouched. `/api/display-data?landingId=NN` builds that landing on demand instead (about 25ms)
+and caches the result for the life of the process, and `/api/landings` supplies the menu. nothing
+is prebuilt for the other 24 landings, which would have cost about 5 MB on disk.
+
+one limitation worth knowing: **SFTP landing notices still follow the landing this kiosk is
+configured for**, not the one selected in the menu. the poller fetches a single landing's file.
+switching to another landing shows its departures, but a notice posted for that landing will not
+appear. an unpolled landing returns an inactive notice rather than a stale one, so the failure
+mode is a missing notice, never a wrong one.
+
+### the rest
+
 what changes on a phone, and nothing else does:
 
 - the landing name, clock, route count and freshness chip stick to the top while the list scrolls.
@@ -261,7 +284,7 @@ messages can be up to 2,000 characters. a malformed file, wrong landing id, fail
 
 replace the files in [`gtfs/`](./gtfs) (or [`gtfs/waterway/`](./gtfs/waterway)) when a new feed is published, then restart. the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
-any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `31`) in both files — `test/display-contract.test.js` checks that they agree.
+any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `32`) in both files — `test/display-contract.test.js` checks that they agree.
 
 ## Docker
 

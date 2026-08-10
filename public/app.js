@@ -13,10 +13,20 @@ const elements = {
   manualOverride: document.querySelector("#manualOverride"),
   manualOverrideBox: document.querySelector("#manualOverrideBox"),
   manualOverrideMessage: document.querySelector("#manualOverrideMessage"),
-  manualOverrideUpdated: document.querySelector("#manualOverrideUpdated")
+  manualOverrideUpdated: document.querySelector("#manualOverrideUpdated"),
+  menuButton: document.querySelector("#menuButton"),
+  landingMenu: document.querySelector("#landingMenu"),
+  landingMenuPanel: document.querySelector("#landingMenuPanel"),
+  landingMenuScrim: document.querySelector("#landingMenuScrim"),
+  landingMenuClose: document.querySelector("#landingMenuClose"),
+  landingList: document.querySelector("#landingList")
 };
 
 const cacheKey = "nyc-ferry-did-data-v6";
+// Which landing this device is showing. Persisted so an agent's choice survives a reload and
+// so an offline start knows which cached board to restore.
+const landingKey = "nyc-ferry-did-selected-landing";
+const landingsKey = "nyc-ferry-did-landings";
 let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
 let serviceAlerts = null;
@@ -368,24 +378,93 @@ async function loadRealtime() {
   render();
 }
 
+function selectedLanding() {
+  const value = Number(localStorage.getItem(landingKey));
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function landingDataKey(landingNumber) {
+  return `${cacheKey}-landing-${landingNumber}`;
+}
+
 async function load() {
+  const selected = selectedLanding();
+  // No stored choice means this device has never picked one, so take whatever the build
+  // configured. Once a board loads, its landing is remembered for the next start.
+  const query = selected === null ? "" : `?landingId=${encodeURIComponent(selected)}`;
   try {
-    const response = await fetch("/api/display-data", { cache: "no-store" });
+    const response = await fetch(`/api/display-data${query}`, { cache: "no-store" });
     if (!response.ok) throw new Error();
     data = await response.json();
-    localStorage.setItem(cacheKey, JSON.stringify(data));
+    localStorage.setItem(landingKey, String(data.meta.landingNumber));
+    localStorage.setItem(landingDataKey(data.meta.landingNumber), JSON.stringify(data));
   } catch {
-    const saved = localStorage.getItem(cacheKey);
+    const saved = selected === null ? null : localStorage.getItem(landingDataKey(selected));
     if (!saved) throw new Error("No display data is available.");
     data = JSON.parse(saved);
   }
   elements.landing.textContent = data.meta.landing.displayName;
+  renderLandingList();
   await loadManualOverride();
   updateClock();
   loadRealtime();
   loadServiceAlerts();
 }
 
+function renderLandingList() {
+  const landings = JSON.parse(localStorage.getItem(landingsKey) || "[]");
+  if (!landings.length) return;
+  const current = data?.meta?.landingNumber;
+  elements.landingList.innerHTML = landings.map((landing) => `<li>
+    <button type="button" class="landing-option${landing.id === current ? " is-current" : ""}" data-landing-id="${landing.id}"${landing.id === current ? ' aria-current="true"' : ""}>
+      <span class="landing-option-number">${escapeHtml(landing.id)}</span>
+      <span class="landing-option-name">${escapeHtml(landing.displayName)}</span>
+    </button>
+  </li>`).join("");
+}
+
+async function loadLandings() {
+  try {
+    const response = await fetch("/api/landings", { cache: "no-store" });
+    if (!response.ok) throw new Error();
+    const payload = await response.json();
+    localStorage.setItem(landingsKey, JSON.stringify(payload.landings || []));
+  } catch {
+    // Keep whatever list was saved; the menu still works offline.
+  }
+  renderLandingList();
+}
+
+function setMenuOpen(open) {
+  elements.landingMenu.hidden = !open;
+  elements.menuButton.setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("menu-open", open);
+  if (open) (elements.landingList.querySelector(".is-current") || elements.landingMenuClose)?.focus();
+  else elements.menuButton.focus();
+}
+
+async function selectLanding(landingNumber) {
+  if (!Number.isInteger(landingNumber) || landingNumber === data?.meta?.landingNumber) return setMenuOpen(false);
+  localStorage.setItem(landingKey, String(landingNumber));
+  setMenuOpen(false);
+  elements.departures.innerHTML = `<div class="empty"><div><strong>Loading…</strong><span>Switching landing.</span></div></div>`;
+  await load().catch(() => {
+    elements.departures.innerHTML = `<div class="empty"><div><strong>Landing unavailable</strong><span>That landing could not be loaded.</span></div></div>`;
+  });
+}
+
+elements.menuButton.addEventListener("click", () => setMenuOpen(elements.landingMenu.hidden));
+elements.landingMenuClose.addEventListener("click", () => setMenuOpen(false));
+elements.landingMenuScrim.addEventListener("click", () => setMenuOpen(false));
+elements.landingList.addEventListener("click", (event) => {
+  const option = event.target.closest("[data-landing-id]");
+  if (option) selectLanding(Number(option.dataset.landingId));
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.landingMenu.hidden) setMenuOpen(false);
+});
+
+loadLandings();
 load().catch(() => {
   elements.departures.innerHTML = `<div class="empty"><div><strong>Schedule unavailable</strong><span>The local schedule needs attention.</span></div></div>`;
 });
@@ -400,7 +479,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=31", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=32", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

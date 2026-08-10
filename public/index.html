@@ -10,13 +10,17 @@
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
     <link rel="icon" href="/assets/kiosk-icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=31" />
+    <link rel="stylesheet" href="/styles.css?v=32" />
   </head>
   <body>
     <main class="screen" id="screen">
       <div class="content">
         <section class="board" aria-labelledby="landingName">
           <div class="board-heading">
+            <button type="button" class="menu-button" id="menuButton" aria-expanded="false" aria-controls="landingMenu">
+              <span class="menu-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Choose landing</span>
+            </button>
             <h1 id="landingName">NYC Ferry</h1>
             <div class="board-state">
               <div class="route-count" id="routeCount">Loading routes…</div>
@@ -27,6 +31,16 @@
           <div class="column-head"><span>Route</span><span>Direction</span><span>Next departures</span></div>
           <div class="departures" id="departures" aria-live="polite"></div>
         </section>
+      </div>
+      <div class="landing-menu" id="landingMenu" hidden>
+        <div class="landing-menu-scrim" id="landingMenuScrim"></div>
+        <nav class="landing-menu-panel" id="landingMenuPanel" aria-label="Choose landing">
+          <div class="landing-menu-head">
+            <strong>Landing</strong>
+            <button type="button" class="landing-menu-close" id="landingMenuClose">Done</button>
+          </div>
+          <ul class="landing-list" id="landingList"></ul>
+        </nav>
       </div>
       <section class="manual-override" id="manualOverride" hidden aria-live="assertive" aria-atomic="true">
         <div class="manual-override-box" id="manualOverrideBox" data-size="short">
@@ -50,6 +64,6 @@
         <span class="service-alert-count" id="serviceAlertCount" hidden></span>
       </section>
     </main>
-    <script type="module" src="/app.js?v=31"></script>
+    <script type="module" src="/app.js?v=32"></script>
   </body>
 </html>

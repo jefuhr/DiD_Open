@@ -127,7 +127,40 @@ test("phone layout leaves the kiosk board untouched", async () => {
   const base = css.slice(0, css.indexOf("@media(max-width:820px)"));
   assert.match(base, /\.screen\{width:100vw;height:100vh/);
   assert.match(base, /\.departures\{flex:1;min-height:0;display:grid/);
-  assert.doesNotMatch(base, /safe-area-inset/);
+  // The board itself carries no phone-only safe-area padding outside the media query. The
+  // landing drawer does use env() in the base rules, since it overlays every screen size.
+  assert.doesNotMatch(base.match(/\.board\{[^}]*\}/)[0], /env\(/);
+  assert.doesNotMatch(base.match(/\.board-heading\{[^}]*\}/)[0], /env\(/);
+});
+
+test("landing menu lets an agent switch the board's landing", async () => {
+  const [app, css, index, server] = await Promise.all([
+    readFile(appPath, "utf8"), readFile(cssPath, "utf8"),
+    readFile(indexPath, "utf8"), readFile(serverPath, "utf8")
+  ]);
+  // Server serves the list and builds any selectable landing on demand.
+  assert.match(server, /url\.pathname === "\/api\/landings"/);
+  assert.match(server, /SELECTABLE_LANDINGS\.has\(landingNumber\)/);
+  assert.match(server, /return json\(response, 400, \{ error: "Unknown landing\." \}\)/);
+  // No landingId keeps serving the prebuilt file, so the kiosk contract is unchanged.
+  assert.match(server, /if \(requested === null\)/);
+  assert.match(server, /displayDataCache/);
+  // Menu markup and the accessible toggle.
+  assert.match(index, /id="menuButton"[^>]*aria-expanded="false"[^>]*aria-controls="landingMenu"/);
+  assert.match(index, /id="landingMenu"[^>]*hidden/);
+  assert.match(index, /id="landingList"/);
+  // Selection is persisted and restored, including for an offline start.
+  assert.match(app, /localStorage\.setItem\(landingKey/);
+  assert.match(app, /function selectedLanding\(\)/);
+  assert.match(app, /landingDataKey\(/);
+  assert.match(app, /\/api\/display-data\$\{query\}/);
+  // Close paths: the Done button, the scrim, and Escape.
+  assert.match(app, /landingMenuClose\.addEventListener\("click"/);
+  assert.match(app, /landingMenuScrim\.addEventListener\("click"/);
+  assert.match(app, /event\.key === "Escape"/);
+  assert.match(app, /setAttribute\("aria-expanded", String\(open\)\)/);
+  // Touch targets stay finger-sized.
+  assert.match(css, /\.landing-option\{[^}]*min-height:48px/);
 });
 
 test("SFTP landing notices replace all GTFS display regions", async () => {
@@ -149,14 +182,14 @@ test("SFTP landing notices replace all GTFS display regions", async () => {
   assert.match(css, /\.manual-override-box\{/);
 });
 
-test("offline shell includes version 31 display assets", async () => {
+test("offline shell includes version 32 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=31/);
-  assert.match(index, /app\.js\?v=31/);
-  assert.match(worker, /nyc-ferry-did-shell-v31/);
-  assert.match(worker, /styles\.css\?v=31/);
-  assert.match(worker, /app\.js\?v=31/);
+  assert.match(index, /styles\.css\?v=32/);
+  assert.match(index, /app\.js\?v=32/);
+  assert.match(worker, /nyc-ferry-did-shell-v32/);
+  assert.match(worker, /styles\.css\?v=32/);
+  assert.match(worker, /app\.js\?v=32/);
 });

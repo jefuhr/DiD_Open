@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildDisplayData } from "./scripts/build-data.js";
 import { createManualOverrideService } from "./lib/manual-overrides.js";
 import { createRealtimeService } from "./lib/realtime.js";
 import { createServiceAlertService } from "./lib/service-alerts.js";
@@ -23,6 +24,27 @@ const manualOverrideService = createManualOverrideService({ statePath: path.join
 const sftpOverridePoller = createSftpOverridePoller({ config: sftpConfig, landingId: displayConfig.landingNumber, cacheService: manualOverrideService });
 const TYPES = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".json":"application/json; charset=utf-8", ".png":"image/png", ".svg":"image/svg+xml", ".woff2":"font/woff2", ".webmanifest":"application/manifest+json; charset=utf-8" };
 
+// Landings an agent can switch between from the menu. config/landings.json is the source of
+// truth, same as the build, so adding a landing there makes it selectable with no other change.
+const landings = JSON.parse(await readFile(path.join(ROOT, "config/landings.json"), "utf8"));
+const LANDING_CHOICES = Object.entries(landings)
+  .filter(([, item]) => !item.unused)
+  .map(([id, item]) => ({ id: Number(id), displayName: item.displayName || item.name || `Landing ${id}` }))
+  .sort((left, right) => left.displayName.localeCompare(right.displayName));
+const SELECTABLE_LANDINGS = new Set(LANDING_CHOICES.map((item) => item.id));
+
+// Switching landings rebuilds display data on demand (~25ms warm). Results are cached for the
+// life of the process because the inputs — the bundled GTFS feed and config/display.json — only
+// change on redeploy, which is the same restart-after-config-change contract the build has.
+const displayDataCache = new Map();
+async function displayDataFor(landingNumber) {
+  const cached = displayDataCache.get(landingNumber);
+  if (cached) return cached;
+  const built = `${JSON.stringify(await buildDisplayData({ root: ROOT, landingNumber }))}\n`;
+  displayDataCache.set(landingNumber, built);
+  return built;
+}
+
 function headers(response) {
   response.setHeader("X-Content-Type-Options", "nosniff");
   response.setHeader("X-Frame-Options", "SAMEORIGIN");
@@ -36,7 +58,26 @@ async function serve(response, file) {
 async function handle(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
   if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), sftpOverride:sftpOverridePoller.status() });
-  if (url.pathname === "/api/display-data") { try { const data = await readFile(DATA, "utf8"); headers(response); response.writeHead(200, { "Content-Type":TYPES[".json"], "Cache-Control":"no-cache" }); return response.end(data); } catch (error) { return json(response, 503, { error:"Display data unavailable", detail:error.message }); } }
+  if (url.pathname === "/api/landings") return json(response, 200, { landings: LANDING_CHOICES, configured: displayConfig.landingNumber });
+  if (url.pathname === "/api/display-data") {
+    const requested = url.searchParams.get("landingId");
+    try {
+      // No landingId keeps the original contract: serve the file the build produced.
+      if (requested === null) {
+        const data = await readFile(DATA, "utf8");
+        headers(response);
+        response.writeHead(200, { "Content-Type":TYPES[".json"], "Cache-Control":"no-cache" });
+        return response.end(data);
+      }
+      const landingNumber = Number(requested);
+      if (!Number.isInteger(landingNumber) || !SELECTABLE_LANDINGS.has(landingNumber)) {
+        return json(response, 400, { error: "Unknown landing." });
+      }
+      headers(response);
+      response.writeHead(200, { "Content-Type":TYPES[".json"], "Cache-Control":"no-cache" });
+      return response.end(await displayDataFor(landingNumber));
+    } catch (error) { return json(response, 503, { error:"Display data unavailable", detail:error.message }); }
+  }
   if (url.pathname === "/api/realtime") { const result = await realtimeService.getCurrent(); return json(response, result.available ? 200 : 503, result); }
   if (url.pathname === "/api/alerts") { const result = await serviceAlertService.getCurrent(); return json(response, result.available ? 200 : 503, result); }
   if (url.pathname === "/api/override") {
