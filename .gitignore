@@ -3,3 +3,4 @@ state/
 secrets/
 .env
 .DS_Store
+.claude/worktrees/

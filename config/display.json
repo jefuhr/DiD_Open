@@ -1,9 +1,12 @@
 {
-  "landingNumber": 26,
-  "slideSeconds": 16,
-  "departureWindowMinutes": 500,
+  "landingNumber": 25,
+  "slideSeconds": 10,
+  "departureWindowMinutes": 90,
   "departuresShown": 3,
   "routesShown": 4,
   "waterwayEnabled": true,
+  "seastreakEnabled": true,
+  "nyuEnabled": true,
+  "libertyEnabled": true,
   "busesEnabled": false
 }

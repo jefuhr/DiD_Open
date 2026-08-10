@@ -1,0 +1,2 @@
+agency_id,agency_name,agency_url,agency_lang,agency_timezone
+1518,Liberty Landing Ferry,https://www.libertylandingcityferry.com/,en,America/New_York

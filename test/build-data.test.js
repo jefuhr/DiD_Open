@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { buildDisplayData } from "../scripts/build-data.js";
+import { buildDisplayData, decodeEntities } from "../scripts/build-data.js";
 
 test("every configured landing builds departures", async () => {
   for (let landingNumber = 2; landingNumber <= 26; landingNumber += 1) {
@@ -148,4 +148,197 @@ test("NY Waterway departures are omitted for landings without a waterwayStopIds 
   const data = await buildDisplayData({ landingNumber: 7, waterwayEnabled: true });
   assert.equal(data.meta.waterway.enabled, false);
   assert.equal(data.departures.some((item) => item.operator === "NY Waterway"), false);
+});
+
+test("Seastreak departures are merged in at East 34th Street when enabled", async () => {
+  const data = await buildDisplayData({ landingNumber: 8, seastreakEnabled: true });
+  assert.equal(data.meta.seastreak.enabled, true);
+  assert.equal(data.meta.seastreak.agencyName, "Seastreak");
+  const seastreakDepartures = data.departures.filter((item) => item.operator === "Seastreak");
+  assert.ok(seastreakDepartures.length > 0, "East 34th Street should include Seastreak departures");
+  for (const departure of seastreakDepartures) {
+    assert.match(departure.tripId, /^sea:/);
+    assert.match(departure.routeId, /^sea:/);
+    assert.match(departure.stopId, /^sea:/);
+    assert.match(departure.serviceId, /^sea:/);
+    assert.ok(data.tripSchedules[departure.tripId]?.stops.length > 1);
+    assert.equal(data.routes[departure.routeId].operator, "Seastreak");
+    // Seastreak's own headsigns only name a region, so the board shows the trip's last stop.
+    assert.doesNotMatch(departure.destination, /^(Manhattan|New Jersey)$/);
+  }
+  // NYC Ferry's own departures and route ids are untouched by the merge.
+  assert.ok(data.departures.some((item) => item.operator === "NYC Ferry"));
+  assert.ok(data.routes.ER);
+  assert.equal(data.routes.ER.operator, "NYC Ferry");
+});
+
+test("Seastreak departures are omitted when seastreakEnabled is false", async () => {
+  const data = await buildDisplayData({ landingNumber: 8, seastreakEnabled: false });
+  assert.equal(data.meta.seastreak.enabled, false);
+  assert.equal(data.meta.seastreak.agencyName, null);
+  assert.equal(data.departures.some((item) => item.operator === "Seastreak"), false);
+  assert.ok(data.departures.length > 0);
+});
+
+test("Seastreak departures are omitted for landings without a seastreakStopIds mapping", async () => {
+  const data = await buildDisplayData({ landingNumber: 16, seastreakEnabled: true });
+  assert.equal(data.meta.seastreak.enabled, false);
+  assert.equal(data.departures.some((item) => item.operator === "Seastreak"), false);
+});
+
+test("NYU ferry departures are merged in at both terminals it serves", async () => {
+  // East 34th Street and Sunset Park are opposite ends of the same NYU crossing, so each should
+  // show the other as the destination.
+  for (const [landingNumber, destination] of [[8, "Brooklyn Army Terminal"], [24, "East 34th Street"]]) {
+    const data = await buildDisplayData({ landingNumber, nyuEnabled: true });
+    assert.equal(data.meta.nyu.enabled, true);
+    assert.equal(data.meta.nyu.agencyName, "New York University");
+    const nyuDepartures = data.departures.filter((item) => item.operator === "New York University");
+    assert.ok(nyuDepartures.length > 0, `landing ${landingNumber} should include NYU departures`);
+    for (const departure of nyuDepartures) {
+      assert.match(departure.tripId, /^nyu:/);
+      assert.match(departure.routeId, /^nyu:/);
+      assert.match(departure.stopId, /^nyu:/);
+      assert.match(departure.serviceId, /^nyu:/);
+      assert.ok(data.tripSchedules[departure.tripId]?.stops.length > 1);
+      assert.equal(data.routes[departure.routeId].operator, "New York University");
+      assert.equal(departure.destination, destination);
+      assert.equal(departure.mode, "ferry");
+    }
+    assert.ok(data.departures.some((item) => item.operator === "NYC Ferry"));
+  }
+});
+
+test("NYU ferry departures are omitted when nyuEnabled is false", async () => {
+  const data = await buildDisplayData({ landingNumber: 8, nyuEnabled: false });
+  assert.equal(data.meta.nyu.enabled, false);
+  assert.equal(data.meta.nyu.agencyName, null);
+  assert.equal(data.departures.some((item) => item.operator === "New York University"), false);
+  assert.ok(data.departures.length > 0);
+});
+
+test("NYU ferry departures are omitted for landings without a nyuStopIds mapping", async () => {
+  const data = await buildDisplayData({ landingNumber: 16, nyuEnabled: true });
+  assert.equal(data.meta.nyu.enabled, false);
+  assert.equal(data.departures.some((item) => item.operator === "New York University"), false);
+});
+
+test("the generated NYU feed only runs on the weekdays Passio publishes service for", async () => {
+  const data = await buildDisplayData({ landingNumber: 8, nyuEnabled: true });
+  const nyuCalendars = data.calendars.filter((item) => item.serviceId.startsWith("nyu:"));
+  assert.ok(nyuCalendars.length > 0);
+  for (const calendar of nyuCalendars) {
+    // weekdays is [Sun..Sat]; NYU runs Monday through Friday only.
+    assert.deepEqual(calendar.weekdays, [false, true, true, true, true, true, false]);
+    assert.match(calendar.startDate, /^\d{4}-\d{2}-\d{2}$/);
+    assert.match(calendar.endDate, /^\d{4}-\d{2}-\d{2}$/);
+  }
+});
+
+test("Liberty Landing departures are merged in at Battery Park City when enabled", async () => {
+  const data = await buildDisplayData({ landingNumber: 25, libertyEnabled: true });
+  assert.equal(data.meta.liberty.enabled, true);
+  assert.equal(data.meta.liberty.agencyName, "Liberty Landing Ferry");
+  const libertyDepartures = data.departures.filter((item) => item.operator === "Liberty Landing Ferry");
+  assert.ok(libertyDepartures.length > 0, "Battery Park City should parse Liberty Landing departures");
+  for (const departure of libertyDepartures) {
+    assert.match(departure.tripId, /^lib:/);
+    assert.match(departure.routeId, /^lib:/);
+    assert.match(departure.stopId, /^lib:/);
+    assert.match(departure.serviceId, /^lib:/);
+    assert.ok(data.tripSchedules[departure.tripId]?.stops.length > 1);
+    assert.equal(data.routes[departure.routeId].operator, "Liberty Landing Ferry");
+    assert.equal(departure.mode, "ferry");
+  }
+  // The NY Waterway dock at this landing keeps its own namespace and its own operator.
+  assert.ok(data.departures.some((item) => item.operator === "NY Waterway"));
+  assert.ok(data.departures.some((item) => item.operator === "NYC Ferry"));
+});
+
+test("Liberty Landing departures are omitted when libertyEnabled is false", async () => {
+  const data = await buildDisplayData({ landingNumber: 25, libertyEnabled: false });
+  assert.equal(data.meta.liberty.enabled, false);
+  assert.equal(data.meta.liberty.agencyName, null);
+  assert.equal(data.departures.some((item) => item.operator === "Liberty Landing Ferry"), false);
+  assert.ok(data.departures.length > 0);
+});
+
+test("Liberty Landing departures are omitted for landings without a libertyStopIds mapping", async () => {
+  const data = await buildDisplayData({ landingNumber: 16, libertyEnabled: true });
+  assert.equal(data.meta.liberty.enabled, false);
+  assert.equal(data.departures.some((item) => item.operator === "Liberty Landing Ferry"), false);
+});
+
+test("every bundled feed is still in service, so no operator is silently empty", async () => {
+  // public/app.js only counts a departure whose service is in effect today, so a lapsed feed shows
+  // nothing at all rather than failing loudly. Liberty Landing shipped that way once — a 2019 feed
+  // that had expired in 2020 — so this asserts the invariant for every operator at every landing
+  // that pulls one in. A failure here means that feed needs regenerating or replacing.
+  const today = new Date().toISOString().slice(0, 10);
+  for (const landingNumber of [8, 16, 25]) {
+    const data = await buildDisplayData({ landingNumber });
+    const latestEnd = new Map();
+    const covered = new Set();
+    for (const calendar of data.calendars) {
+      const operator = calendar.serviceId.includes(":") ? calendar.serviceId.split(":")[0] : "nycf";
+      if (!latestEnd.has(operator) || calendar.endDate > latestEnd.get(operator)) latestEnd.set(operator, calendar.endDate);
+      if (today >= calendar.startDate && today <= calendar.endDate) covered.add(operator);
+    }
+    for (const [operator, endDate] of latestEnd) {
+      assert.ok(
+        covered.has(operator),
+        `landing ${landingNumber}: the "${operator}" feed has no service covering ${today} (latest end ${endDate}); it needs replacing`
+      );
+    }
+  }
+});
+
+test("the Liberty Landing feed matches the timetable its operator publishes", async () => {
+  // gtfs/liberty/ is transcribed from libertylandingcityferry.com by scripts/build-liberty-gtfs.js,
+  // not downloaded, so this pins the shape of that transcription. The operator prints hourly
+  // sailings leaving Brookfield Place at :45 — weekdays 06:45 to 19:45, weekends from 09:45.
+  const data = await buildDisplayData({ landingNumber: 25, libertyEnabled: true });
+  const fromBrookfield = data.departures.filter((item) => item.stopId === "lib:2557122");
+  const byService = new Map();
+  for (const departure of fromBrookfield) {
+    const list = byService.get(departure.serviceId) || [];
+    list.push(departure.departureTime);
+    byService.set(departure.serviceId, list);
+  }
+  const weekday = (byService.get("lib:liberty-weekday") || []).sort();
+  const weekend = (byService.get("lib:liberty-weekend") || []).sort();
+  assert.deepEqual(weekday, Array.from({ length: 14 }, (_, index) => `${String(index + 6).padStart(2, "0")}:45:00`));
+  assert.deepEqual(weekend, Array.from({ length: 11 }, (_, index) => `${String(index + 9).padStart(2, "0")}:45:00`));
+  // Every sailing from Manhattan runs to Liberty Landing by way of Warren Street.
+  for (const departure of fromBrookfield) {
+    assert.equal(departure.destination, "Liberty Landing");
+    assert.equal(departure.nextStop, "Warren Street");
+  }
+});
+
+test("partner feeds keep separate id namespaces at a landing that has both", async () => {
+  const data = await buildDisplayData({ landingNumber: 8, seastreakEnabled: true, waterwayEnabled: true, nyuEnabled: true });
+  const prefixes = new Set(Object.keys(data.routes).map((id) => id.split(":")[1] ? `${id.split(":")[0]}:` : "nycf"));
+  assert.ok(prefixes.has("sea:"));
+  assert.ok(prefixes.has("nyu:"));
+  for (const departure of data.departures) {
+    const operator = data.routes[departure.routeId].operator;
+    if (departure.routeId.startsWith("sea:")) assert.equal(operator, "Seastreak");
+    else if (departure.routeId.startsWith("wtr:")) assert.equal(operator, "NY Waterway");
+    else if (departure.routeId.startsWith("nyu:")) assert.equal(operator, "New York University");
+    else assert.equal(operator, "NYC Ferry");
+  }
+  // Departures stay in one time-sorted list regardless of which feed they came from.
+  const seconds = data.departures.map((item) => item.seconds);
+  assert.deepEqual(seconds, [...seconds].sort((left, right) => left - right));
+});
+
+test("HTML-escaped feed text is decoded before it reaches the screen", async () => {
+  assert.equal(decodeEntities("Martha&#8217;s Vineyard &amp; Nantucket"), "Martha’s Vineyard & Nantucket");
+  assert.equal(decodeEntities("New Bedford &#038; Nantucket"), "New Bedford & Nantucket");
+  assert.equal(decodeEntities("Pier 11  /  Wall St"), "Pier 11 / Wall St");
+  assert.equal(decodeEntities(""), "");
+  const data = await buildDisplayData({ landingNumber: 8, seastreakEnabled: true });
+  for (const route of Object.values(data.routes)) assert.doesNotMatch(route.name, /&#?\w+;/);
+  for (const departure of data.departures) assert.doesNotMatch(departure.destination, /&#?\w+;/);
 });
