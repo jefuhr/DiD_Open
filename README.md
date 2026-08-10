@@ -97,6 +97,8 @@ to add another landing, find its `stop_id` in [`gtfs/waterway/stops.txt`](./gtfs
 
 ## boat assignments
 
+full explanation and the update runbook: [`ferryAssignments.md`](./ferryAssignments.md).
+
 crews refer to a boat by its route and number — "East River 5" — so the staff board prints that
 next to the vessel name as a compact `ER5` badge. boat numbers restart per route, so the route
 code is part of the label: `ER5` and `AS5` are different boats.
@@ -124,9 +126,13 @@ not every trip gets a badge, and that's expected:
 - NY Waterway publishes no crew schedule, so those rows stay unlabeled.
 
 the bundled feed and [`schedules/summer-2026.xlsx`](./schedules) cover the same period, and every
-other ferry route matches: `AS`, `ER`, `RR`, `SB`, and `SG` at 100%, `RS` at 93 of 96 trips. a
-missing or unreadable `content/boat-assignments.json` is not fatal — the build just omits the
-badges.
+other ferry route matches: `AS`, `ER`, `RR`, `SB`, and `SG` at 100%, `RS` at 93 of 96 trips. the
+importer prints this coverage per route on every run. a missing or unreadable
+`content/boat-assignments.json` is not fatal — the build just omits the badges.
+
+**this has to be redone whenever the GTFS feed changes.** trip numbers are reissued each schedule
+period, so an old mapping silently stops matching. [`ferryAssignments.md`](./ferryAssignments.md)
+is the step-by-step runbook.
 
 ## SFTP landing notices
 
