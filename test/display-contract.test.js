@@ -76,6 +76,16 @@ test("staff board shows every route direction at once with config-driven departu
   }
 });
 
+test("shows the crew boat assignment beside the boat name", async () => {
+  const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
+  assert.match(app, /Number\.isInteger\(item\.boatAssignment\)/);
+  assert.match(app, /routeShortName\(item\.routeId\)\}\$\{item\.boatAssignment\}/);
+  assert.match(app, /class="boat-assignment"/);
+  // The assignment sits between the status badge and the boat name in the same row.
+  assert.match(app, /\$\{delayLabel \|\| onTimeLabel \|\| scheduledLabel\}\$\{assignment\}<span class="boat-name">/);
+  assert.match(css, /\.boat-assignment\{[^}]*flex:0 0 auto/);
+});
+
 test("staff board strips the rider-facing chrome: no header bar, no ad", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
@@ -106,14 +116,14 @@ test("SFTP landing notices replace all GTFS display regions", async () => {
   assert.match(css, /\.manual-override-box\{/);
 });
 
-test("offline shell includes version 29 display assets", async () => {
+test("offline shell includes version 30 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=29/);
-  assert.match(index, /app\.js\?v=29/);
-  assert.match(worker, /nyc-ferry-did-shell-v29/);
-  assert.match(worker, /styles\.css\?v=29/);
-  assert.match(worker, /app\.js\?v=29/);
+  assert.match(index, /styles\.css\?v=30/);
+  assert.match(index, /app\.js\?v=30/);
+  assert.match(worker, /nyc-ferry-did-shell-v30/);
+  assert.match(worker, /styles\.css\?v=30/);
+  assert.match(worker, /app\.js\?v=30/);
 });

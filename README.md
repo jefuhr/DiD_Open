@@ -6,7 +6,8 @@ this branch is the **staff variant**, built for ticket agents answering rider qu
 
 - no ad and no header bar — the board gets the whole screen. a slim strip keeps the landing name, clock, route count, and data-freshness chip.
 - no slideshow. every route direction is on screen at once; rows compress to fit, so `routesShown` and `slideSeconds` are ignored by the display (the build still validates them).
-- each departure squeezes time, countdown, boat name, and delay/on-time/LAST status into one compact slot. `departuresShown` still controls how many columns appear (set to `5` here).
+- each departure squeezes time, countdown, crew boat assignment, boat name, and delay/on-time/LAST status into one compact slot. `departuresShown` still controls how many columns appear (set to `5` here).
+- every scheduled boat shows its crew assignment next to the vessel name — `ER5` is East River boat 5. see [boat assignments](#boat-assignments).
 - service alerts and SFTP landing notices behave exactly as on the rider display.
 
 ## run it
@@ -36,7 +37,7 @@ everything lives in [`config/display.json`](./config/display.json):
   "landingNumber": 26,
   "slideSeconds": 16,
   "departureWindowMinutes": 500,
-  "departuresShown": 3,
+  "departuresShown": 5,
   "routesShown": 4,
   "waterwayEnabled": true,
   "busesEnabled": false
@@ -46,14 +47,14 @@ everything lives in [`config/display.json`](./config/display.json):
 | setting | range | what it does |
 |---|---|---|
 | `landingNumber` | `2`–`26` | which landing this kiosk shows. `1` is unused. |
-| `slideSeconds` | `3`–`300` | how long each page of routes stays on screen. |
+| `slideSeconds` | `3`–`300` | unused on the staff board (no paging); still validated. |
 | `departureWindowMinutes` | `1`–`1440` | a route only appears if its next departure is within this many minutes. once it qualifies, the board still fills every departure column, even with later trips outside the window. |
 | `departuresShown` | `1`–`5` | departure columns per route row. |
-| `routesShown` | `1`–`5` | route rows per page. |
+| `routesShown` | `1`–`5` | unused on the staff board (every route direction shows); still validated. |
 | `waterwayEnabled` | `true` / `false` | merge in NY Waterway departures. see below. |
 | `busesEnabled` | `true` / `false` | show connecting shuttle buses. see below. |
 
-the board pages through every route direction on its own, then starts over. each departure shows its boat name when the live feed has that assignment.
+the staff board shows every route direction at once and never pages. each departure shows its crew boat assignment, plus the boat name when the live feed has that assignment.
 
 ## landings
 
@@ -93,6 +94,39 @@ good to know:
 - NY Waterway publishes no realtime feed here, so those rows show scheduled times only: no boat name, no delay badge. that's expected.
 
 to add another landing, find its `stop_id` in [`gtfs/waterway/stops.txt`](./gtfs/waterway/stops.txt) and add a `waterwayStopIds` array to that landing in `config/landings.json`.
+
+## boat assignments
+
+crews refer to a boat by its route and number — "East River 5" — so the staff board prints that
+next to the vessel name as a compact `ER5` badge. boat numbers restart per route, so the route
+code is part of the label: `ER5` and `AS5` are different boats.
+
+the mapping lives in [`content/boat-assignments.json`](./content/boat-assignments.json), keyed by
+GTFS `trip_short_name`. that column in [`gtfs/trips.txt`](./gtfs/trips.txt) holds the same trip
+number the published crew schedule uses (`1101`, `4102`), which is what joins the two.
+
+regenerate it when a new seasonal schedule is published, then commit the result:
+
+```bash
+pip install openpyxl
+python3 scripts/import-boat-assignments.py schedules/summer-2026.xlsx
+```
+
+the importer is an offline maintenance step — the kiosk and the Node app never run Python. it
+reads every sheet with a `Trip No.` and `Boat` column, tells the two columns apart by magnitude
+(trip numbers are four digits, boat numbers are not) because a couple of sheets in the published
+workbook fill them in the opposite order, and fails loudly if one trip number claims two boats.
+
+not every trip gets a badge, and that's expected:
+
+- the Rockaway East/West shuttles (`RES`, `RWS`) are buses, not boats.
+- the Governors Island shuttle (`GI`) is crewed off-schedule and has no `Boat` column.
+- NY Waterway publishes no crew schedule, so those rows stay unlabeled.
+
+the bundled feed and [`schedules/summer-2026.xlsx`](./schedules) cover the same period, and every
+other ferry route matches: `AS`, `ER`, `RR`, `SB`, and `SG` at 100%, `RS` at 93 of 96 trips. a
+missing or unreadable `content/boat-assignments.json` is not fatal — the build just omits the
+badges.
 
 ## SFTP landing notices
 
@@ -186,7 +220,7 @@ messages can be up to 2,000 characters. a malformed file, wrong landing id, fail
 
 replace the files in [`gtfs/`](./gtfs) (or [`gtfs/waterway/`](./gtfs/waterway)) when a new feed is published, then restart. the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
-any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `29`) in both files — `test/display-contract.test.js` checks that they agree.
+any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `30`) in both files — `test/display-contract.test.js` checks that they agree.
 
 ## Docker
 

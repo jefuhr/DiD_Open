@@ -168,6 +168,10 @@ function routeDirectionGroups(now = new Date()) {
     });
 }
 
+function routeShortName(routeId) {
+  return data?.routes?.[routeId]?.shortName || routeId;
+}
+
 function departureCell(item) {
   const delaySeconds = Number(item.delay);
   const hasFreshTiming = !realtime.stale && item.hasLiveTiming && Number.isFinite(delaySeconds);
@@ -185,9 +189,14 @@ function departureCell(item) {
   const scheduledLabel = !isLast && !delayLabel && !onTimeLabel
     ? `<span class="scheduled-badge" aria-label="Status: Scheduled">SCHEDULED</span>`
     : "";
+  // Crew boat assignment ("ER5" = East River boat 5). Boat numbers restart per route, so the
+  // route code is part of the label. NY Waterway and the shuttles have no assignment.
+  const assignment = Number.isInteger(item.boatAssignment)
+    ? `<span class="boat-assignment">${escapeHtml(`${routeShortName(item.routeId)}${item.boatAssignment}`)}</span>`
+    : "";
   return `<div class="departure-slot">
     <div class="slot-time-row"><time>${adjustedTime(item.departureTime, item.delay)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span></div>
-    <span class="departure-last-slot">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}<span class="boat-name">${item.boatName ? escapeHtml(item.boatName) : ""}</span></span>
+    <span class="departure-last-slot">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}${assignment}<span class="boat-name">${item.boatName ? escapeHtml(item.boatName) : ""}</span></span>
   </div>`;
 }
 
@@ -391,7 +400,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=29", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=30", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

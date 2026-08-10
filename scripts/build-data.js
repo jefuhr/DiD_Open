@@ -63,6 +63,12 @@ export async function buildDisplayData({
     readFile(path.join(root, "gtfs/calendar.txt"), "utf8"), readFile(path.join(root, "gtfs/calendar_dates.txt"), "utf8"),
     readFile(path.join(root, "gtfs/feed_info.txt"), "utf8"), readFile(path.join(root, "gtfs/agency.txt"), "utf8")
   ]);
+  // Crew-schedule boat assignments ("East River 5"), keyed by GTFS trip_short_name. Generated
+  // from the seasonal workbook by scripts/import-boat-assignments.py. Optional: a feed with no
+  // matching schedule on hand still builds, just without assignment labels.
+  const boatAssignments = await readFile(path.join(root, "content/boat-assignments.json"), "utf8")
+    .then((raw) => JSON.parse(raw).assignments || {})
+    .catch(() => ({}));
   const display = JSON.parse(displayRaw);
   const landings = JSON.parse(landingsRaw);
   const landingNumber = Number(landingOverride ?? display.landingNumber);
@@ -129,12 +135,14 @@ export async function buildDisplayData({
       const destination = destinationInfo(current, trip, finalStop, trip.route_id);
       const servesGovernorsIsland = trip.route_id === "SB" &&
         times.slice(index).some((stopTime) => governorsIslandStops.has(stopTime.stop_id));
+      const assignedBoat = boatAssignments[String(trip.trip_short_name || "").trim()];
       departures.push({
         tripId, routeId: trip.route_id, serviceId: trip.service_id, directionId: trip.direction_id,
         stopId: current.stop_id, departureTime, seconds: timeToSeconds(departureTime),
         destination: destination.destination, variant: destination.variant,
         nextStop: stopsById.get(times[index + 1].stop_id)?.stop_name || null,
         servesGovernorsIsland,
+        boatAssignment: Number.isInteger(assignedBoat) ? assignedBoat : null,
         mode: route.route_type === "3" ? "bus" : "ferry",
         operator: agency.agency_name || "NYC Ferry"
       });
@@ -214,6 +222,8 @@ export async function buildDisplayData({
           destination, variant: null,
           nextStop: wStopsById.get(times[index + 1].stop_id)?.stop_name || null,
           servesGovernorsIsland: false,
+          // NY Waterway crews aren't in the NYC Ferry schedule workbook.
+          boatAssignment: null,
           mode: route.route_type === "3" ? "bus" : "ferry",
           operator: waterwayAgencyName
         });
@@ -257,7 +267,7 @@ export async function buildDisplayData({
 
   return {
     meta: {
-      schemaVersion: 7, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
+      schemaVersion: 8, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
       departuresShown, routesShown, busesEnabled,
       landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds: landingConfig.stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { buildDisplayData } from "../scripts/build-data.js";
+import { buildDisplayData, parseCsv } from "../scripts/build-data.js";
 
 test("every configured landing builds departures", async () => {
   for (let landingNumber = 2; landingNumber <= 26; landingNumber += 1) {
@@ -61,7 +61,7 @@ test("display data includes the configured slideshow interval and all directions
   assert.equal(data.meta.departureWindowMinutes, display.departureWindowMinutes);
   assert.equal(data.meta.departuresShown, display.departuresShown);
   assert.equal(data.meta.routesShown, display.routesShown);
-  assert.equal(data.meta.schemaVersion, 7);
+  assert.equal(data.meta.schemaVersion, 8);
   assert.ok(data.tripSchedules[data.departures[0].tripId]?.stops.length > 1);
   const directions = new Set(data.departures.map((item) => `${item.routeId}|${item.directionId}|${item.destination}`));
   assert.ok(directions.size > 4, "Pier 11 should require more than one four-route slide");
@@ -141,11 +141,41 @@ test("NY Waterway departures are omitted when waterwayEnabled is false", async (
   assert.equal(data.meta.waterway.enabled, false);
   assert.equal(data.meta.waterway.agencyName, null);
   assert.equal(data.departures.some((item) => item.operator === "NY Waterway"), false);
-  assert.equal(data.meta.schemaVersion, 7);
+  assert.equal(data.meta.schemaVersion, 8);
 });
 
 test("NY Waterway departures are omitted for landings without a waterwayStopIds mapping", async () => {
   const data = await buildDisplayData({ landingNumber: 7, waterwayEnabled: true });
   assert.equal(data.meta.waterway.enabled, false);
   assert.equal(data.departures.some((item) => item.operator === "NY Waterway"), false);
+});
+
+test("crew boat assignments are attached to NYC Ferry departures", async () => {
+  const data = await buildDisplayData({ landingNumber: 16 });
+  // The Governors Island shuttle is crewed off-schedule and has no Boat column in the
+  // workbook, so it is the one ferry route that never carries an assignment.
+  const scheduled = data.departures.filter((item) =>
+    item.operator === "NYC Ferry" && item.mode === "ferry" && item.routeId !== "GI");
+  assert.ok(scheduled.length > 0);
+  const labeled = scheduled.filter((item) => Number.isInteger(item.boatAssignment) && item.boatAssignment >= 1);
+  assert.ok(labeled.length / scheduled.length > 0.95,
+    `${scheduled.length - labeled.length} of ${scheduled.length} scheduled ferry departures lack a boat assignment`);
+  assert.ok(data.departures.filter((item) => item.routeId === "GI").every((item) => item.boatAssignment === null));
+  // NY Waterway publishes no crew schedule, so those rows stay unlabeled.
+  assert.ok(data.departures.filter((item) => item.operator === "NY Waterway").every((item) => item.boatAssignment === null));
+});
+
+test("boat assignments join GTFS trip_short_name to the schedule workbook", async () => {
+  const [assignmentsRaw, tripsRaw] = await Promise.all([
+    readFile(new URL("../content/boat-assignments.json", import.meta.url), "utf8"),
+    readFile(new URL("../gtfs/trips.txt", import.meta.url), "utf8")
+  ]);
+  const { assignments } = JSON.parse(assignmentsRaw);
+  assert.ok(Object.keys(assignments).length > 300);
+  assert.ok(Object.values(assignments).every((boat) => Number.isInteger(boat) && boat >= 1));
+  // Shuttle-bus routes (RES/RWS) and the Governors Island shuttle carry no boat number, so
+  // coverage is asserted over the ferry routes the workbook actually schedules.
+  const trips = parseCsv(tripsRaw).filter((trip) => ["AS", "ER", "RS", "SB", "SG", "RR"].includes(trip.route_id));
+  const missing = trips.filter((trip) => assignments[String(trip.trip_short_name).trim()] === undefined);
+  assert.ok(missing.length / trips.length < 0.05, `${missing.length} of ${trips.length} ferry trips lack a boat assignment`);
 });
