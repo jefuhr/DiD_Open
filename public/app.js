@@ -400,7 +400,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=30", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=31", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

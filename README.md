@@ -1,14 +1,41 @@
-# nyc ferry did reborn — staff edition
+# nyc ferry did reborn — mobile staff edition
 
 an offline-first departure display for NYC Ferry landings. a local Node server builds scheduled departures from the bundled GTFS feed, overlays NYC Ferry GTFS-Realtime trip updates, and keeps working when the internet drops.
 
-this branch is the **staff variant**, built for ticket agents answering rider questions fast:
+this branch is the **mobile staff variant**: everything the `staff` branch does, reflowed for a phone in an agent's hand. it is the same codebase and the same data, with a phone layout added — open it on a 1080p kiosk screen and you still get the wall board.
 
 - no ad and no header bar — the board gets the whole screen. a slim strip keeps the landing name, clock, route count, and data-freshness chip.
 - no slideshow. every route direction is on screen at once; rows compress to fit, so `routesShown` and `slideSeconds` are ignored by the display (the build still validates them).
 - each departure squeezes time, countdown, crew boat assignment, boat name, and delay/on-time/LAST status into one compact slot. `departuresShown` still controls how many columns appear (set to `5` here).
 - every scheduled boat shows its crew assignment next to the vessel name — `ER5` is East River boat 5. see [boat assignments](#boat-assignments).
 - service alerts and SFTP landing notices behave exactly as on the rider display.
+
+## on a phone
+
+below `820px` the board becomes a scrolling stack of route cards. each route direction is one card, and each departure is a full-width row rather than a column:
+
+```text
+┌──────────────────────────────────┐
+│ [SG] ST. GEORGE                  │
+│ Wall St./Pier 11                 │
+│ SOUTHBOUND                       │
+├──────────────────────────────────┤
+│ 7:04 PM  16 min                  │
+│ +15 min  SG4  Tooth Ferry        │
+├──────────────────────────────────┤
+│ 8:12 PM  1 hr 24 min             │
+│ ON TIME  SG1  Curiosity          │
+└──────────────────────────────────┘
+```
+
+what changes on a phone, and nothing else does:
+
+- the landing name, clock, route count and freshness chip stick to the top while the list scrolls.
+- the kiosk squishes rows to fit a fixed screen. a phone can't, so cards keep their natural height and the page scrolls.
+- `No scheduled trip` padding slots are dropped. they exist to keep the kiosk grid square and are dead weight on a phone.
+- turned sideways, cards go two across.
+- sizes switch from `vh`/`vw` to `px`, so text stays legible regardless of handset height. nothing renders below `11px`.
+- notch and home-indicator clearance via `env(safe-area-inset-*)`, and `apple-mobile-web-app-capable` so "Add to Home Screen" opens it without browser chrome.
 
 ## run it
 
@@ -19,7 +46,15 @@ npm ci
 npm start
 ```
 
-open `http://127.0.0.1:8090`. the kiosk launches Chromium at that address. the server binds to loopback only unless you set `HOST=0.0.0.0`.
+open `http://127.0.0.1:8090`.
+
+**to reach it from a phone**, the server has to listen on more than loopback:
+
+```bash
+HOST=0.0.0.0 npm start
+```
+
+then browse to `http://<the machine's LAN address>:8090` from a handset on the same network. the server has no authentication, so only do this on a trusted network. `Add to Home Screen` gives an app-like launcher; the service worker keeps the last data on screen when the phone loses signal.
 
 ```bash
 npm test        # run the test suite
@@ -226,7 +261,7 @@ messages can be up to 2,000 characters. a malformed file, wrong landing id, fail
 
 replace the files in [`gtfs/`](./gtfs) (or [`gtfs/waterway/`](./gtfs/waterway)) when a new feed is published, then restart. the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
-any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `30`) in both files — `test/display-contract.test.js` checks that they agree.
+any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `31`) in both files — `test/display-contract.test.js` checks that they agree.
 
 ## Docker
 

@@ -97,6 +97,39 @@ test("staff board strips the rider-facing chrome: no header bar, no ad", async (
   assert.match(index, /id="routeCount"/);
 });
 
+test("phone layout stacks the board into scrolling route cards", async () => {
+  const [css, index] = await Promise.all([readFile(cssPath, "utf8"), readFile(indexPath, "utf8")]);
+  assert.match(index, /viewport-fit=cover/);
+  assert.match(index, /name="apple-mobile-web-app-capable"/);
+  const phone = css.match(/@media\(max-width:820px\)\{[\s\S]*?\n\}/);
+  assert.ok(phone, "expected a max-width:820px phone block");
+  const rules = phone[0];
+  // The kiosk's fixed-height, non-scrolling shell has to be released on a phone.
+  assert.match(rules, /html,body\{height:auto;overflow:visible\}/);
+  assert.match(rules, /\.screen\{[^}]*height:auto/);
+  // Departures stack vertically instead of sitting in columns.
+  assert.match(rules, /\.departure-slots\{display:flex;flex-direction:column/);
+  assert.match(rules, /\.departures\{display:flex;flex-direction:column/);
+  // Padding slots and the desktop column header are noise on a phone.
+  assert.match(rules, /\.departure-slot\.unavailable\{display:none\}/);
+  assert.match(rules, /\.column-head\{display:none\}/);
+  // Notch and home-indicator clearance.
+  assert.match(rules, /env\(safe-area-inset-top\)/);
+  assert.match(rules, /env\(safe-area-inset-bottom\)/);
+  // Landscape phones get two columns without inheriting the kiosk's fixed row count.
+  assert.match(css, /@media\(max-width:820px\) and \(orientation:landscape\)/);
+  assert.match(css, /grid-template-rows:none;grid-auto-rows:auto/);
+});
+
+test("phone layout leaves the kiosk board untouched", async () => {
+  const css = await readFile(cssPath, "utf8");
+  // Every phone override must live inside a media query; the base rules stay kiosk-sized.
+  const base = css.slice(0, css.indexOf("@media(max-width:820px)"));
+  assert.match(base, /\.screen\{width:100vw;height:100vh/);
+  assert.match(base, /\.departures\{flex:1;min-height:0;display:grid/);
+  assert.doesNotMatch(base, /safe-area-inset/);
+});
+
 test("SFTP landing notices replace all GTFS display regions", async () => {
   const [app, css, index, server] = await Promise.all([
     readFile(appPath, "utf8"),
@@ -116,14 +149,14 @@ test("SFTP landing notices replace all GTFS display regions", async () => {
   assert.match(css, /\.manual-override-box\{/);
 });
 
-test("offline shell includes version 30 display assets", async () => {
+test("offline shell includes version 31 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=30/);
-  assert.match(index, /app\.js\?v=30/);
-  assert.match(worker, /nyc-ferry-did-shell-v30/);
-  assert.match(worker, /styles\.css\?v=30/);
-  assert.match(worker, /app\.js\?v=30/);
+  assert.match(index, /styles\.css\?v=31/);
+  assert.match(index, /app\.js\?v=31/);
+  assert.match(worker, /nyc-ferry-did-shell-v31/);
+  assert.match(worker, /styles\.css\?v=31/);
+  assert.match(worker, /app\.js\?v=31/);
 });
