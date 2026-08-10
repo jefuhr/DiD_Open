@@ -1,6 +1,13 @@
-# nyc ferry did reborn
+# nyc ferry did reborn — staff edition
 
-an offline-first `16:9` departure display for NYC Ferry landings. a local Node server builds scheduled departures from the bundled GTFS feed, overlays NYC Ferry GTFS-Realtime trip updates, and keeps working when the internet drops.
+an offline-first departure display for NYC Ferry landings. a local Node server builds scheduled departures from the bundled GTFS feed, overlays NYC Ferry GTFS-Realtime trip updates, and keeps working when the internet drops.
+
+this branch is the **staff variant**, built for ticket agents answering rider questions fast:
+
+- no ad and no header bar — the board gets the whole screen. a slim strip keeps the landing name, clock, route count, and data-freshness chip.
+- no slideshow. every route direction is on screen at once; rows compress to fit, so `routesShown` and `slideSeconds` are ignored by the display (the build still validates them).
+- each departure squeezes time, countdown, boat name, and delay/on-time/LAST status into one compact slot. `departuresShown` still controls how many columns appear (set to `5` here).
+- service alerts and SFTP landing notices behave exactly as on the rider display.
 
 ## run it
 
@@ -167,21 +174,19 @@ messages can be up to 2,000 characters. a malformed file, wrong landing id, fail
 
 ## offline behavior
 
-- the schedule, landing map, fonts, logo, display code, and ad all live on the device.
+- the schedule, landing map, fonts, and display code all live on the device.
 - the last good realtime response is written atomically to `state/realtime.json`.
 - live vehicle assignments are matched against the local vessel roster to get boat names.
 - the alert strip uses the live GTFS-Realtime alert feed and caches to `state/service-alerts.json`.
 - the last valid SFTP notice is stored in `state/manual-overrides.json` and survives restarts.
-- the service worker caches the shell, the ad, and API responses; the browser also keeps a last snapshot in local storage.
+- the service worker caches the shell and API responses; the browser also keeps a last snapshot in local storage.
 - if realtime is unavailable, the board falls back to the saved snapshot, then to bundled scheduled times.
-
-the ad artwork is [`public/assets/ad.jpg`](./public/assets/ad.jpg), cached offline with everything else.
 
 ## updating the schedule
 
 replace the files in [`gtfs/`](./gtfs) (or [`gtfs/waterway/`](./gtfs/waterway)) when a new feed is published, then restart. the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
-any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `28`) in both files — `test/display-contract.test.js` checks that they agree.
+any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `29`) in both files — `test/display-contract.test.js` checks that they agree.
 
 ## Docker
 

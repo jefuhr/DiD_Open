@@ -1,12 +1,11 @@
 const elements = {
   screen: document.querySelector("#screen"),
-  displayMode: document.querySelector("#displayMode"),
   landing: document.querySelector("#landingName"),
   time: document.querySelector("#clockTime"),
   date: document.querySelector("#clockDate"),
   departures: document.querySelector("#departures"),
   status: document.querySelector("#dataStatus"),
-  slideStatus: document.querySelector("#slideStatus"),
+  routeCount: document.querySelector("#routeCount"),
   serviceAlerts: document.querySelector("#serviceAlerts"),
   serviceAlertSummary: document.querySelector("#serviceAlertSummary"),
   serviceAlertFreshness: document.querySelector("#serviceAlertFreshness"),
@@ -22,8 +21,6 @@ let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
 let serviceAlerts = null;
 let manualOverride = { active: false, message: "", updatedAt: null };
-let slideIndex = 0;
-let slideTimer = null;
 
 function displayCount(key) {
   const value = Number(data?.meta?.[key]);
@@ -31,7 +28,6 @@ function displayCount(key) {
 }
 
 function applyDisplayCounts() {
-  document.documentElement.dataset.routesShown = String(displayCount("routesShown"));
   document.documentElement.dataset.departuresShown = String(displayCount("departuresShown"));
 }
 
@@ -190,33 +186,27 @@ function departureCell(item) {
     ? `<span class="scheduled-badge" aria-label="Status: Scheduled">SCHEDULED</span>`
     : "";
   return `<div class="departure-slot">
-    <div class="slot-time-row"><time>${adjustedTime(item.departureTime, item.delay)}</time></div>
-    <span class="boat-name">${item.boatName ? escapeHtml(item.boatName) : ""}</span>
-    <span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span>
-    <span class="departure-last-slot">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}</span>
+    <div class="slot-time-row"><time>${adjustedTime(item.departureTime, item.delay)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span></div>
+    <span class="departure-last-slot">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}<span class="boat-name">${item.boatName ? escapeHtml(item.boatName) : ""}</span></span>
   </div>`;
 }
 
 function render() {
   if (!data) return;
   applyDisplayCounts();
-  const routesShown = displayCount("routesShown");
   const departuresShown = displayCount("departuresShown");
   const groups = routeDirectionGroups();
-  const pageCount = Math.max(1, Math.ceil(groups.length / routesShown));
-  slideIndex %= pageCount;
-  const start = slideIndex * routesShown;
-  const visible = groups.slice(start, start + routesShown);
-  elements.slideStatus.textContent = pageCount > 1
-    ? `Routes ${start + 1}–${Math.min(start + routesShown, groups.length)} of ${groups.length} · Page ${slideIndex + 1}/${pageCount}`
-    : `${groups.length} route direction${groups.length === 1 ? "" : "s"}`;
+  // Staff view: no slideshow paging. Every route direction stays on screen and
+  // the row grid squishes to fit, so an agent never waits for the answer to rotate in.
+  elements.departures.style.setProperty("--routes-shown", String(Math.max(1, groups.length)));
+  elements.routeCount.textContent = `${groups.length} route direction${groups.length === 1 ? "" : "s"}`;
 
-  if (!visible.length) {
+  if (!groups.length) {
     elements.departures.innerHTML = `<div class="empty"><div><strong>NO MORE BOATS!</strong><span>NYC Ferry service has concluded for the day.</span></div></div>`;
     return;
   }
 
-  elements.departures.innerHTML = visible.map((group) => {
+  elements.departures.innerHTML = groups.map((group) => {
     const route = data.routes[group.routeId] || {};
     const routeClass = String(group.routeId || "default").replace(/[^A-Za-z0-9_-]/g, "");
     const variantClass = group.variant ? ` variant-${group.variant.toLowerCase()}` : "";
@@ -252,12 +242,6 @@ function render() {
   }).join("");
 }
 
-function startSlideshow() {
-  if (slideTimer) clearInterval(slideTimer);
-  const seconds = Number(data?.meta?.slideSeconds) || 12;
-  slideTimer = setInterval(() => { slideIndex += 1; render(); }, seconds * 1000);
-}
-
 function ageLabel(timestamp) {
   const ageMs = timestamp ? Date.now() - Date.parse(timestamp) : Number.NaN;
   if (!Number.isFinite(ageMs) || ageMs < 60_000) return "just now";
@@ -269,7 +253,6 @@ function renderManualOverride() {
   const active = Boolean(manualOverride?.active && manualOverride.message);
   elements.screen.classList.toggle("override-active", active);
   elements.manualOverride.hidden = !active;
-  elements.displayMode.textContent = active ? "SERVICE NOTICE" : "LIVE DEPARTURES";
   elements.manualOverrideMessage.textContent = active ? manualOverride.message : "";
   const length = manualOverride?.message?.length || 0;
   elements.manualOverrideBox.dataset.size = length > 700 ? "long" : length > 280 ? "medium" : "short";
@@ -388,10 +371,8 @@ async function load() {
     data = JSON.parse(saved);
   }
   elements.landing.textContent = data.meta.landing.displayName;
-  slideIndex = 0;
   await loadManualOverride();
   updateClock();
-  startSlideshow();
   loadRealtime();
   loadServiceAlerts();
 }
@@ -410,7 +391,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=28", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=29", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

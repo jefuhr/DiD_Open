@@ -60,22 +60,31 @@ test("service alert freshness sits beside its heading", async () => {
   assert.match(css, /\.service-alert-heading\{display:flex;align-items:baseline/);
 });
 
-test("route and departure counts drive the slideshow and grid", async () => {
+test("staff board shows every route direction at once with config-driven departure columns", async () => {
   const [app, css] = await Promise.all([
     readFile(appPath, "utf8"),
     readFile(cssPath, "utf8")
   ]);
-  assert.match(app, /displayCount\("routesShown"\)/);
   assert.match(app, /displayCount\("departuresShown"\)/);
-  assert.match(app, /dataset\.routesShown/);
   assert.match(app, /dataset\.departuresShown/);
-  assert.doesNotMatch(app, /PAGE_SIZE|TIMES_PER_DIRECTION/);
+  assert.match(app, /setProperty\("--routes-shown", String\(Math\.max\(1, groups\.length\)\)\)/);
+  assert.doesNotMatch(app, /slideTimer|startSlideshow|slideIndex|PAGE_SIZE|TIMES_PER_DIRECTION/);
   assert.match(css, /repeat\(var\(--routes-shown\),minmax\(0,1fr\)\)/);
   assert.match(css, /repeat\(var\(--departures-shown\),minmax\(0,1fr\)\)/);
   for (let count = 1; count <= 5; count += 1) {
-    assert.match(css, new RegExp(`data-routes-shown="${count}"`));
     assert.match(css, new RegExp(`data-departures-shown="${count}"`));
   }
+});
+
+test("staff board strips the rider-facing chrome: no header bar, no ad", async () => {
+  const [index, worker] = await Promise.all([
+    readFile(indexPath, "utf8"),
+    readFile(workerPath, "utf8")
+  ]);
+  assert.doesNotMatch(index, /<header|ferry-mart|ad\.jpg|nyc-ferry-logo/);
+  assert.doesNotMatch(worker, /ad\.jpg|nyc-ferry-logo/);
+  assert.match(index, /id="clockTime"/);
+  assert.match(index, /id="routeCount"/);
 });
 
 test("SFTP landing notices replace all GTFS display regions", async () => {
@@ -97,14 +106,14 @@ test("SFTP landing notices replace all GTFS display regions", async () => {
   assert.match(css, /\.manual-override-box\{/);
 });
 
-test("offline shell includes version 28 display assets", async () => {
+test("offline shell includes version 29 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=28/);
-  assert.match(index, /app\.js\?v=28/);
-  assert.match(worker, /nyc-ferry-did-shell-v28/);
-  assert.match(worker, /styles\.css\?v=28/);
-  assert.match(worker, /app\.js\?v=28/);
+  assert.match(index, /styles\.css\?v=29/);
+  assert.match(index, /app\.js\?v=29/);
+  assert.match(worker, /nyc-ferry-did-shell-v29/);
+  assert.match(worker, /styles\.css\?v=29/);
+  assert.match(worker, /app\.js\?v=29/);
 });

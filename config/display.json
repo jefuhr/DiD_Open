@@ -2,7 +2,7 @@
   "landingNumber": 26,
   "slideSeconds": 16,
   "departureWindowMinutes": 500,
-  "departuresShown": 3,
+  "departuresShown": 5,
   "routesShown": 4,
   "waterwayEnabled": true,
   "busesEnabled": false

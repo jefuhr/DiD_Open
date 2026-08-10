@@ -4,26 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#001d41" />
-    <title>NYC Ferry Departures</title>
+    <title>NYC Ferry Staff Board</title>
     <link rel="icon" href="/assets/kiosk-icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=28" />
+    <link rel="stylesheet" href="/styles.css?v=29" />
   </head>
   <body>
     <main class="screen" id="screen">
-      <header class="header">
-        <div class="brand"><img src="/assets/nyc-ferry-logo.png" alt="NYC Ferry" /><span id="displayMode">LIVE DEPARTURES</span></div>
-        <div class="landing"><span>DEPARTING FROM</span><h1 id="landingName">NYC Ferry</h1></div>
-        <div class="clock"><time id="clockTime">--:--</time><span id="clockDate">Loading schedule…</span></div>
-      </header>
       <div class="content">
-        <section class="board" aria-labelledby="boardTitle">
-          <div class="board-heading"><div><span class="eyebrow">ALL ROUTES · ALL DIRECTIONS</span><h2 id="boardTitle">Next departures</h2></div><div class="board-state"><div class="slide-status" id="slideStatus">Routes 1–4</div><div class="status" id="dataStatus"><i></i><span>Local schedule</span></div></div></div>
-          <div class="column-head"><span>Route</span><span>Direction</span><span>Next departures </span></div>
+        <section class="board" aria-labelledby="landingName">
+          <div class="board-heading">
+            <h1 id="landingName">NYC Ferry</h1>
+            <div class="board-state">
+              <div class="route-count" id="routeCount">Loading routes…</div>
+              <div class="status" id="dataStatus"><i></i><span>Local schedule</span></div>
+              <div class="clock"><time id="clockTime">--:--</time><span id="clockDate">Loading schedule…</span></div>
+            </div>
+          </div>
+          <div class="column-head"><span>Route</span><span>Direction</span><span>Next departures</span></div>
           <div class="departures" id="departures" aria-live="polite"></div>
         </section>
-        <aside class="ferry-mart" aria-label="Ferry Mart promotion">
-          <img src="/assets/ad.jpg" alt="Ferry Mart — check out the menu on the NYC Ferry app" />
-        </aside>
       </div>
       <section class="manual-override" id="manualOverride" hidden aria-live="assertive" aria-atomic="true">
         <div class="manual-override-box" id="manualOverrideBox" data-size="short">
@@ -47,6 +46,6 @@
         <span class="service-alert-count" id="serviceAlertCount" hidden></span>
       </section>
     </main>
-    <script type="module" src="/app.js?v=28"></script>
+    <script type="module" src="/app.js?v=29"></script>
   </body>
 </html>
