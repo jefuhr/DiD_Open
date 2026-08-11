@@ -213,21 +213,22 @@ function routeShortName(routeId) {
   return data?.routes?.[routeId]?.shortName || routeId;
 }
 
-// Timeline view: one row per sailing in the order the boats actually leave, so the next few
-// departures read top-to-bottom at a glance instead of being spread across route cards. Route
-// identity moves onto the row itself, which is what makes ignoring route grouping legible.
+// Timeline view: one row per sailing in the order the boats actually leave, so departures read
+// top-to-bottom instead of being spread across route cards. Route identity moves onto the row
+// itself, which is what makes dropping the route grouping legible.
 //
-// Capped rather than unbounded: the rows share the board's height, so past a point every row is
-// too short to read. The grid squishes to whatever fits, so the list never scrolls.
-const TIMELINE_ROWS = 9;
-
+// Every remaining sailing is listed, bounded only by departureWindowMinutes — the same lookahead
+// the route view already uses to decide a board is worth showing. The list scrolls; rows stay a
+// fixed compact height rather than squishing, because a row too short to read is worse than one
+// more flick of the thumb.
 function timelineDepartures(now = new Date()) {
+  const windowSeconds = (Number(data.meta.departureWindowMinutes) || 180) * 60;
   return routeDirectionGroups(now, Infinity)
     .flatMap((group) => group.departures.map((departure) => ({ departure, group })))
+    .filter(({ departure }) => departure.delta <= windowSeconds)
     // Ties fall back to route order so two boats leaving the same minute cannot swap places
     // between the 15s re-renders.
-    .sort((left, right) => left.departure.delta - right.departure.delta || byRoute(left.group, right.group))
-    .slice(0, TIMELINE_ROWS);
+    .sort((left, right) => left.departure.delta - right.departure.delta || byRoute(left.group, right.group));
 }
 
 // Status badges for one sailing. Shared so the timeline rows and the route cards can never
@@ -313,10 +314,11 @@ function render() {
 function renderTimeline() {
   const rows = timelineDepartures();
   elements.departures.dataset.view = "timeline";
-  elements.columnHead.dataset.view = "timeline";
-  elements.columnHead.innerHTML = "<span>Departs</span><span>Route</span><span>Destination</span>";
-  elements.departures.style.setProperty("--routes-shown", String(Math.max(1, rows.length)));
-  elements.routeCount.textContent = `next ${rows.length} departure${rows.length === 1 ? "" : "s"}`;
+  // The column head describes the route board's three columns; a timeline row is not columnar,
+  // and the phone stylesheet hides it anyway.
+  elements.columnHead.hidden = true;
+  elements.departures.style.removeProperty("--routes-shown");
+  elements.routeCount.textContent = `${rows.length} departure${rows.length === 1 ? "" : "s"}`;
 
   if (!rows.length) {
     elements.departures.innerHTML = `<div class="empty"><div><strong>NO MORE BOATS!</strong><span>NYC Ferry service has concluded for the day.</span></div></div>`;
@@ -328,19 +330,19 @@ function renderTimeline() {
     const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment } = departureStatus(departure);
     const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(visual.variantLabel)}</small>` : "";
     const context = visual.isOtherOperator ? visual.route.operator : directionLabel(group.directionId);
+    // Two lines: when/who/where on the first, the softer detail on the second. Everything on the
+    // first line is what a glance needs; the second is scannable but never competes with it.
     return `<article class="departure timeline-row route-${visual.routeClass}"${visual.style}>
-      <div class="tl-when">
+      <div class="tl-head">
         <time>${adjustedTime(departure.departureTime, departure.delay)}</time>
-        <span class="tl-relative">${escapeHtml(relativeTime(departure.delta))}</span>
-      </div>
-      <div class="tl-route">
         <span class="route-badge${visual.partnerLogo ? " route-badge-image" : ""}">${visual.badgeContent}${variantBadge}</span>
+        <strong class="tl-dest">${escapeHtml(group.destination)}</strong>
       </div>
-      <div class="tl-destination">
-        <strong>${escapeHtml(group.destination)}</strong>
+      <div class="tl-meta">
+        <span class="tl-relative">${escapeHtml(relativeTime(departure.delta))}</span>
         <span class="tl-context">${escapeHtml(context)}</span>
+        <span class="tl-status">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}${assignment}</span>
       </div>
-      <div class="tl-status">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}${assignment}</div>
     </article>`;
   }).join("");
 }
@@ -349,8 +351,7 @@ function renderRouteBoard() {
   const departuresShown = displayCount("departuresShown");
   const groups = routeDirectionGroups();
   elements.departures.dataset.view = "routes";
-  elements.columnHead.dataset.view = "routes";
-  elements.columnHead.innerHTML = "<span>Route</span><span>Direction</span><span>Next departures</span>";
+  elements.columnHead.hidden = false;
   // Staff view: no slideshow paging. Every route direction stays on screen and
   // the row grid squishes to fit, so an agent never waits for the answer to rotate in.
   elements.departures.style.setProperty("--routes-shown", String(Math.max(1, groups.length)));

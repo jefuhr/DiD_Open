@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
     <link rel="icon" href="/assets/kiosk-icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=37" />
+    <link rel="stylesheet" href="/styles.css?v=38" />
   </head>
   <body>
     <main class="screen" id="screen">
@@ -28,7 +28,7 @@
               <div class="clock"><time id="clockTime">--:--</time><span id="clockDate">Loading schedule…</span></div>
             </div>
           </div>
-          <div class="column-head" id="columnHead" data-view="timeline"><span>Departs</span><span>Route</span><span>Destination</span></div>
+          <div class="column-head" id="columnHead" hidden><span>Route</span><span>Direction</span><span>Next departures</span></div>
           <div class="departures" id="departures" aria-live="polite"></div>
         </section>
       </div>
@@ -68,6 +68,6 @@
         <span class="service-alert-count" id="serviceAlertCount" hidden></span>
       </section>
     </main>
-    <script type="module" src="/app.js?v=37"></script>
+    <script type="module" src="/app.js?v=38"></script>
   </body>
 </html>

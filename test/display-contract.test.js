@@ -222,7 +222,7 @@ test("two buttons at the top of the menu swap the departure view", async () => {
   assert.match(app, /return sortedBy\(\) === "route" \? renderRouteBoard\(\) : renderTimeline\(\)/);
 });
 
-test("the timeline lists sailings in departure order with route on each row", async () => {
+test("the timeline lists every upcoming sailing in departure order, route on each row", async () => {
   const [app, css, index] = await Promise.all([
     readFile(appPath, "utf8"), readFile(cssPath, "utf8"), readFile(indexPath, "utf8")
   ]);
@@ -231,33 +231,48 @@ test("the timeline lists sailings in departure order with route on each row", as
   assert.match(app, /routeDirectionGroups\(now, Infinity\)/);
   assert.match(app, /\.flatMap\(\(group\) => group\.departures\.map\(\(departure\) => \(\{ departure, group \}\)\)\)/);
   assert.match(app, /left\.departure\.delta - right\.departure\.delta \|\| byRoute\(left\.group, right\.group\)/);
-  // Route identity travels with the row, which is what lets the grouping go away.
-  assert.match(app, /<div class="tl-route">/);
+
+  // All of them, bounded only by the board's existing lookahead — no fixed row cap.
+  assert.match(app, /\.filter\(\(\{ departure \}\) => departure\.delta <= windowSeconds\)/);
+  assert.doesNotMatch(app, /TIMELINE_ROWS/);
+  assert.doesNotMatch(app, /\.slice\(0, TIMELINE_ROWS\)/);
+
+  // Two compact lines, with route identity travelling on the row.
+  assert.match(app, /<div class="tl-head">/);
   assert.match(app, /class="route-badge\$\{visual\.partnerLogo \? " route-badge-image" : ""\}"/);
-  assert.match(app, /<div class="tl-destination">/);
-  // Capped and squished so the next departures are readable without scrolling.
-  assert.match(app, /const TIMELINE_ROWS = \d+/);
-  assert.match(app, /\.slice\(0, TIMELINE_ROWS\)/);
-  assert.match(app, /setProperty\("--routes-shown", String\(Math\.max\(1, rows\.length\)\)\)/);
-  assert.match(css, /\.departures\{[^}]*grid-template-rows:repeat\(var\(--routes-shown\),minmax\(0,1fr\)\)/);
-  // The column head has to describe whichever view is showing.
-  assert.match(index, /id="columnHead" data-view="timeline"/);
-  assert.match(app, /columnHead\.innerHTML = "<span>Departs<\/span><span>Route<\/span><span>Destination<\/span>"/);
-  assert.match(app, /columnHead\.innerHTML = "<span>Route<\/span><span>Direction<\/span><span>Next departures<\/span>"/);
-  assert.match(css, /\.column-head\[data-view="timeline"\],\.departure\.timeline-row\{grid-template-columns:/);
+  assert.match(app, /<strong class="tl-dest">/);
+  assert.match(app, /<div class="tl-meta">/);
+
+  // The phone stylesheet sets .departure{display:block}, so the row must set its own display at
+  // higher specificity or it silently stacks into a full-screen-tall card.
+  assert.match(css, /\.departure\.timeline-row\{display:flex/);
+  assert.match(css, /\.departures\[data-view="timeline"\]\{display:flex[^}]*overflow-y:auto/);
+  // Fixed row height, not squished to fit: the list scrolls instead.
+  assert.match(css, /\.departure\.timeline-row\{[^}]*flex:0 0 auto/);
+  assert.match(app, /removeProperty\("--routes-shown"\)/);
+  // Phone overrides must exist inside the max-width block, after .departure{display:block}.
+  const phone = css.slice(css.indexOf("@media(max-width:820px)"));
+  assert.match(phone, /\.departures\[data-view="timeline"\]\{gap:8px/);
+  assert.match(phone, /\.timeline-row \.route-badge\{width:46px/);
+
+  // The column head describes the route board only, and is hidden on the timeline.
+  assert.match(index, /id="columnHead" hidden/);
+  assert.match(app, /elements\.columnHead\.hidden = true/);
+  assert.match(app, /elements\.columnHead\.hidden = false/);
+
   // Both views share one status source, so they cannot disagree about a late boat.
   assert.match(app, /function departureStatus\(item\)/);
   assert.match(app, /function routeVisual\(routeId, variant\)/);
 });
 
-test("offline shell includes version 37 display assets", async () => {
+test("offline shell includes version 38 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=37/);
-  assert.match(index, /app\.js\?v=37/);
-  assert.match(worker, /nyc-ferry-did-shell-v37/);
-  assert.match(worker, /styles\.css\?v=37/);
-  assert.match(worker, /app\.js\?v=37/);
+  assert.match(index, /styles\.css\?v=38/);
+  assert.match(index, /app\.js\?v=38/);
+  assert.match(worker, /nyc-ferry-did-shell-v38/);
+  assert.match(worker, /styles\.css\?v=38/);
+  assert.match(worker, /app\.js\?v=38/);
 });
