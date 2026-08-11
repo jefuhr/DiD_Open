@@ -138,13 +138,17 @@ test("landing menu lets an agent switch the board's landing", async () => {
     readFile(appPath, "utf8"), readFile(cssPath, "utf8"),
     readFile(indexPath, "utf8"), readFile(serverPath, "utf8")
   ]);
-  // Server serves the list and builds any selectable landing on demand.
+  // Server serves the list, and every landing is loaded up front rather than built on demand:
+  // switching must not depend on a first-request build, and the realtime feeds have to see all
+  // of them. See test/landing-data.test.js.
   assert.match(server, /url\.pathname === "\/api\/landings"/);
-  assert.match(server, /SELECTABLE_LANDINGS\.has\(landingNumber\)/);
+  assert.match(server, /loadAllLandingData/);
+  assert.match(server, /!displayDataJson\.has\(landingNumber\)/);
   assert.match(server, /return json\(response, 400, \{ error: "Unknown landing\." \}\)/);
-  // No landingId keeps serving the prebuilt file, so the kiosk contract is unchanged.
-  assert.match(server, /if \(requested === null\)/);
-  assert.match(server, /displayDataCache/);
+  // No landingId still resolves to the configured landing, so the kiosk contract is unchanged.
+  assert.match(server, /requested === null \? Number\(displayConfig\.landingNumber\) : Number\(requested\)/);
+  // The client names its landing so realtime comes back scoped to it.
+  assert.match(app, /\/api\/realtime\$\{query\}/);
   // Menu markup and the accessible toggle.
   assert.match(index, /id="menuButton"[^>]*aria-expanded="false"[^>]*aria-controls="landingMenu"/);
   assert.match(index, /id="landingMenu"[^>]*hidden/);
@@ -200,14 +204,14 @@ test("partner operators show their mark in the route badge", async () => {
   assert.match(worker, /\/assets\/cityferry\.png/);
 });
 
-test("offline shell includes version 33 display assets", async () => {
+test("offline shell includes version 34 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=33/);
-  assert.match(index, /app\.js\?v=33/);
-  assert.match(worker, /nyc-ferry-did-shell-v33/);
-  assert.match(worker, /styles\.css\?v=33/);
-  assert.match(worker, /app\.js\?v=33/);
+  assert.match(index, /styles\.css\?v=34/);
+  assert.match(index, /app\.js\?v=34/);
+  assert.match(worker, /nyc-ferry-did-shell-v34/);
+  assert.match(worker, /styles\.css\?v=34/);
+  assert.match(worker, /app\.js\?v=34/);
 });

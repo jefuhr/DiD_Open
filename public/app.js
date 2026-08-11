@@ -374,7 +374,12 @@ function updateClock() {
 
 async function loadRealtime() {
   try {
-    const response = await fetch("/api/realtime", { cache: "no-store" });
+    // The server tracks every landing, so name ours: without it the payload carries updates for
+    // the whole system. Before display data has loaded there is no landing to name, and the
+    // unfiltered response is still correct.
+    const landingId = data?.meta?.landingNumber;
+    const query = landingId ? `?landingId=${encodeURIComponent(landingId)}` : "";
+    const response = await fetch(`/api/realtime${query}`, { cache: "no-store" });
     if (!response.ok) throw new Error();
     realtime = await response.json();
     localStorage.setItem(`${cacheKey}-realtime`, JSON.stringify(realtime));

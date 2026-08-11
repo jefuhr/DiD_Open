@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildDisplayData } from "./scripts/build-data.js";
+import { landingChoices, loadAllLandingData, stopIdsForLanding } from "./lib/landing-data.js";
 import { createManualOverrideService } from "./lib/manual-overrides.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
@@ -19,33 +19,22 @@ const DISPLAY_CONFIG = path.join(ROOT, "config/display.json");
 const SFTP_CONFIG = path.join(ROOT, "config/sftp.json");
 const displayConfig = JSON.parse(await readFile(DISPLAY_CONFIG, "utf8"));
 const sftpConfig = await loadSftpOverrideConfig({ configPath: SFTP_CONFIG, rootPath: ROOT });
-const realtimeService = createRealtimeService({ dataPath: DATA, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json") });
-const nyuRealtimeService = createNyuRealtimeService({ dataPath: DATA, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
+
+// This server answers for every landing, not just config/display.json's. See lib/landing-data.js
+// for why the merged view matters as much as the per-landing map: without it the realtime feeds
+// stay scoped to one landing and partner operators docking elsewhere never get fetched at all.
+const LANDING_CHOICES = landingChoices(JSON.parse(await readFile(path.join(ROOT, "config/landings.json"), "utf8")));
+const landingData = await loadAllLandingData({ root: ROOT, choices: LANDING_CHOICES });
+const displayDataJson = new Map([...landingData.byLanding].map(([id, data]) => [id, `${JSON.stringify(data)}\n`]));
+const realtimeStopsByLanding = new Map([...landingData.byLanding].map(([id, data]) => [id, stopIdsForLanding(data)]));
+console.log(`Loaded ${landingData.byLanding.size} of ${LANDING_CHOICES.length} landings; realtime covers ${landingData.merged.meta.landing.stopIds.length} stops.`);
+
+const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json") });
+const nyuRealtimeService = createNyuRealtimeService({ loadDisplay: async () => landingData.merged, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
 const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROOT, "state/service-alerts.json") });
 const manualOverrideService = createManualOverrideService({ statePath: path.join(ROOT, "state/manual-overrides.json") });
 const sftpOverridePoller = createSftpOverridePoller({ config: sftpConfig, landingId: displayConfig.landingNumber, cacheService: manualOverrideService });
 const TYPES = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".json":"application/json; charset=utf-8", ".png":"image/png", ".svg":"image/svg+xml", ".woff2":"font/woff2", ".webmanifest":"application/manifest+json; charset=utf-8" };
-
-// Landings an agent can switch between from the menu. config/landings.json is the source of
-// truth, same as the build, so adding a landing there makes it selectable with no other change.
-const landings = JSON.parse(await readFile(path.join(ROOT, "config/landings.json"), "utf8"));
-const LANDING_CHOICES = Object.entries(landings)
-  .filter(([, item]) => !item.unused)
-  .map(([id, item]) => ({ id: Number(id), displayName: item.displayName || item.name || `Landing ${id}` }))
-  .sort((left, right) => left.displayName.localeCompare(right.displayName));
-const SELECTABLE_LANDINGS = new Set(LANDING_CHOICES.map((item) => item.id));
-
-// Switching landings rebuilds display data on demand (~25ms warm). Results are cached for the
-// life of the process because the inputs — the bundled GTFS feed and config/display.json — only
-// change on redeploy, which is the same restart-after-config-change contract the build has.
-const displayDataCache = new Map();
-async function displayDataFor(landingNumber) {
-  const cached = displayDataCache.get(landingNumber);
-  if (cached) return cached;
-  const built = `${JSON.stringify(await buildDisplayData({ root: ROOT, landingNumber }))}\n`;
-  displayDataCache.set(landingNumber, built);
-  return built;
-}
 
 function headers(response) {
   response.setHeader("X-Content-Type-Options", "nosniff");
@@ -60,24 +49,19 @@ async function serve(response, file) {
 async function handle(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
   if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), sftpOverride:sftpOverridePoller.status() });
-  if (url.pathname === "/api/landings") return json(response, 200, { landings: LANDING_CHOICES, configured: displayConfig.landingNumber });
+  if (url.pathname === "/api/landings") return json(response, 200, { landings: landingData.available, configured: displayConfig.landingNumber });
   if (url.pathname === "/api/display-data") {
     const requested = url.searchParams.get("landingId");
+    const landingNumber = requested === null ? Number(displayConfig.landingNumber) : Number(requested);
+    if (requested !== null && !displayDataJson.has(landingNumber)) return json(response, 400, { error: "Unknown landing." });
+    const built = displayDataJson.get(landingNumber);
+    // Falling back to the file the build wrote keeps a kiosk alive if its own landing was the one
+    // that failed to build at startup — stale published times beat a blank board.
     try {
-      // No landingId keeps the original contract: serve the file the build produced.
-      if (requested === null) {
-        const data = await readFile(DATA, "utf8");
-        headers(response);
-        response.writeHead(200, { "Content-Type":TYPES[".json"], "Cache-Control":"no-cache" });
-        return response.end(data);
-      }
-      const landingNumber = Number(requested);
-      if (!Number.isInteger(landingNumber) || !SELECTABLE_LANDINGS.has(landingNumber)) {
-        return json(response, 400, { error: "Unknown landing." });
-      }
+      const body = built ?? await readFile(DATA, "utf8");
       headers(response);
       response.writeHead(200, { "Content-Type":TYPES[".json"], "Cache-Control":"no-cache" });
-      return response.end(await displayDataFor(landingNumber));
+      return response.end(body);
     } catch (error) { return json(response, 503, { error:"Display data unavailable", detail:error.message }); }
   }
   // NYU's live estimates ride along in the same payload: its updates are already namespaced with
@@ -86,11 +70,17 @@ async function handle(request, response) {
   // source marks the whole payload stale — which only ever falls back to published times.
   if (url.pathname === "/api/realtime") {
     const [ferry, nyu] = await Promise.all([realtimeService.getCurrent(), nyuRealtimeService.getCurrent()]);
+    // Upstream is polled once for the whole system, then narrowed per request. A client that names
+    // its landing gets only its own stops, which keeps the payload the size it was before this
+    // server covered all 25; omitting landingId returns everything, so an older cached client that
+    // does not send it still works.
+    const stops = realtimeStopsByLanding.get(Number(url.searchParams.get("landingId")));
+    const updates = [...(ferry.updates || []), ...(nyu.updates || [])];
     const result = {
       ...ferry,
       available: ferry.available || nyu.available,
       stale: Boolean(ferry.stale || nyu.stale),
-      updates: [...(ferry.updates || []), ...(nyu.updates || [])],
+      updates: stops ? updates.filter((update) => stops.has(String(update.stopId))) : updates,
       nyu: { available: nyu.available, stale: nyu.stale, fetchedAt: nyu.fetchedAt, error: nyu.error }
     };
     return json(response, result.available ? 200 : 503, result);
