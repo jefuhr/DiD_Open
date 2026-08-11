@@ -40,6 +40,9 @@ everything lives in [`config/display.json`](./config/display.json):
   "departuresShown": 5,
   "routesShown": 4,
   "waterwayEnabled": true,
+  "seastreakEnabled": true,
+  "nyuEnabled": true,
+  "libertyEnabled": true,
   "busesEnabled": false
 }
 ```
@@ -52,6 +55,9 @@ everything lives in [`config/display.json`](./config/display.json):
 | `departuresShown` | `1`–`5` | departure columns per route row. |
 | `routesShown` | `1`–`5` | unused on the staff board (every route direction shows); still validated. |
 | `waterwayEnabled` | `true` / `false` | merge in NY Waterway departures. see below. |
+| `seastreakEnabled` | `true` / `false` | merge in Seastreak departures. see below. |
+| `nyuEnabled` | `true` / `false` | merge in NYU Langone ferry departures. see below. |
+| `libertyEnabled` | `true` / `false` | merge in Liberty Landing Ferry departures. see below. |
 | `busesEnabled` | `true` / `false` | show connecting shuttle buses. see below. |
 
 the staff board shows every route direction at once and never pages. each departure shows its crew boat assignment, plus the boat name when the live feed has that assignment.
@@ -71,29 +77,89 @@ landings `2` through `24` are alphabetical. `25` and `26` were added later so ex
 
 leave the key out entirely and it defaults to `true`.
 
-## NY Waterway
+## partner operators
 
-landings that share a dock with NY Waterway can show its departures next to NYC Ferry's. the feed lives in [`gtfs/waterway/`](./gtfs/waterway) and is merged at build time by [`scripts/build-data.js`](./scripts/build-data.js).
+landings that share a dock with another ferry operator can show its departures next to NYC Ferry's. each operator ships its own GTFS directory, merged at build time by [`scripts/build-data.js`](./scripts/build-data.js).
 
-| landing | NYC Ferry stop | NY Waterway stop |
+| operator | feed | id prefix | mark |
+|---|---|---|---|
+| NY Waterway | [`gtfs/waterway/`](./gtfs/waterway) | `wtr:` | [`public/assets/waterway.png`](./public/assets/waterway.png) |
+| Seastreak | [`gtfs/seastreak/`](./gtfs/seastreak) | `sea:` | [`public/assets/seastreak.png`](./public/assets/seastreak.png) |
+| NYU Langone Ferry | [`gtfs/nyu/`](./gtfs/nyu) — generated, see below | `nyu:` | [`public/assets/nyu.png`](./public/assets/nyu.png) |
+| Liberty Landing Ferry | [`gtfs/liberty/`](./gtfs/liberty) — transcribed, see below | `lib:` | [`public/assets/cityferry.png`](./public/assets/cityferry.png) |
+
+which landings pull which operator:
+
+| landing | NYC Ferry stop | partner stop |
 |---|---|---|
-| `16` Wall St / Pier 11 | `87` Wall St/Pier 11 | `2439146` Pier 11 / Wall Street |
-| `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | `2729332` Brookfield Place/Battery Park City |
-| `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | `2439145` Midtown / W 39th Street |
+| `8` East 34th Street | `17` East 34th Street | Seastreak `168` East 35th St., NYC · NYU `13138` East 34th Street |
+| `16` Wall St / Pier 11 | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street |
+| `24` Sunset Park / BAT | `118` Sunset Park/BAT | NYU `13139` Brooklyn Army Terminal |
+| `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | NY Waterway `2729332` Brookfield Place/Battery Park City · Liberty Landing `2557122` Brookfield Place Terminal |
+| `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | NY Waterway `2439145` Midtown / W 39th Street |
 
-two switches control it, and either one off means no waterway data:
+each operator has two switches, and either one off means none of its data is read:
 
-- `waterwayEnabled` in `config/display.json` — the whole kiosk.
-- `waterwayStopIds` in `config/landings.json` — per landing. only landings with this array populated pull in waterway data.
+- `waterwayEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` in `config/display.json` — the whole kiosk.
+- `waterwayStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
 
 good to know:
 
-- every departure and route carries an `operator` (`"NY Waterway"` or `"NYC Ferry"`, from each feed's `agency.txt`), and the board prints a small operator label under the route name.
-- waterway ids are prefixed `wtr:` internally so they can't collide with NYC Ferry ids.
-- waterway routes with no rider-facing short name — just an internal all-digit route id — show the NY Waterway mark ([`public/assets/waterway.png`](./public/assets/waterway.png)) in the route badge. routes with a real short name keep it.
-- NY Waterway publishes no realtime feed here, so those rows show scheduled times only: no boat name, no delay badge. that's expected.
+- every departure and route carries an `operator` taken from its feed's `agency.txt`, and the board prints a small operator label under the route name.
+- partner ids are namespaced with the prefix above so they can't collide with NYC Ferry ids or each other.
+- partner badges show the operator's mark instead of the GTFS short name, because those short names are useless to riders — NY Waterway publishes internal all-digit route ids, Seastreak names every route "Seastreak", and NYU and Liberty Landing publish no short name at all. a partner route with a real short name (W44, Greenwich) keeps it.
+- Seastreak's headsigns only name a region ("Manhattan", "New Jersey"), so its rows show the trip's last stop instead — Highlands NJ, Atlantic Highlands NJ, Battery Maritime Building. NY Waterway headsigns already name the terminal and are used as published.
+- NY Waterway, Seastreak and Liberty Landing publish no realtime feed here, so their rows show scheduled times only: no boat name, no delay badge. that's expected. NYU does have live estimates — see below.
+- a partner feed only contributes departures whose service is in effect today. if a third-party feed lapses, its rows silently vanish, so the build prints a `WARNING: the <operator> feed ... expired on <date>` line rather than leaving you to debug an empty row.
 
-to add another landing, find its `stop_id` in [`gtfs/waterway/stops.txt`](./gtfs/waterway/stops.txt) and add a `waterwayStopIds` array to that landing in `config/landings.json`.
+to add a partner at another landing, find its `stop_id` in that feed's `stops.txt` and add the matching `...StopIds` array to the landing in `config/landings.json`.
+
+the Seastreak feed comes from [transit.land `f-drk-seastreak`](https://www.transit.land/feeds/f-drk-seastreak), published at `https://seastreak.com/api/transit/google_transit.zip`.
+
+## the Liberty Landing Ferry timetable is transcribed
+
+Liberty Landing Ferry crosses between Liberty Landing Marina and Warren Street in Jersey City and Brookfield Place Terminal, whose dock is ~35 m from NYC Ferry's Battery Park City/Vesey St. — so it belongs at landing `25`.
+
+**the ferry runs; its GTFS does not.** the operator rebranded to Liberty Landing City Ferry under Statue City Cruises/Hornblower and moved to [libertylandingcityferry.com](https://www.libertylandingcityferry.com/), leaving the old domain in the feed's `agency.txt` dead. the only GTFS ever published — [transit.land `f-libertylandingferry~ny~us`](https://www.transit.land/feeds/f-libertylandingferry~ny~us), via Trillium — was last modified **30 Aug 2019** and its calendar lapsed on **2020-08-01**.
+
+that feed is not reused, and its dates were not rolled forward. service went hourly in 2020, so the 2019 half-hourly feed would have put **16 sailings a weekday on the board that do not exist** — every `:15` departure plus the 20:45. that is the static-schedule version of an early departure, and [`gtfsferry.md`](./gtfsferry.md) covers it.
+
+instead [`scripts/build-liberty-gtfs.js`](./scripts/build-liberty-gtfs.js) generates `gtfs/liberty/` from the timetable the operator publishes today:
+
+```
+node scripts/build-liberty-gtfs.js
+```
+
+| | departs Liberty Landing | departs Warren St | departs Brookfield Place | departs Warren St |
+|---|---|---|---|---|
+| weekdays | `:30`, 6:30am–7:30pm | `:32` | `:45`, 6:45am–7:45pm | `:55` |
+| weekends | `:30`, 9:30am–7:30pm | `:32` | `:45`, 9:45am–7:45pm | `:55` |
+
+**this one is a transcription, not a download** — there is no machine-readable source, so it carries obligations the other feeds don't:
+
+- re-check it against the operator's page when `SOURCE_CHECKED_ON` in the script gets old. the generated calendar is deliberately bounded to 180 days so it expires loudly (the build warns on a lapsed partner feed) rather than drifting silently.
+- the operator publishes departure times only. the two arrivals it doesn't print are derived from the 2019 feed's running times, which still hold exactly: 6:30 +2 = 6:32, +13 = 6:45, +10 = 6:55 reproduces every printed time.
+- the operator says "weekdays except major holidays" but publishes no list, so **no holiday exceptions are encoded** and a holiday will show sailings that don't run. `overrides/25.json` is the way to cover a known closure.
+- stop ids are carried over from the Trillium feed unchanged so `config/landings.json` keeps working; only `2557122` was renamed, World Financial Center → Brookfield Place.
+
+## the NYU Langone ferry
+
+NYU runs a weekday ferry between East 34th Street and the Brooklyn Army Terminal, so it shows up at landings `8` and `24` — opposite ends of the same crossing. it is the only partner here that publishes no GTFS at all: the service exists only inside its [Passio GO](https://nyu.passiogo.com) app, and Passio's own `google_transit.zip` export is access-denied.
+
+so `gtfs/nyu/` is **generated, not downloaded**. [`scripts/fetch-nyu-gtfs.js`](./scripts/fetch-nyu-gtfs.js) reconstructs an equivalent static feed from Passio's JSON backend and writes the `.txt` files, which are committed so a build never touches the network:
+
+```
+node scripts/fetch-nyu-gtfs.js
+```
+
+it probes a full week to see which days actually run rather than assuming, which is how the Mon–Fri calendar and the 30-minute crossing in the feed were derived. re-run it when NYU changes its timetable. no API key is involved — Passio's `deviceId` parameter is a client id, not a credential.
+
+live estimates come from the same backend via [`lib/nyu-realtime.js`](./lib/nyu-realtime.js) and ride along in `/api/realtime` under the same `nyu:` ids, so the board matches both operators through one lookup. two things about that feed are worth knowing:
+
+- Passio predicts when a boat **arrives** at a terminal, and a ferry that ties up early then waits for its timetable is not an early departure. the [no-early-departure rule](./gtfsferry.md) applies to NYU exactly as it does to NYC Ferry.
+- Passio's `solidEta.scheduledDeparture` names the *block's* first sailing, not the one the boat is about to work — a 09:22 arrival comes back tagged `06:00`. it is deliberately ignored; the sailing is resolved from the timetable instead. see the comments in `lib/nyu-realtime.js`.
+
+if Passio is unreachable the board falls back to the last snapshot, then to published times. NYU rows never block NYC Ferry's own estimates and vice versa.
 
 ## boat assignments
 
@@ -224,7 +290,7 @@ messages can be up to 2,000 characters. a malformed file, wrong landing id, fail
 
 ## updating the schedule
 
-replace the files in [`gtfs/`](./gtfs) (or [`gtfs/waterway/`](./gtfs/waterway)) when a new feed is published, then restart. the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
+replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/`, `gtfs/seastreak/` and `gtfs/liberty/` — when a new feed is published, then restart. `gtfs/nyu/` is the exception: it has no upstream file to drop in, so regenerate it with `node scripts/fetch-nyu-gtfs.js`. the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
 any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `30`) in both files — `test/display-contract.test.js` checks that they agree.
 

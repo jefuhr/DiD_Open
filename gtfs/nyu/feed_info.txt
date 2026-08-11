@@ -1,0 +1,2 @@
+feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
+New York University,https://nyu.passiogo.com,en,20260810,20270208,passio-45769-20260810

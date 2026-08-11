@@ -6,7 +6,7 @@
   "5": { "name": "Brooklyn Navy Yard", "stopIds": ["120"] },
   "6": { "name": "Corlears Hook", "stopIds": ["115"] },
   "7": { "name": "DUMBO", "stopIds": ["20"] },
-  "8": { "name": "East 34th Street", "stopIds": ["17"] },
+  "8": { "name": "East 34th Street", "stopIds": ["17"], "seastreakStopIds": ["168"], "nyuStopIds": ["13138"] },
   "9": { "name": "East 90th St", "stopIds": ["113"] },
   "10": { "name": "Ferry Point Park", "stopIds": ["141"] },
   "11": { "name": "Governors Island", "stopIds": ["111"] },
@@ -22,7 +22,7 @@
   "21": { "name": "South Williamsburg", "stopIds": ["8"] },
   "22": { "name": "St. George", "stopIds": ["137"] },
   "23": { "name": "Stuyvesant Cove", "stopIds": ["114"] },
-  "24": { "name": "Sunset Park", "displayName": "Sunset Park / BAT", "stopIds": ["118"] },
-  "25": { "name": "Battery Park City", "displayName": "Battery Park City / Brookfield Place", "stopIds": ["136"], "waterwayStopIds": ["2729332"] },
+  "24": { "name": "Sunset Park", "displayName": "Sunset Park / BAT", "stopIds": ["118"], "nyuStopIds": ["13139"] },
+  "25": { "name": "Battery Park City", "displayName": "Battery Park City / Brookfield Place", "stopIds": ["136"], "waterwayStopIds": ["2729332"], "libertyStopIds": ["2557122"] },
   "26": { "name": "Pier 79", "displayName": "Midtown West / Pier 79", "stopIds": ["138"], "waterwayStopIds": ["2439145"] }
 }

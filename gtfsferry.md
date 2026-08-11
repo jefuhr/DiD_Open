@@ -30,12 +30,23 @@ Generic GTFS consumers cannot infer this operating rule from the feed. The consu
 
 ## This repository
 
-The rule is enforced in two places:
+The rule is enforced in three places:
 
 - `lib/realtime.js` clamps normalized realtime delays before they reach API consumers.
+- `lib/nyu-realtime.js` clamps the NYU Langone ferry's Passio GO estimates at the same boundary.
 - `public/app.js` clamps again while building departure groups, protecting the display from an old server snapshot, browser cache, or future alternate realtime source.
 
-Both layers are intentional. Removing either layer requires an equivalent guarantee at every boundary that can supply realtime data.
+All three layers are intentional. Removing any layer requires an equivalent guarantee at every boundary that can supply realtime data.
+
+## Operators other than NYC Ferry
+
+The rule is not specific to NYC Ferry's producer. Any operator merged into the board is subject to it, and a feed that reports arrivals rather than departures makes the distinction sharper rather than weaker.
+
+The NYU Langone ferry is the current example. Passio GO publishes a predicted **arrival** at each terminal, and that boat then sits at the dock until its published departure time — Ferry 03 tying up at 09:02 for a 09:30 sailing is a boat waiting on its timetable, not a departure that moved 28 minutes earlier. Requirement 3 above covers this exactly: an arrival may show that the boat is present, and may never advance the departure.
+
+Schedule-only partners (NY Waterway, Seastreak, Liberty Landing) satisfy the clamp trivially, because there is no realtime source that could move a departure at all. For them the obligation is the other half of the same principle: the published static departure is what the rider sees, so it must be carried through exactly as the operator published it. Editing a stale feed's service dates to make its trips reappear is the static-schedule version of an early departure — it puts times on the board that the operator never published for today. Ship the expired feed and show nothing instead.
+
+The NYU feed also illustrates requirement 5's limits. Passio's `solidEta.scheduledDeparture` reports the *block's* first sailing rather than the one a boat is about to work, so differencing it against the prediction produces a multi-hour phantom delay. An absolute realtime timestamp is only convertible to a delay against the schedule the rider is actually being shown; when a producer's own scheduled-time field does not identify that sailing, resolve the sailing from the static timetable instead of trusting the field.
 
 ## Required test cases
 

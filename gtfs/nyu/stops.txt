@@ -1,0 +1,3 @@
+stop_id,stop_name,stop_lat,stop_lon
+13138,East 34th Street,40.743865,-73.970701
+13139,Brooklyn Army Terminal,40.646526,-74.026587
