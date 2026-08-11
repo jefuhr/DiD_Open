@@ -212,27 +212,27 @@ test("two buttons at the top of the menu swap the departure sort", async () => {
   // active sort is announced rather than only shown by colour.
   const panel = index.slice(index.indexOf('id="landingMenuPanel"'), index.indexOf('id="landingList"'));
   assert.match(panel, /class="sort-toggle" role="group" aria-label="Sort departures"/);
-  assert.match(panel, /id="sortByRoute" data-sort="route" aria-pressed="true"/);
-  assert.match(panel, /id="sortByTime" data-sort="time" aria-pressed="false"/);
+  assert.match(panel, /id="sortByRoute" data-sort="route" aria-pressed="false"/);
+  assert.match(panel, /id="sortByTime" data-sort="time" aria-pressed="true"/);
   assert.match(css, /\.sort-option\[aria-pressed="true"\]\{[^}]*background:var\(--navy\)/);
 
-  // Route order stays the default; the choice persists and re-renders without refetching.
-  assert.match(app, /localStorage\.getItem\(sortKey\) === "time" \? "time" : "route"/);
+  // Departure time is the default; only an explicit choice of "route" opts out of it.
+  assert.match(app, /localStorage\.getItem\(sortKey\) === "route" \? "route" : "time"/);
   assert.match(app, /localStorage\.setItem\(sortKey, next\)/);
-  assert.match(app, /\.sort\(sortedBy\(\) === "time" \? byNextDeparture : byRoute\)/);
+  assert.match(app, /\.sort\(sortedBy\(\) === "route" \? byRoute : byNextDeparture\)/);
   assert.match(app, /function byNextDeparture\(left, right\)/);
   // Ties fall back to route order so the board cannot reshuffle between renders.
   assert.match(app, /return difference \|\| byRoute\(left, right\)/);
 });
 
-test("offline shell includes version 35 display assets", async () => {
+test("offline shell includes version 36 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=35/);
-  assert.match(index, /app\.js\?v=35/);
-  assert.match(worker, /nyc-ferry-did-shell-v35/);
-  assert.match(worker, /styles\.css\?v=35/);
-  assert.match(worker, /app\.js\?v=35/);
+  assert.match(index, /styles\.css\?v=36/);
+  assert.match(index, /app\.js\?v=36/);
+  assert.match(worker, /nyc-ferry-did-shell-v36/);
+  assert.match(worker, /styles\.css\?v=36/);
+  assert.match(worker, /app\.js\?v=36/);
 });

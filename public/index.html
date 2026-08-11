@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
     <link rel="icon" href="/assets/kiosk-icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=35" />
+    <link rel="stylesheet" href="/styles.css?v=36" />
   </head>
   <body>
     <main class="screen" id="screen">
@@ -40,8 +40,8 @@
             <button type="button" class="landing-menu-close" id="landingMenuClose">Done</button>
           </div>
           <div class="sort-toggle" role="group" aria-label="Sort departures">
-            <button type="button" class="sort-option" id="sortByRoute" data-sort="route" aria-pressed="true">Route</button>
-            <button type="button" class="sort-option" id="sortByTime" data-sort="time" aria-pressed="false">Departure time</button>
+            <button type="button" class="sort-option" id="sortByRoute" data-sort="route" aria-pressed="false">Route</button>
+            <button type="button" class="sort-option" id="sortByTime" data-sort="time" aria-pressed="true">Departure time</button>
           </div>
           <ul class="landing-list" id="landingList"></ul>
         </nav>
@@ -68,6 +68,6 @@
         <span class="service-alert-count" id="serviceAlertCount" hidden></span>
       </section>
     </main>
-    <script type="module" src="/app.js?v=35"></script>
+    <script type="module" src="/app.js?v=36"></script>
   </body>
 </html>

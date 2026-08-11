@@ -28,8 +28,9 @@ const cacheKey = "nyc-ferry-did-data-v6";
 // so an offline start knows which cached board to restore.
 const landingKey = "nyc-ferry-did-selected-landing";
 const landingsKey = "nyc-ferry-did-landings";
-// Whether the board orders route cards by route or by which one leaves next. Persisted like the
-// landing choice, and deliberately per-device: it is a reading preference, not board config.
+// Whether the board orders route cards by which one leaves next (the default) or by route.
+// Persisted like the landing choice, and deliberately per-device: it is a reading preference,
+// not board config.
 const sortKey = "nyc-ferry-did-sort";
 let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
@@ -37,7 +38,7 @@ let serviceAlerts = null;
 let manualOverride = { active: false, message: "", updatedAt: null };
 
 function sortedBy() {
-  return localStorage.getItem(sortKey) === "time" ? "time" : "route";
+  return localStorage.getItem(sortKey) === "route" ? "route" : "time";
 }
 
 function renderSortToggle() {
@@ -191,7 +192,7 @@ function routeDirectionGroups(now = new Date()) {
       ...group,
       departures: group.departures.slice(0, displayCount("departuresShown"))
     }))
-    .sort(sortedBy() === "time" ? byNextDeparture : byRoute);
+    .sort(sortedBy() === "route" ? byRoute : byNextDeparture);
 }
 
 // Groups keep their own departures in time order either way; these only decide the order of the
