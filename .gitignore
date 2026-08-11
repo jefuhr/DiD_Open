@@ -1,5 +1,7 @@
-node_modules/
-state/
-secrets/
-.env
 .DS_Store
+.claude/worktrees/
+.env
+node_modules
+node_modules/
+secrets/
+state/

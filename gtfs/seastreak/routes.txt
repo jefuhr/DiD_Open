@@ -1,0 +1,5 @@
+route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color
+9220,20226,Seastreak,"Nantucket / Martha's Vineyard","Inter-island Martha&#8217;s Vineyard &amp; Nantucket, MA",4,https://seastreak.com/ferry-routes-and-schedules/inter-island-marthas-vineyard-nantucket-ma/,013067,FFFFFF
+272,20226,Seastreak,"Nantucket / New Bedford","Between New Bedford &#038; Nantucket, MA",4,https://seastreak.com/ferry-routes-and-schedules/between-new-bedford-nantucket-ma/,013067,FFFFFF
+270,20226,Seastreak,"Martha’s Vineyard / New Bedford","Between New Bedford &#038; Martha’s Vineyard, MA",4,https://seastreak.com/ferry-routes-and-schedules/between-new-bedford-marthas-vineyard-ma/,013067,FFFFFF
+211,20226,Seastreak,"New York City / New Jersey","Between New Jersey &#038; New York City",4,https://seastreak.com/ferry-routes-and-schedules/between-new-jersey-and-new-york-city/,013067,FFFFFF

@@ -210,6 +210,24 @@ function departureCell(item) {
   </div>`;
 }
 
+// Partner operators merged in by scripts/build-data.js namespace their route ids with a prefix.
+// Their GTFS short names are useless on a passenger board — NY Waterway publishes internal
+// all-digit route ids for most routes, Seastreak reuses "Seastreak" for every route, and NYU
+// publishes no short name at all (leaving the bare Passio route number) — so those badges show
+// the operator's mark instead. A partner route with a real short name (W44, Greenwich) keeps it,
+// and NYC Ferry badges are never touched.
+const PARTNER_BADGES = [
+  { prefix: "wtr:", src: "assets/waterway.png", alt: "NY Waterway", useLogo: (shortName) => /^\d+$/.test(shortName) },
+  { prefix: "sea:", src: "assets/seastreak.png", alt: "Seastreak", useLogo: () => true },
+  { prefix: "nyu:", src: "assets/nyu.png", alt: "NYU Langone Ferry", useLogo: () => true },
+  { prefix: "lib:", src: "assets/cityferry.png", alt: "Liberty Landing Ferry", useLogo: () => true }
+];
+
+function partnerBadgeLogo(routeId, shortName) {
+  const badge = PARTNER_BADGES.find((item) => String(routeId || "").startsWith(item.prefix));
+  return badge && badge.useLogo(shortName || "") ? badge : null;
+}
+
 function render() {
   if (!data) return;
   applyDisplayCounts();
@@ -232,18 +250,13 @@ function render() {
     const variantLabel = group.variant === "LOCAL" ? "Local" : group.variant;
     const routeName = group.variant ? `${route.name || "East River"} ${variantLabel}` : (route.name || "NYC Ferry");
     const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(variantLabel)}</small>` : "";
-    // Other-operator routes (e.g. NY Waterway service merged in when config/display.json's
-    // waterwayEnabled is on) get their own official GTFS color and a small operator label so
-    // they're never mistaken for NYC Ferry service.
+    // Partner-operator routes (NY Waterway, Seastreak) keep their own official GTFS color and get
+    // a small operator label so they're never mistaken for NYC Ferry service.
     const isOtherOperator = Boolean(route.operator) && route.operator !== (data.meta.agencyName || "NYC Ferry");
     const operatorBadge = isOtherOperator ? `<small class="route-operator">${escapeHtml(route.operator)}</small>` : "";
-    // Several NY Waterway routes have no public-facing short name, only an internal all-digit GTFS
-    // route id (e.g. 10216). Those read as noise on a passenger display, so the badge shows the
-    // NY Waterway mark instead. Waterway routes that do have a real short name (W44, Greenwich)
-    // keep it, and NYC Ferry badges are untouched.
-    const useWaterwayLogo = String(group.routeId || "").startsWith("wtr:") && /^\d+$/.test(route.shortName || "");
-    const badgeContent = useWaterwayLogo
-      ? `<img class="route-badge-logo" src="assets/waterway.png" alt="NY Waterway">`
+    const partnerLogo = partnerBadgeLogo(group.routeId, route.shortName);
+    const badgeContent = partnerLogo
+      ? `<img class="route-badge-logo" src="${partnerLogo.src}" alt="${escapeHtml(partnerLogo.alt)}">`
       : `<b>${escapeHtml(route.shortName || group.routeId)}</b>`;
     const routeStyle = /^#[0-9A-Fa-f]{6}$/.test(route.color || "")
       ? ` style="--route-color:${route.color};--route-text:${/^#[0-9A-Fa-f]{6}$/.test(route.textColor || "") ? route.textColor : "#FFFFFF"}"`
@@ -252,7 +265,7 @@ function render() {
     while (slots.length < departuresShown) slots.push(null);
     return `<article class="departure route-${routeClass}${variantClass}"${routeStyle}>
       <div class="route">
-        <span class="route-badge${useWaterwayLogo ? " route-badge-image" : ""}">${badgeContent}${variantBadge}</span>
+        <span class="route-badge${partnerLogo ? " route-badge-image" : ""}">${badgeContent}${variantBadge}</span>
         <span class="route-name">${escapeHtml(routeName)}${operatorBadge}</span>
       </div>
       <div class="destination"><strong>${escapeHtml(group.destination)}</strong><span>${isOtherOperator ? "" : directionLabel(group.directionId)}</span></div>

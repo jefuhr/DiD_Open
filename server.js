@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildDisplayData } from "./scripts/build-data.js";
 import { createManualOverrideService } from "./lib/manual-overrides.js";
+import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
 import { createServiceAlertService } from "./lib/service-alerts.js";
 import { createSftpOverridePoller, loadSftpOverrideConfig } from "./lib/sftp-overrides.js";
@@ -19,6 +20,7 @@ const SFTP_CONFIG = path.join(ROOT, "config/sftp.json");
 const displayConfig = JSON.parse(await readFile(DISPLAY_CONFIG, "utf8"));
 const sftpConfig = await loadSftpOverrideConfig({ configPath: SFTP_CONFIG, rootPath: ROOT });
 const realtimeService = createRealtimeService({ dataPath: DATA, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json") });
+const nyuRealtimeService = createNyuRealtimeService({ dataPath: DATA, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
 const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROOT, "state/service-alerts.json") });
 const manualOverrideService = createManualOverrideService({ statePath: path.join(ROOT, "state/manual-overrides.json") });
 const sftpOverridePoller = createSftpOverridePoller({ config: sftpConfig, landingId: displayConfig.landingNumber, cacheService: manualOverrideService });
@@ -78,7 +80,21 @@ async function handle(request, response) {
       return response.end(await displayDataFor(landingNumber));
     } catch (error) { return json(response, 503, { error:"Display data unavailable", detail:error.message }); }
   }
-  if (url.pathname === "/api/realtime") { const result = await realtimeService.getCurrent(); return json(response, result.available ? 200 : 503, result); }
+  // NYU's live estimates ride along in the same payload: its updates are already namespaced with
+  // the "nyu:" trip and stop ids the display was built with, so the client matches both operators
+  // through one lookup. Either operator's feed failing leaves the other's usable, and one stale
+  // source marks the whole payload stale — which only ever falls back to published times.
+  if (url.pathname === "/api/realtime") {
+    const [ferry, nyu] = await Promise.all([realtimeService.getCurrent(), nyuRealtimeService.getCurrent()]);
+    const result = {
+      ...ferry,
+      available: ferry.available || nyu.available,
+      stale: Boolean(ferry.stale || nyu.stale),
+      updates: [...(ferry.updates || []), ...(nyu.updates || [])],
+      nyu: { available: nyu.available, stale: nyu.stale, fetchedAt: nyu.fetchedAt, error: nyu.error }
+    };
+    return json(response, result.available ? 200 : 503, result);
+  }
   if (url.pathname === "/api/alerts") { const result = await serviceAlertService.getCurrent(); return json(response, result.available ? 200 : 503, result); }
   if (url.pathname === "/api/override") {
     response.setHeader("Allow", "GET");

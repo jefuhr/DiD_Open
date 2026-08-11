@@ -182,14 +182,32 @@ test("SFTP landing notices replace all GTFS display regions", async () => {
   assert.match(css, /\.manual-override-box\{/);
 });
 
-test("offline shell includes version 32 display assets", async () => {
+test("partner operators show their mark in the route badge", async () => {
+  const [app, css, worker] = await Promise.all([
+    readFile(appPath, "utf8"),
+    readFile(cssPath, "utf8"),
+    readFile(workerPath, "utf8")
+  ]);
+  assert.match(app, /prefix: "wtr:", src: "assets\/waterway\.png"/);
+  assert.match(app, /prefix: "sea:", src: "assets\/seastreak\.png"/);
+  assert.match(app, /prefix: "nyu:", src: "assets\/nyu\.png"/);
+  assert.match(app, /prefix: "lib:", src: "assets\/cityferry\.png"/);
+  assert.match(app, /class="route-badge-logo" src="\$\{partnerLogo\.src\}"/);
+  assert.match(css, /\.route-badge-logo\{[^}]*object-fit:contain/);
+  assert.match(worker, /\/assets\/waterway\.png/);
+  assert.match(worker, /\/assets\/seastreak\.png/);
+  assert.match(worker, /\/assets\/nyu\.png/);
+  assert.match(worker, /\/assets\/cityferry\.png/);
+});
+
+test("offline shell includes version 33 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=32/);
-  assert.match(index, /app\.js\?v=32/);
-  assert.match(worker, /nyc-ferry-did-shell-v32/);
-  assert.match(worker, /styles\.css\?v=32/);
-  assert.match(worker, /app\.js\?v=32/);
+  assert.match(index, /styles\.css\?v=33/);
+  assert.match(index, /app\.js\?v=33/);
+  assert.match(worker, /nyc-ferry-did-shell-v33/);
+  assert.match(worker, /styles\.css\?v=33/);
+  assert.match(worker, /app\.js\?v=33/);
 });

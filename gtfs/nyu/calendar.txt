@@ -1,0 +1,2 @@
+service_id,sunday,monday,tuesday,wednesday,thursday,friday,saturday,start_date,end_date
+nyu-service-1,0,1,1,1,1,1,0,20260810,20270208
