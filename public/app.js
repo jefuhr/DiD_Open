@@ -19,7 +19,8 @@ const elements = {
   landingMenuPanel: document.querySelector("#landingMenuPanel"),
   landingMenuScrim: document.querySelector("#landingMenuScrim"),
   landingMenuClose: document.querySelector("#landingMenuClose"),
-  landingList: document.querySelector("#landingList")
+  landingList: document.querySelector("#landingList"),
+  sortOptions: [...document.querySelectorAll("[data-sort]")]
 };
 
 const cacheKey = "nyc-ferry-did-data-v6";
@@ -27,10 +28,33 @@ const cacheKey = "nyc-ferry-did-data-v6";
 // so an offline start knows which cached board to restore.
 const landingKey = "nyc-ferry-did-selected-landing";
 const landingsKey = "nyc-ferry-did-landings";
+// Whether the board orders route cards by route or by which one leaves next. Persisted like the
+// landing choice, and deliberately per-device: it is a reading preference, not board config.
+const sortKey = "nyc-ferry-did-sort";
 let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
 let serviceAlerts = null;
 let manualOverride = { active: false, message: "", updatedAt: null };
+
+function sortedBy() {
+  return localStorage.getItem(sortKey) === "time" ? "time" : "route";
+}
+
+function renderSortToggle() {
+  const active = sortedBy();
+  for (const button of elements.sortOptions) {
+    button.setAttribute("aria-pressed", String(button.dataset.sort === active));
+  }
+}
+
+function selectSort(next) {
+  if (next !== "route" && next !== "time") return;
+  localStorage.setItem(sortKey, next);
+  renderSortToggle();
+  // Re-order in place: the menu stays open so the choice can be changed again, and nothing
+  // needs refetching because sorting only touches the order cards are laid out in.
+  render();
+}
 
 function displayCount(key) {
   const value = Number(data?.meta?.[key]);
@@ -167,15 +191,29 @@ function routeDirectionGroups(now = new Date()) {
       ...group,
       departures: group.departures.slice(0, displayCount("departuresShown"))
     }))
-    .sort((left, right) => {
-    const routeOrder = left.routeId.localeCompare(right.routeId);
-    if (routeOrder) return routeOrder;
-    const variantOrder = { A: 0, B: 1, LOCAL: 2 };
-    const variantDifference = (variantOrder[left.variant] ?? 3) - (variantOrder[right.variant] ?? 3);
-    if (variantDifference) return variantDifference;
-    const directionOrder = String(left.directionId).localeCompare(String(right.directionId));
-    return directionOrder || left.destination.localeCompare(right.destination);
-    });
+    .sort(sortedBy() === "time" ? byNextDeparture : byRoute);
+}
+
+// Groups keep their own departures in time order either way; these only decide the order of the
+// cards themselves. Sorting by route keeps a landing's board in a stable, familiar arrangement.
+// Sorting by departure time answers the other question a rider asks — what leaves next — and puts
+// that card first regardless of which operator or route it belongs to.
+function byRoute(left, right) {
+  const routeOrder = left.routeId.localeCompare(right.routeId);
+  if (routeOrder) return routeOrder;
+  const variantOrder = { A: 0, B: 1, LOCAL: 2 };
+  const variantDifference = (variantOrder[left.variant] ?? 3) - (variantOrder[right.variant] ?? 3);
+  if (variantDifference) return variantDifference;
+  const directionOrder = String(left.directionId).localeCompare(String(right.directionId));
+  return directionOrder || left.destination.localeCompare(right.destination);
+}
+
+function byNextDeparture(left, right) {
+  // delta already carries the clamped realtime delay, so a late boat sorts by when it will
+  // actually leave. Ties fall back to route order so the board never reshuffles arbitrarily
+  // between renders.
+  const difference = (left.departures[0]?.delta ?? Infinity) - (right.departures[0]?.delta ?? Infinity);
+  return difference || byRoute(left, right);
 }
 
 function routeShortName(routeId) {
@@ -478,10 +516,14 @@ elements.landingList.addEventListener("click", (event) => {
   const option = event.target.closest("[data-landing-id]");
   if (option) selectLanding(Number(option.dataset.landingId));
 });
+for (const button of elements.sortOptions) {
+  button.addEventListener("click", () => selectSort(button.dataset.sort));
+}
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.landingMenu.hidden) setMenuOpen(false);
 });
 
+renderSortToggle();
 loadLandings();
 load().catch(() => {
   elements.departures.innerHTML = `<div class="empty"><div><strong>Schedule unavailable</strong><span>The local schedule needs attention.</span></div></div>`;
