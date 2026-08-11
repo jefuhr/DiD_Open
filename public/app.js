@@ -330,17 +330,24 @@ function renderTimeline() {
     const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment } = departureStatus(departure);
     const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(visual.variantLabel)}</small>` : "";
     const context = visual.isOtherOperator ? visual.route.operator : directionLabel(group.directionId);
-    // Two lines: when/who/where on the first, the softer detail on the second. Everything on the
-    // first line is what a glance needs; the second is scannable but never competes with it.
+    // The vessel is only known once a live vehicle is matched to the trip, so partner operators and
+    // not-yet-assigned sailings simply omit the line rather than showing a placeholder.
+    const boat = departure.boatName ? `<span class="tl-boat">${escapeHtml(departure.boatName)}</span>` : "";
+    // Three lines, each reading left-to-right: when and which boat, then where, then who and how.
+    // Time and route anchor the left edge; the countdown and the status badges are pushed to the
+    // right, so both columns can be scanned straight down the list without the eye wandering.
+    // The destination gets a line of its own because it is the longest thing on the row and the
+    // one that reads worst truncated.
     return `<article class="departure timeline-row route-${visual.routeClass}"${visual.style}>
       <div class="tl-head">
         <time>${adjustedTime(departure.departureTime, departure.delay)}</time>
         <span class="route-badge${visual.partnerLogo ? " route-badge-image" : ""}">${visual.badgeContent}${variantBadge}</span>
-        <strong class="tl-dest">${escapeHtml(group.destination)}</strong>
-      </div>
-      <div class="tl-meta">
         <span class="tl-relative">${escapeHtml(relativeTime(departure.delta))}</span>
+      </div>
+      <strong class="tl-dest">${escapeHtml(group.destination)}</strong>
+      <div class="tl-meta">
         <span class="tl-context">${escapeHtml(context)}</span>
+        ${boat}
         <span class="tl-status">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}${assignment}</span>
       </div>
     </article>`;

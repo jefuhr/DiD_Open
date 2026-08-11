@@ -237,15 +237,30 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.doesNotMatch(app, /TIMELINE_ROWS/);
   assert.doesNotMatch(app, /\.slice\(0, TIMELINE_ROWS\)/);
 
-  // Two compact lines, with route identity travelling on the row.
+  // Three compact lines, with route identity travelling on the row. The destination owns a line
+  // of its own — it is the longest field and the one that reads worst truncated.
   assert.match(app, /<div class="tl-head">/);
   assert.match(app, /class="route-badge\$\{visual\.partnerLogo \? " route-badge-image" : ""\}"/);
-  assert.match(app, /<strong class="tl-dest">/);
+  assert.match(app, /<strong class="tl-dest">\$\{escapeHtml\(group\.destination\)\}<\/strong>/);
   assert.match(app, /<div class="tl-meta">/);
+
+  // Countdown and status hug the right edge so both scan as columns down the list.
+  assert.match(css, /\.tl-relative\{[^}]*margin-left:auto/);
+  assert.match(css, /\.tl-status\{[^}]*margin-left:auto/);
+  // Long destinations must ellipsis rather than spill out of the card.
+  assert.match(css, /\.tl-dest\{[^}]*text-overflow:ellipsis/);
+
+  // The vessel name, which only NYC Ferry publishes: rendered when a live vehicle supplies one and
+  // omitted outright otherwise, so partner rows carry no empty element or stray separator.
+  assert.match(app, /departure\.boatName \? `<span class="tl-boat">\$\{escapeHtml\(departure\.boatName\)\}<\/span>` : ""/);
+  assert.match(css, /\.tl-boat::before\{content:"·"/);
 
   // The phone stylesheet sets .departure{display:block}, so the row must set its own display at
   // higher specificity or it silently stacks into a full-screen-tall card.
   assert.match(css, /\.departure\.timeline-row\{display:flex/);
+  // .departure also sets align-items:center for the kiosk grid, which in a column flex box centres
+  // the lines horizontally and lets them overflow both edges. The row must reset it.
+  assert.match(css, /\.departure\.timeline-row\{[^}]*align-items:stretch/);
   assert.match(css, /\.departures\[data-view="timeline"\]\{display:flex[^}]*overflow-y:auto/);
   // Fixed row height, not squished to fit: the list scrolls instead.
   assert.match(css, /\.departure\.timeline-row\{[^}]*flex:0 0 auto/);
@@ -265,14 +280,14 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.match(app, /function routeVisual\(routeId, variant\)/);
 });
 
-test("offline shell includes version 38 display assets", async () => {
+test("offline shell includes version 39 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=38/);
-  assert.match(index, /app\.js\?v=38/);
-  assert.match(worker, /nyc-ferry-did-shell-v38/);
-  assert.match(worker, /styles\.css\?v=38/);
-  assert.match(worker, /app\.js\?v=38/);
+  assert.match(index, /styles\.css\?v=39/);
+  assert.match(index, /app\.js\?v=39/);
+  assert.match(worker, /nyc-ferry-did-shell-v39/);
+  assert.match(worker, /styles\.css\?v=39/);
+  assert.match(worker, /app\.js\?v=39/);
 });
