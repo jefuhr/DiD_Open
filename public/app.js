@@ -6,6 +6,7 @@ const elements = {
   departures: document.querySelector("#departures"),
   status: document.querySelector("#dataStatus"),
   routeCount: document.querySelector("#routeCount"),
+  columnHead: document.querySelector("#columnHead"),
   serviceAlerts: document.querySelector("#serviceAlerts"),
   serviceAlertSummary: document.querySelector("#serviceAlertSummary"),
   serviceAlertFreshness: document.querySelector("#serviceAlertFreshness"),
@@ -122,7 +123,7 @@ function directionLabel(directionId) {
   return "Direction unavailable";
 }
 
-function routeDirectionGroups(now = new Date()) {
+function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("departuresShown")) {
   const current = zonedParts(now, data.meta.timezone);
   const departureWindowSeconds = (Number(data.meta.departureWindowMinutes) || 180) * 60;
   const updates = new Map((realtime.updates || []).map((item) => [`${item.tripId}|${item.stopId}`, item]));
@@ -190,15 +191,13 @@ function routeDirectionGroups(now = new Date()) {
     .filter((group) => group.departures[0]?.delta <= departureWindowSeconds)
     .map((group) => ({
       ...group,
-      departures: group.departures.slice(0, displayCount("departuresShown"))
+      departures: group.departures.slice(0, limitPerGroup)
     }))
-    .sort(sortedBy() === "route" ? byRoute : byNextDeparture);
+    .sort(byRoute);
 }
 
-// Groups keep their own departures in time order either way; these only decide the order of the
-// cards themselves. Sorting by route keeps a landing's board in a stable, familiar arrangement.
-// Sorting by departure time answers the other question a rider asks — what leaves next — and puts
-// that card first regardless of which operator or route it belongs to.
+// Route-card order, and the tiebreak the timeline falls back on when two boats leave in the
+// same minute.
 function byRoute(left, right) {
   const routeOrder = left.routeId.localeCompare(right.routeId);
   if (routeOrder) return routeOrder;
@@ -209,19 +208,31 @@ function byRoute(left, right) {
   return directionOrder || left.destination.localeCompare(right.destination);
 }
 
-function byNextDeparture(left, right) {
-  // delta already carries the clamped realtime delay, so a late boat sorts by when it will
-  // actually leave. Ties fall back to route order so the board never reshuffles arbitrarily
-  // between renders.
-  const difference = (left.departures[0]?.delta ?? Infinity) - (right.departures[0]?.delta ?? Infinity);
-  return difference || byRoute(left, right);
-}
 
 function routeShortName(routeId) {
   return data?.routes?.[routeId]?.shortName || routeId;
 }
 
-function departureCell(item) {
+// Timeline view: one row per sailing in the order the boats actually leave, so the next few
+// departures read top-to-bottom at a glance instead of being spread across route cards. Route
+// identity moves onto the row itself, which is what makes ignoring route grouping legible.
+//
+// Capped rather than unbounded: the rows share the board's height, so past a point every row is
+// too short to read. The grid squishes to whatever fits, so the list never scrolls.
+const TIMELINE_ROWS = 9;
+
+function timelineDepartures(now = new Date()) {
+  return routeDirectionGroups(now, Infinity)
+    .flatMap((group) => group.departures.map((departure) => ({ departure, group })))
+    // Ties fall back to route order so two boats leaving the same minute cannot swap places
+    // between the 15s re-renders.
+    .sort((left, right) => left.departure.delta - right.departure.delta || byRoute(left.group, right.group))
+    .slice(0, TIMELINE_ROWS);
+}
+
+// Status badges for one sailing. Shared so the timeline rows and the route cards can never
+// disagree about whether a boat is late, on time, or the last of the day.
+function departureStatus(item) {
   const delaySeconds = Number(item.delay);
   const hasFreshTiming = !realtime.stale && item.hasLiveTiming && Number.isFinite(delaySeconds);
   const delayLabel = hasFreshTiming && delaySeconds >= 60
@@ -243,6 +254,32 @@ function departureCell(item) {
   const assignment = Number.isInteger(item.boatAssignment)
     ? `<span class="boat-assignment">${escapeHtml(`${routeShortName(item.routeId)}${item.boatAssignment}`)}</span>`
     : "";
+  return { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment };
+}
+
+// The route's own colour, badge and operator labelling, shared by both views.
+function routeVisual(routeId, variant) {
+  const route = data.routes[routeId] || {};
+  const partnerLogo = partnerBadgeLogo(routeId, route.shortName);
+  const variantLabel = variant === "LOCAL" ? "Local" : variant;
+  const badgeContent = partnerLogo
+    ? `<img class="route-badge-logo" src="${partnerLogo.src}" alt="${escapeHtml(partnerLogo.alt)}">`
+    : `<b>${escapeHtml(route.shortName || routeId)}</b>`;
+  return {
+    route,
+    partnerLogo,
+    variantLabel,
+    badgeContent,
+    routeClass: String(routeId || "default").replace(/[^A-Za-z0-9_-]/g, ""),
+    isOtherOperator: Boolean(route.operator) && route.operator !== (data.meta.agencyName || "NYC Ferry"),
+    style: /^#[0-9A-Fa-f]{6}$/.test(route.color || "")
+      ? ` style="--route-color:${route.color};--route-text:${/^#[0-9A-Fa-f]{6}$/.test(route.textColor || "") ? route.textColor : "#FFFFFF"}"`
+      : ""
+  };
+}
+
+function departureCell(item) {
+  const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment } = departureStatus(item);
   return `<div class="departure-slot">
     <div class="slot-time-row"><time>${adjustedTime(item.departureTime, item.delay)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span></div>
     <span class="departure-last-slot">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}${assignment}<span class="boat-name">${item.boatName ? escapeHtml(item.boatName) : ""}</span></span>
@@ -270,8 +307,50 @@ function partnerBadgeLogo(routeId, shortName) {
 function render() {
   if (!data) return;
   applyDisplayCounts();
+  return sortedBy() === "route" ? renderRouteBoard() : renderTimeline();
+}
+
+function renderTimeline() {
+  const rows = timelineDepartures();
+  elements.departures.dataset.view = "timeline";
+  elements.columnHead.dataset.view = "timeline";
+  elements.columnHead.innerHTML = "<span>Departs</span><span>Route</span><span>Destination</span>";
+  elements.departures.style.setProperty("--routes-shown", String(Math.max(1, rows.length)));
+  elements.routeCount.textContent = `next ${rows.length} departure${rows.length === 1 ? "" : "s"}`;
+
+  if (!rows.length) {
+    elements.departures.innerHTML = `<div class="empty"><div><strong>NO MORE BOATS!</strong><span>NYC Ferry service has concluded for the day.</span></div></div>`;
+    return;
+  }
+
+  elements.departures.innerHTML = rows.map(({ departure, group }) => {
+    const visual = routeVisual(group.routeId, group.variant);
+    const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment } = departureStatus(departure);
+    const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(visual.variantLabel)}</small>` : "";
+    const context = visual.isOtherOperator ? visual.route.operator : directionLabel(group.directionId);
+    return `<article class="departure timeline-row route-${visual.routeClass}"${visual.style}>
+      <div class="tl-when">
+        <time>${adjustedTime(departure.departureTime, departure.delay)}</time>
+        <span class="tl-relative">${escapeHtml(relativeTime(departure.delta))}</span>
+      </div>
+      <div class="tl-route">
+        <span class="route-badge${visual.partnerLogo ? " route-badge-image" : ""}">${visual.badgeContent}${variantBadge}</span>
+      </div>
+      <div class="tl-destination">
+        <strong>${escapeHtml(group.destination)}</strong>
+        <span class="tl-context">${escapeHtml(context)}</span>
+      </div>
+      <div class="tl-status">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}${assignment}</div>
+    </article>`;
+  }).join("");
+}
+
+function renderRouteBoard() {
   const departuresShown = displayCount("departuresShown");
   const groups = routeDirectionGroups();
+  elements.departures.dataset.view = "routes";
+  elements.columnHead.dataset.view = "routes";
+  elements.columnHead.innerHTML = "<span>Route</span><span>Direction</span><span>Next departures</span>";
   // Staff view: no slideshow paging. Every route direction stays on screen and
   // the row grid squishes to fit, so an agent never waits for the answer to rotate in.
   elements.departures.style.setProperty("--routes-shown", String(Math.max(1, groups.length)));
@@ -283,23 +362,14 @@ function render() {
   }
 
   elements.departures.innerHTML = groups.map((group) => {
-    const route = data.routes[group.routeId] || {};
-    const routeClass = String(group.routeId || "default").replace(/[^A-Za-z0-9_-]/g, "");
+    const { route, partnerLogo, variantLabel, badgeContent, routeClass, isOtherOperator, style: routeStyle } =
+      routeVisual(group.routeId, group.variant);
     const variantClass = group.variant ? ` variant-${group.variant.toLowerCase()}` : "";
-    const variantLabel = group.variant === "LOCAL" ? "Local" : group.variant;
     const routeName = group.variant ? `${route.name || "East River"} ${variantLabel}` : (route.name || "NYC Ferry");
     const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(variantLabel)}</small>` : "";
     // Partner-operator routes (NY Waterway, Seastreak) keep their own official GTFS color and get
     // a small operator label so they're never mistaken for NYC Ferry service.
-    const isOtherOperator = Boolean(route.operator) && route.operator !== (data.meta.agencyName || "NYC Ferry");
     const operatorBadge = isOtherOperator ? `<small class="route-operator">${escapeHtml(route.operator)}</small>` : "";
-    const partnerLogo = partnerBadgeLogo(group.routeId, route.shortName);
-    const badgeContent = partnerLogo
-      ? `<img class="route-badge-logo" src="${partnerLogo.src}" alt="${escapeHtml(partnerLogo.alt)}">`
-      : `<b>${escapeHtml(route.shortName || group.routeId)}</b>`;
-    const routeStyle = /^#[0-9A-Fa-f]{6}$/.test(route.color || "")
-      ? ` style="--route-color:${route.color};--route-text:${/^#[0-9A-Fa-f]{6}$/.test(route.textColor || "") ? route.textColor : "#FFFFFF"}"`
-      : "";
     const slots = [...group.departures];
     while (slots.length < departuresShown) slots.push(null);
     return `<article class="departure route-${routeClass}${variantClass}"${routeStyle}>
