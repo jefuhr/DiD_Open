@@ -134,14 +134,14 @@ test("partner operators show their mark in the route badge", async () => {
   assert.match(worker, /\/assets\/cityferry\.png/);
 });
 
-test("offline shell includes version 31 display assets", async () => {
+test("offline shell includes version 32 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=31/);
-  assert.match(index, /app\.js\?v=31/);
-  assert.match(worker, /nyc-ferry-did-shell-v31/);
-  assert.match(worker, /styles\.css\?v=31/);
-  assert.match(worker, /app\.js\?v=31/);
+  assert.match(index, /styles\.css\?v=32/);
+  assert.match(index, /app\.js\?v=32/);
+  assert.match(worker, /nyc-ferry-did-shell-v32/);
+  assert.match(worker, /styles\.css\?v=32/);
+  assert.match(worker, /app\.js\?v=32/);
 });

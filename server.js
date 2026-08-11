@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { landingChoices, loadAllLandingData, stopIdsForLanding } from "./lib/landing-data.js";
 import { createManualOverrideService } from "./lib/manual-overrides.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
@@ -18,8 +19,18 @@ const DISPLAY_CONFIG = path.join(ROOT, "config/display.json");
 const SFTP_CONFIG = path.join(ROOT, "config/sftp.json");
 const displayConfig = JSON.parse(await readFile(DISPLAY_CONFIG, "utf8"));
 const sftpConfig = await loadSftpOverrideConfig({ configPath: SFTP_CONFIG, rootPath: ROOT });
-const realtimeService = createRealtimeService({ dataPath: DATA, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json") });
-const nyuRealtimeService = createNyuRealtimeService({ dataPath: DATA, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
+
+// This server answers for every landing, not just config/display.json's. See lib/landing-data.js
+// for why the merged view matters as much as the per-landing map: without it the realtime feeds
+// stay scoped to one landing and partner operators docking elsewhere never get fetched at all.
+const LANDING_CHOICES = landingChoices(JSON.parse(await readFile(path.join(ROOT, "config/landings.json"), "utf8")));
+const landingData = await loadAllLandingData({ root: ROOT, choices: LANDING_CHOICES });
+const displayDataJson = new Map([...landingData.byLanding].map(([id, data]) => [id, `${JSON.stringify(data)}\n`]));
+const realtimeStopsByLanding = new Map([...landingData.byLanding].map(([id, data]) => [id, stopIdsForLanding(data)]));
+console.log(`Loaded ${landingData.byLanding.size} of ${LANDING_CHOICES.length} landings; realtime covers ${landingData.merged.meta.landing.stopIds.length} stops.`);
+
+const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json") });
+const nyuRealtimeService = createNyuRealtimeService({ loadDisplay: async () => landingData.merged, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
 const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROOT, "state/service-alerts.json") });
 const manualOverrideService = createManualOverrideService({ statePath: path.join(ROOT, "state/manual-overrides.json") });
 const sftpOverridePoller = createSftpOverridePoller({ config: sftpConfig, landingId: displayConfig.landingNumber, cacheService: manualOverrideService });
@@ -38,18 +49,38 @@ async function serve(response, file) {
 async function handle(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
   if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), sftpOverride:sftpOverridePoller.status() });
-  if (url.pathname === "/api/display-data") { try { const data = await readFile(DATA, "utf8"); headers(response); response.writeHead(200, { "Content-Type":TYPES[".json"], "Cache-Control":"no-cache" }); return response.end(data); } catch (error) { return json(response, 503, { error:"Display data unavailable", detail:error.message }); } }
+  if (url.pathname === "/api/landings") return json(response, 200, { landings: landingData.available, configured: displayConfig.landingNumber });
+  if (url.pathname === "/api/display-data") {
+    const requested = url.searchParams.get("landingId");
+    const landingNumber = requested === null ? Number(displayConfig.landingNumber) : Number(requested);
+    if (requested !== null && !displayDataJson.has(landingNumber)) return json(response, 400, { error: "Unknown landing." });
+    const built = displayDataJson.get(landingNumber);
+    // Falling back to the file the build wrote keeps a kiosk alive if its own landing was the one
+    // that failed to build at startup — stale published times beat a blank board.
+    try {
+      const body = built ?? await readFile(DATA, "utf8");
+      headers(response);
+      response.writeHead(200, { "Content-Type":TYPES[".json"], "Cache-Control":"no-cache" });
+      return response.end(body);
+    } catch (error) { return json(response, 503, { error:"Display data unavailable", detail:error.message }); }
+  }
   // NYU's live estimates ride along in the same payload: its updates are already namespaced with
   // the "nyu:" trip and stop ids the display was built with, so the client matches both operators
   // through one lookup. Either operator's feed failing leaves the other's usable, and one stale
   // source marks the whole payload stale — which only ever falls back to published times.
   if (url.pathname === "/api/realtime") {
     const [ferry, nyu] = await Promise.all([realtimeService.getCurrent(), nyuRealtimeService.getCurrent()]);
+    // Upstream is polled once for the whole system, then narrowed per request. A client that names
+    // its landing gets only its own stops, which keeps the payload the size it was before this
+    // server covered all 25; omitting landingId returns everything, so an older cached client that
+    // does not send it still works.
+    const stops = realtimeStopsByLanding.get(Number(url.searchParams.get("landingId")));
+    const updates = [...(ferry.updates || []), ...(nyu.updates || [])];
     const result = {
       ...ferry,
       available: ferry.available || nyu.available,
       stale: Boolean(ferry.stale || nyu.stale),
-      updates: [...(ferry.updates || []), ...(nyu.updates || [])],
+      updates: stops ? updates.filter((update) => stops.has(String(update.stopId))) : updates,
       nyu: { available: nyu.available, stale: nyu.stale, fetchedAt: nyu.fetchedAt, error: nyu.error }
     };
     return json(response, result.available ? 200 : 503, result);
