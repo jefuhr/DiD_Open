@@ -484,21 +484,59 @@ test("a boat going out of service is spotted from the gap in its own day", async
   assert.equal(waterway.departures.some((item) => item.routeId.startsWith("wtr:") && item.outOfService), false);
 });
 
-test("a gap too short to be sure about is marked unsure rather than asserted", async () => {
+test("published crew shifts replace the gap guesswork", async () => {
   const data = await buildDisplayData({ landingNumber: 16 });
-  // Two weekend Rockaway gaps run 90 and 166 minutes: long enough that nobody should board, short
-  // enough that the boat has probably just tied up where it is rather than gone home.
-  const unsure = data.departures.filter((item) => item.endsShift === "unsure")
-    .map((item) => `${item.routeId}${item.boatAssignment}`).sort();
-  assert.deepEqual(unsure, ["RS7", "RS9"]);
-  // Being unsure means exactly that: the boat is not claimed to have gone anywhere.
-  for (const item of data.departures.filter((item) => item.outOfService)) {
-    const boat = `${item.routeId}${item.boatAssignment}`;
-    assert.equal(unsure.includes(boat) && !item.endsDay, false);
+  // With the crew schedule's own shift boundaries imported, nothing at Pier 11 is inferred any
+  // more: every drop-off flag comes from a published shift end or from the boat's last run.
+  assert.equal(data.departures.some((item) => item.endsShift === "unsure"), false);
+  assert.ok(data.departures.some((item) => item.endsShift === "certain"));
+
+  // The weekday split shifts, exactly as the crew schedule states them: ER5 finishes at Pier 11 at
+  // 10:04, ER1 at 10:28 and AS1 at 10:42, each returning for the evening peak hours later.
+  const midday = data.departures.filter((item) => item.outOfService && !item.endsDay)
+    .map((item) => `${item.routeId}${item.boatAssignment}@${item.departureTime.slice(0, 5)}`).sort();
+  assert.deepEqual(midday, ["AS1@10:42", "ER1@10:28", "ER5@10:04"]);
+
+  // Every boat still gets a home-port run at the end of its day, taken from the feed rather than
+  // the notes so that an unusable shift note cannot make a day look shorter than it is. ER1's
+  // weekday PM note names the wrong terminal and is dropped at import, yet its 10:28 tie-up and its
+  // end of day both still appear.
+  const er1 = data.departures.filter((item) => item.outOfService && item.routeId === "ER" && item.boatAssignment === 1);
+  assert.ok(er1.some((item) => !item.endsDay), "ER1 should still tie up mid-morning");
+  assert.ok(er1.some((item) => item.endsDay), "ER1 should still finish for the day");
+});
+
+test("a crew handover is not a boat going out of service", async () => {
+  const shifts = JSON.parse(await readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8")).shifts;
+  const minutes = (value) => Number(value.split(":")[0]) * 60 + Number(value.split(":")[1]);
+  const handovers = [], breaks = [];
+  for (const boats of Object.values(shifts)) {
+    for (const list of Object.values(boats)) {
+      for (const [index, entry] of list.entries()) {
+        const next = list[index + 1];
+        if (!next) continue;
+        (minutes(next.startTime) - minutes(entry.endTime) <= 60 ? handovers : breaks)
+          .push(minutes(next.startTime) - minutes(entry.endTime));
+      }
+    }
   }
-  // Ordinary layovers reach 44 minutes in this schedule and must never be mistaken for a break.
-  assert.equal(data.departures.some((item) =>
-    item.endsShift && item.routeId === "SB" && item.departureTime < "12:00:00"), false);
+  // The published data separates the two completely: handovers run 0-34 minutes, and every real
+  // break is over four hours. Nothing sits between, which is what makes the distinction safe.
+  assert.ok(handovers.length > 20 && breaks.length > 0);
+  assert.ok(Math.max(...handovers) <= 60, `longest handover was ${Math.max(...handovers)} min`);
+  assert.ok(Math.min(...breaks) > 120, `shortest break was ${Math.min(...breaks)} min`);
+
+  // A boat mid-handover keeps running, so it is never shown tying up there.
+  const data = await buildDisplayData({ landingNumber: 16 });
+  const tieUps = data.departures.filter((item) => item.outOfService).map((item) => item.seconds);
+  for (const list of Object.values(shifts.weekday || {})) {
+    for (const [index, entry] of list.entries()) {
+      const next = list[index + 1];
+      if (!next || minutes(next.startTime) - minutes(entry.endTime) > 60) continue;
+      assert.equal(tieUps.includes(minutes(entry.endTime) * 60), false,
+        `a handover at ${entry.endTime} should not read as going out of service`);
+    }
+  }
 });
 
 test("a crew shuttle is one departure for all the boats it relieves, and never marks them out of service", async () => {
