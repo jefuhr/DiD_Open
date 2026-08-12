@@ -2,6 +2,9 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  CREW_ROUTE, CREW_ROUTE_ID, crewCalendars, crewShuttleRows, homePortRows, lastTripPerBoat
+} from "./out-of-service.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -153,7 +156,9 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
         // Partner crews aren't in the NYC Ferry schedule workbook.
         boatAssignment: null,
         mode: modeOf(route),
-        operator: agencyName
+        operator: agencyName,
+        // Partner operators publish no crew schedule, so none of this is knowable for them.
+        lastTripOfBoat: false, outOfService: false, crewShuttle: false, crewBoats: null
       });
     }
   }
@@ -225,6 +230,12 @@ export async function buildDisplayData({
   const boatAssignments = await readFile(path.join(root, "content/boat-assignments.json"), "utf8")
     .then((raw) => JSON.parse(raw).assignments || {})
     .catch(() => ({}));
+  // Home port and crew shuttles. Optional in the same way and for the same reason: neither the
+  // feed nor the workbook describes a boat's movements once it stops carrying passengers, so a
+  // board without this file simply shows no out-of-service rows.
+  const crewConfig = await readFile(path.join(root, "config/crew-shuttles.json"), "utf8")
+    .then((raw) => JSON.parse(raw))
+    .catch(() => ({}));
   const display = JSON.parse(displayRaw);
   const landings = JSON.parse(landingsRaw);
   const landingNumber = Number(landingOverride ?? display.landingNumber);
@@ -277,6 +288,12 @@ export async function buildDisplayData({
   }
   for (const list of timesByTrip.values()) list.sort((a, b) => Number(a.stop_sequence) - Number(b.stop_sequence));
 
+  // Which trip is each boat's last of the day. Only answerable because the workbook says which boat
+  // runs which trip; routes with no boat number (Governors Island, the Rockaway shuttle buses)
+  // contribute nothing and are simply absent from the map.
+  const lastTrips = lastTripPerBoat({ trips, timesByTrip, boatAssignments });
+  const lastTripIds = new Set([...lastTrips.values()].map((entry) => entry.tripId));
+
   let departures = [];
   for (const [tripId, times] of timesByTrip) {
     const trip = tripsById.get(tripId), route = routesById.get(trip?.route_id);
@@ -300,7 +317,11 @@ export async function buildDisplayData({
         servesGovernorsIsland,
         boatAssignment: Number.isInteger(assignedBoat) ? assignedBoat : null,
         mode: route.route_type === "3" ? "bus" : "ferry",
-        operator: agency.agency_name || "NYC Ferry"
+        operator: agency.agency_name || "NYC Ferry",
+        // Flagged on every leg of the trip, not just the last one: an agent at Pier 11 watching the
+        // boat leave needs to know it is not coming back, not to be told once it has already gone.
+        lastTripOfBoat: lastTripIds.has(tripId),
+        outOfService: false, crewShuttle: false, crewBoats: null
       });
     }
   }
@@ -324,6 +345,40 @@ export async function buildDisplayData({
   const feed = parseCsv(feedRaw)[0] || {};
   let calendars = parseCsv(calendarRaw).map((item) => ({ serviceId: item.service_id, weekdays: [item.sunday,item.monday,item.tuesday,item.wednesday,item.thursday,item.friday,item.saturday].map((v) => v === "1"), startDate: isoDate(item.start_date), endDate: isoDate(item.end_date) }));
   let exceptions = parseCsv(datesRaw).map((item) => ({ serviceId: item.service_id, date: isoDate(item.date), added: item.exception_type === "1" }));
+
+  // The moves a boat makes with no passengers aboard: the run to the home port after its last
+  // revenue trip, and the crew shuttles that swap a crew mid-day without ending the boat's service.
+  // Both are NYC Ferry only, and both are additions to the board rather than edits to it — no
+  // published departure time is changed by any of this.
+  const operatorName = agency.agency_name || "NYC Ferry";
+  const homePort = crewConfig.homePort || "Pier C";
+  const outOfServiceDepartures = [
+    ...homePortRows({
+      lastTrips, selectedStops, homePort,
+      dwellMinutes: Number(crewConfig.homePortDwellMinutes) || 0, operator: operatorName
+    }),
+    ...crewShuttleRows({
+      shuttles: crewConfig.shuttles, landingNumber, landings, selectedStops, homePort, operator: operatorName
+    })
+  ];
+  if (outOfServiceDepartures.length) {
+    departures.push(...outOfServiceDepartures);
+    departures.sort((a, b) => a.seconds - b.seconds || a.routeId.localeCompare(b.routeId));
+    // A crew shuttle cannot reuse the feed's weekday service: on a holiday the feed still runs
+    // weekdays while the crews change on the weekend pattern, so the shuttles get their own pair of
+    // calendars bounded to the same dates the feed covers.
+    const bounds = calendars.filter((item) => item.startDate && item.endDate);
+    const crew = crewCalendars({
+      startDate: bounds.map((item) => item.startDate).sort()[0] || null,
+      endDate: bounds.map((item) => item.endDate).sort().at(-1) || null,
+      holidays: crewConfig.holidays?.dates || []
+    });
+    calendars = calendars.concat(crew.calendars);
+    exceptions = exceptions.concat(crew.exceptions);
+    if (outOfServiceDepartures.some((item) => item.crewShuttle)) {
+      routeData[CREW_ROUTE_ID] = { ...CREW_ROUTE, operator: operatorName };
+    }
+  }
 
   // Partner-operator departures (NY Waterway, Seastreak, NYU). Each is controlled by two independent,
   // additive switches: the operator's "...Enabled" key in config/display.json (global on/off for
@@ -371,7 +426,7 @@ export async function buildDisplayData({
 
   return {
     meta: {
-      schemaVersion: 7, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
+      schemaVersion: 8, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
       departuresShown, routesShown, busesEnabled,
       landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds: landingConfig.stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },

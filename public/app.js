@@ -113,8 +113,11 @@ function routeDirectionGroups(now = new Date()) {
       const delta = offset * 86400 + departure.seconds + delay - current.seconds;
       const slotKey = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}`;
       const scheduledMoment = offset * 86400 + departure.seconds;
-      const previousLast = lastDepartures.get(slotKey);
-      if (!previousLast || scheduledMoment > previousLast.scheduledMoment) {
+      // LAST means the last departure a passenger can take. A home-port run or a crew shuttle
+      // leaves after it and carries nobody, so neither is allowed to claim the badge.
+      const carriesPassengers = !departure.outOfService && !departure.crewShuttle;
+      const previousLast = carriesPassengers ? lastDepartures.get(slotKey) : null;
+      if (carriesPassengers && (!previousLast || scheduledMoment > previousLast.scheduledMoment)) {
         lastDepartures.set(slotKey, { tripId: String(departure.tripId), scheduledMoment });
       }
       if (departure.routeId === "SB" && departure.servesGovernorsIsland) {
@@ -127,7 +130,9 @@ function routeDirectionGroups(now = new Date()) {
       const key = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}|${departure.destination}`;
       const group = groups.get(key) || {
         key, routeId: departure.routeId, directionId: departure.directionId,
-        destination: departure.destination, variant: departure.variant || null, departures: []
+        destination: departure.destination, variant: departure.variant || null,
+        outOfService: Boolean(departure.outOfService), crewShuttle: Boolean(departure.crewShuttle),
+        departures: []
       };
       group.departures.push({
         ...departure,
@@ -172,6 +177,14 @@ function routeShortName(routeId) {
   return data?.routes?.[routeId]?.shortName || routeId;
 }
 
+// The line under the destination. "Northbound" says nothing useful about a boat going home empty,
+// so these two say what the move actually is.
+function groupContext(group, isOtherOperator) {
+  if (group.crewShuttle) return "Crew shuttle";
+  if (group.outOfService) return "Out of service";
+  return isOtherOperator ? "" : directionLabel(group.directionId);
+}
+
 function departureCell(item) {
   const delaySeconds = Number(item.delay);
   const hasFreshTiming = !realtime.stale && item.hasLiveTiming && Number.isFinite(delaySeconds);
@@ -186,17 +199,33 @@ function departureCell(item) {
     ? "Last South Brooklyn departure serving Governors Island"
     : "Last departure of the day";
   const lastLabel = isLast ? `<strong class="departure-last-badge" aria-label="${lastAria}">LAST</strong>` : "";
-  const scheduledLabel = !isLast && !delayLabel && !onTimeLabel
+  // A boat with no passengers aboard has no schedule status worth showing — it is not late or on
+  // time, it is simply not in service — so NO PICKUP takes that slot instead.
+  const noPickup = item.outOfService || item.crewShuttle;
+  const scheduledLabel = !noPickup && !isLast && !delayLabel && !onTimeLabel
     ? `<span class="scheduled-badge" aria-label="Status: Scheduled">SCHEDULED</span>`
+    : "";
+  const noPickupLabel = noPickup
+    ? `<span class="no-pickup-badge" aria-label="Not in service: no passengers">NO PICKUP</span>`
+    : "";
+  // The boat's last revenue trip. It still carries passengers to where it is going, but it will not
+  // turn round afterwards, so an agent needs to stop sending people to it for a return leg.
+  const dropOffLabel = !noPickup && item.lastTripOfBoat
+    ? `<span class="drop-off-badge" aria-label="Last trip for this boat: drop off only">DROP OFF ONLY</span>`
     : "";
   // Crew boat assignment ("ER5" = East River boat 5). Boat numbers restart per route, so the
   // route code is part of the label. NY Waterway and the shuttles have no assignment.
   const assignment = Number.isInteger(item.boatAssignment)
     ? `<span class="boat-assignment">${escapeHtml(`${routeShortName(item.routeId)}${item.boatAssignment}`)}</span>`
     : "";
+  // A crew shuttle is one departure carrying the crews off several boats, so it names them where a
+  // revenue departure names its vessel.
+  const crewBoats = item.crewShuttle && item.crewBoats?.length
+    ? escapeHtml(item.crewBoats.join(" "))
+    : "";
   return `<div class="departure-slot">
     <div class="slot-time-row"><time>${adjustedTime(item.departureTime, item.delay)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span></div>
-    <span class="departure-last-slot">${lastLabel}${delayLabel || onTimeLabel || scheduledLabel}${assignment}<span class="boat-name">${item.boatName ? escapeHtml(item.boatName) : ""}</span></span>
+    <span class="departure-last-slot">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : "")}</span></span>
   </div>`;
 }
 
@@ -258,7 +287,7 @@ function render() {
         <span class="route-badge${partnerLogo ? " route-badge-image" : ""}">${badgeContent}${variantBadge}</span>
         <span class="route-name">${escapeHtml(routeName)}${operatorBadge}</span>
       </div>
-      <div class="destination"><strong>${escapeHtml(group.destination)}</strong><span>${isOtherOperator ? "" : directionLabel(group.directionId)}</span></div>
+      <div class="destination"><strong>${escapeHtml(group.destination)}</strong><span>${groupContext(group, isOtherOperator)}</span></div>
       <div class="departure-slots">${slots.map((item) => item ? departureCell(item) : `<div class="departure-slot unavailable"><span>No scheduled trip</span></div>`).join("")}</div>
     </article>`;
   }).join("");

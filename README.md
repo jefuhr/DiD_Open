@@ -77,6 +77,20 @@ landings `2` through `24` are alphabetical. `25` and `26` were added later so ex
 
 leave the key out entirely and it defaults to `true`.
 
+## out of service, Pier C and crew shuttles
+
+NYC Ferry only, and staff-facing: the board shows what a boat does once it stops carrying passengers.
+
+- **`DROP OFF ONLY`** on a departure — that boat's last revenue trip. it will drop off and go home rather than turn round. not the same as `LAST`: a boat can finish while its route keeps running for hours, and that is precisely the case an agent cannot otherwise see.
+- **a `Pier C` card marked `Out of service`** — the home-port run, at the landing where the boat finishes. `NO PICKUP`.
+- **a `Pier C` card marked `Crew shuttle`** — a mid-day crew change. one departure carries the relieved crews off every boat it names, and those boats keep running.
+
+the first two are derived from the boat assignments: knowing which boat runs which trip is what makes "this boat's last trip" answerable. routes with no boat number get nothing (Governors Island is crewed off-schedule; the Rockaway shuttles are buses), and partner operators never do, because none of them publishes a crew schedule.
+
+the crew shuttles are derived from nothing at all — neither the GTFS feed nor the schedule workbook mentions them. they live in [`config/crew-shuttles.json`](./config/crew-shuttles.json), are maintained by hand, and **go stale exactly when the schedule changes**. holidays matter here: `gtfs/calendar_dates.txt` is empty, so the feed runs an ordinary weekday on a holiday and the `holidays.dates` list is the only thing that switches the shuttles to the weekend pattern. see [ferryAssignments.md](./ferryAssignments.md).
+
+nothing in this feature edits a published time. every row is an addition.
+
 ## partner operators
 
 landings that share a dock with another ferry operator can show its departures next to NYC Ferry's. each operator ships its own GTFS directory, merged at build time by [`scripts/build-data.js`](./scripts/build-data.js).

@@ -61,7 +61,7 @@ test("display data includes the configured slideshow interval and all directions
   assert.equal(data.meta.departureWindowMinutes, display.departureWindowMinutes);
   assert.equal(data.meta.departuresShown, display.departuresShown);
   assert.equal(data.meta.routesShown, display.routesShown);
-  assert.equal(data.meta.schemaVersion, 7);
+  assert.equal(data.meta.schemaVersion, 8);
   assert.ok(data.tripSchedules[data.departures[0].tripId]?.stops.length > 1);
   const directions = new Set(data.departures.map((item) => `${item.routeId}|${item.directionId}|${item.destination}`));
   assert.ok(directions.size > 4, "Pier 11 should require more than one four-route slide");
@@ -103,8 +103,9 @@ test("South Brooklyn trips identify Governors Island service", async () => {
 
 test("East River departures are split into A, B, and Local variants", async () => {
   const data = await buildDisplayData({ landingNumber: 16 });
+  // Revenue departures only: a home-port run belongs to no A/B/Local pattern and carries no variant.
   const variants = new Set(
-    data.departures.filter((item) => item.routeId === "ER").map((item) => item.variant)
+    data.departures.filter((item) => item.routeId === "ER" && !item.outOfService).map((item) => item.variant)
   );
   assert.deepEqual([...variants].sort(), ["A", "B", "LOCAL"]);
   for (const variant of variants) {
@@ -143,7 +144,7 @@ test("NY Waterway departures are omitted when waterwayEnabled is false", async (
   assert.equal(data.meta.waterway.enabled, false);
   assert.equal(data.meta.waterway.agencyName, null);
   assert.equal(data.departures.some((item) => item.routeId.startsWith("wtr:")), false);
-  assert.equal(data.meta.schemaVersion, 7);
+  assert.equal(data.meta.schemaVersion, 8);
 });
 
 test("NY Waterway departures are omitted for landings without a waterwayStopIds mapping", async () => {
@@ -446,4 +447,77 @@ test("the IKEA ferry only runs at weekends, and only where it docks", async () =
   const redHook = await buildDisplayData({ landingNumber: 17, ikeaEnabled: true });
   assert.equal(redHook.meta.ikea.enabled, false);
   assert.equal(redHook.departures.some((item) => item.routeId.startsWith("ike:")), false);
+});
+
+// Out-of-service moves. Nothing here is in the GTFS feed or the schedule workbook — the workbook
+// only says which boat runs which trip, which is what makes "this boat's last trip" answerable.
+test("a boat's last revenue trip is flagged, and it runs home to Pier C after it", async () => {
+  const data = await buildDisplayData({ landingNumber: 16 });
+  const homePort = data.departures.filter((item) => item.outOfService);
+  assert.ok(homePort.length > 0, "Pier 11 should be where several boats finish");
+  for (const item of homePort) {
+    assert.equal(item.destination, "Pier C");
+    assert.equal(item.operator, "NYC Ferry");
+    assert.equal(item.crewShuttle, false);
+    // A home-port run belongs to the boat that makes it, so the badge still identifies the boat.
+    assert.ok(Number.isInteger(item.boatAssignment));
+  }
+  // One home-port run per boat per service, never two.
+  const keys = homePort.map((item) => `${item.routeId}${item.boatAssignment}|${item.serviceId}`);
+  assert.equal(new Set(keys).size, keys.length);
+  // The revenue trip that precedes it is flagged on every leg, so an agent upstream sees it too.
+  const flagged = data.departures.filter((item) => item.lastTripOfBoat);
+  assert.ok(flagged.length > 0);
+  assert.ok(flagged.every((item) => !item.outOfService && !item.crewShuttle));
+
+  // Governors Island is crewed off-schedule and carries no boat number, so nothing can be derived
+  // for it and it must not acquire a home-port run by accident.
+  assert.equal(data.departures.some((item) => item.routeId === "GI" && item.outOfService), false);
+  // Partner operators publish no crew schedule at all.
+  const waterway = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true });
+  assert.equal(waterway.departures.some((item) => item.routeId.startsWith("wtr:") && item.outOfService), false);
+});
+
+test("a crew shuttle is one departure for all the boats it relieves, and never marks them out of service", async () => {
+  const data = await buildDisplayData({ landingNumber: 16 });
+  const shuttles = data.departures.filter((item) => item.crewShuttle);
+  assert.ok(shuttles.length > 0);
+  const weekend = shuttles.filter((item) => item.serviceId === "crew-weekend");
+  // "ERF 3 PM/RWSV 5PM/RWSV 2PM/AST 2 PM: P11 14:35" is one 2:35pm departure, not four.
+  const swap = weekend.find((item) => item.departureTime === "14:35:00");
+  assert.ok(swap, "expected the 14:35 Pier 11 crew shuttle");
+  assert.deepEqual(swap.crewBoats, ["ER3", "RS5", "RS2", "AS2"]);
+  assert.equal(swap.destination, "Pier C");
+  assert.equal(swap.outOfService, false);
+  assert.equal(swap.routeId, "CREW");
+  assert.ok(data.routes.CREW, "the shuttle needs a route of its own, not a borrowed one");
+  // None of the boats it relieves is finishing: each keeps running afterwards.
+  for (const boat of swap.crewBoats) {
+    const route = boat.replace(/\d+$/, ""), number = Number(boat.replace(/^\D+/, ""));
+    const later = data.departures.filter((item) =>
+      item.routeId === route && item.boatAssignment === number && !item.outOfService &&
+      item.seconds > swap.seconds);
+    assert.ok(later.length > 0, `${boat} should still have revenue departures after the crew swap`);
+  }
+});
+
+test("crew shuttles follow the weekend pattern on holidays, which the feed knows nothing about", async () => {
+  const data = await buildDisplayData({ landingNumber: 16 });
+  const services = new Map(data.calendars.map((item) => [item.serviceId, item]));
+  // weekdays[] is Sunday-first.
+  assert.deepEqual(services.get("crew-weekend").weekdays, [true, false, false, false, false, false, true]);
+  assert.deepEqual(services.get("crew-weekday").weekdays, [false, true, true, true, true, true, false]);
+  assert.ok(services.get("crew-weekend").startDate && services.get("crew-weekend").endDate);
+  // A holiday swaps one for the other. The bundled feed has an empty calendar_dates.txt, so these
+  // exceptions are the only thing that makes a holiday different from any other weekday.
+  const holiday = "2026-09-07";
+  assert.ok(data.exceptions.some((item) => item.serviceId === "crew-weekend" && item.date === holiday && item.added));
+  assert.ok(data.exceptions.some((item) => item.serviceId === "crew-weekday" && item.date === holiday && !item.added));
+});
+
+test("landings with no crew shuttle configured get none", async () => {
+  // Red Hook appears in no shuttle line, so it should carry home-port runs at most.
+  const data = await buildDisplayData({ landingNumber: 17 });
+  assert.equal(data.departures.some((item) => item.crewShuttle), false);
+  assert.equal(data.routes.CREW, undefined);
 });

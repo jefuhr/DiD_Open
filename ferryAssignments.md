@@ -98,7 +98,57 @@ departure, and the board composes the badge as route code plus number.
    npm test
    ```
 
-7. **Commit both the feed and the regenerated `content/boat-assignments.json` together.**
+7. **Re-check [`config/crew-shuttles.json`](./config/crew-shuttles.json).** Crew shuttle times move
+   with the schedule and nothing will tell you they are wrong — no import step reads them, and no
+   test can know a shuttle time is out of date. See the next section.
+
+8. **Commit the feed, the regenerated `content/boat-assignments.json` and the shuttle config
+   together.** They describe one schedule period and are only meaningful as a set.
+
+## Out of Service, Pier C, and Crew Shuttles
+
+The board also shows what a boat does when it stops carrying passengers. Three things appear:
+
+| On the board | What it means |
+|---|---|
+| `DROP OFF ONLY` on a departure | This is that boat's **last revenue trip**. It will drop off and then go home; it is not turning round. It may sit on a route that is still running for hours, so this is not the same as `LAST`. |
+| A `Pier C` card, `Out of service` | The home-port run itself, shown at the landing where the boat finishes. `NO PICKUP` — nobody boards. |
+| A `Pier C` card, `Crew shuttle` | A mid-day crew change. One departure carries the relieved crews off every boat it names. Those boats **keep running**; being named here does not mean a boat is finishing. |
+
+**Where each part comes from matters, because only one of them is derived.**
+
+`DROP OFF ONLY` and the home-port runs are worked out from the workbook: knowing which boat runs
+which trip is what makes "this boat's last trip of the day" answerable at all. Routes with no boat
+number get nothing — Governors Island is crewed off-schedule, and the Rockaway shuttles are buses.
+Partner operators publish no crew schedule, so NY Waterway and the rest never show any of this.
+
+The crew shuttles are **not derived from anything**. Neither the feed nor the workbook mentions
+them. They are typed into [`config/crew-shuttles.json`](./config/crew-shuttles.json) by hand, and
+**they go stale exactly when the schedule does**. Update that file in the same change as the
+workbook and the feed.
+
+### Updating the shuttles
+
+```jsonc
+{ "landing": 16, "time": "14:35", "boats": ["ER3", "RS5", "RS2", "AS2"] }
+```
+
+- `landing` is a key in [`config/landings.json`](./config/landings.json) — `16` is Wall St / Pier 11.
+- `time` is the shuttle's departure, 24-hour.
+- `boats` is route code plus number, the same label the badge prints. One entry is **one departure**
+  no matter how many boats it names.
+
+Entries live under `weekend` or `weekday`. Weekend covers holidays too, which needs saying:
+
+> `gtfs/calendar_dates.txt` is empty. The feed has no idea a holiday is happening and runs its
+> ordinary weekday service on one. The `holidays.dates` list in `config/crew-shuttles.json` is the
+> **only** thing that switches the shuttles to the weekend pattern, so a date missing from that list
+> shows the weekday shuttles on a holiday. The shipped list is a starting point — confirm it against
+> the operator's holiday service.
+
+`homePort` renames Pier C if the home port ever moves. `homePortDwellMinutes` shifts the home-port
+run later than the boat's scheduled arrival; it defaults to `0`, meaning the row shows at the minute
+the boat gets in, because the feed says when a boat arrives and nothing about when it lets go.
 
 ## Reading the Coverage Report
 
