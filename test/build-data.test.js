@@ -120,7 +120,9 @@ test("NY Waterway departures are merged in at Pier 11 when enabled", async () =>
   const data = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true });
   assert.equal(data.meta.waterway.enabled, true);
   assert.equal(data.meta.waterway.agencyName, "NY Waterway");
-  const waterwayDepartures = data.departures.filter((item) => item.operator === "NY Waterway");
+  // Scoped by feed prefix, not by operator: NY Waterway also runs the IKEA boat, which is a
+  // separate feed with its own prefix, so the operator name alone no longer identifies this feed.
+  const waterwayDepartures = data.departures.filter((item) => item.routeId.startsWith("wtr:"));
   assert.ok(waterwayDepartures.length > 0, "Pier 11 should include NY Waterway departures");
   for (const departure of waterwayDepartures) {
     assert.match(departure.tripId, /^wtr:/);
@@ -140,14 +142,14 @@ test("NY Waterway departures are omitted when waterwayEnabled is false", async (
   const data = await buildDisplayData({ landingNumber: 16, waterwayEnabled: false });
   assert.equal(data.meta.waterway.enabled, false);
   assert.equal(data.meta.waterway.agencyName, null);
-  assert.equal(data.departures.some((item) => item.operator === "NY Waterway"), false);
+  assert.equal(data.departures.some((item) => item.routeId.startsWith("wtr:")), false);
   assert.equal(data.meta.schemaVersion, 7);
 });
 
 test("NY Waterway departures are omitted for landings without a waterwayStopIds mapping", async () => {
   const data = await buildDisplayData({ landingNumber: 7, waterwayEnabled: true });
   assert.equal(data.meta.waterway.enabled, false);
-  assert.equal(data.departures.some((item) => item.operator === "NY Waterway"), false);
+  assert.equal(data.departures.some((item) => item.routeId.startsWith("wtr:")), false);
 });
 
 test("Seastreak departures are merged in at East 34th Street when enabled", async () => {
@@ -341,4 +343,77 @@ test("HTML-escaped feed text is decoded before it reaches the screen", async () 
   const data = await buildDisplayData({ landingNumber: 8, seastreakEnabled: true });
   for (const route of Object.values(data.routes)) assert.doesNotMatch(route.name, /&#?\w+;/);
   for (const departure of data.departures) assert.doesNotMatch(departure.destination, /&#?\w+;/);
+});
+
+// The Trillium feed types four Hudson-crossing ferries as buses. With busesEnabled=false — the
+// setting every deployed board uses — that silently deleted a third of NY Waterway's service at
+// Pier 11. These are the routes and the counts the operator publishes on nywaterway.com.
+test("NY Waterway ferries mistyped as buses in the feed still sail", async () => {
+  const data = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true, busesEnabled: false });
+  const counts = {};
+  for (const item of data.departures.filter((entry) => entry.routeId.startsWith("wtr:"))) {
+    counts[item.destination] = (counts[item.destination] || 0) + 1;
+  }
+  // Edgewater, Hoboken/14th St and Port Liberte are the three mistyped routes calling at Pier 11.
+  assert.equal(counts.Edgewater, 6);
+  assert.equal(counts["Hoboken (14th St)"], 15);
+  assert.equal(counts["Port Liberte"], 11);
+  // Every one of them is a ferry on the board, not a bus, so busesEnabled cannot reach them.
+  for (const item of data.departures.filter((entry) => entry.routeId.startsWith("wtr:"))) {
+    assert.equal(item.mode, "ferry");
+  }
+  // Genuine buses are still dropped: the feed's crosstown shuttles never appear.
+  assert.equal(data.departures.some((item) => item.mode === "bus"), false);
+});
+
+// The same sailing listed under two trip ids used to render as two identical rows.
+test("a sailing listed twice in a feed is shown once", async () => {
+  const data = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true });
+  const seen = new Set();
+  for (const item of data.departures) {
+    const key = [item.serviceId, item.routeId, item.variant || "", item.stopId, item.departureTime, item.destination].join(" ");
+    assert.equal(seen.has(key), false, `duplicate departure on the board: ${key}`);
+    seen.add(key);
+  }
+  // The known case: NY Waterway carries stale South Amboy trips alongside the current ones, so
+  // Pier 11 must show the six departures the operator publishes rather than eight.
+  const southAmboy = data.departures.filter((item) => item.routeId.startsWith("wtr:") && item.destination === "South Amboy");
+  assert.deepEqual(southAmboy.map((item) => item.departureTime).sort(),
+    ["06:35:00", "07:40:00", "15:35:00", "16:35:00", "17:15:00", "18:15:00"]);
+});
+
+// NY Waterway runs the IKEA Brooklyn weekend boat but leaves it out of its GTFS, so gtfs/ikea/ is
+// transcribed from the operator's published image. These are the departure times on that image.
+test("the IKEA weekend ferry sails from Pier 11 and Midtown", async () => {
+  const pier11 = await buildDisplayData({ landingNumber: 16, ikeaEnabled: true });
+  assert.equal(pier11.meta.ikea.enabled, true);
+  const fromPier11 = pier11.departures.filter((item) => item.routeId.startsWith("ike:"));
+  assert.deepEqual(fromPier11.filter((item) => item.destination === "IKEA Brooklyn").map((item) => item.departureTime),
+    ["11:00:00", "12:30:00", "14:00:00", "15:30:00", "17:00:00"]);
+  assert.deepEqual(fromPier11.filter((item) => item.destination === "Midtown / W 39th Street").map((item) => item.departureTime),
+    ["11:30:00", "13:00:00", "14:30:00", "16:00:00", "17:30:00", "18:35:00"]);
+
+  const midtown = await buildDisplayData({ landingNumber: 26, ikeaEnabled: true });
+  const fromMidtown = midtown.departures.filter((item) => item.routeId.startsWith("ike:"));
+  assert.deepEqual(fromMidtown.map((item) => item.departureTime),
+    ["10:30:00", "12:00:00", "13:30:00", "15:00:00", "16:30:00", "17:55:00"]);
+  // The last sailing of the day is printed with the Pier 11 cell blacked out: it runs non-stop,
+  // which is why Pier 11 sees five southbound boats and Midtown sees six.
+  assert.equal(fromMidtown.at(-1).nextStop, "IKEA Brooklyn");
+  // It is NY Waterway's boat, badged IKEA, and it is a ferry rather than a shuttle bus.
+  assert.equal(midtown.routes["ike:IKEA"].operator, "NY Waterway");
+  assert.equal(midtown.routes["ike:IKEA"].shortName, "IKEA");
+  assert.equal(midtown.routes["ike:IKEA"].mode, "ferry");
+});
+
+test("the IKEA ferry only runs at weekends, and only where it docks", async () => {
+  const calendar = await readFile(new URL("../gtfs/ikea/calendar.txt", import.meta.url), "utf8");
+  const [, row] = calendar.trim().split("\n");
+  const [, sunday, monday, tuesday, wednesday, thursday, friday, saturday] = row.split(",");
+  assert.deepEqual([monday, tuesday, wednesday, thursday, friday], ["0", "0", "0", "0", "0"]);
+  assert.deepEqual([saturday, sunday], ["1", "1"]);
+  // The switch is off wherever no ikeaStopIds mapping exists, so no other landing grows an IKEA row.
+  const redHook = await buildDisplayData({ landingNumber: 17, ikeaEnabled: true });
+  assert.equal(redHook.meta.ikea.enabled, false);
+  assert.equal(redHook.departures.some((item) => item.routeId.startsWith("ike:")), false);
 });
