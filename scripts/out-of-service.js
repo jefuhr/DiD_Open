@@ -291,3 +291,63 @@ export function crewSwapIndex({ shuttles = {}, landings }) {
   }
   return index;
 }
+
+// The other side of a home-port run: the boat leaving Pier C to start a shift. Every shift begins
+// either after a night at the home port or after the boat has just gone back there, so a shift
+// start is a Pier C departure unless it follows a crew handover, where the boat never left the
+// water in the first place.
+//
+// The time is the shift's first pickup, which is when the boat is due at the *other* end — the
+// operator does not publish when it lets go of Pier C, and it varies. So the row carries the first
+// pickup and is marked approximate rather than inventing a departure time nobody scheduled.
+export function homePortDepartures({
+  shifts = {}, dayTypeOf, servicesOfDay, homePort, operator, swapMinutes = 60, runs = new Map()
+}) {
+  // The trip the boat is about to run. Naming it lets the board show which vessel is currently on
+  // that working, which is the closest thing to a prediction available — and it is only ever a
+  // prediction, because the boat on a working changes at a moment's notice.
+  const firstTripOf = (boat, kind, startSeconds) => {
+    for (const list of runs.values()) {
+      if (!list.length) continue;
+      if (boatLabel(list[0].routeId, list[0].boat) !== boat) continue;
+      if (dayTypeOf(list[0].serviceId) !== kind) continue;
+      const run = list.find((item) => Math.abs(item.startSeconds - startSeconds) <= 60);
+      if (run) return run.tripId;
+    }
+    return null;
+  };
+  const rows = [];
+  for (const [kind, boats] of Object.entries(shifts)) {
+    const serviceId = servicesOfDay(kind);
+    if (!serviceId) continue;
+    for (const [boat, list] of Object.entries(boats)) {
+      for (const [index, entry] of list.entries()) {
+        const previous = list[index - 1];
+        if (previous && (!entry.startPlace || previous.endPlace === entry.startPlace) &&
+            hhmmSeconds(entry.startTime) - hhmmSeconds(previous.endTime) <= swapMinutes * 60) continue;
+        if (!entry.startPlace) continue;
+        const seconds = hhmmSeconds(entry.startTime);
+        rows.push({
+          tripId: `pierc:${kind}:${boat}:${entry.startTime}`,
+          routeId: String(boat).replace(/\d+$/, ""), serviceId,
+          directionId: "0", stopId: HOME_PORT_STOP_ID,
+          departureTime: secondsToTime(seconds), seconds,
+          departureTimeEnd: null, secondsEnd: null,
+          destination: entry.startPlace, variant: null, nextStop: null, servesGovernorsIsland: false,
+          boatAssignment: Number(String(boat).replace(/^\D+/, "")) || null,
+          mode: "ferry", operator, via: [],
+          outOfService: false, crewShuttle: false, crewBoats: null, endsShift: null, endsDay: false,
+          // The board prints a star: this is when the boat is due at its first landing, not a
+          // published Pier C departure, and the operator says the real one is not constant.
+          approximate: true, fromHomePort: true, homePortName: homePort,
+          predictTripId: firstTripOf(boat, kind, seconds)
+        });
+      }
+    }
+  }
+  return rows.sort((left, right) => left.seconds - right.seconds || left.destination.localeCompare(right.destination));
+}
+
+// Pier C is not in the GTFS — no operator publishes it — so the landing that shows it is virtual
+// and its one stop id exists only here.
+export const HOME_PORT_STOP_ID = "home-port";

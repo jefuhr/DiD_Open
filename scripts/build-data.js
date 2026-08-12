@@ -3,8 +3,8 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  CREW_ROUTE, CREW_ROUTE_ID, boatDeparturesByDay, boatRuns, crewCalendars, crewShuttleRows,
-  crewSwapIndex, homePortRows, serviceBreaks
+  CREW_ROUTE, CREW_ROUTE_ID, HOME_PORT_STOP_ID, boatDeparturesByDay, boatRuns, crewCalendars,
+  crewShuttleRows, crewSwapIndex, homePortDepartures, homePortRows, serviceBreaks
 } from "./out-of-service.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -358,9 +358,15 @@ export async function buildDisplayData({
   const routesById = new Map(routes.map((item) => [item.route_id, item]));
   const stopsById = new Map(stops.map((item) => [item.stop_id, item]));
   const tripsById = new Map(trips.map((item) => [item.trip_id, item]));
+  // Pier C is where the boats sleep, not somewhere the schedule stops, so no operator publishes it
+  // and no feed contains it. Its landing is virtual: everything on it is derived from the crew
+  // schedule's shift starts rather than read out of stop_times.txt.
+  const isVirtual = landingConfig.virtual === true;
   const selectedStops = new Set(landingConfig.stopIds);
   const governorsIslandStops = new Set(landings["11"]?.stopIds || []);
-  for (const stopId of selectedStops) if (!stopsById.has(stopId)) throw new Error(`Landing ${landingNumber} references missing GTFS stop ${stopId}.`);
+  if (!isVirtual) {
+    for (const stopId of selectedStops) if (!stopsById.has(stopId)) throw new Error(`Landing ${landingNumber} references missing GTFS stop ${stopId}.`);
+  }
 
   const timesByTrip = new Map();
   for (const item of stopTimes) {
@@ -437,7 +443,9 @@ export async function buildDisplayData({
     color: color(item.route_color, "#004E72"), textColor: color(item.route_text_color, "#FFFFFF"), mode: item.route_type === "3" ? "bus" : "ferry",
     operator: agency.agency_name || "NYC Ferry"
   }]));
-  const stopDetails = landingConfig.stopIds.map((id) => stopsById.get(id));
+  const stopDetails = isVirtual
+    ? [{ stop_lat: landingConfig.latitude, stop_lon: landingConfig.longitude }]
+    : landingConfig.stopIds.map((id) => stopsById.get(id));
   const feed = parseCsv(feedRaw)[0] || {};
   let calendars = parseCsv(calendarRaw).map((item) => ({ serviceId: item.service_id, weekdays: [item.sunday,item.monday,item.tuesday,item.wednesday,item.thursday,item.friday,item.saturday].map((v) => v === "1"), startDate: isoDate(item.start_date), endDate: isoDate(item.end_date) }));
   let exceptions = parseCsv(datesRaw).map((item) => ({ serviceId: item.service_id, date: isoDate(item.date), added: item.exception_type === "1" }));
@@ -448,6 +456,16 @@ export async function buildDisplayData({
   // published departure time is changed by any of this.
   const operatorName = agency.agency_name || "NYC Ferry";
   const homePort = crewConfig.homePort || "Pier C";
+  if (isVirtual) {
+    const serviceOfDay = (kind) => {
+      for (const [serviceId, row] of calendarByService) if (dayTypeOf(serviceId) === kind) return serviceId;
+      return null;
+    };
+    departures = homePortDepartures({
+      shifts: boatShifts, dayTypeOf, servicesOfDay: serviceOfDay, homePort, operator: operatorName, runs,
+      swapMinutes: Number(crewConfig.outOfService?.swapMinutes) || 60
+    });
+  }
   const outOfServiceDepartures = [
     ...homePortRows({
       tieUps: breaks.tieUps, selectedStops, homePort,

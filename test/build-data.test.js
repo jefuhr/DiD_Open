@@ -648,3 +648,34 @@ test("a NY Waterway boat calling at several terminals is one row, not several", 
     assert.deepEqual(item.via, []);
   }
 });
+
+// Pier C is where the boats sleep. No operator publishes it and no feed contains it, so its landing
+// is virtual and everything on it comes from the crew schedule's shift starts.
+test("Pier C shows every boat leaving the home port to start a shift", async () => {
+  const data = await buildDisplayData({ landingNumber: 27 });
+  assert.equal(data.meta.landing.displayName, "Pier C (Staff)");
+  assert.ok(data.departures.length > 40);
+  for (const item of data.departures) {
+    // The operator says the home-port departure is not constant, so every row is approximate and
+    // carries the time the boat is due at its first landing instead.
+    assert.equal(item.approximate, true);
+    assert.equal(item.fromHomePort, true);
+    assert.ok(item.destination, "a home-port run needs somewhere to be going");
+    assert.ok(Number.isInteger(item.boatAssignment));
+    // Named so the board can show whichever vessel is currently on that working.
+    assert.ok(item.predictTripId);
+  }
+  // The first boats out on a weekday are the Rockaway pair, due at Ferry Point Park and Rockaway
+  // just after five.
+  const first = data.departures.slice(0, 2)
+    .map((item) => `${item.routeId}${item.boatAssignment} ${item.departureTime.slice(0, 5)} ${item.destination}`);
+  assert.deepEqual(first, ["RS1 05:03 Ferry Point Park", "RS4 05:05 Rockaway"]);
+
+  // A boat relieved mid-day never went home, so its afternoon shift is not a Pier C departure.
+  // SB1 works both a weekday and a weekend, but leaves the home port once on each.
+  for (const serviceId of new Set(data.departures.map((item) => item.serviceId))) {
+    const swapped = data.departures.filter((item) =>
+      item.serviceId === serviceId && item.routeId === "SB" && item.boatAssignment === 1);
+    assert.ok(swapped.length <= 1, "SB1 swaps crew mid-day and stays on the water");
+  }
+});

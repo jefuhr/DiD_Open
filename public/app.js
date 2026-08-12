@@ -114,12 +114,15 @@ function adjustedTime(raw, delaySeconds = 0) {
 // so it prints the window rather than a minute it will not leave on. The opening meridiem is
 // dropped when both ends share it: "2:35 – 3:05 PM" reads better than "2:35 PM – 3:05 PM".
 function departureLabel(item) {
-  const start = adjustedTime(item.departureTime, item.delay);
-  if (!item.departureTimeEnd) return escapeHtml(start);
+  // A boat leaving the home port has no published departure time — the operator says it is not
+  // constant — so the row shows when it is due at its first landing and stars it.
+  const star = item.approximate ? `<abbr class="approx" title="Approximate: the boat's home-port departure is not fixed">*</abbr>` : "";
+  const start = adjustedTime(item.departureTime, item.delay) + star;
+  if (!item.departureTimeEnd) return start;
   const end = adjustedTime(item.departureTimeEnd, 0);
   const startMeridiem = start.slice(-2), endMeridiem = end.slice(-2);
   const opening = startMeridiem === endMeridiem ? start.slice(0, -3) : start;
-  return `${escapeHtml(opening)}<span class="time-range-dash">–</span>${escapeHtml(end)}`;
+  return `${opening}<span class="time-range-dash">–</span>${escapeHtml(end)}`;
 }
 
 function relativeTime(deltaSeconds) {
@@ -188,7 +191,12 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
         delay,
         delta,
         hasLiveTiming,
-        boatName: vehicles.get(String(departure.tripId))?.boatName || null
+        boatName: vehicles.get(String(departure.tripId))?.boatName || null,
+        // A home-port row names no trip of its own, so the vessel shown is whichever one is
+        // currently working the trip this boat is about to pick up. A guess, and labelled as one.
+        predictedBoatName: departure.predictTripId
+          ? vehicles.get(String(departure.predictTripId))?.boatName || null
+          : null
       });
       groups.set(key, group);
     }
@@ -265,6 +273,14 @@ const VIA_SHORTENINGS = [
 function shortStop(name) {
   for (const [pattern, short] of VIA_SHORTENINGS) if (pattern.test(name)) return short;
   return name;
+}
+
+// Deliberately styled apart from a confirmed vessel name: crews swap boats at short notice, so this
+// says which boat is on the working right now, not which one will sail.
+function predictedName(item) {
+  return item.predictedBoatName
+    ? `<em class="boat-name-predicted" title="Currently on this working; boats change at short notice">${escapeHtml(item.predictedBoatName)}?</em>`
+    : "";
 }
 
 function viaLabel(group) {
@@ -352,7 +368,7 @@ function departureCell(item) {
   const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats } = departureStatus(item);
   return `<div class="departure-slot">
     <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span></div>
-    <span class="departure-last-slot">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : "")}</span></span>
+    <span class="departure-last-slot">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
   </div>`;
 }
 
