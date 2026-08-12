@@ -40,7 +40,7 @@ test("shows fresh late and on-time status in the reserved badge row", async () =
   assert.match(app, /class="on-time-badge"[^>]*>ON TIME<\/span>/);
   assert.match(app, /class="scheduled-badge"[^>]*>SCHEDULED<\/span>/);
   assert.match(app, /!isLast && !delayLabel && !onTimeLabel/);
-  assert.match(app, /departure-last-slot">\$\{lastLabel\}\$\{delayLabel \|\| onTimeLabel \|\| scheduledLabel\}/);
+  assert.match(app, /departure-last-slot">\$\{lastLabel\}\$\{noPickupLabel\}\$\{delayLabel \|\| onTimeLabel \|\| scheduledLabel\}/);
   assert.match(css, /\.vessel-delay-badge\{background:#b83224\}/);
   assert.match(css, /\.on-time-badge\{background:#218a4b\}/);
   assert.match(css, /\.scheduled-badge\{color:var\(--navy\);background:#e6eef2/);
@@ -82,7 +82,7 @@ test("shows the crew boat assignment beside the boat name", async () => {
   assert.match(app, /routeShortName\(item\.routeId\)\}\$\{item\.boatAssignment\}/);
   assert.match(app, /class="boat-assignment"/);
   // The assignment sits between the status badge and the boat name in the same row.
-  assert.match(app, /\$\{delayLabel \|\| onTimeLabel \|\| scheduledLabel\}\$\{assignment\}<span class="boat-name">/);
+  assert.match(app, /\$\{delayLabel \|\| onTimeLabel \|\| scheduledLabel\}\$\{dropOffLabel\}\$\{assignment\}<span class="boat-name">/);
   assert.match(css, /\.boat-assignment\{[^}]*flex:0 0 auto/);
 });
 
@@ -280,14 +280,14 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.match(app, /function routeVisual\(routeId, variant\)/);
 });
 
-test("offline shell includes version 39 display assets", async () => {
+test("offline shell includes version 40 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=39/);
-  assert.match(index, /app\.js\?v=39/);
-  assert.match(worker, /nyc-ferry-did-shell-v39/);
-  assert.match(worker, /styles\.css\?v=39/);
-  assert.match(worker, /app\.js\?v=39/);
+  assert.match(index, /styles\.css\?v=40/);
+  assert.match(index, /app\.js\?v=40/);
+  assert.match(worker, /nyc-ferry-did-shell-v40/);
+  assert.match(worker, /styles\.css\?v=40/);
+  assert.match(worker, /app\.js\?v=40/);
 });
