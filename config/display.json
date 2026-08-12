@@ -9,5 +9,6 @@
   "nyuEnabled": true,
   "libertyEnabled": true,
   "ikeaEnabled": true,
+  "giEnabled": true,
   "busesEnabled": false
 }

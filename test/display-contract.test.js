@@ -281,16 +281,24 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.match(app, /function routeVisual\(routeId, variant\)/);
 });
 
-test("offline shell includes version 44 display assets", async () => {
+test("offline shell includes version 45 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=44/);
-  assert.match(index, /app\.js\?v=44/);
-  assert.match(worker, /nyc-ferry-did-shell-v44/);
-  assert.match(worker, /styles\.css\?v=44/);
-  assert.match(worker, /app\.js\?v=44/);
+  assert.match(index, /styles\.css\?v=45/);
+  assert.match(index, /app\.js\?v=45/);
+  assert.match(worker, /nyc-ferry-did-shell-v45/);
+  assert.match(worker, /styles\.css\?v=45/);
+  assert.match(worker, /app\.js\?v=45/);
+});
+
+// The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
+// the shell — a partner badge that 404s offline leaves an empty box where the operator should be.
+test("the Governors Island badge ships with the offline shell", async () => {
+  const [app, worker] = await Promise.all([readFile(appPath, "utf8"), readFile(workerPath, "utf8")]);
+  assert.match(app, /\{ prefix: "gi:", src: "assets\/gi\.png"/);
+  assert.match(worker, /'\/assets\/gi\.png'/);
 });
 
 // The nearest-landing button. Two things here are easy to break and invisible when broken: the

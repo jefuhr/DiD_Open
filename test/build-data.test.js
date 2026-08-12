@@ -451,6 +451,61 @@ test("the IKEA ferry only runs at weekends, and only where it docks", async () =
   assert.equal(redHook.departures.some((item) => item.routeId.startsWith("ike:")), false);
 });
 
+// The Trust for Governors Island runs its own Brooklyn boats, which no GTFS anywhere describes, so
+// gtfs/gi/ is transcribed from the operator's schedule page. These are the times on that page.
+test("the Trust's Governors Island ferry sails from Red Hook and Pier 6", async () => {
+  const redHook = await buildDisplayData({ landingNumber: 17 });
+  assert.equal(redHook.meta.gi.enabled, true);
+  const fromRedHook = redHook.departures.filter((item) => item.routeId.startsWith("gi:"));
+  assert.deepEqual(fromRedHook.map((item) => item.departureTime),
+    ["09:45:00", "10:45:00", "11:45:00", "12:45:00", "13:45:00", "14:45:00", "15:45:00"]);
+  assert.ok(fromRedHook.every((item) => item.destination === "Governors Island"));
+
+  const pier6 = await buildDisplayData({ landingNumber: 3 });
+  const fromPier6 = pier6.departures.filter((item) => item.routeId.startsWith("gi:"));
+  assert.deepEqual(fromPier6.map((item) => item.departureTime),
+    ["10:15:00", "11:15:00", "12:15:00", "13:15:00", "14:15:00", "15:15:00", "16:15:00"]);
+  assert.ok(fromPier6.every((item) => item.destination === "Governors Island"));
+
+  // The Trust's boat, not the NYC Ferry South Brooklyn route that also calls at the island.
+  assert.equal(redHook.routes["gi:GI-RH"].operator, "The Trust for Governors Island");
+  assert.equal(redHook.routes["gi:GI-RH"].mode, "ferry");
+  assert.equal(pier6.routes["gi:GI-BBP"].operator, "The Trust for Governors Island");
+
+  // The return sailings are the last stop of their trip, so they are arrivals and must never be
+  // shown as departures from the Brooklyn side — otherwise each landing doubles.
+  assert.equal(fromRedHook.length + fromPier6.length, 14);
+});
+
+test("the Governors Island ferry runs weekends and holidays, in season, where it docks", async () => {
+  const [calendar, dates] = await Promise.all([
+    readFile(new URL("../gtfs/gi/calendar.txt", import.meta.url), "utf8"),
+    readFile(new URL("../gtfs/gi/calendar_dates.txt", import.meta.url), "utf8")
+  ]);
+  const [, row] = calendar.trim().split("\n");
+  const [, sunday, monday, tuesday, wednesday, thursday, friday, saturday, startDate, endDate] = row.split(",");
+  assert.deepEqual([monday, tuesday, wednesday, thursday, friday], ["0", "0", "0", "0", "0"]);
+  assert.deepEqual([saturday, sunday], ["1", "1"]);
+  // "Saturdays, Sundays, and holidays from May 23-November 1, 2026", quoted from the operator.
+  assert.equal(startDate, "20260523");
+  assert.equal(endDate, "20261101");
+  // Weekday holidays are added, and every one has to fall inside the season or it does nothing.
+  const added = dates.trim().split("\n").slice(1).map((line) => line.split(","));
+  assert.ok(added.length > 0, "the page says holidays run, so some must be listed");
+  for (const [, date, exceptionType] of added) {
+    assert.equal(exceptionType, "1");
+    assert.ok(date >= startDate && date <= endDate, `holiday ${date} is outside the season`);
+  }
+
+  // The switch is off wherever no giStopIds mapping exists, so no other landing grows a Trust row —
+  // including Governors Island itself, which the Trust serves but which is not in scope here.
+  for (const landingNumber of [16, 11]) {
+    const other = await buildDisplayData({ landingNumber });
+    assert.equal(other.meta.gi.enabled, false);
+    assert.equal(other.departures.some((item) => item.routeId.startsWith("gi:")), false);
+  }
+});
+
 // Out-of-service moves. Nothing here is in the GTFS feed or the schedule workbook — the workbook
 // only says which boat runs which trip, which is what makes "this boat's last trip" answerable.
 test("a boat going out of service is spotted from the gap in its own day", async () => {

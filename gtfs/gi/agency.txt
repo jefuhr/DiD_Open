@@ -1,0 +1,2 @@
+agency_id,agency_name,agency_url,agency_lang,agency_timezone
+TGI,The Trust for Governors Island,https://www.govisland.org/visit/ferry,en,America/New_York

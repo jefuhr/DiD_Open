@@ -1,0 +1,5 @@
+service_id,date,exception_type
+gi-weekend,20260525,1
+gi-weekend,20260619,1
+gi-weekend,20260907,1
+gi-weekend,20261012,1

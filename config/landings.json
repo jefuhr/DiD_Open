@@ -1,7 +1,7 @@
 {
   "1": { "unused": true, "name": "Unused" },
   "2": { "name": "Astoria", "stopIds": ["89"] },
-  "3": { "name": "Atlantic Avenue", "stopIds": ["11"] },
+  "3": { "name": "Atlantic Avenue", "stopIds": ["11"], "giStopIds": ["pier6"] },
   "4": { "name": "Bay Ridge", "stopIds": ["23"] },
   "5": { "name": "Brooklyn Navy Yard", "stopIds": ["120"] },
   "6": { "name": "Corlears Hook", "stopIds": ["115"] },
@@ -15,7 +15,7 @@
   "14": { "name": "Long Island City", "stopIds": ["90"] },
   "15": { "name": "North Williamsburg", "stopIds": ["19"] },
   "16": { "name": "Pier 11", "displayName": "Wall St / Pier 11", "stopIds": ["87"], "waterwayStopIds": ["2439146"], "ikeaStopIds": ["pier11"] },
-  "17": { "name": "Red Hook", "displayName": "Red Hook / Atlantic Basin", "stopIds": ["24"] },
+  "17": { "name": "Red Hook", "displayName": "Red Hook / Atlantic Basin", "stopIds": ["24"], "giStopIds": ["redhook"] },
   "18": { "name": "Rockaway + Bus Stop", "displayName": "Rockaway", "stopIds": ["88", "16"] },
   "19": { "name": "Roosevelt Island", "stopIds": ["25"] },
   "20": { "name": "Soundview", "stopIds": ["112"] },

@@ -1,0 +1,2 @@
+service_id,sunday,monday,tuesday,wednesday,thursday,friday,saturday,start_date,end_date
+gi-weekend,1,0,0,0,0,0,1,20260523,20261101

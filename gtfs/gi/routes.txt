@@ -1,0 +1,3 @@
+route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color
+GI-RH,TGI,RH,Governors Island - Red Hook,4,00BBE3,FFFFFF
+GI-BBP,TGI,BBP,Governors Island - Brooklyn Bridge Park,4,00BBE3,FFFFFF

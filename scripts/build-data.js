@@ -102,7 +102,11 @@ export const PARTNER_FEEDS = {
   // NY Waterway runs the IKEA Brooklyn weekend boat but leaves it out of the GTFS it publishes,
   // so it gets its own feed and its own switches rather than riding on the waterway entry. It is
   // seasonal and transcribed from an image by scripts/build-ikea-gtfs.js; see that file.
-  ikea: { prefix: "ike:", directory: "gtfs/ikea", label: "IKEA Brooklyn Ferry", defaultColor: "#0058A3", enabledKey: "ikeaEnabled", stopIdsKey: "ikeaStopIds" }
+  ikea: { prefix: "ike:", directory: "gtfs/ikea", label: "IKEA Brooklyn Ferry", defaultColor: "#0058A3", enabledKey: "ikeaEnabled", stopIdsKey: "ikeaStopIds" },
+  // The Trust runs its own Brooklyn boats to Governors Island, which are not the NYC Ferry South
+  // Brooklyn route that also calls there — different operator, different piers, weekends only.
+  // Transcribed from the operator's schedule page by scripts/build-gi-gtfs.js; see that file.
+  gi: { prefix: "gi:", directory: "gtfs/gi", label: "Governors Island Ferry", defaultColor: "#00BBE3", enabledKey: "giEnabled", stopIdsKey: "giStopIds" }
 };
 
 // NY Waterway publishes one trip per origin-destination pair, so a boat that calls at two terminals
@@ -548,7 +552,7 @@ export async function buildDisplayData({
       timezone: agency.agency_timezone || "America/New_York", agencyName: agency.agency_name || "NYC Ferry", feedVersion: feed.feed_version,
       feedStartDate: isoDate(feed.feed_start_date), feedEndDate: isoDate(feed.feed_end_date),
       sourceHash: createHash("sha256").update(routesRaw + tripsRaw + timesRaw).digest("hex").slice(0, 16),
-      waterway: partners.waterway, seastreak: partners.seastreak, nyu: partners.nyu, liberty: partners.liberty, ikea: partners.ikea
+      waterway: partners.waterway, seastreak: partners.seastreak, nyu: partners.nyu, liberty: partners.liberty, ikea: partners.ikea, gi: partners.gi
     },
     calendars, exceptions,
     routes: routeData, departures, tripSchedules

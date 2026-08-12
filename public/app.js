@@ -390,7 +390,10 @@ const PARTNER_BADGES = [
   { prefix: "wtr:", src: "assets/waterway.png", alt: "NY Waterway", useLogo: (shortName) => /^\d+$/.test(shortName) },
   { prefix: "sea:", src: "assets/seastreak.png", alt: "Seastreak", useLogo: () => true },
   { prefix: "nyu:", src: "assets/nyu.png", alt: "NYU Langone Ferry", useLogo: () => true },
-  { prefix: "lib:", src: "assets/cityferry.png", alt: "Liberty Landing Ferry", useLogo: () => true }
+  { prefix: "lib:", src: "assets/cityferry.png", alt: "Liberty Landing Ferry", useLogo: () => true },
+  // The Trust's own short names ("RH", "BBP") would read as NYC Ferry route codes on a board that
+  // already carries a South Brooklyn boat to the same island, so the wordmark shows instead.
+  { prefix: "gi:", src: "assets/gi.png", alt: "The Trust for Governors Island", useLogo: () => true }
 ];
 
 function partnerBadgeLogo(routeId, shortName) {
@@ -826,7 +829,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=44", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=45", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }
