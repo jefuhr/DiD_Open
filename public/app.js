@@ -249,6 +249,29 @@ function timelineDepartures(now = new Date()) {
     .sort((left, right) => left.departure.delta - right.departure.delta || byRoute(left.group, right.group));
 }
 
+// NY Waterway boats call at more than one terminal, so the stops before the far end are named.
+// Shortened because the destination line is already the widest thing on a card: "Hoboken (14th
+// Street)" becomes "Hoboken 14th", which is what the terminal is called anyway.
+const VIA_SHORTENINGS = [
+  [/^Hoboken \(14th Street\)$/, "Hoboken 14th"],
+  [/^Hoboken \/ NJ Transit Terminal$/, "Hoboken NJT"],
+  [/^Brookfield Place\/Battery Park City$/, "Brookfield Pl"],
+  [/^Midtown West\/W 39th St-Pier 79$/, "Midtown"],
+  [/^Wall St\/Pier 11$/, "Pier 11"],
+  [/^Gov\. Island\/Yankee Pier$/, "Governors Island"],
+  [/^Red Hook\/Atlantic Basin$/, "Red Hook"]
+];
+
+function shortStop(name) {
+  for (const [pattern, short] of VIA_SHORTENINGS) if (pattern.test(name)) return short;
+  return name;
+}
+
+function viaLabel(group) {
+  if (!group.via?.length) return "";
+  return `<small class="via">via ${escapeHtml(group.via.map(shortStop).join(", "))}</small>`;
+}
+
 // The line under the destination. "Northbound" says nothing useful about a boat going home empty,
 // so these two say what the move actually is.
 function groupContext(group, isOtherOperator) {
