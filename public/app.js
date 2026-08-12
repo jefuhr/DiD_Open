@@ -175,10 +175,11 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
         }
       }
       if (delta < -60) continue;
-      const key = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}|${departure.destination}`;
+      const via = (departure.via || []).join(" > ");
+      const key = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}|${departure.destination}|${via}`;
       const group = groups.get(key) || {
         key, routeId: departure.routeId, directionId: departure.directionId,
-        destination: departure.destination, variant: departure.variant || null,
+        destination: departure.destination, via: departure.via || [], variant: departure.variant || null,
         outOfService: Boolean(departure.outOfService), crewShuttle: Boolean(departure.crewShuttle),
         departures: []
       };
@@ -398,7 +399,7 @@ function renderTimeline() {
         <span class="route-badge${visual.partnerLogo ? " route-badge-image" : ""}">${visual.badgeContent}${variantBadge}</span>
         <span class="tl-relative">${escapeHtml(relativeTime(departure.delta))}</span>
       </div>
-      <strong class="tl-dest">${escapeHtml(group.destination)}</strong>
+      <strong class="tl-dest">${escapeHtml(group.destination)}${group.via?.length ? `<span class="tl-via"> via ${escapeHtml(group.via.map(shortStop).join(", "))}</span>` : ""}</strong>
       <div class="tl-meta">
         <span class="tl-context">${escapeHtml(context)}</span>
         ${boat}
@@ -439,7 +440,7 @@ function renderRouteBoard() {
         <span class="route-badge${partnerLogo ? " route-badge-image" : ""}">${badgeContent}${variantBadge}</span>
         <span class="route-name">${escapeHtml(routeName)}${operatorBadge}</span>
       </div>
-      <div class="destination"><strong>${escapeHtml(group.destination)}</strong><span>${groupContext(group, isOtherOperator)}</span></div>
+      <div class="destination"><strong>${escapeHtml(group.destination)}${viaLabel(group)}</strong><span>${groupContext(group, isOtherOperator)}</span></div>
       <div class="departure-slots">${slots.map((item) => item ? departureCell(item) : `<div class="departure-slot unavailable"><span>No scheduled trip</span></div>`).join("")}</div>
     </article>`;
   }).join("");

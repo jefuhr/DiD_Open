@@ -241,7 +241,8 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   // of its own — it is the longest field and the one that reads worst truncated.
   assert.match(app, /<div class="tl-head">/);
   assert.match(app, /class="route-badge\$\{visual\.partnerLogo \? " route-badge-image" : ""\}"/);
-  assert.match(app, /<strong class="tl-dest">\$\{escapeHtml\(group\.destination\)\}<\/strong>/);
+  // The far end, plus the stops on the way for a boat that calls at several.
+  assert.match(app, /<strong class="tl-dest">\$\{escapeHtml\(group\.destination\)\}\$\{group\.via\?\.length/);
   assert.match(app, /<div class="tl-meta">/);
 
   // Countdown and status hug the right edge so both scan as columns down the list.
@@ -280,14 +281,14 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.match(app, /function routeVisual\(routeId, variant\)/);
 });
 
-test("offline shell includes version 41 display assets", async () => {
+test("offline shell includes version 42 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=41/);
-  assert.match(index, /app\.js\?v=41/);
-  assert.match(worker, /nyc-ferry-did-shell-v41/);
-  assert.match(worker, /styles\.css\?v=41/);
-  assert.match(worker, /app\.js\?v=41/);
+  assert.match(index, /styles\.css\?v=42/);
+  assert.match(index, /app\.js\?v=42/);
+  assert.match(worker, /nyc-ferry-did-shell-v42/);
+  assert.match(worker, /styles\.css\?v=42/);
+  assert.match(worker, /app\.js\?v=42/);
 });

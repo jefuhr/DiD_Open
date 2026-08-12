@@ -90,7 +90,9 @@ const WATERWAY_FERRIES_TYPED_AS_BUS = new Set([
 ]);
 
 export const PARTNER_FEEDS = {
-  waterway: { prefix: "wtr:", directory: "gtfs/waterway", label: "NY Waterway", defaultColor: "#00558C", enabledKey: "waterwayEnabled", stopIdsKey: "waterwayStopIds", ferryRouteIds: WATERWAY_FERRIES_TYPED_AS_BUS },
+  waterway: { prefix: "wtr:", directory: "gtfs/waterway", label: "NY Waterway", defaultColor: "#00558C", enabledKey: "waterwayEnabled", stopIdsKey: "waterwayStopIds", ferryRouteIds: WATERWAY_FERRIES_TYPED_AS_BUS,
+    // Departures carry the namespaced id by this point, so the prefix comes off first.
+    lineOfRoute: (routeId) => WATERWAY_LINE_OF_ROUTE.get(String(routeId).replace(/^wtr:/, "")) },
   seastreak: { prefix: "sea:", directory: "gtfs/seastreak", label: "Seastreak", defaultColor: "#013067", enabledKey: "seastreakEnabled", stopIdsKey: "seastreakStopIds", destinationFromFinalStop: true },
   // NYU publishes no GTFS at all — gtfs/nyu/ is reconstructed from its Passio GO backend by
   // scripts/fetch-nyu-gtfs.js. Once written it is an ordinary static feed, so it needs no special
@@ -102,6 +104,65 @@ export const PARTNER_FEEDS = {
   // seasonal and transcribed from an image by scripts/build-ikea-gtfs.js; see that file.
   ikea: { prefix: "ike:", directory: "gtfs/ikea", label: "IKEA Brooklyn Ferry", defaultColor: "#0058A3", enabledKey: "ikeaEnabled", stopIdsKey: "ikeaStopIds" }
 };
+
+// NY Waterway publishes one trip per origin-destination pair, so a boat that calls at two terminals
+// arrives in the feed as two trips leaving the same berth at the same minute. Left alone the board
+// shows one sailing as two boats: the 6:15 from Pier 11 appears once for Paulus Hook and again for
+// Liberty Harbor, when it is a single boat calling at both. Thirty-three of Pier 11's fifty-two
+// weekday departure times are affected.
+//
+// The operator's own route map is the authority for which of these are one boat, and the feed
+// agrees with it wherever it can be checked: on a genuine single sailing the trips' onward calls
+// compose into one ordered chain (Paulus Hook 6:23, then Liberty Harbor 6:27), while two boats that
+// happen to share a minute do not — the 6:35 reaches Hoboken/NJ Transit and Brookfield Place both
+// at 6:50, which no boat can do. So a group is merged only when every onward call has a distinct
+// place and a distinct minute, and is otherwise left exactly as the feed states it.
+// The map's line colours, as route ids. A colour is one boat: the green line calls at Paulus Hook
+// and Liberty Harbor on its way to and from Pier 11, and the purple one links Edgewater, Hoboken
+// 14th St and Port Imperial to both downtown terminals. Everything not listed here is its own boat
+// even when it shares a berth and a minute with another — Hoboken/NJ Transit and Port Liberte both
+// run to Pier 11, on their own lines, and must never be folded into a neighbour.
+const WATERWAY_COMBINED_LINES = [
+  ["10218", "10226"],           // green: Pier 11 - Paulus Hook - Liberty Harbor
+  ["19751", "76080", "10227"],  // purple: Pier 11 - Hoboken 14th St - Port Imperial - Edgewater
+  ["19750", "10220", "10222"],  // purple: Brookfield Place - Hoboken 14th St - Port Imperial - Edgewater
+  ["10230", "10231"]            // pink: Midtown - Hoboken 14th St - Lincoln Harbor
+];
+const WATERWAY_LINE_OF_ROUTE = new Map(
+  WATERWAY_COMBINED_LINES.flatMap((group, index) => group.map((routeId) => [routeId, index]))
+);
+
+function mergeSplitSailings(departures, lineOf) {
+  const groups = new Map();
+  for (const departure of departures) {
+    const line = lineOf?.(departure.routeId);
+    if (line === undefined || line === null) continue;
+    const key = `${departure.serviceId}|${departure.stopId}|${departure.departureTime}|${line}`;
+    groups.set(key, [...(groups.get(key) || []), departure]);
+  }
+  const dropped = new Set();
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    if (group.some((item) => !(item.onward || []).length)) continue;
+    const calls = group.flatMap((item) => item.onward || []);
+    const names = new Set(calls.map((call) => call.name));
+    const minutes = new Set(calls.map((call) => call.seconds));
+    if (names.size !== calls.length || minutes.size !== calls.length) continue;
+    const ordered = [...calls].sort((left, right) => left.seconds - right.seconds);
+    // The row keeps the trip that actually runs to the far end, so its route colour, badge and
+    // trip id all still describe the sailing a rider boards.
+    const finalName = ordered.at(-1).name;
+    const keep = group.find((item) => (item.onward || []).some((call) => call.name === finalName)) || group[0];
+    keep.destination = finalName;
+    keep.via = ordered.slice(0, -1).map((call) => call.name);
+    keep.nextStop = ordered[0].name;
+    for (const item of group) if (item !== keep) dropped.add(item);
+  }
+  if (!dropped.size) return;
+  for (let index = departures.length - 1; index >= 0; index -= 1) {
+    if (dropped.has(departures[index])) departures.splice(index, 1);
+  }
+}
 
 // Reads one partner feed and returns its departures already namespaced and shaped exactly like
 // the NYC Ferry entries, so the caller only has to concatenate.
@@ -160,10 +221,23 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
         operator: agencyName,
         // Partner operators publish no crew schedule, so none of this is knowable for them.
         endsShift: null, outOfService: false, crewShuttle: false, crewBoats: null,
-        departureTimeEnd: null, secondsEnd: null, endsDay: false
+        departureTimeEnd: null, secondsEnd: null, endsDay: false,
+        via: [],
+        // Kept only to stitch split sailings back together below, then discarded.
+        // Some shuttle-bus stop_times carry no time at all, so a call without one is left out and
+        // the group it belongs to simply will not qualify for merging below.
+        onward: times.slice(index + 1)
+          .filter((stopTime) => stopTime.arrival_time || stopTime.departure_time)
+          .map((stopTime) => ({
+            name: decodeEntities(stopsById.get(stopTime.stop_id)?.stop_name || ""),
+            seconds: timeToSeconds(stopTime.arrival_time || stopTime.departure_time)
+          }))
       });
     }
   }
+
+  mergeSplitSailings(departures, feed.lineOfRoute);
+  for (const departure of departures) delete departure.onward;
 
   const usedTripIds = new Set(departures.map((item) => item.tripId));
   const tripSchedules = Object.fromEntries([...usedTripIds].map((prefixedTripId) => [prefixedTripId, {
