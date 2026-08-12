@@ -111,16 +111,38 @@ The board also shows what a boat does when it stops carrying passengers. Three t
 
 | On the board | What it means |
 |---|---|
-| `DROP OFF ONLY` on a departure | This is that boat's **last revenue trip**. It will drop off and then go home; it is not turning round. It may sit on a route that is still running for hours, so this is not the same as `LAST`. |
+| `DROP OFF ONLY` on a departure | The trip a boat works **before it stops** — finishing for the day, or coming off a shift mid-day. It will drop off and then go out of service; it is not turning round. It may sit on a route that is still running for hours, so this is not the same as `LAST`. |
+| `DROP OFF?` on a departure | The same thing, less certain. The gap is long enough that nobody should board, short enough that the boat has probably just tied up where it is rather than gone anywhere. |
 | A `Pier C` card, `Out of service` | The home-port run itself, shown at the landing where the boat finishes. `NO PICKUP` — nobody boards. |
-| A `Pier C` card, `Crew shuttle` | A mid-day crew change. One departure carries the relieved crews off every boat it names. Those boats **keep running**; being named here does not mean a boat is finishing. |
+| A `Pier C` card, `Crew shuttle` | A mid-day crew change, shown as a **window** (`2:35 – 3:05 PM`) because the shuttle waits for the boats it is collecting from to sail. One departure carries the relieved crews off every boat it names. Those boats **keep running**; being named here does not mean a boat is finishing. |
 
 **Where each part comes from matters, because only one of them is derived.**
 
-`DROP OFF ONLY` and the home-port runs are worked out from the workbook: knowing which boat runs
-which trip is what makes "this boat's last trip of the day" answerable at all. Routes with no boat
-number get nothing — Governors Island is crewed off-schedule, and the Rockaway shuttles are buses.
-Partner operators publish no crew schedule, so NY Waterway and the rest never show any of this.
+`DROP OFF ONLY` and the home-port runs are worked out from the workbook. Knowing which boat runs
+which trip is the whole trick: group the trips by boat and a boat going out of service becomes a
+**hole in its own day**. Nothing marks it — the run of trips simply stops and picks up hours later
+with a fresh crew.
+
+That only works because there is a clean gap in the distribution. In the bundled schedule ordinary
+layovers run to 44 minutes; the next gap up is 90; the weekday split shifts are 4–6.5 hours. So
+`gapMinutes` (60) sits in an empty valley and `certainAfterMinutes` (180) separates "the boat has
+gone" from "the crew is on a break and the boat is sitting there". **That valley is a property of
+this schedule, not a law** — re-check both numbers when the schedule changes, with:
+
+```bash
+node -e 'import("./scripts/build-data.js")' # or read the gaps straight out of the workbook
+```
+
+A gap between the two thresholds prints `DROP OFF?` and produces no Pier C run, because asserting
+the boat went somewhere would be inventing a movement nobody published.
+
+Routes with no boat number get nothing — Governors Island is crewed off-schedule, and the Rockaway
+shuttles are buses. Partner operators publish no crew schedule, so NY Waterway and the rest never
+show any of this.
+
+A crew swap is the opposite shape: the relief crew steps aboard and the boat sails, so it leaves no
+gap at all. That is exactly why the two can be told apart, and why every boat named in a shuttle has
+a largest gap of 16–42 minutes — an ordinary layover.
 
 The crew shuttles are **not derived from anything**. Neither the feed nor the workbook mentions
 them. They are typed into [`config/crew-shuttles.json`](./config/crew-shuttles.json) by hand, and
@@ -149,6 +171,7 @@ Entries live under `weekend` or `weekday`. Weekend covers holidays too, which ne
 `homePort` renames Pier C if the home port ever moves. `homePortDwellMinutes` shifts the home-port
 run later than the boat's scheduled arrival; it defaults to `0`, meaning the row shows at the minute
 the boat gets in, because the feed says when a boat arrives and nothing about when it lets go.
+`outOfService.gapMinutes` and `outOfService.certainAfterMinutes` are the two thresholds above.
 
 ## Reading the Coverage Report
 

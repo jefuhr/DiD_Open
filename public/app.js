@@ -74,6 +74,18 @@ function adjustedTime(raw, delaySeconds = 0) {
     .format(new Date(Date.UTC(2020, 0, 1, Math.floor(total / 3600) % 24, Math.floor((total % 3600) / 60))));
 }
 
+// A crew shuttle is ready at the listed time but waits for the boats it is collecting from to sail,
+// so it prints the window rather than a minute it will not leave on. The opening meridiem is
+// dropped when both ends share it: "2:35 – 3:05 PM" reads better than "2:35 PM – 3:05 PM".
+function departureLabel(item) {
+  const start = adjustedTime(item.departureTime, item.delay);
+  if (!item.departureTimeEnd) return escapeHtml(start);
+  const end = adjustedTime(item.departureTimeEnd, 0);
+  const startMeridiem = start.slice(-2), endMeridiem = end.slice(-2);
+  const opening = startMeridiem === endMeridiem ? start.slice(0, -3) : start;
+  return `${escapeHtml(opening)}<span class="time-range-dash">–</span>${escapeHtml(end)}`;
+}
+
 function relativeTime(deltaSeconds) {
   if (deltaSeconds <= 90) return "Boarding";
   if (deltaSeconds < 3600) return `${Math.ceil(deltaSeconds / 60)} min`;
@@ -208,10 +220,15 @@ function departureCell(item) {
   const noPickupLabel = noPickup
     ? `<span class="no-pickup-badge" aria-label="Not in service: no passengers">NO PICKUP</span>`
     : "";
-  // The boat's last revenue trip. It still carries passengers to where it is going, but it will not
-  // turn round afterwards, so an agent needs to stop sending people to it for a return leg.
-  const dropOffLabel = !noPickup && item.lastTripOfBoat
-    ? `<span class="drop-off-badge" aria-label="Last trip for this boat: drop off only">DROP OFF ONLY</span>`
+  // The trip a boat works before it stops. It still carries passengers to where it is going, but it
+  // will not turn round afterwards, so an agent needs to stop sending people to it for a return leg.
+  //
+  // A boat finishing for the day, or tying up for hours, is unambiguous. A shorter gap could as
+  // easily be a crew break with the boat sitting where it is, so that one is marked with a question
+  // mark: none of this is published, all of it is inferred from the shape of the boat's day, and
+  // saying so is better than a confident label that turns out to be wrong.
+  const dropOffLabel = !noPickup && item.endsShift
+    ? `<span class="drop-off-badge${item.endsShift === "unsure" ? " drop-off-unsure" : ""}" aria-label="${item.endsShift === "unsure" ? "Probably the last trip for this boat: drop off only, unconfirmed" : "Last trip for this boat: drop off only"}">DROP OFF${item.endsShift === "unsure" ? "?" : " ONLY"}</span>`
     : "";
   // Crew boat assignment ("ER5" = East River boat 5). Boat numbers restart per route, so the
   // route code is part of the label. NY Waterway and the shuttles have no assignment.
@@ -224,7 +241,7 @@ function departureCell(item) {
     ? escapeHtml(item.crewBoats.join(" "))
     : "";
   return `<div class="departure-slot">
-    <div class="slot-time-row"><time>${adjustedTime(item.departureTime, item.delay)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span></div>
+    <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span></div>
     <span class="departure-last-slot">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : "")}</span></span>
   </div>`;
 }

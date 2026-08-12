@@ -3,7 +3,8 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  CREW_ROUTE, CREW_ROUTE_ID, crewCalendars, crewShuttleRows, homePortRows, lastTripPerBoat
+  CREW_ROUTE, CREW_ROUTE_ID, boatDeparturesByDay, boatRuns, crewCalendars, crewShuttleRows,
+  crewSwapIndex, homePortRows, serviceBreaks
 } from "./out-of-service.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -158,7 +159,8 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
         mode: modeOf(route),
         operator: agencyName,
         // Partner operators publish no crew schedule, so none of this is knowable for them.
-        lastTripOfBoat: false, outOfService: false, crewShuttle: false, crewBoats: null
+        endsShift: null, outOfService: false, crewShuttle: false, crewBoats: null,
+        departureTimeEnd: null, secondsEnd: null, endsDay: false
       });
     }
   }
@@ -288,11 +290,24 @@ export async function buildDisplayData({
   }
   for (const list of timesByTrip.values()) list.sort((a, b) => Number(a.stop_sequence) - Number(b.stop_sequence));
 
-  // Which trip is each boat's last of the day. Only answerable because the workbook says which boat
-  // runs which trip; routes with no boat number (Governors Island, the Rockaway shuttle buses)
-  // contribute nothing and are simply absent from the map.
-  const lastTrips = lastTripPerBoat({ trips, timesByTrip, boatAssignments });
-  const lastTripIds = new Set([...lastTrips.values()].map((entry) => entry.tripId));
+  // Where each boat stops working. Only answerable because the workbook says which boat runs which
+  // trip: grouped by boat, a shift ending mid-day is a hole in that boat's own run of trips. Routes
+  // with no boat number (Governors Island, the Rockaway shuttle buses) contribute nothing.
+  const calendarByService = new Map(parseCsv(calendarRaw).map((item) => [item.service_id, item]));
+  const runs = boatRuns({ trips, timesByTrip, boatAssignments });
+  const dayTypeOf = (serviceId) => {
+    const row = calendarByService.get(serviceId);
+    if (!row) return null;
+    const runsWeekday = ["monday", "tuesday", "wednesday", "thursday", "friday"].some((day) => row[day] === "1");
+    const runsWeekend = row.saturday === "1" || row.sunday === "1";
+    return runsWeekday && !runsWeekend ? "weekday" : (runsWeekend && !runsWeekday ? "weekend" : null);
+  };
+  const breaks = serviceBreaks({
+    runs, dayTypeOf,
+    gapMinutes: Number(crewConfig.outOfService?.gapMinutes) || 60,
+    certainAfterMinutes: Number(crewConfig.outOfService?.certainAfterMinutes) || 180,
+    crewSwaps: crewSwapIndex({ shuttles: crewConfig.shuttles, landings })
+  });
 
   let departures = [];
   for (const [tripId, times] of timesByTrip) {
@@ -320,8 +335,9 @@ export async function buildDisplayData({
         operator: agency.agency_name || "NYC Ferry",
         // Flagged on every leg of the trip, not just the last one: an agent at Pier 11 watching the
         // boat leave needs to know it is not coming back, not to be told once it has already gone.
-        lastTripOfBoat: lastTripIds.has(tripId),
-        outOfService: false, crewShuttle: false, crewBoats: null
+        endsShift: breaks.certainty.get(tripId) || null,
+        outOfService: false, crewShuttle: false, crewBoats: null,
+        departureTimeEnd: null, secondsEnd: null, endsDay: false
       });
     }
   }
@@ -354,11 +370,12 @@ export async function buildDisplayData({
   const homePort = crewConfig.homePort || "Pier C";
   const outOfServiceDepartures = [
     ...homePortRows({
-      lastTrips, selectedStops, homePort,
+      tieUps: breaks.tieUps, selectedStops, homePort,
       dwellMinutes: Number(crewConfig.homePortDwellMinutes) || 0, operator: operatorName
     }),
     ...crewShuttleRows({
-      shuttles: crewConfig.shuttles, landingNumber, landings, selectedStops, homePort, operator: operatorName
+      shuttles: crewConfig.shuttles, landingNumber, landings, selectedStops, homePort, operator: operatorName,
+      boatDepartures: boatDeparturesByDay({ trips, timesByTrip, boatAssignments, dayTypeOf })
     })
   ];
   if (outOfServiceDepartures.length) {

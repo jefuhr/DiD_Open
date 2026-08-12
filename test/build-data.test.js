@@ -451,10 +451,10 @@ test("the IKEA ferry only runs at weekends, and only where it docks", async () =
 
 // Out-of-service moves. Nothing here is in the GTFS feed or the schedule workbook — the workbook
 // only says which boat runs which trip, which is what makes "this boat's last trip" answerable.
-test("a boat's last revenue trip is flagged, and it runs home to Pier C after it", async () => {
+test("a boat going out of service is spotted from the gap in its own day", async () => {
   const data = await buildDisplayData({ landingNumber: 16 });
   const homePort = data.departures.filter((item) => item.outOfService);
-  assert.ok(homePort.length > 0, "Pier 11 should be where several boats finish");
+  assert.ok(homePort.length > 0, "Pier 11 should be where several boats tie up");
   for (const item of homePort) {
     assert.equal(item.destination, "Pier C");
     assert.equal(item.operator, "NYC Ferry");
@@ -462,20 +462,43 @@ test("a boat's last revenue trip is flagged, and it runs home to Pier C after it
     // A home-port run belongs to the boat that makes it, so the badge still identifies the boat.
     assert.ok(Number.isInteger(item.boatAssignment));
   }
-  // One home-port run per boat per service, never two.
-  const keys = homePort.map((item) => `${item.routeId}${item.boatAssignment}|${item.serviceId}`);
-  assert.equal(new Set(keys).size, keys.length);
-  // The revenue trip that precedes it is flagged on every leg, so an agent upstream sees it too.
-  const flagged = data.departures.filter((item) => item.lastTripOfBoat);
+  // The weekday split shifts: these three boats work the morning peak, tie up at Pier 11 mid-morning
+  // for more than five hours, and come back for the evening. Nothing in the feed says so — it is a
+  // hole in the boat's own run of trips.
+  const midday = homePort.filter((item) => !item.endsDay)
+    .map((item) => `${item.routeId}${item.boatAssignment}@${item.departureTime.slice(0, 5)}`).sort();
+  assert.deepEqual(midday, ["AS1@10:42", "ER1@10:28", "ER5@10:04"]);
+  // Those are distinct from finishing for the day, which an agent needs to tell apart.
+  assert.ok(homePort.some((item) => item.endsDay));
+
+  // The trip before the gap is flagged on every leg, so an agent upstream sees it too.
+  const flagged = data.departures.filter((item) => item.endsShift);
   assert.ok(flagged.length > 0);
   assert.ok(flagged.every((item) => !item.outOfService && !item.crewShuttle));
+  assert.ok(flagged.every((item) => ["certain", "unsure"].includes(item.endsShift)));
 
-  // Governors Island is crewed off-schedule and carries no boat number, so nothing can be derived
-  // for it and it must not acquire a home-port run by accident.
+  // Governors Island is crewed off-schedule and carries no boat number, so nothing is derivable and
+  // it must not acquire a home-port run by accident.
   assert.equal(data.departures.some((item) => item.routeId === "GI" && item.outOfService), false);
-  // Partner operators publish no crew schedule at all.
   const waterway = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true });
   assert.equal(waterway.departures.some((item) => item.routeId.startsWith("wtr:") && item.outOfService), false);
+});
+
+test("a gap too short to be sure about is marked unsure rather than asserted", async () => {
+  const data = await buildDisplayData({ landingNumber: 16 });
+  // Two weekend Rockaway gaps run 90 and 166 minutes: long enough that nobody should board, short
+  // enough that the boat has probably just tied up where it is rather than gone home.
+  const unsure = data.departures.filter((item) => item.endsShift === "unsure")
+    .map((item) => `${item.routeId}${item.boatAssignment}`).sort();
+  assert.deepEqual(unsure, ["RS7", "RS9"]);
+  // Being unsure means exactly that: the boat is not claimed to have gone anywhere.
+  for (const item of data.departures.filter((item) => item.outOfService)) {
+    const boat = `${item.routeId}${item.boatAssignment}`;
+    assert.equal(unsure.includes(boat) && !item.endsDay, false);
+  }
+  // Ordinary layovers reach 44 minutes in this schedule and must never be mistaken for a break.
+  assert.equal(data.departures.some((item) =>
+    item.endsShift && item.routeId === "SB" && item.departureTime < "12:00:00"), false);
 });
 
 test("a crew shuttle is one departure for all the boats it relieves, and never marks them out of service", async () => {
@@ -520,4 +543,41 @@ test("landings with no crew shuttle configured get none", async () => {
   const data = await buildDisplayData({ landingNumber: 17 });
   assert.equal(data.departures.some((item) => item.crewShuttle), false);
   assert.equal(data.routes.CREW, undefined);
+});
+
+test("a crew shuttle waits for its boats, so it shows a window rather than a minute", async () => {
+  const data = await buildDisplayData({ landingNumber: 16 });
+  const shuttles = data.departures.filter((item) => item.crewShuttle);
+  const swap = shuttles.find((item) => item.serviceId === "crew-weekend" && item.departureTime === "14:35:00");
+  assert.ok(swap, "expected the 14:35 Pier 11 crew shuttle");
+  // ER3, RS5, RS2 and AS2 next sail from Pier 11 at 15:05, 14:55, 15:00 and 15:05. The shuttle
+  // cannot go until the last crew is aboard, so the window closes at 15:05.
+  assert.equal(swap.departureTimeEnd, "15:05:00");
+  assert.ok(swap.secondsEnd > swap.seconds);
+  for (const item of shuttles) {
+    assert.ok(item.departureTimeEnd, `every shuttle should close its window: ${item.tripId}`);
+    assert.ok(item.secondsEnd > item.seconds);
+  }
+  // A home-port run is a single time, not a window — nothing is waiting on it.
+  for (const item of data.departures.filter((entry) => entry.outOfService)) {
+    assert.equal(item.departureTimeEnd, null);
+  }
+});
+
+test("a crew swap does not read as a boat going out of service", async () => {
+  const data = await buildDisplayData({ landingNumber: 16 });
+  const shuttles = data.departures.filter((item) => item.crewShuttle);
+  const named = new Set(shuttles.flatMap((item) => item.crewBoats || []));
+  assert.ok(named.size > 0);
+  // In this schedule a swap leaves no hole at all: the relief crew steps aboard and the boat sails.
+  // So no boat is both named in a shuttle and shown tying up at that landing around that time.
+  for (const shuttle of shuttles) {
+    for (const boat of shuttle.crewBoats || []) {
+      const tieUp = data.departures.find((item) => item.outOfService &&
+        `${item.routeId}${item.boatAssignment}` === boat &&
+        item.serviceId !== "crew-weekday" && item.serviceId !== "crew-weekend" &&
+        Math.abs(item.seconds - shuttle.seconds) < 3600);
+      assert.equal(tieUp, undefined, `${boat} is swapping crew at ${shuttle.departureTime}, not finishing`);
+    }
+  }
 });
