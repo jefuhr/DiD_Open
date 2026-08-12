@@ -28,6 +28,33 @@ test("loads every landing, not just the one config/display.json selects", async 
   assert.ok(loaded.byLanding.size > 1 && loaded.byLanding.has(configured));
 });
 
+// The client ranks landings by distance, so /api/landings has to carry somewhere to measure to.
+// Without this every landing is equally far away and the nearest-landing button silently reports
+// that it found nothing.
+test("every offered landing reaches the client with a position", async () => {
+  const choices = landingChoices(landings);
+  const loaded = await loadAllLandingData({ root, choices });
+  for (const item of loaded.available) {
+    assert.ok(Number.isFinite(item.latitude) && Number.isFinite(item.longitude), `landing ${item.id} (${item.displayName}) has no position`);
+    // NYC harbour, generously drawn. Catches a swapped lat/lon or a stray zero, which would put a
+    // landing in the Gulf of Guinea and make it win or lose every comparison.
+    assert.ok(item.latitude > 40.4 && item.latitude < 41.1, `landing ${item.id} latitude ${item.latitude} is not in the harbour`);
+    assert.ok(item.longitude > -74.4 && item.longitude < -73.6, `landing ${item.id} longitude ${item.longitude} is not in the harbour`);
+  }
+  // Both names travel: the menu shows the long one, the nearest button the short one.
+  assert.ok(loaded.available.every((item) => item.name && item.displayName));
+});
+
+// Pier C is the one landing with no GTFS stop behind it, so its position is only ever as good as
+// config. It was briefly Hoboken's Pier C Park — about 5 km from the Brooklyn homeport, far enough
+// to hand the wrong answer to anyone standing at either place.
+test("Pier C sits at the Brooklyn homeport, not across the river", () => {
+  const pierC = Object.values(landings).find((item) => item.name === "Pier C");
+  assert.ok(pierC, "the Pier C landing is configured");
+  assert.ok(pierC.latitude > 40.69 && pierC.latitude < 40.72, `Pier C latitude ${pierC.latitude} is outside the Brooklyn Navy Yard`);
+  assert.ok(pierC.longitude > -73.99 && pierC.longitude < -73.96, `Pier C longitude ${pierC.longitude} is outside the Brooklyn Navy Yard`);
+});
+
 test("one unbuildable landing costs that landing and nothing else", async () => {
   const choices = [{ id: 2, displayName: "Astoria" }, { id: 3, displayName: "Atlantic Avenue" }];
   const warnings = [];

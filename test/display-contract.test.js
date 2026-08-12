@@ -281,16 +281,64 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.match(app, /function routeVisual\(routeId, variant\)/);
 });
 
-test("offline shell includes version 43 display assets", async () => {
+test("offline shell includes version 44 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=43/);
-  assert.match(index, /app\.js\?v=43/);
-  assert.match(worker, /nyc-ferry-did-shell-v43/);
-  assert.match(worker, /styles\.css\?v=43/);
-  assert.match(worker, /app\.js\?v=43/);
+  assert.match(index, /styles\.css\?v=44/);
+  assert.match(index, /app\.js\?v=44/);
+  assert.match(worker, /nyc-ferry-did-shell-v44/);
+  assert.match(worker, /styles\.css\?v=44/);
+  assert.match(worker, /app\.js\?v=44/);
+});
+
+// The nearest-landing button. Two things here are easy to break and invisible when broken: the
+// button must never read position without a tap, and it has to sit on the heading's first line —
+// .board-state wraps to a line of its own on a phone, which is what puts this in the top right.
+test("the nearest-landing button locates on tap and then shortcuts", async () => {
+  const [index, app, css] = await Promise.all([
+    readFile(indexPath, "utf8"),
+    readFile(appPath, "utf8"),
+    readFile(cssPath, "utf8")
+  ]);
+
+  assert.match(index, /id="nearestButton"/);
+  assert.match(index, /id="nearestLabel"/);
+  // Between the landing name and the chips, so the phone wrap leaves it in the corner.
+  assert.ok(
+    index.indexOf('id="nearestButton"') > index.indexOf('id="landingName"'),
+    "the button must follow the landing name"
+  );
+  assert.ok(
+    index.indexOf('id="nearestButton"') < index.indexOf('class="board-state"'),
+    "the button must precede the chips that wrap onto the second line"
+  );
+
+  // Position is read on an explicit tap and nowhere else: no watchPosition, and no getCurrentPosition
+  // on load, so anyone who never asks is never prompted.
+  assert.doesNotMatch(app, /watchPosition/);
+  assert.equal(app.match(/getCurrentPosition/g)?.length, 1, "position is requested in exactly one place");
+  assert.match(app, /function locateNearest\(\)/);
+  assert.match(app, /elements\.nearestButton\.addEventListener\("click"/);
+
+  // Ranking needs a position per landing, which only reaches the client through /api/landings.
+  assert.match(app, /function nearestLanding\(latitude, longitude\)/);
+  assert.match(app, /function distanceMetres\(/);
+  assert.match(app, /Number\.isFinite\(landing\.latitude\)/);
+
+  // Tapping always does something: jump to the landing, or take a fresh fix when already there.
+  assert.match(app, /saved\.id !== data\?\.meta\?\.landingNumber\) return void selectLanding\(saved\.id\)/);
+  assert.match(app, /setNearest\("here"/);
+
+  // A denied permission is a different problem from a fix that did not arrive, and says so.
+  assert.match(app, /PERMISSION_DENIED/);
+
+  assert.match(css, /\.nearest-button\{[^}]*flex:0 0 auto/);
+  // The label is a landing name and some are long, so it truncates rather than widening the header.
+  assert.match(css, /\.nearest-label\{[^}]*text-overflow:ellipsis/);
+  const phoneStyles = css.slice(css.indexOf("@media(max-width:820px)"));
+  assert.match(phoneStyles, /\.nearest-button\{height:40px/);
 });
 
 // A merge once shipped conflict markers in index.html and sw.js. Nothing caught it: the contract

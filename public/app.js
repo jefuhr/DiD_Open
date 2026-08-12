@@ -21,6 +21,8 @@ const elements = {
   landingMenuScrim: document.querySelector("#landingMenuScrim"),
   landingMenuClose: document.querySelector("#landingMenuClose"),
   landingList: document.querySelector("#landingList"),
+  nearestButton: document.querySelector("#nearestButton"),
+  nearestLabel: document.querySelector("#nearestLabel"),
   sortOptions: [...document.querySelectorAll("[data-sort]")]
 };
 
@@ -33,6 +35,12 @@ const landingsKey = "nyc-ferry-did-landings";
 // Persisted like the landing choice, and deliberately per-device: it is a reading preference,
 // not board config.
 const sortKey = "nyc-ferry-did-sort";
+// The landing a location fix last resolved to, so the shortcut survives a reload.
+const nearestKey = "nyc-ferry-did-nearest";
+// A fix is only good for about the shift it was taken in. Crew move between landings, and a
+// shortcut still pointing at yesterday's dock is worse than no shortcut at all.
+const nearestMaxAgeMs = 12 * 60 * 60 * 1000;
+let nearestTimer = null;
 let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
 let serviceAlerts = null;
@@ -634,6 +642,7 @@ async function load() {
   }
   elements.landing.textContent = data.meta.landing.displayName;
   renderLandingList();
+  renderNearest();
   await loadManualOverride();
   updateClock();
   loadRealtime();
@@ -664,6 +673,105 @@ async function loadLandings() {
   renderLandingList();
 }
 
+// The nearest-landing shortcut.
+//
+// Someone opening this at a dock should not have to pick their landing out of a 26-item menu, so
+// the button spends one tap on a location fix and then becomes a direct jump to whatever landing
+// they are standing at. It only ever reads position on an explicit tap: no background watching, no
+// permission prompt for anyone who never asks for it.
+
+function savedNearest() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(nearestKey) || "null");
+    if (!saved || !Number.isInteger(saved.id)) return null;
+    return Date.now() - Number(saved.at) > nearestMaxAgeMs ? null : saved;
+  } catch {
+    return null;
+  }
+}
+
+// Great-circle metres. The landings sit a few km apart at most, so this is far more precision than
+// ranking them needs — but Pier C and Brooklyn Navy Yard are only ~400 m apart, which is close
+// enough that the cheap flat approximation is not obviously safe, and haversine costs nothing.
+function distanceMetres(fromLat, fromLon, toLat, toLon) {
+  const radians = Math.PI / 180;
+  const halfLat = ((toLat - fromLat) * radians) / 2;
+  const halfLon = ((toLon - fromLon) * radians) / 2;
+  const a = Math.sin(halfLat) ** 2 + Math.cos(fromLat * radians) * Math.cos(toLat * radians) * Math.sin(halfLon) ** 2;
+  return 2 * 6371008.8 * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+// Which of a landing's two names fits a button. Usually the short one ("Pier 11" over "Wall St /
+// Pier 11"), but not always — landing 18 is "Rockaway" for display and "Rockaway + Bus Stop"
+// internally — so take whichever is actually shorter rather than assuming.
+function buttonLabel(landing) {
+  return [landing.name, landing.displayName].filter(Boolean).sort((left, right) => left.length - right.length)[0] || `Landing ${landing.id}`;
+}
+
+function nearestLanding(latitude, longitude) {
+  const landings = JSON.parse(localStorage.getItem(landingsKey) || "[]");
+  let best = null;
+  for (const landing of landings) {
+    // A landing the build could not place is skipped rather than guessed at: missing from the
+    // search is recoverable, wrong is not.
+    if (!Number.isFinite(landing.latitude) || !Number.isFinite(landing.longitude)) continue;
+    const metres = distanceMetres(latitude, longitude, landing.latitude, landing.longitude);
+    if (!best || metres < best.metres) best = { id: landing.id, name: buttonLabel(landing), metres };
+  }
+  return best;
+}
+
+function distanceLabel(metres) {
+  const miles = metres / 1609.344;
+  return miles < 0.1 ? "under 0.1 mi" : `${miles.toFixed(1)} mi`;
+}
+
+function setNearest(state, label, description) {
+  elements.nearestButton.dataset.state = state;
+  elements.nearestButton.disabled = state === "locating";
+  elements.nearestLabel.textContent = label;
+  elements.nearestButton.setAttribute("aria-label", description);
+  elements.nearestButton.title = description;
+}
+
+function renderNearest() {
+  clearTimeout(nearestTimer);
+  const saved = savedNearest();
+  if (!saved) return setNearest("idle", "Nearest", "Find the nearest landing");
+  // Standing at the landing already on screen, the shortcut has nowhere to send anyone, so it
+  // becomes the way to take a fresh fix instead of a tap that does nothing.
+  if (saved.id === data?.meta?.landingNumber) return setNearest("here", saved.name, `You are at ${saved.name} — tap to check again`);
+  setNearest("ready", saved.name, `Nearest landing: ${saved.name}${saved.distance ? `, ${saved.distance} away` : ""}. Tap to switch.`);
+}
+
+// Failures say which failure it was and then get out of the way: a permission the user has to
+// change in browser settings reads differently from a fix that just did not arrive.
+function flashNearest(label, description) {
+  setNearest("error", label, description);
+  nearestTimer = setTimeout(renderNearest, 3200);
+}
+
+function locateNearest() {
+  if (!navigator.geolocation) return flashNearest("No GPS", "This device cannot report its location.");
+  clearTimeout(nearestTimer);
+  setNearest("locating", "Locating…", "Finding the nearest landing");
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const best = nearestLanding(position.coords.latitude, position.coords.longitude);
+      // Only reachable from a landing list cached before landings carried positions. One online
+      // start refreshes it, so this is a "not yet" rather than a real error.
+      if (!best) return flashNearest("No fix", "No landing positions are available yet.");
+      localStorage.setItem(nearestKey, JSON.stringify({ id: best.id, name: best.name, distance: distanceLabel(best.metres), at: Date.now() }));
+      renderNearest();
+    },
+    (error) => {
+      if (error.code === error.PERMISSION_DENIED) return flashNearest("Blocked", "Location access is blocked for this site.");
+      flashNearest("No fix", "Your location could not be determined.");
+    },
+    { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 }
+  );
+}
+
 function setMenuOpen(open) {
   elements.landingMenu.hidden = !open;
   elements.menuButton.setAttribute("aria-expanded", String(open));
@@ -682,6 +790,11 @@ async function selectLanding(landingNumber) {
   });
 }
 
+elements.nearestButton.addEventListener("click", () => {
+  const saved = savedNearest();
+  if (saved && saved.id !== data?.meta?.landingNumber) return void selectLanding(saved.id);
+  locateNearest();
+});
 elements.menuButton.addEventListener("click", () => setMenuOpen(elements.landingMenu.hidden));
 elements.landingMenuClose.addEventListener("click", () => setMenuOpen(false));
 elements.landingMenuScrim.addEventListener("click", () => setMenuOpen(false));
@@ -697,6 +810,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 renderSortToggle();
+renderNearest();
 loadLandings();
 load().catch(() => {
   elements.departures.innerHTML = `<div class="empty"><div><strong>Schedule unavailable</strong><span>The local schedule needs attention.</span></div></div>`;
@@ -712,7 +826,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=32", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=44", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

@@ -24,6 +24,6 @@
   "23": { "name": "Stuyvesant Cove", "stopIds": ["114"] },
   "24": { "name": "Sunset Park", "displayName": "Sunset Park / BAT", "stopIds": ["118"], "nyuStopIds": ["13139"] },
   "25": { "name": "Battery Park City", "displayName": "Battery Park City / Brookfield Place", "stopIds": ["136"], "waterwayStopIds": ["2729332"], "libertyStopIds": ["2557122"] },
-  "27": { "name": "Pier C", "displayName": "Pier C (Staff)", "virtual": true, "stopIds": ["home-port"], "latitude": 40.7376, "longitude": -74.0262 },
+  "27": { "name": "Pier C", "displayName": "Pier C (Staff)", "virtual": true, "stopIds": ["home-port"], "latitude": 40.7045, "longitude": -73.974 },
   "26": { "name": "Pier 79", "displayName": "Midtown West / Pier 79", "stopIds": ["138"], "waterwayStopIds": ["2439145"], "ikeaStopIds": ["midtown"] }
 }
