@@ -1,0 +1,640 @@
+﻿sheet,cell,cell_text,cell_note
+weekday2,A3,RWSV 1 AM (K-299),"RWSV 1 AM
+First pickup 05:03 at FPP.   
+
+Last drop off 13:05 at Pier 11
+
+
+
+"
+weekday2,B3,RWSV 2 AM (K-299),"RWSV 2 AM
+First pickup 05:47 at FPP 
+
+Last drop off 12:10 at RWY
+
+
+"
+weekday2,C3,RWSV 3 AM (K-299),"RWSV 3 AM
+First pickup 06:31 at FPP 
+
+Last drop off 14:11 at P11
+
+
+"
+weekday2,D3,RWSV 4 AM (K-299),"RWSV 4 AM
+ First pickup 05:05 at RWY 
+
+Last drop off 12:59 at P11
+
+
+"
+weekday2,E3,RWSV 5 AM (K-299),"RWSV 4 AM
+First pickup 05:49 at RWY. 
+
+Last drop off 10:00 at RWY
+
+
+"
+weekday2,F3,RWSV 6 AM (K-299),"RWSV 4 AM
+First pickup 06:33 RWY 
+
+Last drop off 14:09 at P11
+
+
+"
+weekday2,G3,"AST 1 AM (K-299)
+Drills","AST 1 AM
+First pickup 06:03 at 90th
+
+Last drop 10:42 at Pier 11
+
+"
+weekday2,H3,AST 2 AM (K-299),"AST 2 AM
+First departure 06:41 90th St.
+
+Last drop 13:14 at Pier 11"
+weekday2,I3,AST 3 AM (K-299),"AST 3 AM
+First departure 06:22 at Pier 11 
+
+Last drop 14:11 at Pier 11"
+weekday2,J3,SBK 1 AM (T),"SBK 1 AM
+First pickup 06:40 at Red Hook 
+
+Last drop 13:45 at E 34th St."
+weekday2,K3,SBK 2 AM (T),"SBK 2 AM
+First departure 06:33 at E 34th.
+
+Last drop 13:24 at GI"
+weekday2,A11,RWSV 1 PM (K-299),"RWSV 1 PM
+First departure is 13:13 from Pier 11  
+
+Last drop off is 21:08 at RWY"
+weekday2,B11,RWSV 2 PM (K-299),"RWSV 2 PM
+ First departure is 16:12 at RWY, 
+
+Last drop off is 21:32 at P11"
+weekday2,C11,RWSV 3 PM (K-299),"RWSV 3 PM
+First departure is 14:19 from Pier 11 
+
+Last drop off is 20:47 at P11"
+weekday2,D11,RWSV 4 PM (K-299),"RWSV 2 PM
+First departure is 13:09 from Pier 11, 
+
+Last drop off is 21:07 at FPP"
+weekday2,E11,RWSV 5 PM (K-299),"RWSV 5 PM
+First departure is 16:06 at FPP 
+
+Last drop off is 21:28 at P11"
+weekday2,F11,RWSV 6 PM (K-299),"RWSV 2 PM
+First departure is 14:19 from Pier 11 
+
+Last drop off is 20:48 at P11"
+weekday2,G11,"AST 1 PM (K-299)
+Drills
+","AST 1 PM
+Drills from 14:15-15:30
+First pickup 16:52 at Pier 11
+
+Last drop 20:42 at Pier 11
+"
+weekday2,H11,AST 2 PM (K-299),"AST 2 PM
+First departure 13:20 at Pier 11
+
+Last drop 21:16 at Pier 11"
+weekday2,I11,AST 3 PM (K-299),"AST 3 PM
+First departure 14:17 at Pier 11.
+
+Last drop off 20:59 at E. 90th
+"
+weekday2,J11,SBK 1 PM (T),"SBK 1 PM
+First pickup 13:51 at E 34th St, 
+
+Last drop 21:41 at 34th St."
+weekday2,K11,SBK 2 PM (T),"SBK 2 PM
+First pickup 13:53 at G.I., 
+
+Last drop 21:33 at Redhook"
+weekday2,A19,ERF 1 AM|DRL (T) ,"ERF 1 AM
+First departure 06:06 at HPS
+
+Last drop 10:28 at Pier 11"
+weekday2,B19,ERF 2 AM (T),"ERF 2 AM
+First departure 06:26 at E 34th St
+
+Last drop 14:31 at Pier 11"
+weekday2,C19,ERF 3 AM (T),"ERF 3 AM
+First departure 06:31 at HPS
+
+Last drop off 14:14 at E 34th St"
+weekday2,D19,"ERF 4 AM (T)
+Training","ERF 4 AM
+First departure 06:51 at E 34th St
+Last drop off 10:28 at E 34th St"
+weekday2,E19,"ERF 5 AM (T)
+Training","ERF 5 AM
+First departure 06:27 at Pier 11
+
+Last drop 10:04 at Pier 11"
+weekday2,F19,"ERF 6 AM (T)
+","ERF 5 AM
+First departure 06:39 at P11,
+
+ Last drop 13:54 at Pier 11"
+weekday2,G19,STG 1 AM (T),"STG-BK 1 AM
+First pickup 06:16 at STG  
+
+Last drop 13:18 at Pier 11"
+weekday2,H19,STG 2 AM (T),"STG-BK 2 AM
+First pickup 06:15 at Pier 11 
+
+Last drop 14:08 at Pier 11"
+weekday2,I19,STG 3 AM (T) DRL,"STG-BK 3 AM
+First pickup 06:21 at STG  
+
+Last drop 10:37 at Pier 79"
+weekday2,J19,STG 4 AM (T),"STG-BK 4 AM
+First pickup 06:22 at Pier 79  
+
+Last drop 13:43 at Pier 79"
+weekday2,A27,TRN|ERF 1 PM (T) ,"ERF 1 PM
+First departure 15:46 at Pier 11
+
+Last drop 20:02 at E 34th"
+weekday2,B27,ERF 2 PM (T),"ERF 2 PM
+First departure 14:40 at Pier 11
+
+Last drop off 21:43 at Pier 11"
+weekday2,C27,DRL|ERF 3 PM (T),"ERF 3 PM
+First departure 14:19 at East 34th St.
+
+Last drop off 19:47 at pier 11."
+weekday2,D27,"TRN|ERF 4 PM (T)
+","ERF 4 PM
+First departure 16:16 at Pier 11
+
+Last drop off 20:44 at Pier 11"
+weekday2,E27,"ERF 5 PM (T)
+","ERF 5 PM
+First departure 16:31 at Pier 11
+
+Last drop off 22:03 at 34th st"
+weekday2,F27,ERF 6 PM (T),"ERF 5 PM
+First departure 14:03 at Pier 11
+
+ Last drop off 21:26 at E 34th St."
+weekday2,G27,STG 1 PM (T),"STG-BK 1 PM
+First departure 13:24 at Pier 11  
+
+Last drop 21:20 at Pier 11
+"
+weekday2,H27,STG 2 PM (T),"STG-BK 2 PM
+First pickup 14:14 at Pier 11, 
+
+Last drop 22:08 at P11"
+weekday2,I27,DRL/STG 3 PM (T),"STG-BK 3 PM
+First Pickup is 16:54 ar P79, 
+
+Last drop is 21:49 at P79
+"
+weekday2,J27,STG 4 PM (T),"STG-BK 4 PM
+ First pickup 13:50 at Pier 79  
+
+Last drop 21:12 at Pier 79
+"
+weekday2,A53,RWSV 1 AM (K-350),"RWSV 1 AM
+First pickup 07:52 at FPP. 
+
+Last drop off 14:00 at Pier 11
+
+
+
+
+"
+weekday2,B53,RWSV 2 AM (K-350),"RWSV 2 AM
+First pickup 08:42 at FPP
+
+Last drop off 14:50 at Pier 11
+
+
+"
+weekday2,C53,RWSV 3 AM (K-350),"RWSV 3 AM
+First pickup 09:37 at FPP
+Last drop off 15:40 at Pier 11
+
+
+"
+weekday2,D53,RWSV 4 AM (K-350),"RWSV 4 AM
+First pickup 09:05 at Pier 11
+
+Last drop off 16:30 at Pier 11
+
+
+"
+weekday2,E53,RWSV 5 AM (K-350),"RWSV 4 AM
+First pickup 08:47 at RWY. 
+
+Last drop off 14:46 at Pier 11
+
+
+"
+weekday2,F53,RWSV 6 AM (K-350),"RWSV 4 AM
+First pickup 09:37 at RWY. 
+
+Last drop off 15:36 at Pier 11
+
+
+"
+weekday2,G53,RWY 7 (K-350),"RWY 7
+First pickup 11:15 at Pier 11
+
+Last drop off 21:04 at Pier 11
+
+
+"
+weekday2,H53,RWY 8 (K-350),"RWY 8
+First pickup 09:36 at Pier 11
+
+Last drop off 19:25 at Pier 11
+
+
+"
+weekday2,I53,RWY 9 (K-350),"RWSV 9
+First pickup 10:26 from Pier 11
+
+Last drop off 20:15 at Pier 11
+
+
+"
+weekday2,J53,AST 1 AM (T-150),"AST 1 AM
+First pickup 08:58 at 90th
+
+Last drop 15:20 at 90th St.
+
+"
+weekday2,K53,AST 2 AM (K-299),"AST 2 AM
+First departure 08:56 at Pier 11
+Last drop 14:56 at Pier 11"
+weekday2,L53,AST 3 (K-299),"AST 3 AM
+First departure 11:40 at Pier 11
+
+Last drop 21:46 at Pier 11"
+weekday2,M53,GI (T-150),"GI Shuttle
+First departure is 10:04 at Pier 11
+Last drop off is 17:56 at Pier 11"
+weekday2,A61,RWSV 1 PM (K-350),"RWSV 1 PM
+First departure is 14:10 from Pier 11
+
+Last drop off is 21:26 at Pier 11"
+weekday2,B61,RWSV 2 PM (K-350),"RWSV 2 PM
+First departure is 15:00 at Pier 11
+last drop off is 22:16 at Pier 11"
+weekday2,C61,RWSV 3 PM (K-350),"RWSV 3 PM
+First departure is 15:50 from Pier 11
+
+Last drop off is 21:51 at RWY"
+weekday2,D61,RWSV 4 PM (K-350),"RWSV 4 PM
+First departure is 16:40 at Pier 11
+Last drop off is 21:30 at Pier 11"
+weekday2,E61,RWSV 5 PM (K-350),"RWSV 5 PM
+First departure is 14:55 at Pier 11
+Last drop off is 20:57 at FPP"
+weekday2,F61,RWSV 6 PM (K-350),"RWSV 6 PM
+First departure is 15:45 at Pier 11
+Last drop off is 21:47 at FPP"
+weekday2,H61,RWY RKT (K-350),"RWSV 9
+First pickup 10:26 from Pier 11
+
+Last drop off 18:46
+
+
+
+"
+weekday2,J61,AST 1 PM (T-150),"AST 1 PM
+First pickup 15:26 at 90th
+
+Last drop 21:29 at 90th St. 
+"
+weekday2,K61,AST 2 PM (K-299),"AST 2 PM
+First departure 15:05 at Pier 11
+
+Last drop 21:05 at Pier 11"
+weekday2,A69,ERF 1 AM (T) ,"ERF 1 AM
+First departure 08:35 at 34th St
+
+Last drop 15:08 at Pier 11"
+weekday2,B69,ERF 2 AM (T),"ERF 2 AM
+First departure 09:05 at E 34th St
+
+Last drop 15:48 at Pier 11"
+weekday2,C69,ERF 3 AM (T),"ERF 3 AM
+First departure 08:47 at Pier 11
+
+Last drop off 14:42 at Pier 11"
+weekday2,D69,ERF 4  (T),"ERF 4 
+First departure 10:43 at E 34th St
+
+Last drop off 20:56 at Pier 11"
+weekday2,E69,ERF 5 (T),"ERF 5
+First departure 10:32 at Pier 11
+
+Last drop off 20:39 at Pier 11"
+weekday2,F69,ERF 6  (T),"ERF 6
+First departure 11:00 at Pier 11
+
+Last drop off 21:05 at 34th St. "
+weekday2,G69,ERF 7  (T),"ERF 7
+First departure 11:13 at Pier 11
+
+Last drop off 21:17 at 34th St. "
+weekday2,H69,STG 1 AM (T),"STG-BK 1 AM
+First pickup 09:17 at Pier 11
+
+Last drop 15:31 at Pier 79"
+weekday2,I69,STG 2 AM (T),"STG-BK 2 AM
+First pickup 09:04 at Pier 79
+
+Last drop 15:31 at Pier 11"
+weekday2,J69,STG 3 AM (T),"STG-BK 3 AM
+First pickup 09:55 at Pier 79
+
+Last drop 16:09 at Pier 11"
+weekday2,K69,STG 4  (T),"STG-BK 4 AM
+First pickup 11:04 at Pier 79
+
+Last drop 21:37 at Pier 79"
+weekday2,L69,SBK 1 AM (T),"SBK 1 AM
+First pickup 08:23 at Bay Ridge
+
+Last drop 14:59 at Bay Ridge"
+weekday2,M69,SBK 2 AM (T),"SBK 2 AM
+First departure 08:21 at E 34th.
+
+Last drop 15:00 at 34th St"
+weekday2,N69,SBK 3 (T),"SBK 2 AM
+First departure 11:11 at Bay Ridge 
+
+Last drop 20:27 at Bay RIdge"
+weekday2,O69,SBK 4 (T),"SBK 2 AM
+First departure 11:05 at E 34th.
+
+Last drop 21:27 at Bay Ridge"
+weekday2,A77,ERF 1 PM (T) ,"ERF 1 PM
+First departure 15:42 at Pier 11
+
+Last drop 21:34 at Pier 11"
+weekday2,B77,ERF 2 PM (T),"ERF 2 PM
+First departure 16:21 at Pier 11
+
+Last drop off 22:14 at Pier 11"
+weekday2,C77,ERF 3 PM (T),"ERF 3 PM
+First departure 15:05 at Pier 11
+
+Last drop off 21:53 at E34th St"
+weekday2,H77,STG 1 PM (T),"STG-BK 1 PM
+First departure 15:49 at Pier 79
+
+Last drop 22:15 at Pier 11
+"
+weekday2,I77,STG 2 PM (T),"STG-BK 2 PM
+First departure 15:37 at Pier 11
+
+Last drop 22:15 at Pier 79
+"
+weekday2,J77,STG 3 PM (T),"STG-BK 3 PM
+First departure 16:15 at Pier 11
+
+Last Drop off is 21:37 Pier 11"
+weekday2,L77,SBK 1 PM (T),"SBK 1 PM
+First departure 15:05 at Bay Ridge
+Last drop 22:07 at Bay Ridge"
+weekday2,M77,SBK 2 PM (T),"SBK 2 PM
+Fist departure 15:06 at 34th St
+Last drop off 22:08 at 34th St
+"
+weekend2,A2,RWSV 1 AM (K-350),"RWSV 1 AM
+First pickup 07:52 at FPP. 
+
+Last drop off 14:00 at Pier 11
+
+
+
+
+"
+weekend2,B2,RWSV 2 AM (K-350),"RWSV 2 AM
+First pickup 08:42 at FPP
+
+Last drop off 14:50 at Pier 11
+
+
+"
+weekend2,C2,RWSV 3 AM (K-350),"RWSV 3 AM
+First pickup 09:37 at FPP
+Last drop off 15:40 at Pier 11
+
+
+"
+weekend2,D2,RWSV 4 AM (K-350),"RWSV 4 AM
+First pickup 09:05 at Pier 11
+
+Last drop off 16:30 at Pier 11
+
+
+"
+weekend2,E2,RWSV 5 AM (K-350),"RWSV 4 AM
+First pickup 08:47 at RWY. 
+
+Last drop off 14:46 at Pier 11
+
+
+"
+weekend2,F2,RWSV 6 AM (K-350),"RWSV 4 AM
+First pickup 09:37 at RWY. 
+
+Last drop off 15:36 at Pier 11
+
+
+"
+weekend2,G2,RWY 7 (K-350),"RWY 7
+First pickup 11:15 at Pier 11
+
+Last drop off 21:04 at Pier 11
+
+
+"
+weekend2,H2,RWY 8 (K-350),"RWY 8
+First pickup 09:36 at Pier 11
+
+Last drop off 19:25 at Pier 11
+
+
+"
+weekend2,I2,RWY 9 (K-350),"RWSV 9
+First pickup 10:26 from Pier 11
+
+Last drop off 20:15 at Pier 11
+
+
+"
+weekend2,J2,AST 1 AM (T-150),"AST 1 AM
+First pickup 08:58 at 90th
+
+Last drop 15:20 at 90th St.
+
+"
+weekend2,K2,AST 2 AM (K-299),"AST 2 AM
+First departure 08:56 at Pier 11
+Last drop 14:56 at Pier 11"
+weekend2,L2,AST 3 (K-299),"AST 3 AM
+First departure 11:40 at Pier 11
+
+Last drop 21:46 at Pier 11"
+weekend2,M2,GI (T-150),"GI Shuttle
+First departure is 10:04 at Pier 11
+Last drop off is 17:56 at Pier 11"
+weekend2,A10,RWSV 1 PM (K-350),"RWSV 1 PM
+First departure is 14:10 from Pier 11
+
+Last drop off is 21:26 at Pier 11"
+weekend2,B10,RWSV 2 PM (K-350),"RWSV 2 PM
+First departure is 15:00 at Pier 11
+last drop off is 22:16 at Pier 11"
+weekend2,C10,RWSV 3 PM (K-350),"RWSV 3 PM
+First departure is 15:50 from Pier 11
+
+Last drop off is 21:51 at RWY"
+weekend2,D10,RWSV 4 PM (K-350),"RWSV 4 PM
+First departure is 16:40 at Pier 11
+Last drop off is 21:30 at Pier 11"
+weekend2,E10,RWSV 5 PM (K-350),"RWSV 5 PM
+First departure is 14:55 at Pier 11
+Last drop off is 20:57 at FPP"
+weekend2,F10,RWSV 6 PM (K-350),"RWSV 6 PM
+First departure is 15:45 at Pier 11
+Last drop off is 21:47 at FPP"
+weekend2,H10,RWY RKT (K-350),"RWSV 9
+First pickup 10:26 from Pier 11
+
+Last drop off 20:15 at Pier 11
+
+
+"
+weekend2,J10,AST 1 PM (T-150),"AST 1 PM
+First pickup 15:26 at 90th
+
+Last drop 21:29 at 90th St. 
+"
+weekend2,K10,AST 2 PM (K-299),"AST 2 PM
+First departure 15:05 at Pier 11
+
+Last drop 21:05 at Pier 11"
+weekend2,L10,MID,"AST 3 PM
+First departure 14:17 at Pier 11.
+
+Last drop off 20:59 at E. 90th
+"
+weekend2,A18,ERF 1 AM (T) ,"ERF 1 AM
+First departure 08:35 at 34th St
+
+Last drop 15:08 at Pier 11"
+weekend2,B18,ERF 2 AM (T),"ERF 2 AM
+First departure 09:05 at E 34th St
+
+Last drop 15:48 at Pier 11"
+weekend2,C18,ERF 3 AM (T),"ERF 3 AM
+First departure 08:47 at Pier 11
+
+Last drop off 14:42 at Pier 11"
+weekend2,D18,ERF 4  (T),"ERF 4 
+First departure 10:43 at E 34th St
+
+Last drop off 20:56 at Pier 11"
+weekend2,E18,ERF 5 (T),"ERF 5
+First departure 10:32 at Pier 11
+
+Last drop off 20:39 at Pier 11"
+weekend2,F18,ERF 6  (T),"ERF 6
+First departure 11:00 at Pier 11
+
+Last drop off 21:05 at 34th St. "
+weekend2,G18,ERF 7  (T),"ERF 7
+First departure 11:13 at Pier 11
+
+Last drop off 21:17 at 34th St. "
+weekend2,H18,STG 1 AM (T),"STG-BK 1 AM
+First pickup 09:17 at Pier 11
+
+Last drop 15:31 at Pier 79"
+weekend2,I18,STG 2 AM (T),"STG-BK 2 AM
+First pickup 09:04 at Pier 79
+
+Last drop 15:31 at Pier 11"
+weekend2,J18,STG 3 AM (T),"STG-BK 3 AM
+First pickup 09:55 at Pier 79
+
+Last drop 16:09 at Pier 11"
+weekend2,K18,STG 4  (T),"STG-BK 4 AM
+First pickup 11:04 at Pier 79
+
+Last drop 21:37 at Pier 79"
+weekend2,L18,SBK 1 AM (T),"SBK 1 AM
+First pickup 08:23 at Bay Ridge
+
+Last drop 14:59 at Bay Ridge"
+weekend2,M18,SBK 2 AM (T),"SBK 2 AM
+First departure 08:21 at E 34th.
+
+Last drop 15:00 at 34th St"
+weekend2,N18,SBK 3 (T),"SBK 2 AM
+First departure 11:11 at Bay Ridge 
+
+Last drop 20:27 at Bay RIdge"
+weekend2,O18,SBK 4 (T),"SBK 2 AM
+First departure 11:05 at E 34th.
+
+Last drop 21:27 at Bay Ridge"
+weekend2,A26,ERF 1 PM (T) ,"ERF 1 PM
+First departure 15:42 at Pier 11
+
+Last drop 21:34 at Pier 11"
+weekend2,B26,ERF 2 PM (T),"ERF 2 PM
+First departure 16:21 at Pier 11
+
+Last drop off 22:14 at Pier 11"
+weekend2,C26,ERF 3 PM (T),"ERF 3 PM
+First departure 15:05 at Pier 11
+
+Last drop off 21:53 at E34th St"
+weekend2,D26,,"ERF 6
+First departure 11:00 at Pier 11
+
+Last drop off 21:05 at 34th St. "
+weekend2,E26,,"ERF 7
+First departure 11:13 at Pier 11
+
+Last drop off 21:17 at 34th St. "
+weekend2,H26,STG 1 PM (T),"STG-BK 1 PM
+First departure 15:49 at Pier 79
+
+Last drop 22:15 at Pier 11
+"
+weekend2,I26,STG 2 PM (T),"STG-BK 2 PM
+First departure 15:37 at Pier 11
+
+Last drop 22:15 at Pier 79
+"
+weekend2,J26,STG 3 PM (T),"STG-BK 3 PM
+First departure 16:15 at Pier 11
+
+Last Drop off is 21:37 Pier 11"
+weekend2,K26,STG 4 PM (T),"STG-BK 4 PM
+First departure 13:50 at Pier 79
+
+Last drop 21:12 at Pier 79
+"
+weekend2,L26,SBK 1 PM (T),"SBK 1 PM
+First departure 15:05 at Bay Ridge
+Last drop 22:07 at Bay Ridge"
+weekend2,M26,SBK 2 PM (T),"SBK 2 PM
+Fist departure 15:06 at 34th St
+Last drop off 22:08 at 34th St
+"

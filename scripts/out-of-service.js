@@ -17,6 +17,11 @@ function timeToSeconds(value) {
   return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3] || 0);
 }
 
+function hhmmSeconds(value) {
+  const [hours, minutes] = String(value || "").split(":").map(Number);
+  return (Number(hours) || 0) * 3600 + (Number(minutes) || 0) * 60;
+}
+
 function secondsToTime(seconds) {
   return `${String(Math.floor(seconds / 3600)).padStart(2, "0")}:${String(Math.floor((seconds % 3600) / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 }
@@ -66,24 +71,60 @@ export function boatRuns({ trips, timesByTrip, boatAssignments }) {
 // that no one should board, not worth asserting the boat has gone anywhere. Those are marked
 // unsure, and the board prints a question mark rather than pretending.
 export function serviceBreaks({
-  runs, gapMinutes = 60, certainAfterMinutes = 180, crewSwaps = new Map(), dayTypeOf = () => null
+  runs, gapMinutes = 60, certainAfterMinutes = 180, crewSwaps = new Map(), dayTypeOf = () => null,
+  shifts = {}, stopName = () => null, swapMinutes = 60
 }) {
   const gapSeconds = Math.max(1, gapMinutes) * 60;
   const certainSeconds = Math.max(gapSeconds, certainAfterMinutes * 60);
   const certainty = new Map();
   const tieUps = [];
   for (const list of runs.values()) {
+    if (!list.length) continue;
+    const kind = dayTypeOf(list[0].serviceId);
+    const known = shifts?.[kind]?.[boatLabel(list[0].routeId, list[0].boat)];
+
+    // The end of the day is not a matter of opinion: nothing follows the boat's last run. Taking it
+    // from the feed rather than from the notes means a boat whose final shift note was unusable
+    // still gets its home-port run, and a note that stops short cannot make the day look shorter
+    // than it is.
+    const finalRun = list.at(-1);
+    certainty.set(finalRun.tripId, "certain");
+    tieUps.push({ ...finalRun, endsDay: true });
+
+    // Mid-day is where it gets interesting, and where the crew schedule earns its keep. Its shift
+    // boundaries say where a shift ends as well as when, cover a boat relieved mid-route that
+    // leaves no gap to notice, and are published rather than inferred — so where they exist,
+    // nothing here is a guess and nothing is unsure.
+    if (known?.length) {
+      for (const [index, entry] of known.entries()) {
+        const endSeconds = hhmmSeconds(entry.endTime);
+        if (endSeconds >= finalRun.endSeconds) continue;
+        const next = known[index + 1];
+        // Consecutive shifts meeting at the same place within the window are a crew change, not the
+        // boat stopping: the relief steps aboard and it sails on. In the published data those
+        // handovers run 0-34 minutes and every real break is over four hours, so the two never come
+        // close to each other.
+        if (next && (!next.startPlace || next.startPlace === entry.endPlace) &&
+            hhmmSeconds(next.startTime) - endSeconds <= swapMinutes * 60) continue;
+        const run = list.find((item) => Math.abs(item.endSeconds - endSeconds) <= 60 &&
+          (!entry.endPlace || stopName(item.endStopId) === entry.endPlace));
+        if (!run) continue;
+        certainty.set(run.tripId, "certain");
+        tieUps.push({ ...run, endsDay: false });
+      }
+      continue;
+    }
+
+    // No published shift for this boat, so fall back to reading the gaps.
     for (const [index, run] of list.entries()) {
       const next = list[index + 1];
-      const gap = next ? next.startSeconds - run.endSeconds : Infinity;
+      if (!next) continue;
+      const gap = next.startSeconds - run.endSeconds;
       if (gap < gapSeconds) continue;
-      // A crew swap looks nothing like this in the bundled schedule — the boat keeps running and
-      // leaves no gap at all — but if a shuttle ever does line up with one, the shuttle is the
-      // better explanation and the boat is not going anywhere.
-      if (isCrewSwap({ crewSwaps, run, kind: dayTypeOf(run.serviceId) })) continue;
+      if (isCrewSwap({ crewSwaps, run, kind })) continue;
       const level = gap >= certainSeconds ? "certain" : "unsure";
       certainty.set(run.tripId, level);
-      if (level === "certain") tieUps.push({ ...run, endsDay: !next });
+      if (level === "certain") tieUps.push({ ...run, endsDay: false });
     }
   }
   return { certainty, tieUps };

@@ -1,0 +1,779 @@
+{
+ "source": "schedules/summer-2026-shift-notes.csv",
+ "note": "Crew shift boundaries, imported from the workbook's cell notes by scripts/import-boat-shifts.py. Every value here is verified against the bundled GTFS feed at import time; anything the feed disagreed with was dropped rather than guessed at. Regenerate whenever the feed or the workbook changes.",
+ "shifts": {
+  "weekday": {
+   "AS1": [
+    {
+     "shift": "AM",
+     "startTime": "06:03",
+     "startPlace": "East 90th St",
+     "endTime": "10:42",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!G3"
+    },
+    {
+     "shift": "PM",
+     "startTime": "16:52",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "20:42",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!G11"
+    }
+   ],
+   "AS2": [
+    {
+     "shift": "AM",
+     "startTime": "06:41",
+     "startPlace": "East 90th St",
+     "endTime": "13:14",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!H3"
+    },
+    {
+     "shift": "PM",
+     "startTime": "13:20",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:16",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!H11"
+    }
+   ],
+   "AS3": [
+    {
+     "shift": "AM",
+     "startTime": "06:22",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "14:11",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!I3"
+    },
+    {
+     "shift": "PM",
+     "startTime": "14:17",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "20:59",
+     "endPlace": "East 90th St",
+     "source": "weekday2!I11"
+    }
+   ],
+   "ER1": [
+    {
+     "shift": "AM",
+     "startTime": "06:06",
+     "startPlace": "Hunters Point South",
+     "endTime": "10:28",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!A19"
+    }
+   ],
+   "ER2": [
+    {
+     "shift": "AM",
+     "startTime": "06:26",
+     "startPlace": "East 34th Street",
+     "endTime": "14:31",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!B19"
+    },
+    {
+     "shift": "PM",
+     "startTime": "14:40",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:43",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!B27"
+    }
+   ],
+   "ER3": [
+    {
+     "shift": "AM",
+     "startTime": "06:31",
+     "startPlace": "Hunters Point South",
+     "endTime": "14:14",
+     "endPlace": "East 34th Street",
+     "source": "weekday2!C19"
+    },
+    {
+     "shift": "PM",
+     "startTime": "14:19",
+     "startPlace": "East 34th Street",
+     "endTime": "19:47",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!C27"
+    }
+   ],
+   "ER4": [
+    {
+     "shift": "AM",
+     "startTime": "06:51",
+     "startPlace": "East 34th Street",
+     "endTime": "10:28",
+     "endPlace": "East 34th Street",
+     "source": "weekday2!D19"
+    },
+    {
+     "shift": "PM",
+     "startTime": "16:16",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "20:44",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!D27"
+    }
+   ],
+   "ER5": [
+    {
+     "shift": "AM",
+     "startTime": "06:27",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "10:04",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!E19"
+    },
+    {
+     "shift": "PM",
+     "startTime": "16:31",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "22:03",
+     "endPlace": "East 34th Street",
+     "source": "weekday2!E27"
+    }
+   ],
+   "ER6": [
+    {
+     "shift": "AM",
+     "startTime": "06:39",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "13:54",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!F19"
+    },
+    {
+     "shift": "PM",
+     "startTime": "14:03",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:26",
+     "endPlace": "East 34th Street",
+     "source": "weekday2!F27"
+    }
+   ],
+   "RS1": [
+    {
+     "shift": "AM",
+     "startTime": "05:03",
+     "startPlace": "Ferry Point Park",
+     "endTime": "13:13",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!A3",
+     "endNoteTime": "13:05"
+    },
+    {
+     "shift": "PM",
+     "startTime": "13:13",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:08",
+     "endPlace": "Rockaway",
+     "source": "weekday2!A11"
+    }
+   ],
+   "RS2": [
+    {
+     "shift": "AM",
+     "startTime": "05:47",
+     "startPlace": "Ferry Point Park",
+     "endTime": "12:10",
+     "endPlace": "Rockaway",
+     "source": "weekday2!B3"
+    },
+    {
+     "shift": "PM",
+     "startTime": "16:12",
+     "startPlace": "Rockaway",
+     "endTime": "21:32",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!B11"
+    }
+   ],
+   "RS3": [
+    {
+     "shift": "AM",
+     "startTime": "06:31",
+     "startPlace": "Ferry Point Park",
+     "endTime": "14:19",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!C3",
+     "endNoteTime": "14:11"
+    },
+    {
+     "shift": "PM",
+     "startTime": "14:19",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "20:47",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!C11"
+    }
+   ],
+   "RS4": [
+    {
+     "shift": "AM",
+     "startTime": "05:05",
+     "startPlace": "Rockaway",
+     "endTime": "13:09",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!D3",
+     "endNoteTime": "12:59"
+    },
+    {
+     "shift": "PM",
+     "startTime": "13:09",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:07",
+     "endPlace": "Ferry Point Park",
+     "source": "weekday2!D11"
+    }
+   ],
+   "RS5": [
+    {
+     "shift": "AM",
+     "startTime": "05:49",
+     "startPlace": "Rockaway",
+     "endTime": "10:00",
+     "endPlace": "Rockaway",
+     "source": "weekday2!E3"
+    },
+    {
+     "shift": "PM",
+     "startTime": "16:06",
+     "startPlace": "Ferry Point Park",
+     "endTime": "21:28",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!E11"
+    }
+   ],
+   "RS6": [
+    {
+     "shift": "AM",
+     "startTime": "06:33",
+     "startPlace": "Rockaway",
+     "endTime": "14:19",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!F3",
+     "endNoteTime": "14:09"
+    },
+    {
+     "shift": "PM",
+     "startTime": "14:19",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "20:48",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!F11"
+    }
+   ],
+   "SB1": [
+    {
+     "shift": "AM",
+     "startTime": "06:40",
+     "startPlace": "Red Hook/Atlantic Basin",
+     "endTime": "13:45",
+     "endPlace": "East 34th Street",
+     "source": "weekday2!J3"
+    },
+    {
+     "shift": "PM",
+     "startTime": "13:51",
+     "startPlace": "East 34th Street",
+     "endTime": "21:41",
+     "endPlace": "East 34th Street",
+     "source": "weekday2!J11"
+    }
+   ],
+   "SB2": [
+    {
+     "shift": "AM",
+     "startTime": "06:33",
+     "startPlace": "East 34th Street",
+     "endTime": "13:24",
+     "endPlace": "Gov. Island/Yankee Pier",
+     "source": "weekday2!K3"
+    },
+    {
+     "shift": "PM",
+     "startTime": "13:53",
+     "startPlace": "Gov. Island/Yankee Pier",
+     "endTime": "21:33",
+     "endPlace": "Red Hook/Atlantic Basin",
+     "source": "weekday2!K11"
+    }
+   ],
+   "SG1": [
+    {
+     "shift": "AM",
+     "startTime": "06:16",
+     "startPlace": "St. George",
+     "endTime": "13:18",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!G19"
+    },
+    {
+     "shift": "PM",
+     "startTime": "13:24",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:20",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!G27"
+    }
+   ],
+   "SG2": [
+    {
+     "shift": "AM",
+     "startTime": "06:15",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "14:08",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!H19"
+    },
+    {
+     "shift": "PM",
+     "startTime": "14:14",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "22:08",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!H27"
+    }
+   ],
+   "SG3": [
+    {
+     "shift": "AM",
+     "startTime": "06:21",
+     "startPlace": "St. George",
+     "endTime": "10:37",
+     "endPlace": "Midtown West/W 39th St-Pier 79",
+     "source": "weekday2!I19"
+    },
+    {
+     "shift": "PM",
+     "startTime": "16:54",
+     "startPlace": "Midtown West/W 39th St-Pier 79",
+     "endTime": "21:49",
+     "endPlace": "Midtown West/W 39th St-Pier 79",
+     "source": "weekday2!I27"
+    }
+   ],
+   "SG4": [
+    {
+     "shift": "AM",
+     "startTime": "06:22",
+     "startPlace": "Midtown West/W 39th St-Pier 79",
+     "endTime": "13:43",
+     "endPlace": "Midtown West/W 39th St-Pier 79",
+     "source": "weekday2!J19"
+    },
+    {
+     "shift": "PM",
+     "startTime": "13:50",
+     "startPlace": "Midtown West/W 39th St-Pier 79",
+     "endTime": "21:12",
+     "endPlace": "Midtown West/W 39th St-Pier 79",
+     "source": "weekday2!J27"
+    }
+   ]
+  },
+  "weekend": {
+   "AS1": [
+    {
+     "shift": "AM",
+     "startTime": "08:58",
+     "startPlace": "East 90th St",
+     "endTime": "15:20",
+     "endPlace": "East 90th St",
+     "source": "weekend2!J2"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:26",
+     "startPlace": "East 90th St",
+     "endTime": "21:29",
+     "endPlace": "East 90th St",
+     "source": "weekend2!J10"
+    }
+   ],
+   "AS2": [
+    {
+     "shift": "AM",
+     "startTime": "08:56",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "14:56",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!K2"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:05",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:05",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!K10"
+    }
+   ],
+   "AS3": [
+    {
+     "shift": "",
+     "startTime": "11:40",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:46",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!L2"
+    }
+   ],
+   "ER1": [
+    {
+     "shift": "AM",
+     "startTime": "08:35",
+     "startPlace": "East 34th Street",
+     "endTime": "15:08",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!A18"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:42",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:34",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!A26"
+    }
+   ],
+   "ER2": [
+    {
+     "shift": "AM",
+     "startTime": "09:05",
+     "startPlace": "East 34th Street",
+     "endTime": "15:48",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!B18"
+    },
+    {
+     "shift": "PM",
+     "startTime": "16:21",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "22:14",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!B26"
+    }
+   ],
+   "ER3": [
+    {
+     "shift": "AM",
+     "startTime": "08:47",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "14:42",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!C18"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:05",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:53",
+     "endPlace": "East 34th Street",
+     "source": "weekend2!C26"
+    }
+   ],
+   "ER4": [
+    {
+     "shift": "",
+     "startTime": "10:43",
+     "startPlace": "East 34th Street",
+     "endTime": "20:56",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!D18"
+    }
+   ],
+   "ER6": [
+    {
+     "shift": "",
+     "startTime": "11:00",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:05",
+     "endPlace": "East 34th Street",
+     "source": "weekend2!F18"
+    }
+   ],
+   "ER7": [
+    {
+     "shift": "",
+     "startTime": "11:13",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:17",
+     "endPlace": "East 34th Street",
+     "source": "weekend2!G18"
+    }
+   ],
+   "RS1": [
+    {
+     "shift": "AM",
+     "startTime": "07:52",
+     "startPlace": "Ferry Point Park",
+     "endTime": "14:10",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!A2",
+     "endNoteTime": "14:00"
+    },
+    {
+     "shift": "PM",
+     "startTime": "14:10",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:26",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!A10"
+    }
+   ],
+   "RS2": [
+    {
+     "shift": "AM",
+     "startTime": "08:42",
+     "startPlace": "Ferry Point Park",
+     "endTime": "15:00",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!B2",
+     "endNoteTime": "14:50"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:00",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "22:16",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!B10"
+    }
+   ],
+   "RS3": [
+    {
+     "shift": "AM",
+     "startTime": "09:32",
+     "startPlace": "Ferry Point Park",
+     "endTime": "15:50",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!C2",
+     "startNoteTime": "09:37",
+     "endNoteTime": "15:40"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:50",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:51",
+     "endPlace": "Rockaway",
+     "source": "weekend2!C10"
+    }
+   ],
+   "RS4": [
+    {
+     "shift": "AM",
+     "startTime": "09:05",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "16:40",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!D2",
+     "endNoteTime": "16:30"
+    },
+    {
+     "shift": "PM",
+     "startTime": "16:40",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:30",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!D10"
+    }
+   ],
+   "RS5": [
+    {
+     "shift": "AM",
+     "startTime": "08:47",
+     "startPlace": "Rockaway",
+     "endTime": "14:55",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!E2",
+     "endNoteTime": "14:46"
+    },
+    {
+     "shift": "PM",
+     "startTime": "14:55",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "20:57",
+     "endPlace": "Ferry Point Park",
+     "source": "weekend2!E10"
+    }
+   ],
+   "RS6": [
+    {
+     "shift": "AM",
+     "startTime": "09:37",
+     "startPlace": "Rockaway",
+     "endTime": "15:45",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!F2",
+     "endNoteTime": "15:36"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:45",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:47",
+     "endPlace": "Ferry Point Park",
+     "source": "weekend2!F10"
+    }
+   ],
+   "RS7": [
+    {
+     "shift": "",
+     "startTime": "11:15",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:04",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!G2"
+    }
+   ],
+   "RS8": [
+    {
+     "shift": "",
+     "startTime": "09:36",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "19:25",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!H2"
+    }
+   ],
+   "RS9": [
+    {
+     "shift": "",
+     "startTime": "10:26",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "20:15",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!I2"
+    }
+   ],
+   "SB1": [
+    {
+     "shift": "AM",
+     "startTime": "08:23",
+     "startPlace": "Bay Ridge",
+     "endTime": "14:59",
+     "endPlace": "Bay Ridge",
+     "source": "weekend2!L18"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:05",
+     "startPlace": "Bay Ridge",
+     "endTime": "22:07",
+     "endPlace": "Bay Ridge",
+     "source": "weekend2!L26"
+    }
+   ],
+   "SB2": [
+    {
+     "shift": "AM",
+     "startTime": "08:21",
+     "startPlace": "East 34th Street",
+     "endTime": "15:00",
+     "endPlace": "East 34th Street",
+     "source": "weekend2!M18"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:06",
+     "startPlace": "East 34th Street",
+     "endTime": "22:08",
+     "endPlace": "East 34th Street",
+     "source": "weekend2!M26"
+    }
+   ],
+   "SB3": [
+    {
+     "shift": "",
+     "startTime": "11:11",
+     "startPlace": "Bay Ridge",
+     "endTime": "20:27",
+     "endPlace": "Bay Ridge",
+     "source": "weekend2!N18"
+    }
+   ],
+   "SB4": [
+    {
+     "shift": "",
+     "startTime": "11:05",
+     "startPlace": "East 34th Street",
+     "endTime": "21:27",
+     "endPlace": "Bay Ridge",
+     "source": "weekend2!O18"
+    }
+   ],
+   "SG1": [
+    {
+     "shift": "AM",
+     "startTime": "09:17",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "15:31",
+     "endPlace": "Midtown West/W 39th St-Pier 79",
+     "source": "weekend2!H18"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:49",
+     "startPlace": "Midtown West/W 39th St-Pier 79",
+     "endTime": "22:15",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!H26"
+    }
+   ],
+   "SG2": [
+    {
+     "shift": "AM",
+     "startTime": "09:04",
+     "startPlace": "Midtown West/W 39th St-Pier 79",
+     "endTime": "15:31",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!I18"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:37",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "22:15",
+     "endPlace": "Midtown West/W 39th St-Pier 79",
+     "source": "weekend2!I26"
+    }
+   ],
+   "SG3": [
+    {
+     "shift": "AM",
+     "startTime": "09:55",
+     "startPlace": "Midtown West/W 39th St-Pier 79",
+     "endTime": "16:09",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!J18"
+    },
+    {
+     "shift": "PM",
+     "startTime": "16:15",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "21:37",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekend2!J26"
+    }
+   ],
+   "SG4": [
+    {
+     "shift": "",
+     "startTime": "11:04",
+     "startPlace": "Midtown West/W 39th St-Pier 79",
+     "endTime": "21:37",
+     "endPlace": "Midtown West/W 39th St-Pier 79",
+     "source": "weekend2!K18"
+    }
+   ]
+  }
+ }
+}

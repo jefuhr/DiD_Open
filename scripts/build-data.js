@@ -238,6 +238,11 @@ export async function buildDisplayData({
   const crewConfig = await readFile(path.join(root, "config/crew-shuttles.json"), "utf8")
     .then((raw) => JSON.parse(raw))
     .catch(() => ({}));
+  // Published crew shift boundaries, imported from the workbook's cell notes by
+  // scripts/import-boat-shifts.py. Optional: without it every shift end is inferred from gaps.
+  const boatShifts = await readFile(path.join(root, "content/boat-shifts.json"), "utf8")
+    .then((raw) => JSON.parse(raw).shifts || {})
+    .catch(() => ({}));
   const display = JSON.parse(displayRaw);
   const landings = JSON.parse(landingsRaw);
   const landingNumber = Number(landingOverride ?? display.landingNumber);
@@ -303,7 +308,8 @@ export async function buildDisplayData({
     return runsWeekday && !runsWeekend ? "weekday" : (runsWeekend && !runsWeekday ? "weekend" : null);
   };
   const breaks = serviceBreaks({
-    runs, dayTypeOf,
+    runs, dayTypeOf, shifts: boatShifts,
+    stopName: (stopId) => stopsById.get(stopId)?.stop_name || null,
     gapMinutes: Number(crewConfig.outOfService?.gapMinutes) || 60,
     certainAfterMinutes: Number(crewConfig.outOfService?.certainAfterMinutes) || 180,
     crewSwaps: crewSwapIndex({ shuttles: crewConfig.shuttles, landings })

@@ -98,12 +98,14 @@ departure, and the board composes the badge as route code plus number.
    npm test
    ```
 
-7. **Re-check [`config/crew-shuttles.json`](./config/crew-shuttles.json).** Crew shuttle times move
+7. **Re-import the shift boundaries.** `python3 scripts/import-boat-shifts.py <notes csv>`, then
+   read its report — it lists every note the feed disagreed with, and every boat left without one.
+
+8. **Re-check [`config/crew-shuttles.json`](./config/crew-shuttles.json).** Crew shuttle times move
    with the schedule and nothing will tell you they are wrong — no import step reads them, and no
    test can know a shuttle time is out of date. See the next section.
 
-8. **Commit the feed, the regenerated `content/boat-assignments.json` and the shuttle config
-   together.** They describe one schedule period and are only meaningful as a set.
+9. **Commit the feed, both regenerated `content/` files and the shuttle config together.** They describe one schedule period and are only meaningful as a set.
 
 ## Out of Service, Pier C, and Crew Shuttles
 
@@ -118,23 +120,40 @@ The board also shows what a boat does when it stops carrying passengers. Three t
 
 **Where each part comes from matters, because only one of them is derived.**
 
-`DROP OFF ONLY` and the home-port runs are worked out from the workbook. Knowing which boat runs
-which trip is the whole trick: group the trips by boat and a boat going out of service becomes a
-**hole in its own day**. Nothing marks it — the run of trips simply stops and picks up hours later
-with a fresh crew.
+`DROP OFF ONLY` and the home-port runs come from **the crew schedule's own shift boundaries**, in
+[`content/boat-shifts.json`](./content/boat-shifts.json). Each boat's column in the workbook carries
+a cell note saying when and where that crew starts and finishes:
 
-That only works because there is a clean gap in the distribution. In the bundled schedule ordinary
-layovers run to 44 minutes; the next gap up is 90; the weekday split shifts are 4–6.5 hours. So
-`gapMinutes` (60) sits in an empty valley and `certainAfterMinutes` (180) separates "the boat has
-gone" from "the crew is on a break and the boat is sitting there". **That valley is a property of
-this schedule, not a law** — re-check both numbers when the schedule changes, with:
-
-```bash
-node -e 'import("./scripts/build-data.js")' # or read the gaps straight out of the workbook
+```text
+RWSV 1 AM
+First pickup 05:03 at FPP.
+Last drop off 13:05 at Pier 11
 ```
 
-A gap between the two thresholds prints `DROP OFF?` and produces no Pier C run, because asserting
-the boat went somewhere would be inventing a movement nobody published.
+[`scripts/import-boat-shifts.py`](./scripts/import-boat-shifts.py) reads those notes, checks every
+one against the bundled feed, and writes the result. Run it whenever the feed or the workbook
+changes:
+
+```bash
+python3 scripts/import-boat-shifts.py schedules/summer-2026-shift-notes.csv
+```
+
+Two boundaries are handled differently on purpose:
+
+- **The end of the day comes from the feed, not the notes.** Nothing follows a boat's last run, so
+  it needs no interpretation — and a shift note that is missing or unusable then cannot make a
+  boat's day look shorter than it is.
+- **Mid-day shift ends come from the notes**, because that is the case the feed cannot express. A
+  boat relieved at Pier 11 in the middle of a Rockaway run leaves no gap at all to notice.
+
+The published data separates a crew handover from a boat stopping completely: handovers run **0–34
+minutes**, every real break is **over four hours**, and nothing sits between. `swapMinutes` (60) is
+the line, and it has an enormous margin either side.
+
+Where a boat has no usable shift note the board falls back to reading gaps, and `gapMinutes` /
+`certainAfterMinutes` apply. A gap between those two prints **`DROP OFF?`** and produces no Pier C
+run, because asserting the boat went somewhere would be inventing a movement nobody published. With
+the current import only `ER5 weekend` and `RR1 weekend` fall back.
 
 Routes with no boat number get nothing — Governors Island is crewed off-schedule, and the Rockaway
 shuttles are buses. Partner operators publish no crew schedule, so NY Waterway and the rest never
