@@ -145,21 +145,22 @@ landings that share a dock with another ferry operator can show its departures n
 | Seastreak | [`gtfs/seastreak/`](./gtfs/seastreak) | `sea:` | [`public/assets/seastreak.png`](./public/assets/seastreak.png) |
 | NYU Langone Ferry | [`gtfs/nyu/`](./gtfs/nyu) — generated, see below | `nyu:` | [`public/assets/nyu.png`](./public/assets/nyu.png) |
 | Liberty Landing Ferry | [`gtfs/liberty/`](./gtfs/liberty) — transcribed, see below | `lib:` | [`public/assets/cityferry.png`](./public/assets/cityferry.png) |
+| IKEA Brooklyn Ferry | [`gtfs/ikea/`](./gtfs/ikea) — transcribed, see below | `ike:` | text badge, `IKEA` |
 
 which landings pull which operator:
 
 | landing | NYC Ferry stop | partner stop |
 |---|---|---|
 | `8` East 34th Street | `17` East 34th Street | Seastreak `168` East 35th St., NYC · NYU `13138` East 34th Street |
-| `16` Wall St / Pier 11 | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street |
+| `16` Wall St / Pier 11 | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street · IKEA `pier11` Pier 11 / Wall Street |
 | `24` Sunset Park / BAT | `118` Sunset Park/BAT | NYU `13139` Brooklyn Army Terminal |
 | `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | NY Waterway `2729332` Brookfield Place/Battery Park City · Liberty Landing `2557122` Brookfield Place Terminal |
-| `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | NY Waterway `2439145` Midtown / W 39th Street |
+| `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | NY Waterway `2439145` Midtown / W 39th Street · IKEA `midtown` Midtown / W 39th Street |
 
 each operator has two switches, and either one off means none of its data is read:
 
-- `waterwayEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` in `config/display.json` — the whole kiosk.
-- `waterwayStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
+- `waterwayEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` / `ikeaEnabled` in `config/display.json` — the whole kiosk.
+- `waterwayStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` / `ikeaStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
 
 good to know:
 
@@ -167,7 +168,10 @@ good to know:
 - partner ids are namespaced with the prefix above so they can't collide with NYC Ferry ids or each other.
 - partner badges show the operator's mark instead of the GTFS short name, because those short names are useless to riders — NY Waterway publishes internal all-digit route ids, Seastreak names every route "Seastreak", and NYU and Liberty Landing publish no short name at all. a partner route with a real short name (W44, Greenwich) keeps it.
 - Seastreak's headsigns only name a region ("Manhattan", "New Jersey"), so its rows show the trip's last stop instead — Highlands NJ, Atlantic Highlands NJ, Battery Maritime Building. NY Waterway headsigns already name the terminal and are used as published.
-- NY Waterway, Seastreak and Liberty Landing publish no realtime feed here, so their rows show scheduled times only: no boat name, no delay badge. that's expected. NYU does have live estimates — see below.
+- four NY Waterway routes are tagged `route_type` 3 (bus) in the Trillium feed although they are ferries: `19750` Edgewater – Brookfield Place, `19751` Edgewater – Pier 11, `74376` Port Liberte – Pier 11 and `76080` Hoboken/14th St – Pier 11. with `busesEnabled: false` that dropped them from the board entirely — about a third of NY Waterway's service at Pier 11. `WATERWAY_FERRIES_TYPED_AS_BUS` in [`scripts/build-data.js`](./scripts/build-data.js) reclassifies exactly those four. it changes no times, and it lives in code so that dropping in a fresh feed can't quietly reintroduce the bug. everything else typed as a bus in that feed really is one.
+- a feed can list the same sailing under two trip ids, which used to render as two identical rows. the build drops a departure only when another one already matches it on service, route, stop, minute *and* destination — a duplicate row, never a time.
+- NY Waterway, Seastreak, Liberty Landing and the IKEA boat publish no realtime feed here, so their rows show scheduled times only: no boat name, no delay badge. that's expected. NYU does have live estimates — see below.
+- **known bad, upstream:** at Brookfield Place the board shows the South Amboy boat leaving at 6:50 AM, 7:55 AM, 3:50 PM and 4:50 PM. NY Waterway publishes 6:25 AM, 7:30 AM, 3:25 PM and 4:25 PM. route `77347` in the bundled feed carries a stale set of trips that put Brookfield Place *after* Pier 11 rather than before it; the current trips alongside them are right, and Pier 11's own times are right, so the two afternoon ones are also the duplicates the build now drops there. this is not patched here — correcting it means editing published times, and the real fix is a fresher NY Waterway feed. the bundled one is `UTC: 07-Oct-2025`. check for a newer Trillium release before trusting Brookfield Place's South Amboy rows.
 - a partner feed only contributes departures whose service is in effect today. if a third-party feed lapses, its rows silently vanish, so the build prints a `WARNING: the <operator> feed ... expired on <date>` line rather than leaving you to debug an empty row.
 
 to add a partner at another landing, find its `stop_id` in that feed's `stops.txt` and add the matching `...StopIds` array to the landing in `config/landings.json`.
@@ -199,6 +203,19 @@ node scripts/build-liberty-gtfs.js
 - the operator publishes departure times only. the two arrivals it doesn't print are derived from the 2019 feed's running times, which still hold exactly: 6:30 +2 = 6:32, +13 = 6:45, +10 = 6:55 reproduces every printed time.
 - the operator says "weekdays except major holidays" but publishes no list, so **no holiday exceptions are encoded** and a holiday will show sailings that don't run. `overrides/25.json` is the way to cover a known closure.
 - stop ids are carried over from the Trillium feed unchanged so `config/landings.json` keeps working; only `2557122` was renamed, World Financial Center → Brookfield Place.
+
+## the IKEA Brooklyn ferry is transcribed, and seasonal
+
+**NY Waterway runs it; their GTFS doesn't mention it.** [`gtfs/waterway/`](./gtfs/waterway) has no IKEA route, no Red Hook stop, and no weekend service on any Pier 11 route. the only place the operator publishes this timetable is [nywaterway.com/ikea.aspx](https://www.nywaterway.com/ikea.aspx), and there only as a **JPEG of a table**. so [`scripts/build-ikea-gtfs.js`](./scripts/build-ikea-gtfs.js) transcribes it, the same way Liberty Landing is handled.
+
+- free, Saturdays and Sundays only, between Midtown / W 39th St, Pier 11 / Wall St and the pier behind the store at 1 Beard Street.
+- six sailings each way. the last one out of Midtown (5:55 PM) is printed with its Pier 11 cell blacked out — it runs non-stop, so Pier 11 sees five southbound boats and Midtown six.
+- the badge reads `IKEA` rather than an operator mark: NY Waterway's other routes are all commuter runs across the Hudson, so the mark would tell a rider less than the name does.
+
+two things to know before trusting it:
+
+- **the operator's "Arrive Midtown" column is not usable.** it prints five minutes after the Pier 11 arrival on every row, for a leg the same page gives as thirty minutes southbound — and on the 2:20 PM sailing it prints an arrival at Midtown *before* the boat reaches Pier 11. every departure is transcribed as published; that one terminal arrival is derived as Pier 11 + 30 min. it is never shown, because a trip's last stop is never a departure.
+- **it expires on purpose.** the service pauses over the winter and NY Waterway reissues the image under a new filename every month or two, with no end date on the page. `SEASON_DAYS` bounds the generated calendar to 90 days so the feed lapses loudly — the build warns and the IKEA rows stop — rather than advertising sailings that don't run. re-read the page and re-run the script when `SOURCE_CHECKED_ON` gets old.
 
 ## the NYU Langone ferry
 
@@ -348,7 +365,7 @@ messages can be up to 2,000 characters. a malformed file, wrong landing id, fail
 
 ## updating the schedule
 
-replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/`, `gtfs/seastreak/` and `gtfs/liberty/` — when a new feed is published, then restart. `gtfs/nyu/` is the exception: it has no upstream file to drop in, so regenerate it with `node scripts/fetch-nyu-gtfs.js`. the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
+replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/` and `gtfs/seastreak/` — when a new feed is published, then restart. three directories have no upstream file to drop in and are regenerated instead: `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, and `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js` (re-read the operator's page first — both of those last two are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
 any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `32`) in both files — `test/display-contract.test.js` checks that they agree.
 

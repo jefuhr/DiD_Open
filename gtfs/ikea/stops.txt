@@ -1,0 +1,4 @@
+stop_id,stop_name,stop_lat,stop_lon
+midtown,Midtown / W 39th Street,40.76062395229,-74.003851516287
+pier11,Pier 11 / Wall Street,40.702800820044,-74.005721223577
+ikea,IKEA Brooklyn,40.6734,-74.0156

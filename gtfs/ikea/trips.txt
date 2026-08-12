@@ -1,0 +1,13 @@
+route_id,service_id,trip_id,trip_headsign,direction_id
+IKEA,ikea-weekend,ikea-to-01,IKEA Brooklyn,0
+IKEA,ikea-weekend,ikea-to-02,IKEA Brooklyn,0
+IKEA,ikea-weekend,ikea-to-03,IKEA Brooklyn,0
+IKEA,ikea-weekend,ikea-to-04,IKEA Brooklyn,0
+IKEA,ikea-weekend,ikea-to-05,IKEA Brooklyn,0
+IKEA,ikea-weekend,ikea-to-06,IKEA Brooklyn,0
+IKEA,ikea-weekend,ikea-from-01,Midtown / W 39th Street,1
+IKEA,ikea-weekend,ikea-from-02,Midtown / W 39th Street,1
+IKEA,ikea-weekend,ikea-from-03,Midtown / W 39th Street,1
+IKEA,ikea-weekend,ikea-from-04,Midtown / W 39th Street,1
+IKEA,ikea-weekend,ikea-from-05,Midtown / W 39th Street,1
+IKEA,ikea-weekend,ikea-from-06,Midtown / W 39th Street,1
