@@ -14,7 +14,7 @@
   "13": { "name": "Hunters Point South", "stopIds": ["4"] },
   "14": { "name": "Long Island City", "stopIds": ["90"] },
   "15": { "name": "North Williamsburg", "stopIds": ["19"] },
-  "16": { "name": "Pier 11", "displayName": "Wall St / Pier 11", "stopIds": ["87"], "waterwayStopIds": ["2439146"] },
+  "16": { "name": "Pier 11", "displayName": "Wall St / Pier 11", "stopIds": ["87"], "waterwayStopIds": ["2439146"], "ikeaStopIds": ["pier11"] },
   "17": { "name": "Red Hook", "displayName": "Red Hook / Atlantic Basin", "stopIds": ["24"] },
   "18": { "name": "Rockaway + Bus Stop", "displayName": "Rockaway", "stopIds": ["88", "16"] },
   "19": { "name": "Roosevelt Island", "stopIds": ["25"] },
@@ -24,5 +24,5 @@
   "23": { "name": "Stuyvesant Cove", "stopIds": ["114"] },
   "24": { "name": "Sunset Park", "displayName": "Sunset Park / BAT", "stopIds": ["118"], "nyuStopIds": ["13139"] },
   "25": { "name": "Battery Park City", "displayName": "Battery Park City / Brookfield Place", "stopIds": ["136"], "waterwayStopIds": ["2729332"], "libertyStopIds": ["2557122"] },
-  "26": { "name": "Pier 79", "displayName": "Midtown West / Pier 79", "stopIds": ["138"], "waterwayStopIds": ["2439145"] }
+  "26": { "name": "Pier 79", "displayName": "Midtown West / Pier 79", "stopIds": ["138"], "waterwayStopIds": ["2439145"], "ikeaStopIds": ["midtown"] }
 }
