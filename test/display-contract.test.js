@@ -292,3 +292,22 @@ test("offline shell includes version 43 display assets", async () => {
   assert.match(worker, /styles\.css\?v=43/);
   assert.match(worker, /app\.js\?v=43/);
 });
+
+// A merge once shipped conflict markers in index.html and sw.js. Nothing caught it: the contract
+// tests only look for patterns they expect, so text nobody asserts on rode all the way to a live
+// board and rendered as "<<<<<<< HEAD ======= >>>>>>> staff" above the departures. This is the
+// cheap guard that would have.
+test("no file carries an unresolved merge conflict", async () => {
+  const root = new URL("../", import.meta.url);
+  const files = [
+    "public/index.html", "public/app.js", "public/styles.css", "public/sw.js",
+    "scripts/build-data.js", "scripts/out-of-service.js", "server.js",
+    "config/display.json", "config/landings.json", "config/crew-shuttles.json"
+  ];
+  for (const name of files) {
+    const text = await readFile(new URL(name, root), "utf8");
+    for (const marker of ["<<<<<<<", "=======", ">>>>>>>"]) {
+      assert.doesNotMatch(text, new RegExp(`^${marker}`, "m"), `${name} still has a ${marker} conflict marker`);
+    }
+  }
+});
