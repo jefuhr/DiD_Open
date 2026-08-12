@@ -280,14 +280,14 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.match(app, /function routeVisual\(routeId, variant\)/);
 });
 
-test("offline shell includes version 40 display assets", async () => {
+test("offline shell includes version 41 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=40/);
-  assert.match(index, /app\.js\?v=40/);
-  assert.match(worker, /nyc-ferry-did-shell-v40/);
-  assert.match(worker, /styles\.css\?v=40/);
-  assert.match(worker, /app\.js\?v=40/);
+  assert.match(index, /styles\.css\?v=41/);
+  assert.match(index, /app\.js\?v=41/);
+  assert.match(worker, /nyc-ferry-did-shell-v41/);
+  assert.match(worker, /styles\.css\?v=41/);
+  assert.match(worker, /app\.js\?v=41/);
 });

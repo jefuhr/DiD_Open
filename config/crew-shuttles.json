@@ -1,6 +1,11 @@
 {
   "note": "Crew shuttles and home-port runs for NYC Ferry boats. Nothing here comes from the GTFS feed or the schedule workbook - both are silent about out-of-service moves - so this file is maintained by hand and must be revisited whenever the schedule changes. See ferryAssignments.md.",
   "homePort": "Pier C",
+  "outOfService": {
+    "note": "How a boat going out of service is spotted. The workbook marks nothing, so it is inferred from holes in a boat's own run of trips. In the bundled schedule ordinary layovers reach 44 minutes and the next gap up is 90, so 60 sits in an empty valley between them - that valley is a property of this schedule, not a law, so re-check these when the schedule changes. Gaps at or above certainAfterMinutes mean the boat leaves and the Pier C run is shown; shorter ones are marked with a question mark instead, because an hour and a half at Rockaway is more likely a crew break with the boat tied up where it is.",
+    "gapMinutes": 60,
+    "certainAfterMinutes": 180
+  },
   "holidays": {
     "note": "Dates that run the WEEKEND shuttle set even though the GTFS feed runs weekday service. calendar_dates.txt is empty, so the feed itself has no idea a holiday is happening - this list is the only source. Weekend-falling holidays are left out because they change nothing. Starting list only: confirm against the operator's holiday service before relying on it.",
     "dates": [
@@ -20,20 +25,102 @@
   "shuttles": {
     "note": "One entry is one departure to the home port carrying the crews being relieved off the boats listed. 'landing' is a key in config/landings.json. 'boats' is the route code plus boat number, the same label the board badges - a boat named here is swapping crew, not finishing, so it is never marked out of service on account of the shuttle.",
     "weekend": [
-      { "landing": 16, "time": "13:45", "boats": ["RS1"] },
-      { "landing": 4,  "time": "14:30", "boats": ["SB1"] },
-      { "landing": 16, "time": "14:35", "boats": ["ER3", "RS5", "RS2", "AS2"] },
-      { "landing": 8,  "time": "14:40", "boats": ["SB2"] },
-      { "landing": 9,  "time": "14:50", "boats": ["AS1"] },
-      { "landing": 26, "time": "15:00", "boats": ["SG1"] },
-      { "landing": 16, "time": "15:10", "boats": ["SG2", "RS6", "RS3", "ER1"] },
-      { "landing": 16, "time": "15:45", "boats": ["ER2", "SG3", "RS4"] }
+      {
+        "landing": 16,
+        "time": "13:45",
+        "boats": [
+          "RS1"
+        ]
+      },
+      {
+        "landing": 4,
+        "time": "14:30",
+        "boats": [
+          "SB1"
+        ]
+      },
+      {
+        "landing": 16,
+        "time": "14:35",
+        "boats": [
+          "ER3",
+          "RS5",
+          "RS2",
+          "AS2"
+        ]
+      },
+      {
+        "landing": 8,
+        "time": "14:40",
+        "boats": [
+          "SB2"
+        ]
+      },
+      {
+        "landing": 9,
+        "time": "14:50",
+        "boats": [
+          "AS1"
+        ]
+      },
+      {
+        "landing": 26,
+        "time": "15:00",
+        "boats": [
+          "SG1"
+        ]
+      },
+      {
+        "landing": 16,
+        "time": "15:10",
+        "boats": [
+          "SG2",
+          "RS6",
+          "RS3",
+          "ER1"
+        ]
+      },
+      {
+        "landing": 16,
+        "time": "15:45",
+        "boats": [
+          "ER2",
+          "SG3",
+          "RS4"
+        ]
+      }
     ],
     "weekday": [
-      { "landing": 16, "time": "12:45", "boats": ["RS1", "RS4"] },
-      { "landing": 11, "time": "13:15", "boats": ["SB2"] },
-      { "landing": 8,  "time": "13:30", "boats": ["SB1"] },
-      { "landing": 16, "time": "13:45", "boats": ["RS3", "RS6"] }
+      {
+        "landing": 16,
+        "time": "12:45",
+        "boats": [
+          "RS1",
+          "RS4"
+        ]
+      },
+      {
+        "landing": 11,
+        "time": "13:15",
+        "boats": [
+          "SB2"
+        ]
+      },
+      {
+        "landing": 8,
+        "time": "13:30",
+        "boats": [
+          "SB1"
+        ]
+      },
+      {
+        "landing": 16,
+        "time": "13:45",
+        "boats": [
+          "RS3",
+          "RS6"
+        ]
+      }
     ]
   }
 }
