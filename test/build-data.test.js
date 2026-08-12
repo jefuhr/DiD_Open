@@ -381,13 +381,15 @@ test("boat assignments join GTFS trip_short_name to the schedule workbook", asyn
 // Pier 11. These are the routes and the counts the operator publishes on nywaterway.com.
 test("NY Waterway ferries mistyped as buses in the feed still sail", async () => {
   const data = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true, busesEnabled: false });
+  // Counted by the terminals a sailing reaches, not by the row's headline destination: one boat
+  // calls at several, so "Edgewater" is sometimes the far end and sometimes a stop on the way.
   const counts = {};
   for (const item of data.departures.filter((entry) => entry.routeId.startsWith("wtr:"))) {
-    counts[item.destination] = (counts[item.destination] || 0) + 1;
+    for (const place of [item.destination, ...(item.via || [])]) counts[place] = (counts[place] || 0) + 1;
   }
   // Edgewater, Hoboken/14th St and Port Liberte are the three mistyped routes calling at Pier 11.
   assert.equal(counts.Edgewater, 6);
-  assert.equal(counts["Hoboken (14th St)"], 15);
+  assert.equal(counts["Hoboken (14th Street)"], 15);
   assert.equal(counts["Port Liberte"], 11);
   // Every one of them is a ferry on the board, not a bus, so busesEnabled cannot reach them.
   for (const item of data.departures.filter((entry) => entry.routeId.startsWith("wtr:"))) {
@@ -617,5 +619,32 @@ test("a crew swap does not read as a boat going out of service", async () => {
         Math.abs(item.seconds - shuttle.seconds) < 3600);
       assert.equal(tieUp, undefined, `${boat} is swapping crew at ${shuttle.departureTime}, not finishing`);
     }
+  }
+});
+
+// NY Waterway publishes one trip per origin-destination pair, so a boat calling at two terminals
+// arrives as two trips leaving the same berth at the same minute and used to render as two boats.
+test("a NY Waterway boat calling at several terminals is one row, not several", async () => {
+  const data = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true });
+  const waterway = data.departures.filter((item) => item.routeId.startsWith("wtr:"));
+  // The operator's map: green is one line calling at Paulus Hook and Liberty Harbor.
+  const green = waterway.find((item) => item.departureTime === "06:15:00");
+  assert.equal(green.destination, "Liberty Harbor");
+  assert.deepEqual(green.via, ["Paulus Hook"]);
+  assert.equal(waterway.filter((item) => item.departureTime === "06:15:00").length, 1);
+  // Purple links Hoboken 14th St, Port Imperial and Edgewater to Pier 11.
+  const purple = waterway.find((item) => item.departureTime === "07:51:00");
+  assert.equal(purple.destination, "Edgewater");
+  assert.deepEqual(purple.via, ["Hoboken (14th Street)", "Port Imperial"]);
+
+  // Two boats that merely share a minute must stay two rows. At 6:35 one sails to Hoboken/NJ
+  // Transit and another to South Amboy — both reach a terminal at 6:50, which no single boat can.
+  const sixThirtyFive = waterway.filter((item) => item.departureTime === "06:35:00");
+  assert.equal(sixThirtyFive.length, 2);
+  assert.deepEqual(sixThirtyFive.map((item) => item.destination).sort(),
+    ["Hoboken / NJ Transit Terminal", "South Amboy"]);
+  // Port Liberte runs its own line to Pier 11 and is never folded into a neighbour.
+  for (const item of waterway.filter((entry) => entry.destination === "Port Liberte")) {
+    assert.deepEqual(item.via, []);
   }
 });

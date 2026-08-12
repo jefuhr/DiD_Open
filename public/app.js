@@ -139,10 +139,11 @@ function routeDirectionGroups(now = new Date()) {
         }
       }
       if (delta < -60) continue;
-      const key = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}|${departure.destination}`;
+      const via = (departure.via || []).join(" > ");
+      const key = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}|${departure.destination}|${via}`;
       const group = groups.get(key) || {
         key, routeId: departure.routeId, directionId: departure.directionId,
-        destination: departure.destination, variant: departure.variant || null,
+        destination: departure.destination, via: departure.via || [], variant: departure.variant || null,
         outOfService: Boolean(departure.outOfService), crewShuttle: Boolean(departure.crewShuttle),
         departures: []
       };
@@ -187,6 +188,29 @@ function routeDirectionGroups(now = new Date()) {
 
 function routeShortName(routeId) {
   return data?.routes?.[routeId]?.shortName || routeId;
+}
+
+// NY Waterway boats call at more than one terminal, so the stops before the far end are named.
+// Shortened because the destination line is already the widest thing on a card: "Hoboken (14th
+// Street)" becomes "Hoboken 14th", which is what the terminal is called anyway.
+const VIA_SHORTENINGS = [
+  [/^Hoboken \(14th Street\)$/, "Hoboken 14th"],
+  [/^Hoboken \/ NJ Transit Terminal$/, "Hoboken NJT"],
+  [/^Brookfield Place\/Battery Park City$/, "Brookfield Pl"],
+  [/^Midtown West\/W 39th St-Pier 79$/, "Midtown"],
+  [/^Wall St\/Pier 11$/, "Pier 11"],
+  [/^Gov\. Island\/Yankee Pier$/, "Governors Island"],
+  [/^Red Hook\/Atlantic Basin$/, "Red Hook"]
+];
+
+function shortStop(name) {
+  for (const [pattern, short] of VIA_SHORTENINGS) if (pattern.test(name)) return short;
+  return name;
+}
+
+function viaLabel(group) {
+  if (!group.via?.length) return "";
+  return `<small class="via">via ${escapeHtml(group.via.map(shortStop).join(", "))}</small>`;
 }
 
 // The line under the destination. "Northbound" says nothing useful about a boat going home empty,
@@ -304,7 +328,7 @@ function render() {
         <span class="route-badge${partnerLogo ? " route-badge-image" : ""}">${badgeContent}${variantBadge}</span>
         <span class="route-name">${escapeHtml(routeName)}${operatorBadge}</span>
       </div>
-      <div class="destination"><strong>${escapeHtml(group.destination)}</strong><span>${groupContext(group, isOtherOperator)}</span></div>
+      <div class="destination"><strong>${escapeHtml(group.destination)}${viaLabel(group)}</strong><span>${groupContext(group, isOtherOperator)}</span></div>
       <div class="departure-slots">${slots.map((item) => item ? departureCell(item) : `<div class="departure-slot unavailable"><span>No scheduled trip</span></div>`).join("")}</div>
     </article>`;
   }).join("");
