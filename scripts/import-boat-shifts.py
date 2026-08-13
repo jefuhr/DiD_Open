@@ -64,6 +64,22 @@ WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"]
 # departure on screen a minute the boat does not leave.
 MATCH_TOLERANCE = 10 * 60
 
+# Shift notes for boats the workbook has no readable column for. Each is still checked against the
+# bundled feed exactly like a note read out of the CSV, and each says where it came from, because a
+# value nobody can trace back is worse than an absent one.
+#
+# RR1 — the Rockaway Rocket. Its column is headed "RWY RKT" with no boat number, and the note inside
+# it is copied from RWSV 9: it gives Pier 11 times for a boat that never calls there, running
+# between Long Island City and Rockaway all day. Supplied by hand on 2026-08-13.
+MANUAL = [
+    {
+        "boat": "RR1", "kind": "weekend", "shift": "",
+        "startTime": "09:30", "startPlace": "Long Island City",
+        "endTime": "17:30", "endPlace": "Long Island City",
+        "source": "supplied by hand 2026-08-13 (RWY RKT column is unreadable)",
+    },
+]
+
 
 def place(text):
     if not text:
@@ -117,6 +133,23 @@ def resolve(events, name, noted):
     return None, name, False
 
 
+def final_leg(legs, name, when):
+    """The end of the leg the boat pulled out on at this time, if it was heading for this place.
+
+    "Last drop off is 17:30 at Long Island City" for a boat that leaves Rockaway at 17:30 and gets
+    into Long Island City at 18:46 is two true facts about one trip and no single stop event at
+    all: the time it let go, and the place it was going. The crew finishes when that leg does.
+
+    Both halves have to agree before this is used — the noted time must be an exact departure and
+    the noted place must be where that same trip ends — so a time that merely happens to fall near
+    a sailing cannot drag a note onto a leg it has nothing to do with.
+    """
+    if not name:
+        return None
+    endings = {arrival for departure, destination, arrival in legs if departure == when and destination == name}
+    return endings.pop() if len(endings) == 1 else None
+
+
 def seconds(value):
     hours, minutes = value.split(":")[:2]
     return int(hours) * 3600 + int(minutes) * 60
@@ -146,7 +179,7 @@ def read_gtfs():
 
     # Every stop event each boat makes, because a crew can take over mid-route: an RS boat is
     # relieved at Pier 11 in the middle of a Rockaway-to-Soundview run, not at either end of it.
-    departures, arrivals = collections.defaultdict(set), collections.defaultdict(set)
+    departures, arrivals, legs = collections.defaultdict(set), collections.defaultdict(set), collections.defaultdict(set)
     for trip in rows("trips.txt"):
         boat = assignments.get(str(trip.get("trip_short_name", "")).strip())
         if not isinstance(boat, int):
@@ -162,7 +195,15 @@ def read_gtfs():
         for _, stop_id, arrival, _ in stop_times[1:]:
             if arrival:
                 arrivals[key].add((stops.get(stop_id, ""), seconds(arrival)))
-    return departures, arrivals
+        # Where each leg ends, keyed by when the boat pulled out. A note can name its last drop by
+        # the time the boat left on that final leg and the place it was heading for, which is two
+        # true facts about one trip and no single stop event at all.
+        final_stop, final_arrival = stop_times[-1][1], stop_times[-1][2]
+        if final_arrival:
+            for _, _, _, departure in stop_times[:-1]:
+                if departure:
+                    legs[key].add((seconds(departure), stops.get(final_stop, ""), seconds(final_arrival)))
+    return departures, arrivals, legs
 
 
 def main():
@@ -170,9 +211,53 @@ def main():
     with open(os.path.join(ROOT, source), newline="", encoding="utf-8-sig") as handle:
         raw = list(csv.DictReader(handle))
 
-    departures, arrivals = read_gtfs()
+    departures, arrivals, legs = read_gtfs()
     shifts = collections.defaultdict(lambda: collections.defaultdict(list))
-    dropped, warnings, adjusted, relocated = [], [], [], []
+    dropped, warnings, adjusted, relocated, legged = [], [], [], [], []
+
+    def verify(boat, kind, shift, record, where):
+        """Check a note against the feed and keep it, or report why it cannot be kept."""
+        key = (boat, kind)
+        start, start_place, start_moved = resolve(departures.get(key, set()), record["startPlace"], record["startTime"])
+        end, end_place, end_moved = resolve(arrivals.get(key, set()), record["endPlace"], record["endTime"])
+        # A last drop named by the time the boat pulled out and the place it was heading for
+        # describes a leg rather than a stop, so it matches nothing above. Only tried once the stop
+        # events have both failed, and only when time and destination agree.
+        ended_leg = None
+        if end is None:
+            ended_leg = final_leg(legs.get(key, set()), record["endPlace"], seconds(record["endTime"]))
+            if ended_leg is not None:
+                end, end_place = ended_leg, record["endPlace"]
+        if start is None or end is None:
+            detail = []
+            if start is None:
+                detail.append(f"start {record['startTime']} {record['startPlace']}")
+            if end is None:
+                detail.append(f"end {record['endTime']} {record['endPlace']}")
+            dropped.append(f"{where}: {boat} {kind} {shift or '-'} — no matching GTFS event for " + ", ".join(detail))
+            return
+
+        if ended_leg is not None:
+            record["endNoteTime"] = record["endTime"]
+            legged.append(f"{where}: {boat} {kind} {shift or '-'} end {record['endTime']} -> {clock(end)} "
+                          f"{record['endPlace']} (the noted time is when the boat left on the last leg)")
+        else:
+            for field, noted, matched in (("start", record["startTime"], start), ("end", record["endTime"], end)):
+                if matched != seconds(noted):
+                    record[field + "NoteTime"] = noted
+                    adjusted.append(f"{where}: {boat} {kind} {shift or '-'} {field} {noted} -> {clock(matched)} "
+                                    f"({abs(matched - seconds(noted)) // 60} min, feed wins)")
+        # The note's own place is kept alongside the feed's, because the note is the record of what
+        # the crew wrote and this is the one field it got wrong.
+        for field, moved, noted_place, feed_place in (("start", start_moved, record["startPlace"], start_place),
+                                                      ("end", end_moved, record["endPlace"], end_place)):
+            if moved:
+                record[field + "NotePlace"] = noted_place
+                record[field + "Place"] = feed_place
+                relocated.append(f"{where}: {boat} {kind} {shift or '-'} {field} {clock(seconds(record[field + 'Time']))} "
+                                 f"{noted_place} -> {feed_place} (time matches exactly; the note named the other end of the leg)")
+        record["startTime"], record["endTime"] = clock(start), clock(end)
+        shifts[kind][boat].append(record)
 
     for row in raw:
         label = " ".join((row["cell_text"] or "").split())
@@ -211,34 +296,20 @@ def main():
             "source": f"{sheet}!{cell}",
         }
 
-        key = (boat, kind)
-        start, start_place, start_moved = resolve(departures.get(key, set()), record["startPlace"], record["startTime"])
-        end, end_place, end_moved = resolve(arrivals.get(key, set()), record["endPlace"], record["endTime"])
-        if start is None or end is None:
-            detail = []
-            if start is None:
-                detail.append(f"start {record['startTime']} {record['startPlace']}")
-            if end is None:
-                detail.append(f"end {record['endTime']} {record['endPlace']}")
-            dropped.append(f"{sheet} {cell}: {boat} {kind} {shift or '-'} — no matching GTFS event for " + ", ".join(detail))
-            continue
+        verify(boat, kind, shift, record, f"{sheet} {cell}")
 
-        for field, noted, matched in (("start", record["startTime"], start), ("end", record["endTime"], end)):
-            if matched != seconds(noted):
-                record[field + "NoteTime"] = noted
-                adjusted.append(f"{sheet} {cell}: {boat} {kind} {shift or '-'} {field} {noted} -> {clock(matched)} "
-                                f"({abs(matched - seconds(noted)) // 60} min, feed wins)")
-        # The note's own place is kept alongside the feed's, because the note is the record of what
-        # the crew wrote and this is the one field it got wrong.
-        for field, moved, noted_place, feed_place in (("start", start_moved, record["startPlace"], start_place),
-                                                      ("end", end_moved, record["endPlace"], end_place)):
-            if moved:
-                record[field + "NotePlace"] = noted_place
-                record[field + "Place"] = feed_place
-                relocated.append(f"{sheet} {cell}: {boat} {kind} {shift or '-'} {field} {clock(seconds(record[field + 'Time']))} "
-                                 f"{noted_place} -> {feed_place} (time matches exactly; the note named the other end of the leg)")
-        record["startTime"], record["endTime"] = clock(start), clock(end)
-        shifts[kind][boat].append(record)
+    # Columns the workbook cannot express, supplied by hand. The Rocket's column is labelled
+    # "RWY RKT" with no boat number, and the note in it is copied from RWSV 9 — it describes Pier 11
+    # times for a boat that runs between Long Island City and Rockaway, so there has never been
+    # anything in the workbook to read for it. Without this RR1 is the one boat working a weekend
+    # that never leaves the home port on the board. Verified against the feed like every other note.
+    for entry in MANUAL:
+        verify(entry["boat"], entry["kind"], entry.get("shift", ""), {
+            "shift": entry.get("shift", ""),
+            "startTime": entry["startTime"], "startPlace": entry["startPlace"],
+            "endTime": entry["endTime"], "endPlace": entry["endPlace"],
+            "source": entry["source"],
+        }, entry["source"])
 
     for kind in shifts:
         for boat in shifts[kind]:
@@ -275,6 +346,11 @@ def main():
         print(f"\nMatched to a nearby feed event ({len(adjusted)}) — the note records when the boat tied up,")
         print("the feed only when it sailed:")
         for item in adjusted:
+            print(f"  {item}")
+    if legged:
+        print(f"\nEnded where the last leg ended ({len(legged)}) — the note gives the time the boat")
+        print("let go and the place it was heading for, which is a trip rather than a stop:")
+        for item in legged:
             print(f"  {item}")
     if relocated:
         print(f"\nRelocated to the place the feed puts the boat ({len(relocated)}) — the note has the")

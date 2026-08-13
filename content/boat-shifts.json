@@ -529,6 +529,17 @@
      "source": "weekend2!G18"
     }
    ],
+   "RR1": [
+    {
+     "shift": "",
+     "startTime": "09:30",
+     "startPlace": "Long Island City",
+     "endTime": "18:46",
+     "endPlace": "Long Island City",
+     "source": "supplied by hand 2026-08-13 (RWY RKT column is unreadable)",
+     "endNoteTime": "17:30"
+    }
+   ],
    "RS1": [
     {
      "shift": "AM",

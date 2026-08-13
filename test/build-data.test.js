@@ -781,6 +781,35 @@ test("only a crew shuttle keeps a shift start off the Pier C board", async () =>
   }
 });
 
+// The Rocket has no readable column in the workbook: it is headed "RWY RKT" with no boat number and
+// the note inside it is copied from RWSV 9, giving Pier 11 times for a boat that runs between Long
+// Island City and Rockaway and never calls at Pier 11. Its note is supplied by hand instead, and it
+// was the one boat working a weekend that never left the home port on the board.
+test("the Rockaway Rocket leaves Pier C like every other weekend boat", async () => {
+  const [pierC, shiftFile] = await Promise.all([
+    buildDisplayData({ landingNumber: 27 }),
+    readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse)
+  ]);
+
+  const rocket = shiftFile.shifts.weekend.RR1;
+  assert.equal(rocket?.length, 1, "the Rocket works one weekend shift");
+  assert.equal(rocket[0].startTime, "09:30");
+  assert.equal(rocket[0].startPlace, "Long Island City");
+  // "Last drop off 17:30 at Long Island City" names the leg by when the boat let go of Rockaway and
+  // where it was heading. The crew finishes when that leg does, which the feed puts at 18:46, and
+  // the noted time is kept beside it.
+  assert.equal(rocket[0].endTime, "18:46");
+  assert.equal(rocket[0].endPlace, "Long Island City");
+  assert.equal(rocket[0].endNoteTime, "17:30");
+  assert.match(rocket[0].source, /supplied by hand/);
+
+  const departure = pierC.departures.find((item) =>
+    item.serviceId === "2" && !item.crewShuttle && `${item.routeId}${item.boatAssignment}` === "RR1");
+  assert.ok(departure, "the Rocket leaves Pier C on a weekend");
+  assert.equal(departure.departureTime.slice(0, 5), "09:30");
+  assert.equal(departure.destination, "Long Island City");
+});
+
 // The weekday needed eight rows restored; the weekend needed none, because every changeover there
 // already has a shuttle against it. That is worth holding still: it is the evidence that the gap
 // was in the weekday shuttle config rather than in the rule, and if a weekend shuttle is ever
