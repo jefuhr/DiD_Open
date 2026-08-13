@@ -351,7 +351,7 @@ function departureStatus(item) {
   // mark: none of this is published, all of it is inferred from the shape of the boat's day, and
   // saying so is better than a confident label that turns out to be wrong.
   const dropOffLabel = !noPickup && item.endsShift
-    ? `<span class="drop-off-badge${item.endsShift === "unsure" ? " drop-off-unsure" : ""}" aria-label="${item.endsShift === "unsure" ? "Probably the last trip for this boat: drop off only, unconfirmed" : "Last trip for this boat: drop off only"}">DROP OFF${item.endsShift === "unsure" ? "?" : " ONLY"}</span>`
+    ? `<span class="drop-off-badge${item.endsShift === "unsure" ? " drop-off-unsure" : ""}" aria-label="${item.endsShift === "unsure" ? "Probably this boat's final trip: drop off only, unconfirmed" : "This boat's final trip: drop off only"}">FINAL${item.endsShift === "unsure" ? "?" : ""}</span>`
     : "";
   // Crew boat assignment ("ER5" = East River boat 5). Boat numbers restart per route, so the
   // route code is part of the label. NY Waterway and the shuttles have no assignment.
@@ -849,7 +849,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=49", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=50", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

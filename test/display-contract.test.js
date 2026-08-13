@@ -46,6 +46,19 @@ test("shows fresh late and on-time status in the reserved badge row", async () =
   assert.match(css, /\.scheduled-badge\{color:var\(--navy\);background:#e6eef2/);
 });
 
+// The badge on a boat's last working trip reads FINAL. Nothing about it is published: it is inferred
+// from the shape of the boat's day against the crew sheet, so a shorter gap that could be a break
+// rather than a finish keeps the question mark instead of claiming certainty.
+test("a boat's last trip is badged FINAL", async () => {
+  const app = await readFile(appPath, "utf8");
+  assert.match(app, />FINAL\$\{item\.endsShift === "unsure" \? "\?" : ""\}<\/span>/);
+  assert.doesNotMatch(app, /DROP OFF/, "the badge no longer says DROP OFF ONLY");
+  // The reason survives for anyone reading by screen reader, where the word alone is thinner.
+  assert.match(app, /aria-label="\$\{item\.endsShift === "unsure" \? "Probably this boat's final trip: drop off only, unconfirmed" : "This boat's final trip: drop off only"\}"/);
+  // Distinct from LAST, which marks the last sailing a passenger can take on that route direction.
+  assert.match(app, /class="departure-last-badge"[^>]*>LAST<\/strong>/);
+});
+
 test("never displays a realtime departure earlier than its scheduled time", async () => {
   const app = await readFile(appPath, "utf8");
   assert.match(app, /const delay = hasLiveTiming \? Math\.max\(0, liveDelay\) : 0/);
@@ -371,16 +384,16 @@ test("every time on the board is 24-hour", async () => {
   assert.match(app, /return `\$\{start\}<span class="time-range-dash">–<\/span>\$\{escapeHtml\(end\)\}`/);
 });
 
-test("offline shell includes version 49 display assets", async () => {
+test("offline shell includes version 50 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=49/);
-  assert.match(index, /app\.js\?v=49/);
-  assert.match(worker, /nyc-ferry-did-shell-v49/);
-  assert.match(worker, /styles\.css\?v=49/);
-  assert.match(worker, /app\.js\?v=49/);
+  assert.match(index, /styles\.css\?v=50/);
+  assert.match(index, /app\.js\?v=50/);
+  assert.match(worker, /nyc-ferry-did-shell-v50/);
+  assert.match(worker, /styles\.css\?v=50/);
+  assert.match(worker, /app\.js\?v=50/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
