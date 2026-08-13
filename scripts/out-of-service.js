@@ -242,6 +242,43 @@ export function crewShuttleRows({
   return rows;
 }
 
+// The other end of the same shuttle, shown on the home port's own board: every crew shuttle leaves
+// Pier C before it can collect anyone, so the landing that sees them all is the one they sail from.
+//
+// Only the outbound leg is listed. At the collecting landing the row carries a range because the
+// shuttle waits there for boats to sail, but the far end of that range is when it heads back to
+// Pier C — a return, not a departure from here — so this side keeps the first time and drops it.
+//
+// That time is the configured one, which is when the shuttle is due at the *other* end. The
+// operator does not publish when it lets go of Pier C, exactly as with a shift start, so the row is
+// marked approximate rather than inventing a departure time nobody scheduled.
+export function homePortCrewShuttles({ shuttles = {}, landings, homePort, operator }) {
+  const rows = [];
+  for (const [kind, entries] of Object.entries(shuttles)) {
+    if (!Array.isArray(entries)) continue;
+    const serviceId = kind === "weekend" ? CREW_WEEKEND_SERVICE : CREW_WEEKDAY_SERVICE;
+    for (const entry of entries) {
+      const landing = landings[String(entry.landing)];
+      if (!landing) continue;
+      const departureTime = /^\d{1,2}:\d{2}$/.test(entry.time || "") ? `${entry.time}:00` : entry.time;
+      const seconds = timeToSeconds(departureTime);
+      rows.push({
+        tripId: `pierc-crew:${kind}:${entry.landing}:${entry.time}`, routeId: CREW_ROUTE_ID,
+        serviceId, directionId: "0", stopId: HOME_PORT_STOP_ID,
+        departureTime, seconds,
+        departureTimeEnd: null, secondsEnd: null,
+        destination: landing.name || landing.displayName || `Landing ${entry.landing}`,
+        variant: null, nextStop: null, servesGovernorsIsland: false,
+        boatAssignment: null, mode: "ferry", operator, via: [],
+        outOfService: false, crewShuttle: true, crewBoats: [...(entry.boats || [])],
+        endsShift: null, endsDay: false,
+        approximate: true, fromHomePort: true, homePortName: homePort
+      });
+    }
+  }
+  return rows;
+}
+
 function nextDeparture({ boatDepartures, boat, kind, stopId, afterSeconds }) {
   const times = boatDepartures.get(`${boat}|${kind}|${stopId}`);
   if (!times) return null;

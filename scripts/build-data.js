@@ -4,7 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   CREW_ROUTE, CREW_ROUTE_ID, HOME_PORT_STOP_ID, boatDeparturesByDay, boatRuns, crewCalendars,
-  crewShuttleRows, crewSwapIndex, homePortDepartures, homePortRows, serviceBreaks
+  crewShuttleRows, crewSwapIndex, homePortCrewShuttles, homePortDepartures, homePortRows,
+  serviceBreaks
 } from "./out-of-service.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -478,7 +479,10 @@ export async function buildDisplayData({
     ...crewShuttleRows({
       shuttles: crewConfig.shuttles, landingNumber, landings, selectedStops, homePort, operator: operatorName,
       boatDepartures: boatDeparturesByDay({ trips, timesByTrip, boatAssignments, dayTypeOf })
-    })
+    }),
+    // Every shuttle sails from the home port, so the home port's board lists all of them — the
+    // outbound leg only, since the range's far end at the collecting landing is the run back here.
+    ...(isVirtual ? homePortCrewShuttles({ shuttles: crewConfig.shuttles, landings, homePort, operator: operatorName }) : [])
   ];
   if (outOfServiceDepartures.length) {
     departures.push(...outOfServiceDepartures);

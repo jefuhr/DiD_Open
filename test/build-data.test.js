@@ -710,7 +710,10 @@ test("Pier C shows every boat leaving the home port to start a shift", async () 
   const data = await buildDisplayData({ landingNumber: 27 });
   assert.equal(data.meta.landing.displayName, "Pier C (Staff)");
   assert.ok(data.departures.length > 40);
-  for (const item of data.departures) {
+  // The crew shuttles sail from here too, but they are a boat going to collect a crew rather than a
+  // boat starting a shift, so they carry no vessel of their own and are checked separately below.
+  const shiftStarts = data.departures.filter((item) => !item.crewShuttle);
+  for (const item of shiftStarts) {
     // The operator says the home-port departure is not constant, so every row is approximate and
     // carries the time the boat is due at its first landing instead.
     assert.equal(item.approximate, true);
@@ -722,7 +725,7 @@ test("Pier C shows every boat leaving the home port to start a shift", async () 
   }
   // The first boats out on a weekday are the Rockaway pair, due at Ferry Point Park and Rockaway
   // just after five.
-  const first = data.departures.slice(0, 2)
+  const first = shiftStarts.slice(0, 2)
     .map((item) => `${item.routeId}${item.boatAssignment} ${item.departureTime.slice(0, 5)} ${item.destination}`);
   assert.deepEqual(first, ["RS1 05:03 Ferry Point Park", "RS4 05:05 Rockaway"]);
 
@@ -732,5 +735,54 @@ test("Pier C shows every boat leaving the home port to start a shift", async () 
     const swapped = data.departures.filter((item) =>
       item.serviceId === serviceId && item.routeId === "SB" && item.boatAssignment === 1);
     assert.ok(swapped.length <= 1, "SB1 swaps crew mid-day and stays on the water");
+  }
+});
+
+// Every crew shuttle has to leave the home port before it can collect anyone, so Pier C is the one
+// landing that sees all of them — outbound only, because the return is not a departure from here.
+test("Pier C shows every crew shuttle sailing out to collect a crew", async () => {
+  const [pierC, config] = await Promise.all([
+    buildDisplayData({ landingNumber: 27 }),
+    readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse)
+  ]);
+  const shuttles = pierC.departures.filter((item) => item.crewShuttle);
+  const configured = [...config.shuttles.weekday, ...config.shuttles.weekend];
+  assert.equal(shuttles.length, configured.length, "one row per configured shuttle, no more and no fewer");
+  assert.ok(pierC.routes.CREW, "the shuttles need their own route so no passenger route is implied");
+
+  for (const item of shuttles) {
+    assert.equal(item.stopId, "home-port", "the shuttle sails from the home port");
+    assert.equal(item.routeId, "CREW");
+    // The collecting landing shows a range because the shuttle waits there for boats to sail. The
+    // far end of that range is the run back here, which is an arrival, so this side drops it.
+    assert.equal(item.departureTimeEnd, null, `${item.tripId} should carry one time, not a range`);
+    assert.equal(item.secondsEnd, null);
+    // Same footing as a shift start: the configured time is when the shuttle is due at the other
+    // end, and the operator does not publish when it lets go of Pier C.
+    assert.equal(item.approximate, true);
+    assert.equal(item.fromHomePort, true);
+    assert.ok(item.crewBoats?.length, "a shuttle exists to collect the crews off named boats");
+    assert.equal(item.boatAssignment, null, "the shuttle is not one of the boats it collects from");
+  }
+
+  // Destination is the landing it is going to — the mirror of the row at that landing, which reads
+  // "Pier C". The weekend 14:35 collects four crews off Pier 11.
+  const busiest = shuttles.find((item) => item.departureTime === "14:35:00");
+  assert.equal(busiest.destination, "Pier 11");
+  assert.deepEqual(busiest.crewBoats, ["ER3", "RS5", "RS2", "AS2"]);
+  assert.equal(busiest.serviceId, "crew-weekend");
+
+  // Weekday and weekend shuttles run on their own pair of calendars, because a holiday keeps the
+  // feed on weekday service while the crews change on the weekend pattern.
+  assert.deepEqual(
+    new Set(shuttles.map((item) => item.serviceId)),
+    new Set(["crew-weekday", "crew-weekend"])
+  );
+
+  // The other end of each shuttle still reads the same way at the landing it collects from.
+  const pier11 = await buildDisplayData({ landingNumber: 16 });
+  for (const item of pier11.departures.filter((row) => row.crewShuttle)) {
+    assert.equal(item.destination, "Pier C");
+    assert.ok(item.departureTimeEnd, "the collecting landing keeps its range");
   }
 });
