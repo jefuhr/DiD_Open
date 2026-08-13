@@ -740,6 +740,47 @@ test("Pier C shows every boat leaving the home port to start a shift", async () 
 
 // Every crew shuttle has to leave the home port before it can collect anyone, so Pier C is the one
 // landing that sees all of them — outbound only, because the return is not a departure from here.
+// Every shift boundary on the crew sheet is a real movement out of the home port, with one
+// exception: a crew shuttle carries the relief out to the boat, so that boat never goes home. The
+// shuttle config is the only record of which changeovers those are, so it is what decides — not the
+// shape of the gap, which says nothing about whether a shuttle ran.
+test("only a crew shuttle keeps a shift start off the Pier C board", async () => {
+  const [pierC, crew] = await Promise.all([
+    buildDisplayData({ landingNumber: 27 }),
+    readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse)
+  ]);
+  const starts = pierC.departures.filter((item) => !item.crewShuttle);
+  const departuresOf = (boat, serviceId) => starts.filter((item) =>
+    `${item.routeId}${item.boatAssignment}` === boat && item.serviceId === serviceId);
+
+  // Weekday: SB1 rides a shuttle at 13:30 and stays on the water, so it leaves Pier C once. AS3
+  // changes crew at Pier 11 with six minutes between shifts and no shuttle against it, so both of
+  // its shifts are departures — the short gap on its own is not evidence the boat stayed put.
+  assert.equal(departuresOf("SB1", "1").length, 1, "SB1 is shuttled on a weekday");
+  assert.equal(departuresOf("AS3", "1").length, 2, "AS3 has no weekday shuttle");
+  const as3 = departuresOf("AS3", "1").map((item) => item.departureTime.slice(0, 5)).sort();
+  assert.deepEqual(as3, ["06:22", "14:17"]);
+
+  // Every boat named in a weekday shuttle leaves Pier C exactly once; every boat that changes crew
+  // without one leaves twice.
+  const shuttled = new Set(crew.shuttles.weekday.flatMap((entry) => entry.boats));
+  for (const boat of shuttled) {
+    assert.equal(departuresOf(boat, "1").length, 1, `${boat} rides the weekday shuttle`);
+  }
+  for (const boat of ["AS2", "ER2", "ER3", "ER6", "SG1", "SG2", "SG4"]) {
+    assert.ok(!shuttled.has(boat), `${boat} has no weekday shuttle configured`);
+    assert.equal(departuresOf(boat, "2").length + departuresOf(boat, "1").length >= 2, true,
+      `${boat} changes crew with no shuttle, so both shifts leave Pier C`);
+  }
+
+  // The weekend shuttle list covers every changeover there is, so no weekend boat gains a second
+  // departure — the rule and the board agree completely on a weekend.
+  const weekendShuttled = new Set(crew.shuttles.weekend.flatMap((entry) => entry.boats));
+  for (const boat of weekendShuttled) {
+    assert.equal(departuresOf(boat, "2").length, 1, `${boat} rides the weekend shuttle`);
+  }
+});
+
 // Two shift notes name the far end of the boat's last leg as the place it finished — "last drop
 // 20:02 at E 34th" for a trip that leaves East 34th at 19:26 and reaches Pier 11 at 20:02. Matching
 // place and time together discarded both shifts whole, and with them a start time the feed agreed

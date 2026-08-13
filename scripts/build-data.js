@@ -392,12 +392,16 @@ export async function buildDisplayData({
     const runsWeekend = row.saturday === "1" || row.sunday === "1";
     return runsWeekday && !runsWeekend ? "weekday" : (runsWeekend && !runsWeekday ? "weekend" : null);
   };
+  // Which boats have a crew brought out to them rather than going home to swap. Read twice: once to
+  // stop a shuttled boat being called out of service, and once to stop its next shift being counted
+  // as a fresh departure from Pier C.
+  const crewSwaps = crewSwapIndex({ shuttles: crewConfig.shuttles, landings });
   const breaks = serviceBreaks({
     runs, dayTypeOf, shifts: boatShifts,
     stopName: (stopId) => stopsById.get(stopId)?.stop_name || null,
     gapMinutes: Number(crewConfig.outOfService?.gapMinutes) || 60,
     certainAfterMinutes: Number(crewConfig.outOfService?.certainAfterMinutes) || 180,
-    crewSwaps: crewSwapIndex({ shuttles: crewConfig.shuttles, landings })
+    crewSwaps
   });
 
   let departures = [];
@@ -468,7 +472,7 @@ export async function buildDisplayData({
     };
     departures = homePortDepartures({
       shifts: boatShifts, dayTypeOf, servicesOfDay: serviceOfDay, homePort, operator: operatorName, runs,
-      swapMinutes: Number(crewConfig.outOfService?.swapMinutes) || 60
+      crewSwaps
     });
   }
   const outOfServiceDepartures = [

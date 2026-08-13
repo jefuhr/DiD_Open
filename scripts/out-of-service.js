@@ -329,16 +329,40 @@ export function crewSwapIndex({ shuttles = {}, landings }) {
   return index;
 }
 
-// The other side of a home-port run: the boat leaving Pier C to start a shift. Every shift begins
-// either after a night at the home port or after the boat has just gone back there, so a shift
-// start is a Pier C departure unless it follows a crew handover, where the boat never left the
-// water in the first place.
+// A crew shuttle is ready at its listed time and then waits for the boat to sail, so it can be
+// listed well before the crew it is collecting has finished — half an hour is normal. It cannot be
+// listed after the relief crew is already working, which is what closes the window.
+//
+// Matched by boat and day rather than by place: the workbook writes place names ("Wall St/Pier 11")
+// and the shuttle config names landings, which are different vocabularies, and a boat swaps crew
+// once a day, so its own name and the changeover it brackets are specific enough.
+const SHUTTLE_READY_BEFORE = 60 * 60;
+
+function shuttleCovers({ crewSwaps, boat, kind, endSeconds, startSeconds }) {
+  const swaps = crewSwaps.get(`${boat}|${kind}`);
+  if (!swaps) return false;
+  return swaps.some((swap) => swap.seconds >= endSeconds - SHUTTLE_READY_BEFORE && swap.seconds <= startSeconds);
+}
+
+// The other side of a home-port run: the boat leaving Pier C to start a shift.
+//
+// Every shift boundary on the crew sheet is a real movement — a first departure the boat had to
+// come out of the home port for, and a last drop after which it goes back — with one exception: a
+// crew shuttle, which carries the relief out to the boat so it never leaves the water. So the
+// shuttle config decides which changeovers are suppressed, and everything else is a Pier C
+// departure.
+//
+// This deliberately does not infer the handover from the shape of the gap. A boat relieved at Pier
+// 11 with six minutes between shifts plainly did not sail home in the meantime, but "the gap is
+// short" is not the same fact as "a shuttle ran", and only the second one is recorded anywhere.
+// Where the sheet shows a changeover with no shuttle against it, the sheet is what the board
+// follows.
 //
 // The time is the shift's first pickup, which is when the boat is due at the *other* end — the
 // operator does not publish when it lets go of Pier C, and it varies. So the row carries the first
 // pickup and is marked approximate rather than inventing a departure time nobody scheduled.
 export function homePortDepartures({
-  shifts = {}, dayTypeOf, servicesOfDay, homePort, operator, swapMinutes = 60, runs = new Map()
+  shifts = {}, dayTypeOf, servicesOfDay, homePort, operator, runs = new Map(), crewSwaps = new Map()
 }) {
   // The trip the boat is about to run. Naming it lets the board show which vessel is currently on
   // that working, which is the closest thing to a prediction available — and it is only ever a
@@ -360,8 +384,10 @@ export function homePortDepartures({
     for (const [boat, list] of Object.entries(boats)) {
       for (const [index, entry] of list.entries()) {
         const previous = list[index - 1];
-        if (previous && (!entry.startPlace || previous.endPlace === entry.startPlace) &&
-            hhmmSeconds(entry.startTime) - hhmmSeconds(previous.endTime) <= swapMinutes * 60) continue;
+        if (previous && shuttleCovers({
+          crewSwaps, boat, kind,
+          endSeconds: hhmmSeconds(previous.endTime), startSeconds: hhmmSeconds(entry.startTime)
+        })) continue;
         if (!entry.startPlace) continue;
         const seconds = hhmmSeconds(entry.startTime);
         rows.push({
