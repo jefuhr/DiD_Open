@@ -65,6 +65,15 @@
      "endTime": "10:28",
      "endPlace": "Wall St/Pier 11",
      "source": "weekday2!A19"
+    },
+    {
+     "shift": "PM",
+     "startTime": "15:46",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "20:02",
+     "endPlace": "Wall St/Pier 11",
+     "source": "weekday2!A27",
+     "endNotePlace": "East 34th Street"
     }
    ],
    "ER2": [
@@ -487,6 +496,17 @@
      "endTime": "20:56",
      "endPlace": "Wall St/Pier 11",
      "source": "weekend2!D18"
+    }
+   ],
+   "ER5": [
+    {
+     "shift": "",
+     "startTime": "10:32",
+     "startPlace": "Wall St/Pier 11",
+     "endTime": "20:39",
+     "endPlace": "East 34th Street",
+     "source": "weekend2!E18",
+     "endNotePlace": "Wall St/Pier 11"
     }
    ],
    "ER6": [

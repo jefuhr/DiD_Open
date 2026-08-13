@@ -90,6 +90,33 @@ def nearest(events, name, when):
     return min(candidates, key=lambda time: abs(time - when)) if candidates else None
 
 
+def resolve(events, name, noted):
+    """Match a noted boundary to a feed event, allowing the note to have named the wrong end.
+
+    A crew writing "last drop 20:02 at E 34th" for a trip that leaves East 34th at 19:26 and gets
+    into Pier 11 at 20:02 has the time exactly right and the place backwards — they wrote where the
+    leg started rather than where it put them. Two of these are in the current workbook, and
+    matching on place and time together threw away the whole shift over it, including a start time
+    that verified to the second.
+
+    So a boundary that finds nothing at its noted place falls back to the boat's own events at
+    exactly that time, wherever they happened. Exactly, not within the tolerance: the time is the
+    field the crew demonstrably gets right, and it is only trustworthy enough to relocate a note
+    when it lands on a feed event to the second. Anything ambiguous — no event, or more than one —
+    still fails, which is what keeps a stale copied note from being rescued into a wrong place.
+
+    Returns (time, place, relocated) with time None when the feed does not support the note at all.
+    """
+    when = seconds(noted)
+    matched = nearest(events, name, when)
+    if matched is not None:
+        return matched, name, False
+    elsewhere = sorted({(place_name, time) for place_name, time in events if time == when})
+    if len(elsewhere) == 1:
+        return elsewhere[0][1], elsewhere[0][0], True
+    return None, name, False
+
+
 def seconds(value):
     hours, minutes = value.split(":")[:2]
     return int(hours) * 3600 + int(minutes) * 60
@@ -145,7 +172,7 @@ def main():
 
     departures, arrivals = read_gtfs()
     shifts = collections.defaultdict(lambda: collections.defaultdict(list))
-    dropped, warnings, adjusted = [], [], []
+    dropped, warnings, adjusted, relocated = [], [], [], []
 
     for row in raw:
         label = " ".join((row["cell_text"] or "").split())
@@ -185,8 +212,8 @@ def main():
         }
 
         key = (boat, kind)
-        start = nearest(departures.get(key, set()), record["startPlace"], seconds(record["startTime"]))
-        end = nearest(arrivals.get(key, set()), record["endPlace"], seconds(record["endTime"]))
+        start, start_place, start_moved = resolve(departures.get(key, set()), record["startPlace"], record["startTime"])
+        end, end_place, end_moved = resolve(arrivals.get(key, set()), record["endPlace"], record["endTime"])
         if start is None or end is None:
             detail = []
             if start is None:
@@ -201,6 +228,15 @@ def main():
                 record[field + "NoteTime"] = noted
                 adjusted.append(f"{sheet} {cell}: {boat} {kind} {shift or '-'} {field} {noted} -> {clock(matched)} "
                                 f"({abs(matched - seconds(noted)) // 60} min, feed wins)")
+        # The note's own place is kept alongside the feed's, because the note is the record of what
+        # the crew wrote and this is the one field it got wrong.
+        for field, moved, noted_place, feed_place in (("start", start_moved, record["startPlace"], start_place),
+                                                      ("end", end_moved, record["endPlace"], end_place)):
+            if moved:
+                record[field + "NotePlace"] = noted_place
+                record[field + "Place"] = feed_place
+                relocated.append(f"{sheet} {cell}: {boat} {kind} {shift or '-'} {field} {clock(seconds(record[field + 'Time']))} "
+                                 f"{noted_place} -> {feed_place} (time matches exactly; the note named the other end of the leg)")
         record["startTime"], record["endTime"] = clock(start), clock(end)
         shifts[kind][boat].append(record)
 
@@ -239,6 +275,11 @@ def main():
         print(f"\nMatched to a nearby feed event ({len(adjusted)}) — the note records when the boat tied up,")
         print("the feed only when it sailed:")
         for item in adjusted:
+            print(f"  {item}")
+    if relocated:
+        print(f"\nRelocated to the place the feed puts the boat ({len(relocated)}) — the note has the")
+        print("time to the second but named the other end of the leg:")
+        for item in relocated:
             print(f"  {item}")
     if dropped:
         print(f"\nDropped, because the feed disagrees ({len(dropped)}):")

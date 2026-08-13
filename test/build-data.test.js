@@ -740,6 +740,38 @@ test("Pier C shows every boat leaving the home port to start a shift", async () 
 
 // Every crew shuttle has to leave the home port before it can collect anyone, so Pier C is the one
 // landing that sees all of them — outbound only, because the return is not a departure from here.
+// Two shift notes name the far end of the boat's last leg as the place it finished — "last drop
+// 20:02 at E 34th" for a trip that leaves East 34th at 19:26 and reaches Pier 11 at 20:02. Matching
+// place and time together discarded both shifts whole, and with them a start time the feed agreed
+// with to the second, so their afternoon Pier C departures went missing from the board.
+test("a shift note that names the wrong end still yields its Pier C departure", async () => {
+  const shifts = await readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse);
+
+  const er1 = shifts.shifts.weekday.ER1.find((item) => item.startTime === "15:46");
+  assert.ok(er1, "ER1 works a weekday afternoon shift out of Pier 11");
+  assert.equal(er1.endTime, "20:02");
+  // The feed's place is stored and the crew's own wording is kept beside it, because the note is
+  // the record of what was written and this is the field it got wrong.
+  assert.equal(er1.endPlace, "Wall St/Pier 11");
+  assert.equal(er1.endNotePlace, "East 34th Street");
+
+  const er5 = shifts.shifts.weekend.ER5.find((item) => item.startTime === "10:32");
+  assert.ok(er5, "ER5 works a weekend shift out of Pier 11");
+  assert.equal(er5.endPlace, "East 34th Street");
+  assert.equal(er5.endNotePlace, "Wall St/Pier 11");
+
+  // Both reach the board as home-port departures, which is the whole point of recovering them.
+  const pierC = await buildDisplayData({ landingNumber: 27 });
+  const at = (serviceId, time) => pierC.departures.find((item) =>
+    item.serviceId === serviceId && item.departureTime.startsWith(time) && !item.crewShuttle);
+  assert.ok(at("1", "15:46"), "ER1's afternoon shift start shows at Pier C on a weekday");
+  assert.ok(at("2", "10:32"), "ER5's shift start shows at Pier C on a weekend");
+
+  // SG4's weekend PM note is a stale copy of its weekday one (21:12 at Pier 79 is a weekday time),
+  // and no weekend event matches it at any place, so it stays dropped rather than being rescued.
+  assert.equal(shifts.shifts.weekend.SG4.length, 1);
+});
+
 test("Pier C shows every crew shuttle sailing out to collect a crew", async () => {
   const [pierC, config] = await Promise.all([
     buildDisplayData({ landingNumber: 27 }),
