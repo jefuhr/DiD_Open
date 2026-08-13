@@ -412,7 +412,6 @@ function renderTimeline() {
   // The column head describes the route board's three columns; a timeline row is not columnar,
   // and the phone stylesheet hides it anyway.
   elements.columnHead.hidden = true;
-  elements.departures.style.removeProperty("--routes-shown");
   elements.routeCount.textContent = `${rows.length} departure${rows.length === 1 ? "" : "s"}`;
 
   if (!rows.length) {
@@ -465,7 +464,6 @@ function renderRouteBoard() {
   elements.columnHead.hidden = false;
   // Staff view: no slideshow paging. Every route direction stays on screen and
   // the row grid squishes to fit, so an agent never waits for the answer to rotate in.
-  elements.departures.style.setProperty("--routes-shown", String(Math.max(1, groups.length)));
   elements.routeCount.textContent = `${groups.length} route direction${groups.length === 1 ? "" : "s"}`;
 
   if (!groups.length) {

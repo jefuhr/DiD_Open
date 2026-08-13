@@ -60,16 +60,41 @@ test("service alert freshness sits beside its heading", async () => {
   assert.match(css, /\.service-alert-heading\{display:flex;align-items:baseline/);
 });
 
-test("staff board shows every route direction at once with config-driven departure columns", async () => {
+// Sorted by route, the board used to divide its height by however many route directions the landing
+// had. Pier 11 has twenty, so every row got a twentieth of the screen and its own overflow:hidden
+// cut the destination and the status badges in half; a landing with two got half a screen each.
+// Rows are a fixed height now and the list scrolls, which is what the timeline view already did.
+test("the route board keeps its rows one size and scrolls past the bottom", async () => {
+  const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
+  const rule = css.match(/\.departures\{[^}]*\}/)[0];
+
+  assert.match(rule, /grid-auto-rows:var\(--route-row\)/, "every row is the same height");
+  assert.match(rule, /--route-row:clamp\(/, "and that height is bounded, not a fraction of the screen");
+  assert.doesNotMatch(rule, /minmax\(0,1fr\)/, "a fractional row is what squashed twenty of them");
+  // Without this the rows stretch to fill a landing that only has two.
+  assert.match(rule, /align-content:start/);
+  assert.match(rule, /overflow-y:auto/);
+  // Firefox and Chrome take scrollbar-width; older WebKit needs the pseudo-element.
+  assert.match(css, /\.departures\{[^}]*scrollbar-width:thin/);
+  assert.match(css, /\.departures::-webkit-scrollbar\{width:/);
+
+  // The row count no longer drives the layout, so nothing should still be setting it.
+  assert.doesNotMatch(css, /--routes-shown/);
+  assert.doesNotMatch(app, /--routes-shown/);
+
+  // The phone stacks cards and scrolls the page itself; a scroller inside it would trap the gesture.
+  const phone = css.slice(css.indexOf("@media(max-width:820px)"));
+  assert.match(phone, /\.departures\{display:flex[^}]*overflow:visible/);
+});
+
+test("staff board shows every route direction with config-driven departure columns", async () => {
   const [app, css] = await Promise.all([
     readFile(appPath, "utf8"),
     readFile(cssPath, "utf8")
   ]);
   assert.match(app, /displayCount\("departuresShown"\)/);
   assert.match(app, /dataset\.departuresShown/);
-  assert.match(app, /setProperty\("--routes-shown", String\(Math\.max\(1, groups\.length\)\)\)/);
   assert.doesNotMatch(app, /slideTimer|startSlideshow|slideIndex|PAGE_SIZE|TIMES_PER_DIRECTION/);
-  assert.match(css, /repeat\(var\(--routes-shown\),minmax\(0,1fr\)\)/);
   assert.match(css, /repeat\(var\(--departures-shown\),minmax\(0,1fr\)\)/);
   for (let count = 1; count <= 5; count += 1) {
     assert.match(css, new RegExp(`data-departures-shown="${count}"`));
@@ -265,7 +290,6 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.match(css, /\.departures\[data-view="timeline"\]\{display:flex[^}]*overflow-y:auto/);
   // Fixed row height, not squished to fit: the list scrolls instead.
   assert.match(css, /\.departure\.timeline-row\{[^}]*flex:0 0 auto/);
-  assert.match(app, /removeProperty\("--routes-shown"\)/);
   // Phone overrides must exist inside the max-width block, after .departure{display:block}.
   const phone = css.slice(css.indexOf("@media(max-width:820px)"));
   assert.match(phone, /\.departures\[data-view="timeline"\]\{gap:8px/);
