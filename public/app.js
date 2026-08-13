@@ -114,13 +114,14 @@ function escapeHtml(value) {
 function adjustedTime(raw, delaySeconds = 0) {
   const [hours, minutes, seconds] = raw.split(":").map(Number);
   const total = hours * 3600 + minutes * 60 + seconds + delaySeconds;
-  return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "UTC" })
+  // 24-hour, zero-padded: this is a crew board, and the schedule, the workbook and the radio all
+  // speak in it. h23 rather than hour12:false, which yields a 24:00 hour in some locales.
+  return new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" })
     .format(new Date(Date.UTC(2020, 0, 1, Math.floor(total / 3600) % 24, Math.floor((total % 3600) / 60))));
 }
 
 // A crew shuttle is ready at the listed time but waits for the boats it is collecting from to sail,
-// so it prints the window rather than a minute it will not leave on. The opening meridiem is
-// dropped when both ends share it: "2:35 – 3:05 PM" reads better than "2:35 PM – 3:05 PM".
+// so it prints the window rather than a minute it will not leave on: "14:35 – 15:05".
 function departureLabel(item) {
   // A boat leaving the home port has no published departure time — the operator says it is not
   // constant — so the row shows when it is due at its first landing and stars it.
@@ -128,9 +129,7 @@ function departureLabel(item) {
   const start = adjustedTime(item.departureTime, item.delay) + star;
   if (!item.departureTimeEnd) return start;
   const end = adjustedTime(item.departureTimeEnd, 0);
-  const startMeridiem = start.slice(-2), endMeridiem = end.slice(-2);
-  const opening = startMeridiem === endMeridiem ? start.slice(0, -3) : start;
-  return `${opening}<span class="time-range-dash">–</span>${escapeHtml(end)}`;
+  return `${start}<span class="time-range-dash">–</span>${escapeHtml(end)}`;
 }
 
 function relativeTime(deltaSeconds) {
@@ -515,7 +514,7 @@ function renderManualOverride() {
   elements.manualOverrideUpdated.textContent = active && Number.isFinite(updatedAt)
     ? `Updated ${new Intl.DateTimeFormat("en-US", {
       timeZone: data?.meta?.timezone || "America/New_York",
-      month: "long", day: "numeric", hour: "numeric", minute: "2-digit"
+      month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
     }).format(new Date(updatedAt))}`
     : "";
 
@@ -589,7 +588,7 @@ async function loadServiceAlerts() {
 function updateClock() {
   const now = new Date();
   const timeZone = data?.meta?.timezone || "America/New_York";
-  elements.time.textContent = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" }).format(now);
+  elements.time.textContent = new Intl.DateTimeFormat("en-US", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(now);
   elements.date.textContent = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long", month: "long", day: "numeric" }).format(now);
   render();
 }
@@ -829,7 +828,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=45", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=46", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

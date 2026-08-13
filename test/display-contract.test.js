@@ -281,16 +281,39 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.match(app, /function routeVisual\(routeId, variant\)/);
 });
 
-test("offline shell includes version 45 display assets", async () => {
+// The crews, the workbook and the radio all speak 24-hour time, so the board does too. Every clock
+// on screen is covered: the departure times, the range a crew shuttle prints, the header clock and
+// the service-notice timestamp.
+test("every time on the board is 24-hour", async () => {
+  const app = await readFile(appPath, "utf8");
+
+  // Each formatter that prints an hour has to ask for h23. Counting them together is what stops a
+  // fifth one being added later in 12-hour and going unnoticed.
+  const hours = app.match(/hour: "2-digit"/g) || [];
+  const cycles = app.match(/hourCycle: "h23"/g) || [];
+  assert.ok(hours.length >= 4, "the departure times, the clock, the notice stamp and the day boundary");
+  assert.equal(hours.length, cycles.length, "every hour-printing formatter asks for h23");
+  assert.doesNotMatch(app, /hour: "numeric"/, "a numeric hour formats as 12-hour under en-US");
+  // hour12:false is the tempting spelling and the wrong one — it yields a 24:00 hour in some
+  // locales, where h23 always rolls to 00:00.
+  assert.doesNotMatch(app, /hour12: false/);
+
+  // A 24-hour range needs no meridiem trimming, and the slicing that did it would silently eat the
+  // last two digits of the minutes if it were left behind.
+  assert.doesNotMatch(app, /slice\(-2\)/);
+  assert.match(app, /return `\$\{start\}<span class="time-range-dash">–<\/span>\$\{escapeHtml\(end\)\}`/);
+});
+
+test("offline shell includes version 46 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=45/);
-  assert.match(index, /app\.js\?v=45/);
-  assert.match(worker, /nyc-ferry-did-shell-v45/);
-  assert.match(worker, /styles\.css\?v=45/);
-  assert.match(worker, /app\.js\?v=45/);
+  assert.match(index, /styles\.css\?v=46/);
+  assert.match(index, /app\.js\?v=46/);
+  assert.match(worker, /nyc-ferry-did-shell-v46/);
+  assert.match(worker, /styles\.css\?v=46/);
+  assert.match(worker, /app\.js\?v=46/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
