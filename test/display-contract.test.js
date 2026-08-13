@@ -328,16 +328,16 @@ test("every time on the board is 24-hour", async () => {
   assert.match(app, /return `\$\{start\}<span class="time-range-dash">–<\/span>\$\{escapeHtml\(end\)\}`/);
 });
 
-test("offline shell includes version 46 display assets", async () => {
+test("offline shell includes version 47 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=46/);
-  assert.match(index, /app\.js\?v=46/);
-  assert.match(worker, /nyc-ferry-did-shell-v46/);
-  assert.match(worker, /styles\.css\?v=46/);
-  assert.match(worker, /app\.js\?v=46/);
+  assert.match(index, /styles\.css\?v=47/);
+  assert.match(index, /app\.js\?v=47/);
+  assert.match(worker, /nyc-ferry-did-shell-v47/);
+  assert.match(worker, /styles\.css\?v=47/);
+  assert.match(worker, /app\.js\?v=47/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
