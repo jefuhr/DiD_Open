@@ -150,6 +150,16 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
   const departureWindowSeconds = (Number(data.meta.departureWindowMinutes) || 180) * 60;
   const updates = new Map((realtime.updates || []).map((item) => [`${item.tripId}|${item.stopId}`, item]));
   const vehicles = new Map((realtime.vehicles || []).map((item) => [String(item.tripId), item]));
+  // Which vessel is on each boat right now. The feed only names a vessel for a trip it has reached,
+  // so a sailing later today has none of its own — but the workbook knows which boat runs it, and
+  // that boat is out on the water under a vessel the feed *has* named. Freshest report wins when a
+  // boat appears on more than one trip, which happens as it hands over between them.
+  const vessels = new Map();
+  for (const item of realtime.vehicles || []) {
+    if (!item.boat || !item.boatName) continue;
+    const seen = vessels.get(item.boat);
+    if (!seen || (item.updatedAtEpochSeconds || 0) >= (seen.updatedAtEpochSeconds || 0)) vessels.set(item.boat, item);
+  }
   const groups = new Map();
   const lastDepartures = new Map();
   const lastGovernorsIslandDepartures = new Map();
@@ -199,11 +209,16 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
         delta,
         hasLiveTiming,
         boatName: vehicles.get(String(departure.tripId))?.boatName || null,
-        // A home-port row names no trip of its own, so the vessel shown is whichever one is
-        // currently working the trip this boat is about to pick up. A guess, and labelled as one.
-        predictedBoatName: departure.predictTripId
-          ? vehicles.get(String(departure.predictTripId))?.boatName || null
-          : null
+        // Failing a vessel of its own, the one currently working this boat — by way of the trip a
+        // home-port row is about to pick up, or simply by the boat the workbook puts on this
+        // sailing. A guess either way, and labelled as one: the vessel on a working changes at
+        // short notice, which is exactly why the board says "McShane?" rather than "McShane".
+        predictedBoatName: vehicles.get(String(departure.tripId))?.boatName
+          ? null
+          : (departure.predictTripId ? vehicles.get(String(departure.predictTripId))?.boatName : null)
+            || (Number.isInteger(departure.boatAssignment)
+              ? vessels.get(`${departure.routeId}${departure.boatAssignment}`)?.boatName || null
+              : null)
       });
       groups.set(key, group);
     }
@@ -834,7 +849,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=48", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=49", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

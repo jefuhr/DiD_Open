@@ -109,6 +109,24 @@ test("both views name the predicted boat on a home-port row", async () => {
   assert.match(boatLine, /predictedName\(departure\)/, "the timeline must not stop at boatName");
 });
 
+// Every scheduled sailing, not just the home-port rows. The feed names a vessel only for trips it
+// has reached, so anything later today has none of its own — but the workbook puts a boat on it, and
+// the server says which vessel is on that boat right now.
+test("a scheduled sailing predicts its vessel from the boat working it", async () => {
+  const app = await readFile(appPath, "utf8");
+
+  // Freshest report wins: a boat shows up on two trips as it hands over between them.
+  assert.match(app, /const vessels = new Map\(\)/);
+  assert.match(app, /if \(!item\.boat \|\| !item\.boatName\) continue/);
+  assert.match(app, /updatedAtEpochSeconds \|\| 0\) >= \(seen\.updatedAtEpochSeconds \|\| 0\)/);
+
+  // Looked up by the boat the workbook assigns, which partner rows and crew shuttles do not have.
+  assert.match(app, /Number\.isInteger\(departure\.boatAssignment\)\s*\n?\s*\? vessels\.get\(`\$\{departure\.routeId\}\$\{departure\.boatAssignment\}`\)/);
+
+  // A live vessel always wins; the guess only fills the gap, never competes with a real match.
+  assert.match(app, /predictedBoatName: vehicles\.get\(String\(departure\.tripId\)\)\?\.boatName\s*\n?\s*\? null/);
+});
+
 test("staff board shows every route direction with config-driven departure columns", async () => {
   const [app, css] = await Promise.all([
     readFile(appPath, "utf8"),
@@ -353,16 +371,16 @@ test("every time on the board is 24-hour", async () => {
   assert.match(app, /return `\$\{start\}<span class="time-range-dash">–<\/span>\$\{escapeHtml\(end\)\}`/);
 });
 
-test("offline shell includes version 48 display assets", async () => {
+test("offline shell includes version 49 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=48/);
-  assert.match(index, /app\.js\?v=48/);
-  assert.match(worker, /nyc-ferry-did-shell-v48/);
-  assert.match(worker, /styles\.css\?v=48/);
-  assert.match(worker, /app\.js\?v=48/);
+  assert.match(index, /styles\.css\?v=49/);
+  assert.match(index, /app\.js\?v=49/);
+  assert.match(worker, /nyc-ferry-did-shell-v49/);
+  assert.match(worker, /styles\.css\?v=49/);
+  assert.match(worker, /app\.js\?v=49/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
