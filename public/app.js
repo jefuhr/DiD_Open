@@ -432,9 +432,17 @@ function renderTimeline() {
     // The vessel is only known once a live vehicle is matched to the trip, so partner operators and
     // not-yet-assigned sailings simply omit the line rather than showing a placeholder. A crew
     // shuttle names the boats it relieves in the same place.
+    //
+    // A home-port row names no trip of its own — its id is minted here, not in the feed — so no
+    // vehicle will ever match it and boatName is always empty. The vessel to show is the one
+    // currently working the trip the boat is about to pick up, which is what predictTripId is for.
+    // The route board has always fallen back to it; this view had not, so every Pier C row lost
+    // its boat when the board was sorted by departure time.
     const boat = crewBoats
       ? `<span class="tl-boat">${crewBoats}</span>`
-      : (departure.boatName ? `<span class="tl-boat">${escapeHtml(departure.boatName)}</span>` : "");
+      : departure.boatName ? `<span class="tl-boat">${escapeHtml(departure.boatName)}</span>`
+      : departure.predictedBoatName ? `<span class="tl-boat">${predictedName(departure)}</span>`
+      : "";
     // Three lines, each reading left-to-right: when and which boat, then where, then who and how.
     // Time and route anchor the left edge; the countdown and the status badges are pushed to the
     // right, so both columns can be scanned straight down the list without the eye wandering.
@@ -826,7 +834,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=47", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=48", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

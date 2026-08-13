@@ -87,6 +87,28 @@ test("the route board keeps its rows one size and scrolls past the bottom", asyn
   assert.match(phone, /\.departures\{display:flex[^}]*overflow:visible/);
 });
 
+// A home-port row's trip id is minted by the build, not taken from the feed, so no live vehicle can
+// ever match it and its own boatName is always empty. The vessel worth showing is the one currently
+// working the trip the boat is about to pick up. The route board fell back to that; the timeline did
+// not, so every Pier C row lost its boat the moment the board was sorted by departure time.
+test("both views name the predicted boat on a home-port row", async () => {
+  const app = await readFile(appPath, "utf8");
+
+  // One helper renders the guess, so both views mark it the same way: italic, muted, question mark.
+  assert.match(app, /function predictedName\(item\)/);
+  assert.match(app, /predictedBoatName[\s\S]{0,200}boat-name-predicted[^`]*\}\?<\/em>/);
+  assert.match(app, /predictTripId\s*\?\s*\n?\s*vehicles\.get\(String\(departure\.predictTripId\)\)/);
+
+  // The route board's slot and the timeline's row both reach for it, and neither may stop at
+  // boatName alone.
+  assert.match(app, /item\.boatName \? escapeHtml\(item\.boatName\) : predictedName\(item\)/);
+  assert.match(app, /departure\.predictedBoatName \? `<span class="tl-boat">\$\{predictedName\(departure\)\}<\/span>`/);
+
+  const timeline = app.slice(app.indexOf("function renderTimeline"));
+  const boatLine = timeline.slice(timeline.indexOf("const boat = crewBoats"), timeline.indexOf("Three lines"));
+  assert.match(boatLine, /predictedName\(departure\)/, "the timeline must not stop at boatName");
+});
+
 test("staff board shows every route direction with config-driven departure columns", async () => {
   const [app, css] = await Promise.all([
     readFile(appPath, "utf8"),
@@ -278,7 +300,10 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
 
   // The vessel name, which only NYC Ferry publishes: rendered when a live vehicle supplies one and
   // omitted outright otherwise, so partner rows carry no empty element or stray separator.
-  assert.match(app, /departure\.boatName \? `<span class="tl-boat">\$\{escapeHtml\(departure\.boatName\)\}<\/span>` : ""/);
+  // A real vessel name when one is matched, otherwise the predicted one, otherwise no line at all —
+  // never a placeholder. Partner operators publish no vessel and fall through to nothing.
+  assert.match(app, /departure\.boatName \? `<span class="tl-boat">\$\{escapeHtml\(departure\.boatName\)\}<\/span>`/);
+  assert.match(app, /: ""/);
   assert.match(css, /\.tl-boat::before\{content:"·"/);
 
   // The phone stylesheet sets .departure{display:block}, so the row must set its own display at
@@ -328,16 +353,16 @@ test("every time on the board is 24-hour", async () => {
   assert.match(app, /return `\$\{start\}<span class="time-range-dash">–<\/span>\$\{escapeHtml\(end\)\}`/);
 });
 
-test("offline shell includes version 47 display assets", async () => {
+test("offline shell includes version 48 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=47/);
-  assert.match(index, /app\.js\?v=47/);
-  assert.match(worker, /nyc-ferry-did-shell-v47/);
-  assert.match(worker, /styles\.css\?v=47/);
-  assert.match(worker, /app\.js\?v=47/);
+  assert.match(index, /styles\.css\?v=48/);
+  assert.match(index, /app\.js\?v=48/);
+  assert.match(worker, /nyc-ferry-did-shell-v48/);
+  assert.match(worker, /styles\.css\?v=48/);
+  assert.match(worker, /app\.js\?v=48/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
