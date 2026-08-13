@@ -781,6 +781,45 @@ test("only a crew shuttle keeps a shift start off the Pier C board", async () =>
   }
 });
 
+// The weekday needed eight rows restored; the weekend needed none, because every changeover there
+// already has a shuttle against it. That is worth holding still: it is the evidence that the gap
+// was in the weekday shuttle config rather than in the rule, and if a weekend shuttle is ever
+// removed or a weekend boat gains a second shift, the board should change and this should say so.
+test("every weekend shift start reaches Pier C unless a shuttle covers it", async () => {
+  const [pierC, shiftFile, crew] = await Promise.all([
+    buildDisplayData({ landingNumber: 27 }),
+    readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse),
+    readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse)
+  ]);
+  const shifts = shiftFile.shifts.weekend;
+  const shuttled = new Set(crew.shuttles.weekend.flatMap((entry) => entry.boats));
+  const board = new Map();
+  for (const item of pierC.departures.filter((row) => !row.crewShuttle && row.serviceId === "2")) {
+    const boat = `${item.routeId}${item.boatAssignment}`;
+    board.set(boat, [...(board.get(boat) || []), item.departureTime.slice(0, 5)].sort());
+  }
+
+  let expectedTotal = 0;
+  for (const [boat, list] of Object.entries(shifts)) {
+    const starts = list.map((item) => item.startTime);
+    // The first shift of the day is always a departure - the boat spent the night at the home port.
+    // A later one is a departure only where no shuttle brought the relief out to it.
+    const expected = shuttled.has(boat) ? [starts[0]] : starts;
+    expectedTotal += expected.length;
+    assert.deepEqual(board.get(boat), [...expected].sort(), `${boat} on the weekend board`);
+  }
+  assert.equal(pierC.departures.filter((item) => !item.crewShuttle && item.serviceId === "2").length, expectedTotal);
+  assert.equal([...board.keys()].every((boat) => boat in shifts), true, "no boat on the board is absent from the sheet");
+
+  // Every weekend boat that works two shifts has a shuttle, which is why the weekend gained nothing
+  // when the rule changed. A boat here with two shifts and no shuttle means the config has fallen
+  // behind the sheet the way the weekday one had.
+  const twoShifts = Object.entries(shifts).filter(([, list]) => list.length > 1).map(([boat]) => boat);
+  assert.ok(twoShifts.length >= 16);
+  assert.deepEqual(twoShifts.filter((boat) => !shuttled.has(boat)), [],
+    "a weekend changeover with no shuttle against it - add it to config/crew-shuttles.json");
+});
+
 // Two shift notes name the far end of the boat's last leg as the place it finished — "last drop
 // 20:02 at E 34th" for a trip that leaves East 34th at 19:26 and reaches Pier 11 at 20:02. Matching
 // place and time together discarded both shifts whole, and with them a start time the feed agreed
