@@ -10,6 +10,8 @@ node NYCF_ferryGTFSFixer.example.js
 
 No dependencies, no network. All output quoted in this document comes from that file.
 
+Scope: NYC Ferry's own realtime path only. Partner operators sharing a landing are a separate concern, covered in [`README.md`](./README.md).
+
 ## Why "fixer"
 
 A raw GTFS-Realtime feed is not a departure board. It is a stream of assertions about vehicles, in a schema general enough to describe systems that behave nothing like NYC Ferry, encoded in a format whose defaults are indistinguishable from silence. Between that and a rider standing on a platform there are about a dozen specific corrections, and none of them are inferable from the feed itself.
@@ -26,8 +28,6 @@ A raw GTFS-Realtime feed is not a departure board. It is a stream of assertions 
 | `H101` / `HB0101` / `H-101` | Three different boats, or no boat name | Folds hull-number forms to one identity | `identityForms` |
 | A boat name only in the trip-update feed | A blank column for the boat at the dock | Reads vehicle descriptors from both feeds | `normalizeVehicleAssignments` |
 | Nothing at all (producer down) | A blank board, or yesterday's delays | Last snapshot, marked stale → published times | `createRealtimeService` |
-| Two operators, both with a stop `4` | Colliding ids, wrong predictions | Namespaced ids per operator | `PARTNER_FEEDS` |
-| Passio: "scheduled departure 06:00" | A three-hour phantom delay | Ignores the field, resolves the sailing from the timetable | `normalizeNyuEtas` |
 
 ## The rule everything serves
 
@@ -39,10 +39,9 @@ effective_delay = max(0, realtime_delay)
 Realtime may move a departure later, cancel it, or reveal which boat is working it. It may never move a departure earlier. GTFS-Realtime permits negative delay because the spec serves systems whose vehicles run ahead of schedule; NYC Ferry is not one, and a generic consumer cannot infer that from the feed. So it is enforced, explicitly, at every boundary that can supply a delay:
 
 - `lib/realtime.js:50` — `riderDepartureDelaySeconds`, before any update reaches `/api/realtime`.
-- `lib/nyu-realtime.js:91` — the Passio arrival, at the point of conversion.
 - `public/app.js:116` — again while building departure groups, because a delay can also arrive from `localStorage` or an older server snapshot.
 
-Three layers is not redundancy; it is three different sources of a delay, each responsible for itself.
+Two layers is not redundancy; it is two different sources of a delay, each responsible for itself. `gtfsferry.md` lists a third, at the boundary of the one partner feed that carries live estimates.
 
 ## The pipeline
 
@@ -55,11 +54,11 @@ connexionz /tripupdate ─────┐          ┌─ normalizeTripUpdates �
 connexionz /vehicleposition ┘  realtime │
                                         └─ normalizeVehicleAssignments ──► vehicles[]
                                                 (fleet identity match)
-passio3.com /mapGetData ──► lib/nyu-realtime.js ──► updates[] (nyu: prefixed)
                                               │
                               server.js ──────┴──► /api/realtime  (15s TTL, single-flight)
-                                              │
-                              public/app.js ──┴──► routeDirectionGroups ──► the board
+                                              │        state/realtime.json
+                                              ▼
+                              public/app.js ─────► routeDirectionGroups ──► the board
                                                      (clamp again, 15s poll)
 ```
 
@@ -69,7 +68,7 @@ Two things travel down this pipe and they are kept strictly separate: **timing**
 
 ## Stage 1 — the static schedule is the ground truth
 
-`scripts/build-data.js` reads the bundled GTFS and writes `public/data/display-data.json`. Two structures in that file are what make prediction possible at all.
+The board only ever reads the GTFS bundled in [`gtfs/`](./gtfs), so deployments stay reproducible and nothing is downloaded at boot. `scripts/build-data.js` reads that feed and writes `public/data/display-data.json`. Two structures in that file are what make prediction possible at all.
 
 **`departures[]`** — one row per (trip, landing stop) a rider can board. Built by walking each trip's `stop_times` in `stop_sequence` order and taking every stop that is one of this landing's stops, is not `pickup_type: 1` (no pickup), and is not the trip's final stop — the last call of a trip is an arrival, not a boardable departure.
 
@@ -78,6 +77,8 @@ Two things travel down this pipe and they are kept strictly separate: **timing**
 That second structure is easy to mistake for dead weight. It is the reason a delay observed three stops upstream can be shown here. An absolute prediction is only convertible into a delay if you know what that stop was scheduled for; without `tripSchedules` the upstream rung of the delay ladder has nothing to difference against and silently returns `null`.
 
 Times are stored as **seconds since the start of the service day**, never as epoch instants. GTFS hours run past 24 — `25:10:00` is 1:10 am on the next calendar day, still belonging to the previous service day — and keeping that representation end to end is what makes the whole pipeline DST-proof. Nothing in the prediction path ever adds 86400 to a wall clock.
+
+Which landing gets built comes from `landingNumber` in [`config/display.json`](./config/display.json), validated against [`config/landings.json`](./config/landings.json) — the source of truth for which landings exist and which GTFS stops each maps to. A landing can map to more than one stop, which is why the realtime layer treats "this landing's stops" as a set rather than a single id.
 
 Relevant functions: `parseCsv`, `timeToSeconds`, `isoDate`, `buildScheduleShapes` (§1 of the example file).
 
@@ -111,7 +112,7 @@ schedule:            "tripId|stopId" → scheduled seconds   // departures[] ∪
 landingStopsByTrip:  tripId → Set(this landing's stops on that trip)
 ```
 
-`landingStopsByTrip` is built from the **local schedule**, not from the message. A landing can map to more than one GTFS stop, and the set of trips it boards is known locally — so a producer that omits this landing's stop from a message cannot make the trip disappear from the board. Only if the trip is unknown locally does the code fall back to whatever stops the message happens to carry.
+`landingStopsByTrip` is built from the **local schedule**, not from the message. The set of trips this landing boards is known locally, so a producer that omits this landing's stop from a message cannot make the trip disappear from the board. Only if the trip is unknown locally does the code fall back to whatever stops the message happens to carry.
 
 A trip with no target stops is skipped entirely.
 
@@ -121,7 +122,7 @@ A trip with no target stops is skipped entirely.
 timingEvent(stopUpdate)  // departure if populated, else arrival, else null
 ```
 
-A rider wants to know when the boat *leaves*. An arrival is consulted only when there is no departure event at all, and even then it can only push a departure later — never pull it earlier. A ferry that ties up at 09:02 for a 09:30 sailing is a boat waiting on its timetable, not a departure that moved 28 minutes.
+A rider wants to know when the boat *leaves*. An arrival is consulted only when there is no departure event at all, and even then it can only push a departure later — never pull it earlier. A boat that ties up at 09:02 for a 09:30 sailing is waiting on its timetable, not departing 28 minutes early.
 
 ### 3.3 The `Object.hasOwn` subtlety
 
@@ -181,13 +182,13 @@ canceled: number(tripUpdate.trip?.scheduleRelationship) === 3
 { tripId, stopId, delaySeconds, predictedEpochSeconds, canceled }
 ```
 
-`delaySeconds` is clamped and rider-facing. `predictedEpochSeconds` is the raw, *unclamped* prediction — retained for diagnostics, read by nothing rider-facing. `lib/nyu-realtime.js` emits this exact shape, which is what lets one client lookup serve both operators.
+`delaySeconds` is clamped and rider-facing. `predictedEpochSeconds` is the raw, *unclamped* prediction — retained for diagnostics, read by nothing rider-facing.
 
 ## Stage 4 — which boat is it
 
-Identity is a separate problem with a separate failure mode, and it is the one place the pipeline does fuzzy matching.
+Identity is a separate problem with a separate failure mode, and it is the one place the pipeline does fuzzy matching. Each departure shows its boat name whenever the live feed carries that assignment; the roster it matches against is [`content/vessels.json`](./content/vessels.json), on the device.
 
-The feeds identify a vessel with a `VehicleDescriptor` — some combination of `label`, `id`, `licensePlate`. The same hull appears as `H-101` in `content/vessels.json`, `H101` in one feed's label, `HB0101` in an AVL id, and `NYCF HB0101` when someone decorated it.
+The feeds identify a vessel with a `VehicleDescriptor` — some combination of `label`, `id`, `licensePlate`. The same hull appears as `H-101` in the roster, `H101` in one feed's label, `HB0101` in an AVL id, and `NYCF HB0101` when someone decorated it.
 
 ```js
 normalizeIdentity("H-101")   // "h101"     — strip accents, case, punctuation
@@ -211,7 +212,7 @@ Two details that matter more than the scoring:
 **Merge order encodes freshness, not feed preference.**
 
 ```js
-vehicleFeed ? merge(tripUpdates, positions)   // positions fresher → win
+vehicleFeed ? merge(tripUpdates, positions)        // positions fresher → win
             : merge(cachedPositions, tripUpdates)  // cache is older → fresh trip updates win
 ```
 
@@ -221,30 +222,18 @@ An unmatched descriptor still yields its raw label rather than nothing — a rid
 
 ## Stage 5 — cache, serve, degrade
 
-`createRealtimeService` and `createNyuRealtimeService` share one contract:
+`createRealtimeService` holds the polling contract:
 
 - **15-second TTL.** One snapshot serves every caller, so N kiosks and N browser tabs remain one upstream request.
 - **Single-flight.** An `inflight` promise collapses concurrent cache misses into one fetch.
-- **Atomic persistence.** Snapshots are written to `state/*.json` via temp file + `rename()`, so a kiosk losing power mid-write cannot leave a truncated file that poisons the next boot.
-- **Never worse than stale.** A failed refresh returns the last good snapshot with `stale: true`. Only a cold cache reports `available: false`.
+- **Atomic persistence.** The snapshot is written to `state/realtime.json` via temp file + `rename()`, so a kiosk losing power mid-write cannot leave a truncated file that poisons the next boot.
+- **Never worse than stale.** A failed refresh returns the last good snapshot with `stale: true`. Only a cold cache reports `available: false`, and `/api/realtime` then answers `503` instead of `200`.
 
 `stale` is not cosmetic. It is a contract with the client: *stop trusting these delays*. The client honors it by discarding every delay and showing published times.
 
-`server.js` then merges the two operators into one `/api/realtime` payload:
-
-```js
-available: ferry.available || nyu.available     // either operator's data is worth serving
-stale:     ferry.stale     || nyu.stale         // either being stale marks the payload stale
-updates:   [...ferry.updates, ...nyu.updates]   // one array, ids already namespaced
-```
-
-NYU's updates carry `nyu:`-prefixed trip and stop ids — the same ids the display data was built with — so the client resolves both operators through a single map lookup. Either operator failing leaves the other usable, and the pessimistic `stale` only ever costs a fallback to published times.
-
-The one deliberate asymmetry: for a landing with no NYU dock, `createNyuRealtimeService` returns `available: true, updates: []`. A landing without that dock is the normal case and is a success with nothing to report — not an error. Treating it as an error would permanently mark `/api/realtime` degraded at most landings and suppress NYC Ferry's own live estimates.
-
 ## Stage 6 — the board
 
-`public/app.js` polls `/api/realtime` every 15 seconds, mirrors each response to `localStorage`, and falls back to that copy (marked `stale`) when the local server is unreachable. `routeDirectionGroups` then does the final assembly, and re-derives the safety properties rather than assuming them.
+`public/app.js` polls `/api/realtime` every 15 seconds, mirrors each response to `localStorage`, and falls back to that copy (marked `stale`) when the local server is unreachable — `loadRealtime` in §5 of the example file. The service worker caches the shell and API responses, so the whole board survives a network drop on locally held data. `routeDirectionGroups` then does the final assembly, and re-derives the safety properties rather than assuming them.
 
 **Two service days are walked** (`offset` from `-1` to `0`). A 00:30 sailing is `24:30:00` on the *previous* service day and would be invisible after midnight if only today were considered. `addDays(serviceDate, Math.floor(seconds / 86400))` then drops rows whose calendar date is not today.
 
@@ -267,9 +256,9 @@ delta = offset * 86400 + departure.seconds + delay - now.seconds
 
 `delta` determines sort order, the countdown, the `Boarding` state (`delta <= 90`), and removal (`delta < -60`, a 60-second grace after the delayed departure). Deriving all four from one signed number is what makes it structurally impossible for them to disagree — a board that sorts by predicted time but counts down from scheduled time is the classic bug here.
 
-**`LAST` is computed before the removal filter**, over the whole service day, so it marks the day's final sailing rather than the last one still on screen. It is computed after the cancellation filter, so it names the last boat that will actually run — in the worked example below, `LAST` sits on 18:35 because the 18:50 is canceled.
+**`LAST` is computed before the removal filter**, over the whole service day, so it marks the day's final sailing rather than the last one still on screen. It is computed after the cancellation filter, so it names the last boat that will actually run — in the worked example below, `LAST` sits on 18:35 because the 18:50 is canceled. South Brooklyn carries a second, parallel `LAST` for Governors Island, which only some SB trips serve, so the final island run is marked even when later SB boats follow it.
 
-**The window filter applies to a group's *next* departure only.** Once a route qualifies, every column is filled, even with trips outside the window, so a row is never half empty.
+**The window filter applies to a group's *next* departure only.** A route appears if its next departure is within `departureWindowMinutes`; once it qualifies, every one of its `departuresShown` columns is filled, even with trips outside the window, so a row is never half empty.
 
 **The badge ladder** — each rung means something different, and the distinction between the last two is the whole point:
 
@@ -280,37 +269,19 @@ delta = offset * 86400 + departure.seconds + delay - now.seconds
 | `SCHEDULED` | No fresh timing | This is the published time. No claim about the boat. |
 | `LAST` | Final sailing of the service day | Outranks the other three. |
 
-## The NYU Langone ferry — an arrival is not a departure
+## The degradation ladder
 
-NYU publishes no GTFS at all. `gtfs/nyu/` is reconstructed from Passio GO's JSON backend by `scripts/fetch-nyu-gtfs.js`; live estimates come from the same backend through `lib/nyu-realtime.js`, normalized into the identical update shape. This feed makes the operating rule unusually visible, and it breaks one assumption the GTFS-RT path takes for granted.
+Every failure below lands one rung down, never sideways into a guess:
 
-**Passio predicts arrivals, not departures.** For a ferry that waits at the dock, the predicted arrival is routinely long before the scheduled departure. Ferry 03 tying up at 09:02 for a 09:30 sailing is a boat waiting on its timetable. The arrival is clamped at the point of conversion:
+| What fails | What the rider sees |
+|---|---|
+| Vehicle-positions feed | Delays intact; boat names from trip updates, or the last cached assignment |
+| Trip-updates feed, cache warm | Last snapshot, `Saved live estimates`, all delays dropped → published times |
+| Trip-updates feed, cache cold | `503` from `/api/realtime`, `Local schedule`, published times |
+| Local server unreachable | `localStorage` copy, marked stale → published times |
+| Everything but the device | Service-worker shell + bundled GTFS → published times |
 
-```js
-delaySeconds = Math.max(0, arrival.secondsOfDay - scheduledSeconds)
-```
-
-**`solidEta.scheduledDeparture` cannot identify the sailing.** It reports the *block's* first departure — a boat predicted to dock at 09:22 comes back tagged `scheduledDeparture: 06:00`, `tripIndex: 0`. Differencing the two invents a three-hour delay on a ferry running perfectly. This is the limit of requirement 5 in `gtfsferry.md`: an absolute realtime timestamp is only convertible against the schedule the rider is actually being shown, and when a producer's own scheduled-time field does not identify that sailing, the sailing must be resolved from the static timetable instead.
-
-So it is: an inbound boat works **the next departure not yet due**, and it is late only if it docks after that departure's published time.
-
-**A sailing whose time has passed is never revived.** Passio cannot say whether an earlier boat already worked it, and showing a departed sailing as merely "late" is a worse error on a platform than showing the published time.
-
-**Passio's own clock supplies `now`** (`payload.time`), so a drifting kiosk clock cannot shift which sailing a prediction attaches to.
-
-**Two boats resolving to the same sailing**: the one arriving first works it (`existing.delaySeconds <= delaySeconds` keeps the smaller).
-
-**No cancellations are ever asserted** from this feed. Passio models a boat going out of service, not a canceled sailing, and the two are not the same claim.
-
-Timestamps parse as wall-clock readings with a parallel `*Utc` field. `parseStamp`'s `pseudoEpoch` reads the local stamp *as if it were UTC* — legitimate only because it is ever differenced against another reading parsed the same way, so the fictional offset cancels out. NYU sails 05:30–20:15 with nothing crossing midnight, so seconds-of-day comparison needs no wrap handling.
-
-## Schedule-only partners
-
-NY Waterway, Seastreak and Liberty Landing publish no realtime feed here. Their rows show scheduled times only — no boat name, no delay badge — and they satisfy the clamp trivially, because nothing can move a departure at all.
-
-Their obligation is the other half of the same principle: **the published static departure is what the rider sees, so it must be carried through exactly as the operator published it.** Editing a stale feed's service dates to make its trips reappear is the static-schedule version of an early departure. Liberty Landing's 2019 feed, rolled forward, would put 16 sailings a weekday on the board that do not exist. So `scripts/build-liberty-gtfs.js` transcribes today's published timetable instead, with a deliberately 180-day-bounded calendar so it expires loudly. `scripts/build-data.js` prints `WARNING: the <operator> feed ... expired on <date>` rather than letting rows vanish silently.
-
-Every partner's ids are namespaced (`wtr:`, `sea:`, `nyu:`, `lib:`) because independently published feeds reuse small integer ids — NY Waterway's stop `4` is unrelated to NYC Ferry's stop `4`. Without the prefixes, a delay could be applied to the wrong operator's boat.
+The bottom of the ladder is the published timetable. There is no rung below it where the board invents a time.
 
 ## Worked example
 
@@ -340,7 +311,7 @@ From `node NYCF_ferryGTFSFixer.example.js` — landing 8 (East 34th Street, GTFS
 
 ```
 3. The board — 18:00:00 local, live
-  ER LOCAL → Long Island City
+  ER LOCAL → Long Island City (Northbound)
     18:05:00 → 6:05 PM  5 min    Waves of Wonder  ON TIME
     18:20:00 → 6:27 PM  27 min   Dream Boat       +7 min
     18:35:00 → 6:41 PM  41 min                    LAST +6 min
@@ -358,14 +329,7 @@ The early boat shows its published 6:05, not 6:01. `LAST` sits on 18:35 because 
 Every delay dropped, every published time restored, every `ON TIME` withdrawn — the board stops claiming knowledge it no longer has. 804 stays canceled, because the cancellation check runs before the staleness check.
 
 ```
-5. NYU via Passio — an arrival is not a departure
-  nyu:t2 at nyu:13138  delay 0s
-```
-
-A 09:22 dock, tagged by Passio with `scheduledDeparture: 06:00`. The tag is ignored; the sailing resolves to the 09:30, which is not yet due. The boat is on time and the 09:30 stays 09:30.
-
-```
-6. The clamp, case by case (gtfsferry.md's required matrix)
+5. The clamp, case by case (gtfsferry.md's required matrix)
   departure 09:55 for a 10:00 sailing    → 10:00 +   0s = 10:00 AM
   delay -300s                            → 10:00 +   0s = 10:00 AM
   arrival 09:55, no departure            → 10:00 +   0s = 10:00 AM
@@ -378,9 +342,8 @@ A 09:22 dock, tagged by Passio with `scheduledDeparture: 06:00`. The tag is igno
 | File | Covers |
 |---|---|
 | `test/realtime.test.js` | The delay ladder, `hasOwn` vs. protobuf defaults, all four clamp paths, vessel matching, merge order |
-| `test/nyu-realtime.test.js` | Passio arrival clamping, sailing resolution, `Passio's block-level scheduledDeparture never becomes a delay` |
-| `test/display-contract.test.js` | `never displays a realtime departure earlier than its scheduled time` — the clamp at the presentation layer — plus the badge row, `LAST`, and the shared cache-bust version |
-| `test/build-data.test.js` | Schedule shapes for every landing, partner merging and id namespacing, `every bundled feed is still in service, so no operator is silently empty` |
+| `test/display-contract.test.js` | `never displays a realtime departure earlier than its scheduled time` — the clamp at the presentation layer — plus the badge row, `LAST`, and the Governors Island case |
+| `test/build-data.test.js` | Schedule shapes for every landing, route abbreviations and colors, East River A/B/Local variants, Governors Island trips |
 
 ```bash
 npm test
@@ -400,4 +363,4 @@ Before touching the prediction path:
 - [ ] Timezone conversion stays in the agency's zone, not the process's.
 - [ ] Cached and `localStorage`-sourced realtime is subject to the same rules as fresh.
 - [ ] Cancellations remain honored independently of staleness.
-- [ ] Removing a clamp layer requires an equivalent guarantee at every boundary that can supply a delay. There are three sources today.
+- [ ] Removing a clamp layer requires an equivalent guarantee at every boundary that can supply a delay.

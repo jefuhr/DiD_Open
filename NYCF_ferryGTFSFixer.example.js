@@ -1,6 +1,6 @@
 // NYCF_ferryGTFSFixer.example.js
 //
-// Every function the boat prediction touches, in one file, in pipeline order.
+// Every function NYC Ferry's boat prediction touches, in one file, in pipeline order.
 // Companion to NYCF_ferryGTFSFixer.md. Run it:
 //
 //     node NYCF_ferryGTFSFixer.example.js
@@ -9,13 +9,12 @@
 // fetches are included for completeness but are never called by the demo at the bottom.
 //
 // Differences from the shipped code, and only these:
-//   - the four client functions in section 5 take `data` / `realtime` as arguments;
+//   - the client functions in section 5 take `data` / `realtime` as arguments;
 //     public/app.js reads them from module-level state and from the DOM.
 //   - departureCell returns a plain object instead of an HTML string, so the badge
 //     decisions are inspectable without a browser.
 //   - fetchFeed imports gtfs-realtime-bindings lazily so this file runs uninstalled.
-// The prediction logic itself is line-for-line what lib/realtime.js, lib/nyu-realtime.js
-// and public/app.js run.
+// The prediction logic itself is line-for-line what lib/realtime.js and public/app.js run.
 
 // ---------------------------------------------------------------------------
 // 1. Static schedule (scripts/build-data.js)
@@ -43,7 +42,7 @@ export function parseCsv(input) {
 }
 
 /**
- * GTFS times are seconds since noon-minus-12h of the *service* day, so hours run past 24:
+ * GTFS times are seconds since the start of the *service* day, so hours run past 24:
  * "25:10:00" is 1:10 am on the next calendar day, still belonging to the previous service day.
  * Keeping them as seconds-of-service-day (not epoch) is what makes the whole pipeline
  * DST-proof: nothing here ever adds 86400 to a wall clock.
@@ -91,7 +90,7 @@ export function buildScheduleShapes(stopTimesRows, { landingStopIds = [], tripMe
         tripId, routeId: meta.routeId ?? "", serviceId: meta.serviceId ?? "", directionId: meta.directionId ?? "",
         stopId: String(current.stop_id), departureTime, seconds: timeToSeconds(departureTime),
         destination: meta.destination ?? "", variant: meta.variant ?? null,
-        servesGovernorsIsland: false, mode: "ferry", operator: meta.operator ?? "NYC Ferry"
+        servesGovernorsIsland: meta.servesGovernorsIsland ?? false, mode: "ferry", operator: "NYC Ferry"
       });
     }
   }
@@ -111,7 +110,7 @@ export function buildScheduleShapes(stopTimesRows, { landingStopIds = [], tripMe
 }
 
 // ---------------------------------------------------------------------------
-// 2. NYC Ferry GTFS-Realtime normalization (lib/realtime.js)
+// 2. GTFS-Realtime normalization (lib/realtime.js)
 //    Where a raw feed becomes a rider-facing delay.
 // ---------------------------------------------------------------------------
 
@@ -135,7 +134,7 @@ export function number(value) {
  *
  * The feed speaks epoch seconds; the schedule speaks seconds-of-service-day. Converting
  * through Intl in `timeZone` rather than through the process clock means the answer is right
- * on a machine set to UTC, and right on both sides of a DST change.
+ * on a kiosk set to UTC, and right on both sides of a DST change.
  */
 export function localSecondsOfDay(timestampSeconds, timeZone) {
   const parts = Object.fromEntries(
@@ -157,7 +156,7 @@ export function localSecondsOfDay(timestampSeconds, timeZone) {
  *
  * `Object.hasOwn(event, "delay")` is deliberate and load-bearing. A decoded protobuf message
  * inherits `delay: 0` from its prototype, so a plain `event.delay` read cannot tell "the
- * producer said on time" from "the producer sent no delay at all" — and reading the inherited
+ * producer says on time" from "the producer sent no delay at all" — and reading the inherited
  * zero would silently stamp ON TIME on a boat nobody has heard from. Only an own property is
  * a real assertion; otherwise fall through to the absolute timestamp.
  *
@@ -181,9 +180,9 @@ export function eventDelaySeconds(event, scheduledSeconds, timeZone) {
  * Departure beats arrival, and a field only counts if the producer actually populated it.
  *
  * A rider wants to know when the boat leaves. An arrival is only ever consulted when there is
- * no departure event at all, and even then it can only push a departure later (section 2's
- * clamp), never pull it earlier — a ferry that ties up at 09:02 for a 09:30 sailing is a boat
- * waiting on its timetable.
+ * no departure event at all, and even then it can only push a departure later (the clamp
+ * below), never pull it earlier — a boat that ties up at 09:02 for a 09:30 sailing is waiting
+ * on its timetable, not leaving 28 minutes early.
  */
 export function timingEvent(stopUpdate) {
   const departure = stopUpdate?.departure;
@@ -479,24 +478,6 @@ export function createRealtimeService({
   };
 }
 
-/**
- * /api/realtime, as server.js assembles it.
- *
- * NYU's updates are already namespaced with the `nyu:` ids the display was built with, so they
- * concatenate into one array the client resolves through a single lookup. Either operator can
- * fail without taking the other's estimates down, and either being stale marks the payload
- * stale — which only ever falls back to published times.
- */
-export function mergeRealtimePayload(ferry, nyu) {
-  return {
-    ...ferry,
-    available: ferry.available || nyu.available,
-    stale: Boolean(ferry.stale || nyu.stale),
-    updates: [...(ferry.updates || []), ...(nyu.updates || [])],
-    nyu: { available: nyu.available, stale: nyu.stale, fetchedAt: nyu.fetchedAt, error: nyu.error }
-  };
-}
-
 // ---------------------------------------------------------------------------
 // 5. The board (public/app.js)
 //    Second, independent enforcement of the clamp.
@@ -553,6 +534,13 @@ export function relativeTime(deltaSeconds) {
   return "Tomorrow";
 }
 
+/** GTFS direction_id, as the board words it. */
+export function directionLabel(directionId) {
+  if (String(directionId) === "1") return "Northbound";
+  if (String(directionId) === "0") return "Southbound";
+  return "Direction unavailable";
+}
+
 /**
  * Everything the board shows, grouped by route direction.
  *
@@ -572,6 +560,9 @@ export function relativeTime(deltaSeconds) {
  *   delta < -60     A 60s grace after the (delayed) departure, then the row goes.
  *   lastDepartures  LAST is computed over the whole service day *before* that filter, so it
  *                   marks the day's final sailing rather than the last one still on screen.
+ *                   South Brooklyn tracks a second "last" for Governors Island, which only
+ *                   some SB trips serve, so the final island run is marked even when later
+ *                   SB boats follow it.
  */
 export function routeDirectionGroups(data, realtime, now = new Date()) {
   const current = zonedParts(now, data.meta.timezone);
@@ -678,180 +669,29 @@ export function departureCell(item, realtime) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// 6. NYU Langone via Passio GO (lib/nyu-realtime.js)
-//    A predicted arrival, from a producer with no GTFS at all.
-// ---------------------------------------------------------------------------
-
-export const PASSIO_HOST = "https://passio3.com/www";
-export const NYU_SYSTEM_ID = "1007";
-export const NYU_ROUTE_ID = "45769";
-const PREFIX = "nyu:";
-// Passio ignores the value but requires the parameter; it identifies a client, not a credential.
-const DEVICE_ID = "99999999";
-
 /**
- * Passio stamps are "YYYY-MM-DD HH:MM:SS" in local time, with parallel *Utc fields.
- * `pseudoEpoch` reads the wall clock as if it were UTC — legitimate only because it is ever
- * differenced against another reading parsed the same way, so the fictional offset cancels.
+ * The client's own fallback ladder, polled every 15s (public/app.js).
+ *
+ * localStorage is a second cache behind the server's state/realtime.json, for the case where
+ * the local server itself is unreachable. Anything restored from it is marked stale, which
+ * discards every delay — so the worst case is published times, never a wrong prediction.
  */
-export function parseStamp(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/.exec(String(value || "").trim());
-  if (!match) return null;
-  const [, year, month, day, hour, minute, second] = match.map(Number);
-  return {
-    date: `${match[1]}-${match[2]}-${match[3]}`,
-    secondsOfDay: hour * 3600 + minute * 60 + second,
-    pseudoEpoch: Math.floor(Date.UTC(year, month - 1, day, hour, minute, second) / 1000)
-  };
-}
-
-/** GTFS "HH:MM:SS" → seconds of day, tolerating the 24+ hour form. */
-export function secondsOfDay(gtfsTime) {
-  const match = /^(\d{1,3}):(\d{2}):(\d{2})$/.exec(String(gtfsTime || ""));
-  return match ? Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]) : null;
-}
-
-/**
- * One Passio ETA payload → the same update shape lib/realtime.js emits, `nyu:`-prefixed.
- *
- * `solidEta.scheduledDeparture` cannot identify the sailing a prediction belongs to: it reports
- * the *block's* first departure, so a boat predicted to dock at 09:22 comes back tagged
- * `06:00` with `tripIndex: 0`, and differencing the two invents a three-hour delay on a ferry
- * running perfectly. Only the predicted arrival is trustworthy, so the sailing is resolved from
- * the static timetable instead: an inbound boat works the next departure not yet due, and it is
- * late only if it docks after that departure's published time.
- *
- * A sailing whose time has already passed is never revived — Passio cannot say whether an
- * earlier boat already worked it, and showing a departed sailing as merely "late" is worse on a
- * platform than showing the published time.
- *
- * `now` comes from Passio's own clock, so a drifting kiosk clock cannot shift which sailing a
- * prediction attaches to. NYU sails 05:30–20:15 with nothing crossing midnight, so seconds-of-day
- * comparison needs no wrap handling.
- */
-export function normalizeNyuEtas(payload, { departures = [], nowSecondsOfDay = null } = {}) {
-  const byStop = new Map();
-  for (const departure of departures) {
-    if (!String(departure.routeId || "").startsWith(PREFIX)) continue;
-    const list = byStop.get(departure.stopId) || [];
-    list.push(departure);
-    byStop.set(departure.stopId, list);
-  }
-  for (const list of byStop.values()) list.sort((left, right) => secondsOfDay(left.departureTime) - secondsOfDay(right.departureTime));
-
-  const best = new Map();
-  for (const [stopId, predictions] of Object.entries(payload?.ETAs || {})) {
-    const schedule = byStop.get(`${PREFIX}${stopId}`) || [];
-    if (!schedule.length) continue;
-    for (const prediction of predictions || []) {
-      const solid = prediction?.solidEta;
-      if (!solid) continue;
-      // A recorded arrival outranks a prediction; both are arrivals, so both are only ever a
-      // floor on when the boat can leave again.
-      const arrival = parseStamp(solid.arrivalActual || solid.arrival);
-      const arrivalUtc = parseStamp(solid.arrivalActualUtc || solid.arrivalUtc);
-      if (!arrival) continue;
-      const now = nowSecondsOfDay ?? parseStamp(payload?.time)?.secondsOfDay ?? arrival.secondsOfDay;
-
-      const target = schedule.find((departure) => secondsOfDay(departure.departureTime) >= now);
-      if (!target) continue;
-      const scheduledSeconds = secondsOfDay(target.departureTime);
-      // rider_departure = max(static_departure, realtime_prediction). Clamped at the source, so
-      // no consumer of /api/realtime can observe a negative NYU delay in the first place.
-      const delaySeconds = Math.max(0, arrival.secondsOfDay - scheduledSeconds);
-      // Two inbound boats both resolve to the next sailing; the one arriving first works it.
-      const existing = best.get(target.tripId);
-      if (existing && existing.delaySeconds <= delaySeconds) continue;
-      best.set(target.tripId, {
-        tripId: target.tripId,
-        stopId: target.stopId,
-        delaySeconds,
-        predictedEpochSeconds: arrivalUtc
-          ? arrivalUtc.pseudoEpoch - arrival.secondsOfDay + scheduledSeconds + delaySeconds
-          : null,
-        // Passio models a boat going out of service, never a canceled sailing, so no
-        // cancellation is ever asserted from this feed.
-        canceled: false
-      });
-    }
-  }
-  return [...best.values()];
-}
-
-/** One stop's ETA JSON. Same 7s abort and non-2xx throw as the protobuf path. */
-export async function fetchEta({ fetchImpl = globalThis.fetch, stopId, timeoutMs = 7000 }) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+export async function loadRealtime({ fetchImpl = globalThis.fetch, storage, cacheKey }) {
   try {
-    const query = new URLSearchParams({ eta: "3", deviceId: DEVICE_ID, stopIds: stopId, routeId: NYU_ROUTE_ID });
-    const response = await fetchImpl(`${PASSIO_HOST}/mapGetData.php?${query}`, {
-      signal: controller.signal,
-      headers: { Accept: "application/json", "User-Agent": "NYC-Ferry-DiD-Reborn/1.0" }
-    });
-    if (!response.ok) throw new Error(`NYU ETA for stop ${stopId} returned ${response.status}.`);
-    return await response.json();
-  } finally {
-    clearTimeout(timeout);
+    const response = await fetchImpl("/api/realtime", { cache: "no-store" });
+    if (!response.ok) throw new Error();
+    const realtime = await response.json();
+    storage.setItem(`${cacheKey}-realtime`, JSON.stringify(realtime));
+    return { realtime, status: realtime.stale ? "Saved live estimates" : "Live estimates" };
+  } catch {
+    const saved = storage.getItem(`${cacheKey}-realtime`);
+    if (saved) return { realtime: { ...JSON.parse(saved), stale: true }, status: "Saved live estimates" };
+    return { realtime: { updates: [], vehicles: [], available: false, stale: true }, status: "Local schedule" };
   }
-}
-
-/**
- * Same TTL / single-flight / stale-fallback contract as createRealtimeService.
- *
- * The one asymmetry: a landing with no NYU dock is the normal case and is a *success with
- * nothing to report*, not an error — otherwise 22 of 25 landings would permanently mark
- * /api/realtime degraded and suppress NYC Ferry's own live estimates.
- */
-export function createNyuRealtimeService({
-  dataPath, cachePath, readJson, writeSnapshot,
-  fetchImpl = globalThis.fetch, ttlMs = 15_000, now = () => Date.now()
-}) {
-  let memory = null, loaded = false, inflight = null;
-  const empty = { available: false, stale: true, fetchedAt: null, updates: [] };
-
-  async function loadCache() {
-    if (loaded) return memory;
-    loaded = true;
-    try { memory = await readJson(cachePath); } catch { memory = null; }
-    return memory;
-  }
-  async function refresh() {
-    const display = await readJson(dataPath);
-    const stopIds = display.meta?.nyu?.enabled ? (display.meta.nyu.stopIds || []) : [];
-    if (!stopIds.length) {
-      const snapshot = { available: true, stale: false, fetchedAt: new Date(now()).toISOString(), updates: [] };
-      memory = snapshot;
-      return snapshot;
-    }
-    const payloads = await Promise.all(stopIds.map((stopId) => fetchEta({ fetchImpl, stopId, timeoutMs: 7000 })));
-    const snapshot = {
-      available: true,
-      stale: false,
-      fetchedAt: new Date(now()).toISOString(),
-      updates: payloads.flatMap((payload) => normalizeNyuEtas(payload, { departures: display.departures }))
-    };
-    memory = snapshot;
-    await writeSnapshot(cachePath, snapshot);
-    return snapshot;
-  }
-  return {
-    async getCurrent() {
-      const cached = await loadCache();
-      const age = cached?.fetchedAt ? now() - Date.parse(cached.fetchedAt) : Infinity;
-      if (cached && age >= 0 && age < ttlMs) return { ...cached, stale: false };
-      if (!inflight) inflight = refresh().finally(() => { inflight = null; });
-      try { return await inflight; }
-      catch (error) {
-        if (cached) return { ...cached, available: true, stale: true, error: error.message };
-        return { ...empty, error: error.message };
-      }
-    }
-  };
 }
 
 // ---------------------------------------------------------------------------
-// 7. Demo — the pipeline end to end, on fixtures, with no network.
+// 6. Demo — the pipeline end to end, on fixtures, with no network.
 // ---------------------------------------------------------------------------
 
 /** A decoded protobuf event: `delay: 0` on the prototype, `time` as an own property. */
@@ -917,20 +757,6 @@ const VEHICLE_FEED = {
   ]
 };
 
-const NYU_PAYLOAD = {
-  time: "2026-07-14 09:05:00",
-  ETAs: {
-    // Passio predicts a 09:22 dock. scheduledDeparture says 06:00 — the block's first sailing,
-    // deliberately ignored. The next sailing not yet due is 09:30, so the boat is on time.
-    "13138": [{ solidEta: { arrival: "2026-07-14 09:22:00", arrivalUtc: "2026-07-14 13:22:00", scheduledDeparture: "2026-07-14 06:00:00", tripIndex: 0 } }]
-  }
-};
-const NYU_DEPARTURES = [
-  { tripId: "nyu:t1", routeId: "nyu:45769", stopId: "nyu:13138", departureTime: "09:00:00" },
-  { tripId: "nyu:t2", routeId: "nyu:45769", stopId: "nyu:13138", departureTime: "09:30:00" },
-  { tripId: "nyu:t3", routeId: "nyu:45769", stopId: "nyu:13138", departureTime: "10:00:00" }
-];
-
 function main() {
   const line = (title) => console.log(`\n${title}\n${"-".repeat(title.length)}`);
 
@@ -966,7 +792,7 @@ function main() {
   const realtime = { available: true, stale: false, updates, vehicles };
   const groups = routeDirectionGroups(DISPLAY_DATA, realtime, NOW);
   for (const group of groups) {
-    console.log(`  ${group.routeId} ${group.variant || ""} → ${group.destination}`);
+    console.log(`  ${group.routeId} ${group.variant || ""} → ${group.destination} (${directionLabel(group.directionId)})`);
     for (const item of group.departures) {
       const cell = departureCell(item, realtime);
       console.log(`    ${item.departureTime} → ${cell.time.padEnd(8)} ${cell.relative.padEnd(8)} ${cell.boatName.padEnd(16)} ${cell.badges.join(" ")}`);
@@ -988,14 +814,7 @@ function main() {
   console.log("  runs before the staleness check, so a removed sailing is not resurrected by a");
   console.log("  feed outage. That is why 18:35 still carries LAST here as well.");
 
-  line("5. NYU via Passio — an arrival is not a departure");
-  for (const update of normalizeNyuEtas(NYU_PAYLOAD, { departures: NYU_DEPARTURES })) {
-    console.log(`  ${update.tripId} at ${update.stopId}  delay ${update.delaySeconds}s`);
-  }
-  console.log("  Docking at 09:22 for a 09:30 sailing is a boat waiting on its timetable:");
-  console.log("  0s late, and the 09:30 departure stays at 09:30.");
-
-  line("6. The clamp, case by case (gtfsferry.md's required matrix)");
+  line("5. The clamp, case by case (gtfsferry.md's required matrix)");
   const cases = [
     ["departure 09:55 for a 10:00 sailing", { stopId: "1", departure: protobufEvent({ time: Date.parse("2026-07-14T13:55:00Z") / 1000 }) }],
     ["delay -300s", { stopId: "1", departure: { delay: -300 } }],
