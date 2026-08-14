@@ -524,7 +524,14 @@ test("a boat going out of service is spotted from the gap in its own day", async
   // hole in the boat's own run of trips.
   const midday = homePort.filter((item) => !item.endsDay)
     .map((item) => `${item.routeId}${item.boatAssignment}@${item.departureTime.slice(0, 5)}`).sort();
-  assert.deepEqual(midday, ["AS1@10:42", "ER1@10:28", "ER5@10:04"]);
+  // The long ones are the weekday split shifts: these boats work the morning peak, tie up for more
+  // than five hours and come back for the evening. The short ones are crew changeovers, where the
+  // boat is swapped rather than the crew stepping aboard — it goes in and its relief comes out of
+  // Pier C minutes later. Neither is in the feed; both come off the crew sheet.
+  assert.deepEqual(midday, [
+    "AS1@10:42", "AS2@13:14", "AS3@14:11", "ER1@10:28", "ER2@14:31", "ER5@10:04", "ER6@13:54",
+    "SG1@13:18", "SG2@14:08"
+  ]);
   // Those are distinct from finishing for the day, which an agent needs to tell apart.
   assert.ok(homePort.some((item) => item.endsDay));
 
@@ -552,7 +559,14 @@ test("published crew shifts replace the gap guesswork", async () => {
   // 10:04, ER1 at 10:28 and AS1 at 10:42, each returning for the evening peak hours later.
   const midday = data.departures.filter((item) => item.outOfService && !item.endsDay)
     .map((item) => `${item.routeId}${item.boatAssignment}@${item.departureTime.slice(0, 5)}`).sort();
-  assert.deepEqual(midday, ["AS1@10:42", "ER1@10:28", "ER5@10:04"]);
+  // The long ones are the weekday split shifts: these boats work the morning peak, tie up for more
+  // than five hours and come back for the evening. The short ones are crew changeovers, where the
+  // boat is swapped rather than the crew stepping aboard — it goes in and its relief comes out of
+  // Pier C minutes later. Neither is in the feed; both come off the crew sheet.
+  assert.deepEqual(midday, [
+    "AS1@10:42", "AS2@13:14", "AS3@14:11", "ER1@10:28", "ER2@14:31", "ER5@10:04", "ER6@13:54",
+    "SG1@13:18", "SG2@14:08"
+  ]);
 
   // Every boat still gets a home-port run at the end of its day, taken from the feed rather than
   // the notes so that an unusable shift note cannot make a day look shorter than it is. ER1's
@@ -563,7 +577,7 @@ test("published crew shifts replace the gap guesswork", async () => {
   assert.ok(er1.some((item) => item.endsDay), "ER1 should still finish for the day");
 });
 
-test("a crew handover is not a boat going out of service", async () => {
+test("a crew handover ties the boat up unless a shuttle brings the relief out to it", async () => {
   const shifts = JSON.parse(await readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8")).shifts;
   const minutes = (value) => Number(value.split(":")[0]) * 60 + Number(value.split(":")[1]);
   const handovers = [], breaks = [];
@@ -583,15 +597,25 @@ test("a crew handover is not a boat going out of service", async () => {
   assert.ok(Math.max(...handovers) <= 60, `longest handover was ${Math.max(...handovers)} min`);
   assert.ok(Math.min(...breaks) > 120, `shortest break was ${Math.min(...breaks)} min`);
 
-  // A boat mid-handover keeps running, so it is never shown tying up there.
+  // What happens at a handover depends on how the relief gets aboard, and only on that. A crew
+  // carried out by shuttle steps onto the boat already alongside and it sails on. Everywhere else a
+  // handover is a boat swap: the vessel that finishes runs to Pier C and another comes out of it to
+  // pick the working up, which is why both halves are on the board.
+  const crew = JSON.parse(await readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8"));
+  const shuttled = new Set(crew.shuttles.weekday.flatMap((entry) => entry.boats));
   const data = await buildDisplayData({ landingNumber: 16 });
-  const tieUps = data.departures.filter((item) => item.outOfService).map((item) => item.seconds);
-  for (const list of Object.values(shifts.weekday || {})) {
+  const tieUps = data.departures.filter((item) => item.outOfService && item.serviceId === "1")
+    .map((item) => `${item.routeId}${item.boatAssignment}@${item.departureTime.slice(0, 5)}`);
+  for (const [boat, list] of Object.entries(shifts.weekday || {})) {
     for (const [index, entry] of list.entries()) {
       const next = list[index + 1];
       if (!next || minutes(next.startTime) - minutes(entry.endTime) > 60) continue;
-      assert.equal(tieUps.includes(minutes(entry.endTime) * 60), false,
-        `a handover at ${entry.endTime} should not read as going out of service`);
+      // Only the ones that tie up at this landing are visible here.
+      if (entry.endPlace !== "Wall St/Pier 11") continue;
+      assert.equal(tieUps.includes(`${boat}@${entry.endTime}`), !shuttled.has(boat),
+        shuttled.has(boat)
+          ? `${boat} is relieved by shuttle at ${entry.endTime} and must stay in service`
+          : `${boat} is swapped at ${entry.endTime} and must run to Pier C`);
     }
   }
 });
@@ -1006,13 +1030,17 @@ test("a crew changeover with no shuttle is badged as a drop off", async () => {
   const astoria = await buildDisplayData({ landingNumber: 2 });
   assert.equal(astoria.departures.find((item) => String(item.tripId) === "1018")?.endsShift, "certain");
 
-  // The boat itself does not go anywhere: it sails again from the same pier six minutes later, so
-  // nothing may claim a run to the home port.
+  // And the boat leaves. A changeover is a swap, not a crew stepping aboard the boat already
+  // alongside, so the vessel that finishes at 14:11 runs to Pier C — the six minutes to the 14:17
+  // are two different boats, not one waiting.
   const pier11 = await buildDisplayData({ landingNumber: 16 });
   const homePortRuns = pier11.departures.filter((item) =>
     item.outOfService && item.routeId === "AS" && item.boatAssignment === 3 &&
-    item.seconds >= 13 * 3600 && item.seconds <= 15 * 3600);
-  assert.equal(homePortRuns.length, 0, "AS3 must not be shown running to Pier C at 14:11");
+    item.serviceId === "1" && item.seconds >= 13 * 3600 && item.seconds <= 15 * 3600);
+  assert.equal(homePortRuns.length, 1, "AS3's 14:11 must be shown running to Pier C");
+  assert.equal(homePortRuns[0].departureTime.slice(0, 5), "14:11");
+  assert.equal(homePortRuns[0].destination, "Pier C");
+  assert.equal(homePortRuns[0].endsDay, false, "the working carries on with another boat, so this is not the end of its day");
 
   // And the other half of the same rule still holds: the relieving crew's first departure.
   const pierC = await buildDisplayData({ landingNumber: 27 });
@@ -1094,5 +1122,22 @@ test("drop offs and Pier C first departures agree about every weekday changeover
   for (const { boat } of covered) {
     const midday = [...badged].filter(([, name]) => name === boat).length;
     assert.ok(midday <= 1, `${boat} should carry only its end-of-day badge, found ${midday}`);
+  }
+
+  // Each of the eight also runs to the home port, at the minute its shift sheet ends. Both halves
+  // of a swap are on the board: this boat going in, and its relief coming out of Pier C.
+  const homePortRuns = new Map();
+  for (let landingNumber = 2; landingNumber <= 26; landingNumber += 1) {
+    const data = await buildDisplayData({ landingNumber });
+    for (const item of data.departures) {
+      if (!item.outOfService || item.serviceId !== "1" || !Number.isInteger(item.boatAssignment)) continue;
+      homePortRuns.set(`${item.routeId}${item.boatAssignment}|${item.departureTime.slice(0, 5)}`, item);
+    }
+  }
+  for (const { boat, entry } of standalone) {
+    const run = homePortRuns.get(`${boat}|${entry.endTime}`);
+    assert.ok(run, `${boat} must run to the home port when its shift ends at ${entry.endTime}`);
+    assert.equal(run.destination, "Pier C");
+    assert.equal(run.endsDay, false, `${boat}'s working continues with another boat, so ${entry.endTime} is not the end of its day`);
   }
 });

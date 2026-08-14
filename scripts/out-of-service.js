@@ -49,10 +49,7 @@ export function boatRuns({ trips, timesByTrip, boatAssignments }) {
     const list = runs.get(key) || [];
     list.push({
       tripId: trip.trip_id, routeId: trip.route_id, boat, serviceId: trip.service_id,
-      startSeconds: timeToSeconds(start), endSeconds: timeToSeconds(end),
-      // Both ends, because "did the boat go anywhere between these two trips" is answered by
-      // comparing where one finished with where the next one started.
-      startStopId: times[0].stop_id, endStopId: times.at(-1).stop_id
+      startSeconds: timeToSeconds(start), endSeconds: timeToSeconds(end), endStopId: times.at(-1).stop_id
     });
     runs.set(key, list);
   }
@@ -108,25 +105,24 @@ export function serviceBreaks({
         // relief steps aboard from the shuttle and the boat sails on with nobody put ashore. Every
         // other entry on the sheet is a real end of shift, however short the gap after it looks.
         //
-        // This used to suppress any same-place changeover under an hour, on the reasoning that a
-        // boat sailing again six minutes later cannot have finished. But the sheet is the record of
-        // when a crew stops working, and a crew stopping is exactly what the drop-off badge is
-        // about — the boat carrying on with a fresh crew does not change that the trip just ended
-        // takes nobody back. That heuristic silently swallowed AS3's 14:11 and seven others.
+        // This used to suppress any same-place changeover under an hour, reasoning that a boat
+        // sailing again six minutes later cannot have finished. It can, because it is not the same
+        // boat: a changeover is a swap, and the six minutes are the gap between one vessel leaving
+        // for the home port and another arriving from it. That heuristic silently swallowed AS3's
+        // 14:11 and seven others like it.
         if (next && shuttleCovers({ crewSwaps, boat, kind, endSeconds, startSeconds: hhmmSeconds(next.startTime) })) continue;
         const run = list.find((item) => Math.abs(item.endSeconds - endSeconds) <= 60 &&
           (!entry.endPlace || stopName(item.endStopId) === entry.endPlace));
         if (!run) continue;
         certainty.set(run.tripId, "certain");
-        // The sheet is the authority on crews; the feed is the authority on where the boat is. A
-        // boat that sails again shortly afterwards from the pier it just tied up at plainly did not
-        // run to the home port, so it gets the drop-off badge without a home-port row asserting a
-        // move the schedule beside it contradicts.
-        const following = list[list.indexOf(run) + 1];
-        const staysAlongside = following &&
-          following.startSeconds - run.endSeconds < gapSeconds &&
-          following.startStopId === run.endStopId;
-        if (!staysAlongside) tieUps.push({ ...run, endsDay: false });
+        // And the boat really does leave. A changeover on the sheet is a boat swap, not a crew
+        // stepping aboard the one already alongside: the vessel that finishes runs to the home port
+        // and a different one comes out of it to pick the working up. That is why the relieving
+        // half is a Pier C departure, and it is why this half is a home-port run.
+        //
+        // So the six minutes between AS3's 14:11 and its 14:17 are not one boat waiting — they are
+        // two boats. "AS3" names the working, which is continuous; the vessel underneath it is not.
+        tieUps.push({ ...run, endsDay: false });
       }
       continue;
     }
