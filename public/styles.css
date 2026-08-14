@@ -31,6 +31,23 @@
 .nearest-icon{flex:0 0 auto;width:16px;height:16px;fill:none;stroke:var(--navy);stroke-width:2.2;stroke-linecap:round}.nearest-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A resolved fix is the one state worth colouring: it is the only one that does something when
    tapped. "here" stays quiet because the board already says where you are. */
+/* Date stepper, sitting under the departures list.
+   Browsing turns it amber: a board showing a day that is not today must never be mistaken for the
+   live one, and the tint is the fastest way to say so. */
+.date-bar{flex:0 0 auto;display:flex;align-items:stretch;justify-content:center;gap:0;margin-top:.5vh;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+.date-step,.date-current{border:0;background:transparent;color:var(--navy);font:900 clamp(11px,1.6vh,15px)/1 Lato,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.date-step{flex:0 0 auto;width:15%;min-width:44px;min-height:34px;padding:0;font-size:clamp(16px,2.4vh,22px);line-height:1;color:var(--muted)}
+.date-step:active{background:#e9f2f7}
+.date-step:disabled{opacity:.3;cursor:default}
+.date-current{flex:1 1 auto;min-height:34px;padding:.4vh .6vw;border-inline:1px solid var(--line);white-space:nowrap;letter-spacing:.02em}
+.date-current:active{background:#e9f2f7}
+.date-step:focus-visible,.date-current:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
+.date-bar[data-state="browsing"]{border-color:#b58900;background:#fff8e1}
+.date-bar[data-state="browsing"] .date-current{border-inline-color:#e3c76a;color:#7a5c00}
+.date-bar[data-state="browsing"] .date-step{color:#9a7500}
+/* On a browsed day the list itself carries a matching edge, so the tint is not stranded at the
+   very bottom of a long list that has been scrolled away from it. */
+.screen.browsing-schedule .departures{border-left:3px solid #e3c76a;padding-left:.5vw}
 .nearest-button[data-state="ready"]{border-color:var(--blue);background:#e8f5fc;color:#0b6c92}.nearest-button[data-state="ready"] .nearest-icon{stroke:#0b6c92}
 .nearest-button[data-state="here"] .nearest-icon{stroke:#35aa65}
 .nearest-button[data-state="error"]{border-color:#c8102e;color:#c8102e}.nearest-button[data-state="error"] .nearest-icon{stroke:#c8102e}
@@ -102,6 +119,14 @@ body.menu-open{overflow:hidden}
   .board-heading h1{flex:1 1 auto;min-width:0;font-size:20px;line-height:1.1;white-space:normal}
   .board-state{flex:1 1 100%;flex-wrap:wrap;justify-content:flex-start;gap:6px}
   .route-count,.status{padding:4px 7px;font-size:11px}
+  /* Thumb-sized, and genuinely at the end of the page scroll: reaching the last boat of the day
+     puts the control for the next one directly under the thumb that scrolled there. */
+  .date-bar{margin-top:12px}
+  .date-step{width:22%;min-height:48px;font-size:22px}
+  .date-current{min-height:48px;padding:6px 10px;font-size:14px}
+  /* The list keeps its amber edge on a phone precisely because this bar scrolls away with the
+     content — without it a long browsed day would look live once it was scrolled past. */
+  .screen.browsing-schedule .departures{border-left:3px solid #e3c76a;padding-left:10px}
   /* The clock must never break across lines, so it is the one item that refuses to shrink. */
   .clock{flex:0 0 auto;margin-left:auto;gap:6px;white-space:nowrap}
   .clock time{font-size:20px;white-space:nowrap}

@@ -23,6 +23,10 @@ const elements = {
   landingList: document.querySelector("#landingList"),
   nearestButton: document.querySelector("#nearestButton"),
   nearestLabel: document.querySelector("#nearestLabel"),
+  dateBar: document.querySelector("#dateBar"),
+  datePrev: document.querySelector("#datePrev"),
+  dateNext: document.querySelector("#dateNext"),
+  dateCurrent: document.querySelector("#dateCurrent"),
   sortOptions: [...document.querySelectorAll("[data-sort]")]
 };
 
@@ -41,6 +45,12 @@ const nearestKey = "nyc-ferry-did-nearest";
 // shortcut still pointing at yesterday's dock is worse than no shortcut at all.
 const nearestMaxAgeMs = 12 * 60 * 60 * 1000;
 let nearestTimer = null;
+// Which service date the board is showing, as YYYY-MM-DD, or null for "today, live".
+//
+// Deliberately not persisted. A landing choice is a setting; a date is a lookup. A board left
+// showing tomorrow and then picked up cold the next morning would be confidently wrong about the
+// one thing it exists to state, so every start and every landing switch returns to today.
+let viewDate = null;
 let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
 let serviceAlerts = null;
@@ -94,7 +104,20 @@ function addDays(dateKey, amount) {
   return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}-${String(value.getUTCDate()).padStart(2, "0")}`;
 }
 
+// Memoized per landing payload. Stepping through days asks this the same questions over and over —
+// every render re-reads today and yesterday — and the answer for a given date cannot change while
+// the payload is the one it was computed from. Cleared wholesale in resetSchedule().
+const serviceCache = new Map();
+const dayCache = new Map();
+
+function resetSchedule() {
+  serviceCache.clear();
+  dayCache.clear();
+}
+
 function activeServices(dateKey) {
+  const cached = serviceCache.get(dateKey);
+  if (cached) return cached;
   const weekday = new Date(`${dateKey}T00:00:00Z`).getUTCDay();
   const active = new Set();
   for (const item of data.calendars || []) {
@@ -104,7 +127,48 @@ function activeServices(dateKey) {
     if (item.date !== dateKey) continue;
     if (item.added) active.add(item.serviceId); else active.delete(item.serviceId);
   }
+  serviceCache.set(dateKey, active);
   return active;
+}
+
+// What actually distinguishes one schedule day from another.
+//
+// A date is not the unit of work here — a service pattern is. Every ordinary Tuesday in the feed
+// selects the identical set of service ids, and so produces the identical board; only weekends and
+// the dated exceptions in calendar_dates.txt differ. Keying the computed day on the services rather
+// than the date means stepping across a week costs two real computations, not seven, and stepping
+// back across it costs none.
+//
+// Yesterday's services are part of the key because a sailing published as 25:10 belongs to the
+// previous service day and lands on this one.
+function serviceSignature(dateKey) {
+  return `${[...activeServices(dateKey)].sort().join(",")}|${[...activeServices(addDays(dateKey, -1))].sort().join(",")}`;
+}
+
+// The span of dates the bundled schedule can actually answer for. Read off the calendars rather
+// than feed_info, because the crew calendars and the partner feeds each carry their own bounds and
+// the board is only honest for a date every one of them covers... or rather, for a date any of them
+// covers: a day inside NYC Ferry's range but past NY Waterway's simply shows no waterway rows,
+// which is the same thing the live board already does when a partner feed lapses.
+function scheduleRange() {
+  const bounded = (data.calendars || []).filter((item) => item.startDate && item.endDate);
+  if (!bounded.length) return null;
+  return {
+    first: bounded.map((item) => item.startDate).sort()[0],
+    last: bounded.map((item) => item.endDate).sort().at(-1)
+  };
+}
+
+// Today and now, or a browsed date and the start of it.
+//
+// Everything downstream reads the board through this one object, which is what keeps browsing from
+// forking the render path: a browsed day is simply "now = 00:00 on that date, and no live feed".
+function viewFrame(now = new Date()) {
+  const current = zonedParts(now, data.meta.timezone);
+  if (!viewDate || viewDate === current.dateKey) {
+    return { dateKey: current.dateKey, seconds: current.seconds, today: current.dateKey, live: true };
+  }
+  return { dateKey: viewDate, seconds: 0, today: current.dateKey, live: false };
 }
 
 function escapeHtml(value) {
@@ -132,7 +196,10 @@ function departureLabel(item) {
   return `${start}<span class="time-range-dash">–</span>${escapeHtml(end)}`;
 }
 
-function relativeTime(deltaSeconds) {
+function relativeTime(deltaSeconds, live = true) {
+  // On a browsed day "12 min" would be counting down from midnight, which is nonsense, so the row
+  // simply shows the scheduled time and nothing else.
+  if (!live) return "";
   if (deltaSeconds <= 90) return "Boarding";
   if (deltaSeconds < 3600) return `${Math.ceil(deltaSeconds / 60)} min`;
   if (deltaSeconds < 86400) return `${Math.floor(deltaSeconds / 3600)} hr ${Math.ceil((deltaSeconds % 3600) / 60)} min`;
@@ -146,16 +213,25 @@ function directionLabel(directionId) {
 }
 
 function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("departuresShown")) {
-  const current = zonedParts(now, data.meta.timezone);
+  const frame = viewFrame(now);
+  // A browsed day is a pure function of the schedule: no live feed is applied, and every delta is
+  // measured from midnight rather than from a clock that moves. So the whole computed day can be
+  // memoized, and — keyed on its services rather than its date — reused by every other day that
+  // runs the same pattern. Today is never served from here; it changes every fifteen seconds.
+  const cacheKey = frame.live ? null : `${limitPerGroup}|${serviceSignature(frame.dateKey)}`;
+  if (cacheKey && dayCache.has(cacheKey)) return dayCache.get(cacheKey);
+  const current = { dateKey: frame.dateKey, seconds: frame.seconds };
   const departureWindowSeconds = (Number(data.meta.departureWindowMinutes) || 180) * 60;
-  const updates = new Map((realtime.updates || []).map((item) => [`${item.tripId}|${item.stopId}`, item]));
-  const vehicles = new Map((realtime.vehicles || []).map((item) => [String(item.tripId), item]));
+  // Live estimates describe boats that are on the water now. On any other day there are none, and
+  // pretending otherwise would put yesterday's delays on tomorrow's sailings.
+  const updates = frame.live ? new Map((realtime.updates || []).map((item) => [`${item.tripId}|${item.stopId}`, item])) : new Map();
+  const vehicles = frame.live ? new Map((realtime.vehicles || []).map((item) => [String(item.tripId), item])) : new Map();
   // Which vessel is on each boat right now. The feed only names a vessel for a trip it has reached,
   // so a sailing later today has none of its own — but the workbook knows which boat runs it, and
   // that boat is out on the water under a vessel the feed *has* named. Freshest report wins when a
   // boat appears on more than one trip, which happens as it hands over between them.
   const vessels = new Map();
-  for (const item of realtime.vehicles || []) {
+  for (const item of frame.live ? realtime.vehicles || [] : []) {
     if (!item.boat || !item.boatName) continue;
     const seen = vessels.get(item.boat);
     if (!seen || (item.updatedAtEpochSeconds || 0) >= (seen.updatedAtEpochSeconds || 0)) vessels.set(item.boat, item);
@@ -207,6 +283,7 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
         ...departure,
         delay,
         delta,
+        live: frame.live,
         hasLiveTiming,
         boatName: vehicles.get(String(departure.tripId))?.boatName || null,
         // Failing a vessel of its own, the one currently working this boat — by way of the trip a
@@ -224,7 +301,7 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
     }
   }
 
-  return [...groups.values()]
+  const result = [...groups.values()]
     .map((group) => ({
       ...group,
       departures: group.departures
@@ -236,12 +313,16 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
             lastGovernorsIslandDepartures.get(`${departure.routeId}|${departure.variant || ""}|${departure.directionId}`)?.tripId === String(departure.tripId)
         }))
     }))
-    .filter((group) => group.departures[0]?.delta <= departureWindowSeconds)
+    // The lookahead window is about what is worth showing someone standing at the dock. Browsing a
+    // day is the opposite question — the whole day is the point — so it only bounds the live board.
+    .filter((group) => !frame.live || group.departures[0]?.delta <= departureWindowSeconds)
     .map((group) => ({
       ...group,
       departures: group.departures.slice(0, limitPerGroup)
     }))
     .sort(byRoute);
+  if (cacheKey) dayCache.set(cacheKey, result);
+  return result;
 }
 
 // Route-card order, and the tiebreak the timeline falls back on when two boats leave in the
@@ -271,9 +352,10 @@ function routeShortName(routeId) {
 // more flick of the thumb.
 function timelineDepartures(now = new Date()) {
   const windowSeconds = (Number(data.meta.departureWindowMinutes) || 180) * 60;
+  const live = viewFrame(now).live;
   return routeDirectionGroups(now, Infinity)
     .flatMap((group) => group.departures.map((departure) => ({ departure, group })))
-    .filter(({ departure }) => departure.delta <= windowSeconds)
+    .filter(({ departure }) => !live || departure.delta <= windowSeconds)
     // Ties fall back to route order so two boats leaving the same minute cannot swap places
     // between the 15s re-renders.
     .sort((left, right) => left.departure.delta - right.departure.delta || byRoute(left.group, right.group));
@@ -389,7 +471,7 @@ function routeVisual(routeId, variant) {
 function departureCell(item) {
   const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats } = departureStatus(item);
   return `<div class="departure-slot">
-    <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta))}</span></div>
+    <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta, item.live !== false))}</span></div>
     <span class="departure-last-slot">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
   </div>`;
 }
@@ -415,9 +497,72 @@ function partnerBadgeLogo(routeId, shortName) {
   return badge && badge.useLogo(shortName || "") ? badge : null;
 }
 
+// Stepping the board through the schedule.
+//
+// The whole feature is a filter over data the payload already carries: every landing ships every
+// service id together with the calendars and exceptions that say which days each one runs. So a
+// different day costs no fetch, no rebuild and not one extra byte — it is the same array read
+// through a different date.
+
+function dayLabel(dateKey, today) {
+  if (dateKey === today) return "Today";
+  if (dateKey === addDays(today, 1)) return "Tomorrow";
+  if (dateKey === addDays(today, -1)) return "Yesterday";
+  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" })
+    .format(new Date(`${dateKey}T12:00:00Z`));
+}
+
+function longDayLabel(dateKey) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "long", month: "long", day: "numeric" })
+    .format(new Date(`${dateKey}T12:00:00Z`));
+}
+
+function renderDateBar() {
+  const frame = viewFrame();
+  const range = scheduleRange();
+  const label = dayLabel(frame.dateKey, frame.today);
+  elements.dateBar.dataset.state = frame.live ? "today" : "browsing";
+  elements.dateCurrent.textContent = label;
+  elements.dateCurrent.setAttribute("aria-label", frame.live
+    ? `Showing today's schedule, ${longDayLabel(frame.dateKey)}`
+    : `Showing ${longDayLabel(frame.dateKey)} — tap to return to today`);
+  // Nothing outside the bundled schedule: a step past the last served date would show an empty
+  // board that looks like cancelled service rather than like the end of the feed.
+  elements.datePrev.disabled = Boolean(range) && addDays(frame.dateKey, -1) < range.first;
+  elements.dateNext.disabled = Boolean(range) && addDays(frame.dateKey, 1) > range.last;
+  // The screen carries the state too, so a browsed board can be told apart at a glance from the
+  // live one it otherwise looks exactly like.
+  elements.screen.classList.toggle("browsing-schedule", !frame.live);
+}
+
+function stepDate(amount) {
+  const frame = viewFrame();
+  const range = scheduleRange();
+  const next = addDays(frame.dateKey, amount);
+  if (range && (next < range.first || next > range.last)) return;
+  viewDate = next === frame.today ? null : next;
+  render();
+}
+
+function showToday() {
+  if (viewDate === null) return;
+  viewDate = null;
+  render();
+}
+
+// An empty live board means the boats have finished; an empty browsed one means that day was never
+// going to have any. Saying "concluded for the day" about next Sunday would read as a cancellation.
+function emptyBoard() {
+  const frame = viewFrame();
+  return frame.live
+    ? `<div class="empty"><div><strong>NO MORE BOATS!</strong><span>NYC Ferry service has concluded for the day.</span></div></div>`
+    : `<div class="empty"><div><strong>NO SCHEDULED BOATS</strong><span>Nothing is scheduled here on ${escapeHtml(longDayLabel(frame.dateKey))}.</span></div></div>`;
+}
+
 function render() {
   if (!data) return;
   applyDisplayCounts();
+  renderDateBar();
   return sortedBy() === "route" ? renderRouteBoard() : renderTimeline();
 }
 
@@ -430,7 +575,7 @@ function renderTimeline() {
   elements.routeCount.textContent = `${rows.length} departure${rows.length === 1 ? "" : "s"}`;
 
   if (!rows.length) {
-    elements.departures.innerHTML = `<div class="empty"><div><strong>NO MORE BOATS!</strong><span>NYC Ferry service has concluded for the day.</span></div></div>`;
+    elements.departures.innerHTML = emptyBoard();
     return;
   }
 
@@ -468,7 +613,7 @@ function renderTimeline() {
       <div class="tl-head">
         <time>${departureLabel(departure)}</time>
         <span class="route-badge${visual.partnerLogo ? " route-badge-image" : ""}">${visual.badgeContent}${variantBadge}</span>
-        <span class="tl-relative">${escapeHtml(relativeTime(departure.delta))}</span>
+        <span class="tl-relative">${escapeHtml(relativeTime(departure.delta, departure.live !== false))}</span>
       </div>
       <strong class="tl-dest">${escapeHtml(group.destination)}${group.via?.length ? `<span class="tl-via"> via ${escapeHtml(group.via.map(shortStop).join(", "))}</span>` : ""}</strong>
       <div class="tl-meta">
@@ -490,7 +635,7 @@ function renderRouteBoard() {
   elements.routeCount.textContent = `${groups.length} route direction${groups.length === 1 ? "" : "s"}`;
 
   if (!groups.length) {
-    elements.departures.innerHTML = `<div class="empty"><div><strong>NO MORE BOATS!</strong><span>NYC Ferry service has concluded for the day.</span></div></div>`;
+    elements.departures.innerHTML = emptyBoard();
     return;
   }
 
@@ -663,6 +808,10 @@ async function load() {
     if (!saved) throw new Error("No display data is available.");
     data = JSON.parse(saved);
   }
+  // A new payload invalidates every memoized day, and a new landing is a fresh question — nobody
+  // switching docks means "and keep showing me next Tuesday".
+  resetSchedule();
+  viewDate = null;
   elements.landing.textContent = data.meta.landing.displayName;
   renderLandingList();
   renderNearest();
@@ -828,8 +977,17 @@ elements.landingList.addEventListener("click", (event) => {
 for (const button of elements.sortOptions) {
   button.addEventListener("click", () => selectSort(button.dataset.sort));
 }
+elements.datePrev.addEventListener("click", () => stepDate(-1));
+elements.dateNext.addEventListener("click", () => stepDate(1));
+elements.dateCurrent.addEventListener("click", showToday);
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !elements.landingMenu.hidden) setMenuOpen(false);
+  if (event.key === "Escape" && !elements.landingMenu.hidden) return setMenuOpen(false);
+  // Arrow keys page through the schedule, which is how anyone reaches for a date stepper on a
+  // desktop board. Only when the landing menu is closed and nothing is being typed into.
+  if (!elements.landingMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+  if (event.key === "ArrowLeft") stepDate(-1);
+  else if (event.key === "ArrowRight") stepDate(1);
 });
 
 renderSortToggle();
@@ -849,7 +1007,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=50", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=51", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

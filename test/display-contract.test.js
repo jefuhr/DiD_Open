@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import vm from "node:vm";
 
 const appPath = new URL("../public/app.js", import.meta.url);
 const cssPath = new URL("../public/styles.css", import.meta.url);
@@ -310,8 +311,10 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.match(app, /\.flatMap\(\(group\) => group\.departures\.map\(\(departure\) => \(\{ departure, group \}\)\)\)/);
   assert.match(app, /left\.departure\.delta - right\.departure\.delta \|\| byRoute\(left\.group, right\.group\)/);
 
-  // All of them, bounded only by the board's existing lookahead — no fixed row cap.
-  assert.match(app, /\.filter\(\(\{ departure \}\) => departure\.delta <= windowSeconds\)/);
+  // All of them, bounded only by the board's existing lookahead — no fixed row cap. The bound is
+  // about what a rider at the dock needs next, so it applies to the live board only; browsing a
+  // day is a request for the whole day.
+  assert.match(app, /\.filter\(\(\{ departure \}\) => !live \|\| departure\.delta <= windowSeconds\)/);
   assert.doesNotMatch(app, /TIMELINE_ROWS/);
   assert.doesNotMatch(app, /\.slice\(0, TIMELINE_ROWS\)/);
 
@@ -384,16 +387,256 @@ test("every time on the board is 24-hour", async () => {
   assert.match(app, /return `\$\{start\}<span class="time-range-dash">–<\/span>\$\{escapeHtml\(end\)\}`/);
 });
 
-test("offline shell includes version 50 display assets", async () => {
+// Browsing the schedule by date.
+//
+// These run the real public/app.js against a stub DOM rather than matching its source, because the
+// question here is behavioural: does tomorrow's board show tomorrow's boats, all of them, in order,
+// and without today's live estimates painted onto them. A regex cannot answer that.
+
+const SERVICES = { weekday: "WKD", weekend: "WKE", holiday: "HOL" };
+
+function sailing(serviceId, time, index) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return {
+    tripId: `${serviceId}-${index}`, routeId: "ER", serviceId, directionId: "0",
+    stopId: "1", departureTime: `${time}:00`, seconds: hours * 3600 + minutes * 60,
+    destination: "East 34th Street", variant: null, nextStop: null, servesGovernorsIsland: false,
+    boatAssignment: null, mode: "ferry", operator: "NYC Ferry", via: [],
+    endsShift: null, outOfService: false, crewShuttle: false, crewBoats: null,
+    departureTimeEnd: null, secondsEnd: null, endsDay: false
+  };
+}
+
+const SAMPLE = {
+  meta: {
+    timezone: "America/New_York", agencyName: "NYC Ferry", landingNumber: 16,
+    departureWindowMinutes: 180, departuresShown: 4, routesShown: 5,
+    landing: { name: "Pier 11", displayName: "Wall St / Pier 11", stopIds: ["1"] }
+  },
+  routes: { ER: { id: "ER", shortName: "ER", name: "East River", color: "#004E72", textColor: "#FFFFFF", mode: "ferry", operator: "NYC Ferry" } },
+  calendars: [
+    { serviceId: SERVICES.weekday, weekdays: [false, true, true, true, true, true, false], startDate: "2026-01-01", endDate: "2026-12-31" },
+    { serviceId: SERVICES.weekend, weekdays: [true, false, false, false, false, false, true], startDate: "2026-01-01", endDate: "2026-12-31" }
+  ],
+  // Labor Day: the weekday service is pulled and a holiday one added in its place, which is exactly
+  // the shape the crew calendars use and the case a weekday-versus-weekend guess would get wrong.
+  exceptions: [
+    { serviceId: SERVICES.weekday, date: "2026-09-07", added: false },
+    { serviceId: SERVICES.holiday, date: "2026-09-07", added: true }
+  ],
+  departures: [
+    ...["06:00", "09:00", "12:00", "18:00", "21:00"].map((time, index) => sailing(SERVICES.weekday, time, index)),
+    ...["09:30", "13:30", "20:30"].map((time, index) => sailing(SERVICES.weekend, time, index)),
+    ...["10:00", "16:00"].map((time, index) => sailing(SERVICES.holiday, time, index))
+  ],
+  tripSchedules: {}
+};
+
+async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE } = {}) {
+  const [app, index] = await Promise.all([readFile(appPath, "utf8"), readFile(indexPath, "utf8")]);
+  const ids = [...index.matchAll(/id="([^"]+)"/g)].map((match) => match[1]);
+  const nodes = new Map(), classes = new Map(), listeners = new Map(), store = new Map();
+  const node = (id) => {
+    if (nodes.has(id)) return nodes.get(id);
+    const made = {
+      id, dataset: {}, hidden: false, disabled: false, textContent: "", innerHTML: "", title: "", attrs: {},
+      style: { setProperty() {}, removeProperty() {} },
+      classList: {
+        toggle(name, on) { const set = classes.get(id) || new Set(); if (on) set.add(name); else set.delete(name); classes.set(id, set); },
+        add() {}, remove() {}, contains: (name) => Boolean(classes.get(id)?.has(name))
+      },
+      setAttribute(key, value) { this.attrs[key] = value; }, getAttribute(key) { return this.attrs[key] ?? null; }, removeAttribute() {},
+      addEventListener(type, handler) { listeners.set(`${id}:${type}`, handler); },
+      focus() {}, querySelector: () => null, querySelectorAll: () => [], closest: () => null, appendChild() {}, insertAdjacentHTML() {}
+    };
+    nodes.set(id, made);
+    return made;
+  };
+  const Real = Date;
+  class Frozen extends Real {
+    constructor(...args) { return args.length ? super(...args) : super(now); }
+    static now() { return new Real(now).getTime(); }
+  }
+  const context = {
+    console, Promise, Intl, Math, JSON, Number, String, Object, Array, Boolean, Error, Set, Map, RegExp,
+    isNaN, parseInt, parseFloat, URL, encodeURIComponent, decodeURIComponent, Date: Frozen,
+    HTMLInputElement: class {}, HTMLTextAreaElement: class {},
+    document: {
+      documentElement: { dataset: {}, style: { setProperty() {}, removeProperty() {} } },
+      body: { classList: { toggle() {}, add() {}, remove() {} } },
+      querySelector: (selector) => (selector.startsWith("#") && ids.includes(selector.slice(1)) ? node(selector.slice(1)) : null),
+      querySelectorAll: () => [], addEventListener() {}
+    },
+    localStorage: {
+      getItem: (key) => (store.has(key) ? store.get(key) : null),
+      setItem: (key, value) => store.set(key, String(value)), removeItem: (key) => store.delete(key)
+    },
+    navigator: {}, location: { reload() {} }, window: {},
+    setInterval: () => 0, clearInterval() {}, setTimeout: () => 0, clearTimeout() {},
+    async fetch(url) {
+      const path = String(url);
+      const body = path.startsWith("/api/display-data") ? payload
+        : path.startsWith("/api/landings") ? { landings: [] }
+          : path.startsWith("/api/realtime") ? { available: false, stale: true, updates: [], vehicles: [] }
+            : path.startsWith("/api/alerts") ? { available: true, stale: false, alerts: [] }
+              : { active: false, message: "", updatedAt: null };
+      return { ok: true, json: async () => body };
+    }
+  };
+  context.globalThis = context;
+  vm.createContext(context);
+  vm.runInContext(app, context, { filename: "app.js" });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return {
+    context,
+    node,
+    click: (id) => listeners.get(`${id}:click`)?.(),
+    run: (source) => vm.runInContext(source, context),
+    stored: () => [...store.entries()],
+    times: () => [...node("departures").innerHTML.matchAll(/<time>(\d\d:\d\d)/g)].map((match) => match[1]),
+    text: () => node("departures").innerHTML.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+  };
+}
+
+test("the date stepper walks the schedule forwards and back, and returns to today", async () => {
+  const view = await board();
+  assert.equal(view.node("dateCurrent").textContent, "Today");
+  assert.equal(view.node("dateBar").dataset.state, "today");
+
+  view.click("dateNext");
+  assert.equal(view.node("dateCurrent").textContent, "Tomorrow");
+  assert.equal(view.node("dateBar").dataset.state, "browsing");
+  // Friday 14 August 2026 runs the weekday pattern.
+  assert.deepEqual(view.times(), ["06:00", "09:00", "12:00", "18:00", "21:00"]);
+
+  view.click("dateNext");
+  assert.equal(view.node("dateCurrent").textContent, "Sat, Aug 15");
+  assert.deepEqual(view.times(), ["09:30", "13:30", "20:30"]);
+
+  view.click("datePrev");
+  assert.equal(view.node("dateCurrent").textContent, "Tomorrow");
+
+  view.click("dateCurrent");
+  assert.equal(view.node("dateCurrent").textContent, "Today");
+  assert.equal(view.node("dateBar").dataset.state, "today");
+});
+
+test("a browsed day shows the whole day, where the live board shows a lookahead window", async () => {
+  const view = await board({ now: "2026-08-13T14:30:00Z" });
+  // 10:30 local, and the window is three hours: only the 12:00 is in reach today.
+  assert.deepEqual(view.times(), ["12:00"]);
+  view.click("dateNext");
+  // Tomorrow is a question about the day, not about the next three hours, so the cap lifts —
+  // including the boats that sail before the hour it is now.
+  assert.deepEqual(view.times(), ["06:00", "09:00", "12:00", "18:00", "21:00"]);
+});
+
+test("a browsed day carries no live estimates and no countdown", async () => {
+  const view = await board();
+  view.click("dateNext");
+  const html = view.node("departures").innerHTML;
+  // A delay reported for a boat on the water today says nothing about tomorrow's sailing.
+  assert.doesNotMatch(html, /on-time-badge|departure-delay-badge/);
+  // "in 12 min" measured from midnight would be nonsense, so the row shows the time and stops.
+  assert.doesNotMatch(html, /class="tl-relative">[^<]/);
+  assert.doesNotMatch(html, /class="slot-relative">[^<]/);
+  // The schedule facts a browsed day genuinely does know are still there.
+  assert.match(html, /departure-last-badge/);
+});
+
+test("a browsed day honours dated exceptions rather than guessing from the weekday", async () => {
+  const view = await board();
+  // Labor Day 2026 is a Monday, so a weekday-shaped guess would show the weekday boats.
+  view.run(`viewDate = "2026-09-07"; render();`);
+  assert.deepEqual(view.times(), ["10:00", "16:00"]);
+  assert.deepEqual([...view.run(`activeServices("2026-09-07")`)], ["HOL"]);
+  // The ordinary Monday either side of it is unaffected.
+  view.run(`viewDate = "2026-09-14"; render();`);
+  assert.deepEqual(view.times(), ["06:00", "09:00", "12:00", "18:00", "21:00"]);
+});
+
+test("the stepper stops at the ends of the bundled schedule", async () => {
+  const view = await board();
+  // Read field by field: the object is minted inside the vm realm, so its prototype is not this
+  // realm's Object.prototype and a strict deepEqual would reject it on that alone.
+  const range = view.run("scheduleRange()");
+  assert.equal(range.first, "2026-01-01");
+  assert.equal(range.last, "2026-12-31");
+
+  view.run(`viewDate = ${JSON.stringify(range.last)}; render();`);
+  assert.equal(view.node("dateNext").disabled, true);
+  assert.equal(view.node("datePrev").disabled, false);
+  view.click("dateNext");
+  assert.equal(view.run("viewDate"), range.last, "a step past the last served day is refused");
+
+  view.run(`viewDate = ${JSON.stringify(range.first)}; render();`);
+  assert.equal(view.node("datePrev").disabled, true);
+  view.click("datePrev");
+  assert.equal(view.run("viewDate"), range.first, "a step before the first served day is refused");
+});
+
+// The efficiency requirement. A schedule only varies by weekday and by the dated exceptions, so
+// computing a board per date would be redoing the same work all week.
+test("browsed days are computed once per service pattern, not once per date", async () => {
+  const view = await board();
+  view.run("resetSchedule();");
+  const dates = Array.from({ length: 28 }, (_, index) => view.run(`addDays("2026-08-13", ${index + 1})`));
+  for (const date of dates) view.run(`viewDate = ${JSON.stringify(date)}; render();`);
+
+  const patterns = view.run(`new Set(${JSON.stringify(dates)}.map(serviceSignature)).size`);
+  assert.ok(patterns < dates.length, "a month of dates must collapse to fewer patterns");
+  assert.equal(view.run("dayCache.size"), patterns, "one cache entry per pattern, not per date");
+
+  // Re-walking the same month adds no work at all.
+  for (const date of dates) view.run(`viewDate = ${JSON.stringify(date)}; render();`);
+  assert.equal(view.run("dayCache.size"), patterns, "revisiting a date is free");
+
+  // Today is never served from the cache: it moves with the clock and the live feed.
+  view.run("viewDate = null; render();");
+  assert.equal(view.run("dayCache.size"), patterns);
+});
+
+test("an empty browsed day is not reported as service having concluded", async () => {
+  const view = await board();
+  // A date inside the calendar range that no service covers.
+  view.run(`data.calendars = []; data.exceptions = []; resetSchedule(); viewDate = "2026-08-20"; render();`);
+  assert.match(view.text(), /NO SCHEDULED BOATS/);
+  assert.match(view.text(), /Nothing is scheduled here on Thursday, August 20/);
+  assert.doesNotMatch(view.text(), /concluded for the day/);
+
+  view.run("viewDate = null; render();");
+  assert.match(view.text(), /NO MORE BOATS/);
+  assert.match(view.text(), /concluded for the day/);
+});
+
+// A date is a lookup, not a setting. A board reopened the next morning still showing yesterday's
+// pick of "tomorrow" would be confidently wrong about the only thing it is for.
+test("the browsed date is never persisted and resets when the landing changes", async () => {
+  const view = await board();
+  view.click("dateNext");
+  assert.equal(view.run("viewDate"), "2026-08-14");
+  // Nothing the client wrote to storage mentions the browsed date, so a cold start cannot restore
+  // it. The landing choice and the sort preference are still persisted, as they should be.
+  const written = JSON.stringify(view.stored());
+  assert.doesNotMatch(written, /2026-08-14/);
+  assert.ok(view.stored().some(([key]) => key === "nyc-ferry-did-selected-landing"), "the landing choice is still remembered");
+
+  // And a landing switch re-runs load(), which clears both the memoized days and the date.
+  view.run(`viewDate = "2026-09-01";`);
+  await view.run("load()");
+  assert.equal(view.run("viewDate"), null);
+});
+
+test("offline shell includes version 51 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=50/);
-  assert.match(index, /app\.js\?v=50/);
-  assert.match(worker, /nyc-ferry-did-shell-v50/);
-  assert.match(worker, /styles\.css\?v=50/);
-  assert.match(worker, /app\.js\?v=50/);
+  assert.match(index, /styles\.css\?v=51/);
+  assert.match(index, /app\.js\?v=51/);
+  assert.match(worker, /nyc-ferry-did-shell-v51/);
+  assert.match(worker, /styles\.css\?v=51/);
+  assert.match(worker, /app\.js\?v=51/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
