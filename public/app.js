@@ -27,6 +27,7 @@ const elements = {
   datePrev: document.querySelector("#datePrev"),
   dateNext: document.querySelector("#dateNext"),
   dateCurrent: document.querySelector("#dateCurrent"),
+  clockToggle: document.querySelector("#clockToggle"),
   sortOptions: [...document.querySelectorAll("[data-sort]")]
 };
 
@@ -39,6 +40,10 @@ const landingsKey = "nyc-ferry-did-landings";
 // Persisted like the landing choice, and deliberately per-device: it is a reading preference,
 // not board config.
 const sortKey = "nyc-ferry-did-sort";
+// Whether times print as 24-hour (the default, and what the schedule, the workbook and the radio
+// all speak in) or 12-hour. Persisted per device like the sort choice: it is a reading preference,
+// not board config, and an agent who wants one wants it on every landing they open.
+const clockKey = "nyc-ferry-did-clock";
 // The landing a location fix last resolved to, so the shortcut survives a reload.
 const nearestKey = "nyc-ferry-did-nearest";
 // A fix is only good for about the shift it was taken in. Crew move between landings, and a
@@ -74,6 +79,41 @@ function selectSort(next) {
   // Re-order in place: the menu stays open so the choice can be changed again, and nothing
   // needs refetching because sorting only touches the order cards are laid out in.
   render();
+}
+
+function clockFormat() {
+  return localStorage.getItem(clockKey) === "12" ? "12" : "24";
+}
+
+// The hour half of every formatter that prints a time for someone to read.
+//
+// Display only. zonedParts() below deliberately does not use this: it reads the hour to do
+// arithmetic with, and a 1-12 hour would put "now" twelve hours out for half of every day.
+//
+// h23 rather than hour12:false, which yields a 24:00 hour in some locales; h12 rather than
+// hour12:true for the same reason of asking for the cycle by name.
+function hourOptions() {
+  return clockFormat() === "12"
+    ? { hour: "numeric", hourCycle: "h12" }
+    : { hour: "2-digit", hourCycle: "h23" };
+}
+
+function renderClockToggle() {
+  const twelve = clockFormat() === "12";
+  elements.clockToggle.textContent = twelve ? "12 h" : "24 h";
+  elements.clockToggle.setAttribute("aria-pressed", String(twelve));
+  elements.clockToggle.setAttribute("aria-label",
+    twelve ? "Times are shown on a 12-hour clock. Switch to 24-hour." : "Times are shown on a 24-hour clock. Switch to 12-hour.");
+}
+
+function toggleClockFormat() {
+  localStorage.setItem(clockKey, clockFormat() === "12" ? "24" : "12");
+  renderClockToggle();
+  // Every printed time changes at once: the rows, the clock and the notice stamp. The browsed-day
+  // cache holds rendered HTML, so it has to go with them.
+  resetSchedule();
+  renderManualOverride();
+  updateClock();
 }
 
 function displayCount(key) {
@@ -178,9 +218,13 @@ function escapeHtml(value) {
 function adjustedTime(raw, delaySeconds = 0) {
   const [hours, minutes, seconds] = raw.split(":").map(Number);
   const total = hours * 3600 + minutes * 60 + seconds + delaySeconds;
-  // 24-hour, zero-padded: this is a crew board, and the schedule, the workbook and the radio all
-  // speak in it. h23 rather than hour12:false, which yields a 24:00 hour in some locales.
-  return new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" })
+  // 24-hour, zero-padded, by default: this is a crew board, and the schedule, the workbook and the
+  // radio all speak in it. hourOptions() lets a device switch to 12-hour without that stopping
+  // being the default anywhere else.
+  //
+  // The hour is taken modulo 24 first, so a GTFS 25:10 prints as the 01:10 it is rather than
+  // overflowing into the next day.
+  return new Intl.DateTimeFormat("en-US", { ...hourOptions(), minute: "2-digit", timeZone: "UTC" })
     .format(new Date(Date.UTC(2020, 0, 1, Math.floor(total / 3600) % 24, Math.floor((total % 3600) / 60))));
 }
 
@@ -693,7 +737,7 @@ function renderManualOverride() {
   elements.manualOverrideUpdated.textContent = active && Number.isFinite(updatedAt)
     ? `Updated ${new Intl.DateTimeFormat("en-US", {
       timeZone: data?.meta?.timezone || "America/New_York",
-      month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+      month: "long", day: "numeric", ...hourOptions(), minute: "2-digit"
     }).format(new Date(updatedAt))}`
     : "";
 
@@ -767,7 +811,7 @@ async function loadServiceAlerts() {
 function updateClock() {
   const now = new Date();
   const timeZone = data?.meta?.timezone || "America/New_York";
-  elements.time.textContent = new Intl.DateTimeFormat("en-US", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(now);
+  elements.time.textContent = new Intl.DateTimeFormat("en-US", { timeZone, ...hourOptions(), minute: "2-digit" }).format(now);
   elements.date.textContent = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long", month: "long", day: "numeric" }).format(now);
   render();
 }
@@ -990,6 +1034,7 @@ elements.landingList.addEventListener("click", (event) => {
 for (const button of elements.sortOptions) {
   button.addEventListener("click", () => selectSort(button.dataset.sort));
 }
+elements.clockToggle.addEventListener("click", toggleClockFormat);
 elements.datePrev.addEventListener("click", () => stepDate(-1));
 elements.dateNext.addEventListener("click", () => stepDate(1));
 elements.dateCurrent.addEventListener("click", showToday);
@@ -1004,6 +1049,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 renderSortToggle();
+renderClockToggle();
 renderNearest();
 loadLandings();
 load().catch(() => {
@@ -1020,7 +1066,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=52", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=53", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

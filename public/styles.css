@@ -45,7 +45,15 @@
 /* Date stepper, sitting under the departures list.
    Browsing turns it amber: a board showing a day that is not today must never be mistaken for the
    live one, and the tint is the fastest way to say so. */
-.date-bar{flex:0 0 auto;display:flex;align-items:stretch;justify-content:center;gap:0;margin-top:.5vh;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+/* The bottom row: which day is on screen, and how its times are printed. */
+.board-footer{flex:0 0 auto;display:flex;align-items:stretch;gap:.5vw;margin-top:.5vh}
+.clock-toggle{flex:0 0 auto;min-width:4.5em;min-height:34px;padding:.4vh .6vw;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);font:900 clamp(11px,1.6vh,15px)/1 Lato,sans-serif;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.clock-toggle:active{background:#e9f2f7}
+.clock-toggle:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
+/* Pressed means "not the default", which is worth being able to see at a glance on a crew board
+   whose schedule and radio traffic are both in 24-hour. */
+.clock-toggle[aria-pressed="true"]{border-color:var(--blue);background:#e8f5fc;color:#0b6c92}
+.date-bar{flex:1 1 auto;display:flex;align-items:stretch;justify-content:center;gap:0;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
 .date-step,.date-current{border:0;background:transparent;color:var(--navy);font:900 clamp(11px,1.6vh,15px)/1 Lato,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .date-step{flex:0 0 auto;width:15%;min-width:44px;min-height:34px;padding:0;font-size:clamp(16px,2.4vh,22px);line-height:1;color:var(--muted)}
 .date-step:active{background:#e9f2f7}
@@ -132,7 +140,8 @@ body.menu-open{overflow:hidden}
   .route-count,.status{padding:4px 7px;font-size:11px}
   /* Thumb-sized, and genuinely at the end of the page scroll: reaching the last boat of the day
      puts the control for the next one directly under the thumb that scrolled there. */
-  .date-bar{margin-top:12px}
+  .board-footer{gap:8px;margin-top:12px}
+  .clock-toggle{min-width:64px;min-height:48px;padding:6px 10px;font-size:14px}
   .date-step{width:22%;min-height:48px;font-size:22px}
   .date-current{min-height:48px;padding:6px 10px;font-size:14px}
   /* The list keeps its amber edge on a phone precisely because this bar scrolls away with the

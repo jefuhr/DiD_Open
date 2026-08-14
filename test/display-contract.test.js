@@ -367,25 +367,39 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
 // The crews, the workbook and the radio all speak 24-hour time, so the board does too. Every clock
 // on screen is covered: the departure times, the range a crew shuttle prints, the header clock and
 // the service-notice timestamp.
-test("every time on the board is 24-hour", async () => {
+test("24-hour is the default, and one helper decides it for every printed time", async () => {
   const app = await readFile(appPath, "utf8");
 
-  // Each formatter that prints an hour has to ask for h23. Counting them together is what stops a
-  // fifth one being added later in 12-hour and going unnoticed.
-  const hours = app.match(/hour: "2-digit"/g) || [];
-  const cycles = app.match(/hourCycle: "h23"/g) || [];
-  assert.ok(hours.length >= 4, "the departure times, the clock, the notice stamp and the day boundary");
-  assert.equal(hours.length, cycles.length, "every hour-printing formatter asks for h23");
-  assert.doesNotMatch(app, /hour: "numeric"/, "a numeric hour formats as 12-hour under en-US");
-  // hour12:false is the tempting spelling and the wrong one — it yields a 24:00 hour in some
-  // locales, where h23 always rolls to 00:00.
-  assert.doesNotMatch(app, /hour12: false/);
+  // One place decides, so a formatter added later cannot quietly print in the other cycle.
+  assert.match(app, /function hourOptions\(\) \{/);
+  assert.match(app, /return clockFormat\(\) === "12"\s*\n\s*\? \{ hour: "numeric", hourCycle: "h12" \}\s*\n\s*: \{ hour: "2-digit", hourCycle: "h23" \}/);
+  // Absent a stored choice it is 24-hour: this is a crew board and the schedule, the workbook and
+  // the radio all speak in it.
+  assert.match(app, /localStorage\.getItem\(clockKey\) === "12" \? "12" : "24"/);
 
-  // A 24-hour range needs no meridiem trimming, and the slicing that did it would silently eat the
+  // Every formatter that prints an hour for someone to read goes through the helper. Counting them
+  // is what stops a fourth being added later in a fixed cycle and going unnoticed.
+  const spread = app.match(/\.\.\.hourOptions\(\)/g) || [];
+  assert.equal(spread.length, 3, "the departure times, the clock and the notice stamp");
+
+  // zonedParts is the exception and must stay one: it reads the hour to do arithmetic with, and a
+  // 1-12 hour would put "now" twelve hours out for half of every day.
+  const zoned = app.slice(app.indexOf("function zonedParts"), app.indexOf("function addDays"));
+  assert.match(zoned, /hourCycle: "h23"/);
+  assert.doesNotMatch(zoned, /hourOptions/);
+
+  // hour12 is the tempting spelling and the wrong one in both directions — hour12:false yields a
+  // 24:00 hour in some locales, so the cycle is always named outright. Checked against the code
+  // with its comments stripped, since explaining the trap necessarily names it.
+  const code = app.replace(/^\s*\/\/.*$/gm, "");
+  assert.doesNotMatch(code, /hour12:/);
+
+  // A range needs no meridiem trimming, and the slicing that once did it would silently eat the
   // last two digits of the minutes if it were left behind.
   assert.doesNotMatch(app, /slice\(-2\)/);
   assert.match(app, /return `\$\{start\}<span class="time-range-dash">–<\/span>\$\{escapeHtml\(end\)\}`/);
 });
+
 
 // Browsing the schedule by date.
 //
@@ -432,10 +446,10 @@ const SAMPLE = {
   tripSchedules: {}
 };
 
-async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE } = {}) {
+async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = {} } = {}) {
   const [app, index] = await Promise.all([readFile(appPath, "utf8"), readFile(indexPath, "utf8")]);
   const ids = [...index.matchAll(/id="([^"]+)"/g)].map((match) => match[1]);
-  const nodes = new Map(), classes = new Map(), listeners = new Map(), store = new Map();
+  const nodes = new Map(), classes = new Map(), listeners = new Map(), store = new Map(Object.entries(stored));
   const node = (id) => {
     if (nodes.has(id)) return nodes.get(id);
     const made = {
@@ -701,16 +715,67 @@ test("the via-terminal badge borrows the SCHEDULED shape but none of the status 
   }
 });
 
-test("offline shell includes version 52 display assets", async () => {
+// The clock-format button, beside the date stepper at the foot of the board.
+test("the clock toggle flips every printed time and remembers the choice", async () => {
+  const view = await board();
+  const times = () => [...view.node("departures").innerHTML.matchAll(/<time>([^<]+)</g)].map((match) => match[1]);
+
+  // 24-hour is what a device sees before anyone touches it.
+  assert.equal(view.node("clockToggle").textContent, "24 h");
+  assert.equal(view.node("clockToggle").getAttribute("aria-pressed"), "false");
+  view.run(`viewDate = "2026-08-14"; render();`);
+  assert.deepEqual(times(), ["06:00", "09:00", "12:00", "18:00", "21:00"]);
+  const clock24 = view.node("clockTime").textContent;
+  assert.match(clock24, /^\d{2}:\d{2}$/);
+
+  view.click("clockToggle");
+  assert.equal(view.node("clockToggle").textContent, "12 h");
+  assert.equal(view.node("clockToggle").getAttribute("aria-pressed"), "true");
+  assert.match(view.node("clockToggle").getAttribute("aria-label"), /Switch to 24-hour/);
+  // Midnight and noon are the two the wrong cycle gets wrong, so the fixture brackets the day.
+  assert.deepEqual(times(), ["6:00 AM", "9:00 AM", "12:00 PM", "6:00 PM", "9:00 PM"]);
+  // The header clock moves with the rows rather than being left behind in the other cycle.
+  assert.match(view.node("clockTime").textContent, /(AM|PM)$/);
+
+  // And back, with the choice persisted for the next start.
+  view.click("clockToggle");
+  assert.deepEqual(times(), ["06:00", "09:00", "12:00", "18:00", "21:00"]);
+  assert.equal(view.node("clockTime").textContent, clock24);
+  view.click("clockToggle");
+  assert.ok(view.stored().some(([key, value]) => key === "nyc-ferry-did-clock" && value === "12"));
+});
+
+test("a device that chose 12-hour starts in it", async () => {
+  const view = await board({ stored: { "nyc-ferry-did-clock": "12" } });
+  assert.equal(view.node("clockToggle").textContent, "12 h");
+  view.run(`viewDate = "2026-08-14"; render();`);
+  assert.match(view.node("departures").innerHTML, /<time>6:00 AM</);
+});
+
+// The stepper and the toggle share the footer, and the stepper takes the space the toggle does not.
+test("the clock toggle sits beside the date stepper at the foot of the board", async () => {
+  const [index, css] = await Promise.all([readFile(indexPath, "utf8"), readFile(cssPath, "utf8")]);
+  assert.match(index, /<div class="board-footer">[\s\S]*id="dateBar"[\s\S]*id="clockToggle"[\s\S]*<\/div>/);
+  // Below the list, not above it.
+  assert.ok(index.indexOf('id="departures"') < index.indexOf("board-footer"));
+  assert.match(css, /\.board-footer\{[^}]*display:flex/);
+  assert.match(css, /\.date-bar\{flex:1 1 auto/, "the stepper takes the leftover width");
+  assert.match(css, /\.clock-toggle\{flex:0 0 auto/);
+  // Thumb-sized on a phone, like everything else in that row.
+  const phone = css.slice(css.indexOf("@media(max-width:820px)"));
+  assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
+});
+
+test("offline shell includes version 53 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=52/);
-  assert.match(index, /app\.js\?v=52/);
-  assert.match(worker, /nyc-ferry-did-shell-v52/);
-  assert.match(worker, /styles\.css\?v=52/);
-  assert.match(worker, /app\.js\?v=52/);
+  assert.match(index, /styles\.css\?v=53/);
+  assert.match(index, /app\.js\?v=53/);
+  assert.match(worker, /nyc-ferry-did-shell-v53/);
+  assert.match(worker, /styles\.css\?v=53/);
+  assert.match(worker, /app\.js\?v=53/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
