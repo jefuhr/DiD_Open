@@ -10,7 +10,7 @@ node NYCF_ferryGTFSFixer.example.js
 
 No dependencies, no network. All output quoted in this document comes from that file.
 
-Scope: NYC Ferry's own realtime path only. Partner operators sharing a landing are a separate concern, covered in [`README.md`](./README.md).
+Scope: NYC Ferry's own prediction path only. Partner operators sharing a landing are a separate concern, covered in [`README.md`](./README.md). Stages 1–6 are the realtime pipeline as this branch runs it; [Scheduled boat prediction](#scheduled-boat-prediction) documents the workbook-derived vessel data from a newer version of the project, whose code is not in this branch.
 
 ## Why "fixer"
 
@@ -220,6 +220,8 @@ Last source wins per trip id. When the vehicle feed is up, its positions are aut
 
 An unmatched descriptor still yields its raw label rather than nothing — a rider gains more from `H109` than from a blank space.
 
+Everything above is feed-derived: a boat gets a name only once the producer has said something about its trip. A newer version of this project predicts the vessel *before* the feed reaches the sailing, from the seasonal crew workbook — see [Scheduled boat prediction](#scheduled-boat-prediction) below.
+
 ## Stage 5 — cache, serve, degrade
 
 `createRealtimeService` holds the polling contract:
@@ -336,6 +338,92 @@ Every delay dropped, every published time restored, every `ON TIME` withdrawn �
   departure 10:07                        → 10:00 + 420s = 10:07 AM
   delay +420s                            → 10:00 + 420s = 10:07 AM
 ```
+
+## Scheduled boat prediction
+
+Everything above answers *when* a boat leaves and, once the feed says so, *which* boat. A newer version of this project answers the second question earlier, from data no feed publishes: the seasonal crew workbook. This section documents that data — its shape, its provenance, and the constants the inference runs on.
+
+**Not in this branch.** `config/crew-shuttles.json`, `content/boat-assignments.json`, `content/boat-shifts.json` and `scripts/out-of-service.js` are absent here, so what follows describes the **data contract**, not the algorithm. The values and the reasoning are taken from a `scripts/export-hardcoded-data.js` snapshot; the inference steps in `out-of-service.js` are deliberately not described beyond the constants it exports. Read those files before relying on any of this as implementation detail. Config values quoted below are that deployment's, not this branch's.
+
+### What it buys
+
+| Capability | Feed-derived answer | Workbook-derived answer |
+|---|---|---|
+| Which hull works this sailing | Only after the producer names a vehicle on the trip | Known from the timetable, before the boat exists in realtime |
+| Boat label (`ER5`) | Not available — the feed has no such concept | `trip_short_name` → route code + boat number |
+| Where a boat stops working | Not modeled | Inferred from shift boundaries and holes in the boat's own run |
+| Out-of-service / home-port moves | Never published — no passengers aboard | Inferred, and shown as a `CREW` run to Pier C |
+
+### `content/boat-assignments.json` — trip to boat
+
+344 entries, imported from `summer-2026.xlsx` by `scripts/import-boat-assignments.py`. The key is GTFS `trip_short_name`; the value is the numbered boat that works it.
+
+The first digit of `trip_short_name` selects the route family, and this repository's bundled `trips.txt` confirms the mapping:
+
+| Prefix | Route | Boats in the export | Bundled-feed blocks |
+|---|---|---|---|
+| `1` | ER (East River), RES | 1–7 | `11`–`17` |
+| `2` | RS (Rockaway), RWS | 1–9 | `21`–`29` |
+| `3` | SB (South Brooklyn) | 1–5 | `31`–`34` |
+| `4` | AS (Astoria) | 1–3 | `41`–`43` |
+| `8` | SG (St. George) | 1–4 | `81`–`84` |
+| `9` | RR (Rockaway Rocket) | 1 | `91` |
+
+`trip_short_name` is `block_id` followed by a sequence number, so **the second digit equals the assigned boat number in all 344 entries** — verified across the whole file. That is a property of this naming convention, not a rule to lean on: the workbook import stays the source of truth, because the day a scheduler renumbers a block the convention breaks silently and the import does not.
+
+Prefix `7` (GI, Governors Island) is absent — that boat is maintained separately. Coverage is per-season: the assignments are keyed to the workbook's schedule, so they must be checked against whichever feed is bundled, and a trip with no assignment simply has no predicted boat.
+
+### `content/boat-shifts.json` — where a boat's day starts and ends
+
+86 shifts across 21 weekday and 28 weekend boats, imported from workbook cell notes by `scripts/import-boat-shifts.py`. Each entry carries `startTime`/`startPlace`, `endTime`/`endPlace`, and the originating cell (`weekday2!G3`), with optional `startNoteTime` / `endNoteTime` / `endNotePlace` where the note disagreed with the computed boundary.
+
+Two things about the provenance are worth carrying into any consumer:
+
+- **The import verified against the bundled GTFS and dropped what the feed disagreed with, rather than guessing.** That is the same bias as the clamp: when two sources conflict, publish the weaker claim or none, never an invented one.
+- **One entry is hand-supplied** — weekend `RR1`, sourced `supplied by hand 2026-08-13 (RWY RKT column is unreadable)`. It is labeled as such in the data instead of being laundered into looking imported.
+
+Weekday boats run `AM`/`PM` shift pairs; several weekend boats carry a single unlabeled shift (`"shift": ""`) covering the whole day.
+
+### `config/crew-shuttles.json` — the moves nobody publishes
+
+12 shuttles (4 weekday, 8 weekend) and 11 holiday dates, maintained by hand. The file's own note states the reason plainly: the GTFS feed and the schedule workbook are both silent about moves made with no passengers aboard, so this is the only source, and it must be revisited whenever the schedule changes.
+
+One entry is one departure to the home port (Pier C) carrying the crews being relieved off the boats listed, keyed by landing number and the same `ER3` / `RS5` labels the board badges. A boat named in a shuttle is swapping crew, not finishing — so it is explicitly never marked out of service on account of the shuttle.
+
+The holiday list exists because `calendar_dates.txt` is empty: **the feed has no idea a holiday is happening.** On those dates the passenger schedule runs weekday service while the crews change on the weekend pattern. Weekend-falling holidays are omitted because they change nothing. The data marks itself a starting list, to be confirmed against the operator's holiday service.
+
+### The out-of-service model constants
+
+From `scripts/out-of-service.js`. These are inference parameters chosen against the shape of one bundled schedule — not published facts.
+
+| Constant | Value | What it encodes |
+|---|---|---|
+| `gapMinutes` | 60 | A hole in a boat's own run this long reads as the boat leaving service |
+| `certainAfterMinutes` | 180 | At or above this, the Pier C run is asserted; below it the display hedges with a question mark |
+| `crewSwapWindowBefore` | 1800s (30 min) | How early a listed shuttle can be and still explain the gap |
+| `crewSwapWindowAfter` | 5400s (90 min) | And how late — a crew rides the shuttle shortly after stepping off, not six hours into a gap |
+| `shuttleReadyBefore` | 3600s (60 min) | A shuttle is listed when it is ready, then waits for the boat; bounded empirically, widest real case 31 min |
+
+The 60-minute threshold is justified by an explicit empirical argument rather than a round number: in the bundled schedule ordinary layovers reach 44 minutes and the next gap up is 90, so 60 sits in an empty valley between them. The data says outright that the valley is a property of that schedule, not a law, and that these want re-checking when the schedule changes. The hedge below `certainAfterMinutes` carries the same caution — an hour and a half at Rockaway is more likely a crew break with the boat tied up where it is than a run to Pier C.
+
+Three supporting constants complete the model:
+
+- **`homePortStopId: "home-port"`** — Pier C appears in no feed, so landing 27 is virtual and its single stop id exists only in this repository, along with its own coordinates.
+- **`crewServiceIds: crew-weekday` / `crew-weekend`** — synthetic calendars. The feed's own weekday service cannot be reused, because on a holiday the feed still runs weekdays while the crews change on the weekend pattern.
+- **`crewRoute: CREW`** (`#4A5B68`) — a crew shuttle belongs to no passenger route, and borrowing a route's color would imply the boat is running that service.
+
+### How this interacts with the rule
+
+A scheduled assignment is a **weaker claim than a realtime one**, and the ordering follows from that: a feed-supplied vehicle descriptor names the hull actually working the trip today, while the workbook names the hull rostered to work it in a season that may since have changed. Where both exist, realtime wins.
+
+The clamp is untouched by any of it. None of this data supplies a departure time, so none of it can move one — and the two prediction layers stay in their lanes: the workbook answers *which boat*, the feed answers *when*. The same bias governs both. A boat whose gap is ambiguous gets a question mark rather than an asserted home-port run, exactly as a sailing with no fresh timing gets `SCHEDULED` rather than an invented `ON TIME`.
+
+### `config/landings.json`, `config/display.json`, `content/vessels.json`
+
+The rest of the export is data this branch already carries, in the same shape: 26 active landings (plus the virtual Pier C), the kiosk display settings, and the 38-vessel roster Stage 4 matches against. Two notes from the newer version worth recording:
+
+- A deployed staff or mobile server **answers for every landing** and uses `landingNumber` only as its default, rather than being pinned to one landing the way a kiosk is.
+- The vessel roster's descriptive prose (namesake stories, photo attribution) is editorial and is not read by the board. Only `name`, `number` and `id` participate in identity matching.
 
 ## Tests
 
