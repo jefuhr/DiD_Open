@@ -49,7 +49,10 @@ export function boatRuns({ trips, timesByTrip, boatAssignments }) {
     const list = runs.get(key) || [];
     list.push({
       tripId: trip.trip_id, routeId: trip.route_id, boat, serviceId: trip.service_id,
-      startSeconds: timeToSeconds(start), endSeconds: timeToSeconds(end), endStopId: times.at(-1).stop_id
+      startSeconds: timeToSeconds(start), endSeconds: timeToSeconds(end),
+      // Both ends, because "did the boat go anywhere between these two trips" is answered by
+      // comparing where one finished with where the next one started.
+      startStopId: times[0].stop_id, endStopId: times.at(-1).stop_id
     });
     runs.set(key, list);
   }
@@ -72,7 +75,7 @@ export function boatRuns({ trips, timesByTrip, boatAssignments }) {
 // unsure, and the board prints a question mark rather than pretending.
 export function serviceBreaks({
   runs, gapMinutes = 60, certainAfterMinutes = 180, crewSwaps = new Map(), dayTypeOf = () => null,
-  shifts = {}, stopName = () => null, swapMinutes = 60
+  shifts = {}, stopName = () => null
 }) {
   const gapSeconds = Math.max(1, gapMinutes) * 60;
   const certainSeconds = Math.max(gapSeconds, certainAfterMinutes * 60);
@@ -81,7 +84,8 @@ export function serviceBreaks({
   for (const list of runs.values()) {
     if (!list.length) continue;
     const kind = dayTypeOf(list[0].serviceId);
-    const known = shifts?.[kind]?.[boatLabel(list[0].routeId, list[0].boat)];
+    const boat = boatLabel(list[0].routeId, list[0].boat);
+    const known = shifts?.[kind]?.[boat];
 
     // The end of the day is not a matter of opinion: nothing follows the boat's last run. Taking it
     // from the feed rather than from the notes means a boat whose final shift note was unusable
@@ -100,17 +104,29 @@ export function serviceBreaks({
         const endSeconds = hhmmSeconds(entry.endTime);
         if (endSeconds >= finalRun.endSeconds) continue;
         const next = known[index + 1];
-        // Consecutive shifts meeting at the same place within the window are a crew change, not the
-        // boat stopping: the relief steps aboard and it sails on. In the published data those
-        // handovers run 0-34 minutes and every real break is over four hours, so the two never come
-        // close to each other.
-        if (next && (!next.startPlace || next.startPlace === entry.endPlace) &&
-            hhmmSeconds(next.startTime) - endSeconds <= swapMinutes * 60) continue;
+        // A crew carried out to the boat is the one case where a shift end is not a drop off: the
+        // relief steps aboard from the shuttle and the boat sails on with nobody put ashore. Every
+        // other entry on the sheet is a real end of shift, however short the gap after it looks.
+        //
+        // This used to suppress any same-place changeover under an hour, on the reasoning that a
+        // boat sailing again six minutes later cannot have finished. But the sheet is the record of
+        // when a crew stops working, and a crew stopping is exactly what the drop-off badge is
+        // about — the boat carrying on with a fresh crew does not change that the trip just ended
+        // takes nobody back. That heuristic silently swallowed AS3's 14:11 and seven others.
+        if (next && shuttleCovers({ crewSwaps, boat, kind, endSeconds, startSeconds: hhmmSeconds(next.startTime) })) continue;
         const run = list.find((item) => Math.abs(item.endSeconds - endSeconds) <= 60 &&
           (!entry.endPlace || stopName(item.endStopId) === entry.endPlace));
         if (!run) continue;
         certainty.set(run.tripId, "certain");
-        tieUps.push({ ...run, endsDay: false });
+        // The sheet is the authority on crews; the feed is the authority on where the boat is. A
+        // boat that sails again shortly afterwards from the pier it just tied up at plainly did not
+        // run to the home port, so it gets the drop-off badge without a home-port row asserting a
+        // move the schedule beside it contradicts.
+        const following = list[list.indexOf(run) + 1];
+        const staysAlongside = following &&
+          following.startSeconds - run.endSeconds < gapSeconds &&
+          following.startStopId === run.endStopId;
+        if (!staysAlongside) tieUps.push({ ...run, endsDay: false });
       }
       continue;
     }

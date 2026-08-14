@@ -986,3 +986,113 @@ test("only the waterway feed can produce a via-terminal list", async () => {
   const otherPartners = data.departures.filter((item) => /^[a-z]+:/.test(String(item.routeId)) && !String(item.routeId).startsWith("wtr:"));
   assert.ok(otherPartners.every((item) => Array.isArray(item.viaTerminals) && item.viaTerminals.length === 0));
 });
+
+// A crew changeover with no shuttle is a real drop off, however short the gap looks.
+//
+// AS3's sheet has the AM crew finishing at 14:11 at Pier 11 and the PM crew starting there at
+// 14:17. The feed shows no hole — trip 1018 gets in at 14:11 and trip 999 leaves at 14:17 — so the
+// gap heuristic could never see it, and a rule that dismissed any same-place changeover under an
+// hour dismissed this one too. But the sheet is the record of when a crew stops working, and the
+// 13:20 out of East 90th St is the last trip that crew works: it takes nobody back.
+test("a crew changeover with no shuttle is badged as a drop off", async () => {
+  const east90th = await buildDisplayData({ landingNumber: 9 });
+  const finalTrip = east90th.departures.find((item) => String(item.tripId) === "1018");
+  assert.ok(finalTrip, "AS3's 13:20 from East 90th St must be on the board");
+  assert.equal(finalTrip.boatAssignment, 3);
+  assert.equal(finalTrip.routeId, "AS");
+  assert.equal(finalTrip.endsShift, "certain", "the trip the AM crew finishes on is a drop off");
+
+  // Every leg of it, so an agent watching the boat leave anywhere on that trip is told.
+  const astoria = await buildDisplayData({ landingNumber: 2 });
+  assert.equal(astoria.departures.find((item) => String(item.tripId) === "1018")?.endsShift, "certain");
+
+  // The boat itself does not go anywhere: it sails again from the same pier six minutes later, so
+  // nothing may claim a run to the home port.
+  const pier11 = await buildDisplayData({ landingNumber: 16 });
+  const homePortRuns = pier11.departures.filter((item) =>
+    item.outOfService && item.routeId === "AS" && item.boatAssignment === 3 &&
+    item.seconds >= 13 * 3600 && item.seconds <= 15 * 3600);
+  assert.equal(homePortRuns.length, 0, "AS3 must not be shown running to Pier C at 14:11");
+
+  // And the other half of the same rule still holds: the relieving crew's first departure.
+  const pierC = await buildDisplayData({ landingNumber: 27 });
+  assert.ok(pierC.departures.some((item) => item.tripId === "pierc:weekday:AS3:14:17"),
+    "AS3's 14:17 shift start must still be a Pier C row");
+});
+
+// The exception, and the only one: a crew carried out to the boat. The relief steps aboard from the
+// shuttle and the boat sails on with nobody put ashore, so there is no drop off to badge.
+test("a crew changeover covered by a shuttle is not a drop off", async () => {
+  const pier11 = await buildDisplayData({ landingNumber: 16 });
+  const shuttled = pier11.departures.filter((item) =>
+    item.routeId === "RS" && [1, 3, 4, 6].includes(item.boatAssignment) &&
+    item.serviceId === "1" && item.endsShift && item.seconds >= 12 * 3600 && item.seconds <= 15 * 3600);
+  assert.deepEqual(shuttled, [], "RS1/RS3/RS4/RS6 change crew by shuttle at midday and must not be badged");
+});
+
+// The two halves of the rule are computed in different places — the drop off from the boat's runs,
+// the first departure from the shift sheet — so they are pinned together here. Every weekday
+// changeover the sheet records produces both or neither, and which it is turns only on whether a
+// shuttle is configured for that boat.
+test("drop offs and Pier C first departures agree about every weekday changeover", async () => {
+  const [shiftFile, crewFile, pierC] = await Promise.all([
+    readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse),
+    readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse),
+    buildDisplayData({ landingNumber: 27 })
+  ]);
+  const shuttled = new Set(crewFile.shuttles.weekday.flatMap((entry) => entry.boats));
+
+  // Every trip badged as a drop off on a weekday, anywhere in the system, with the boat that works
+  // it and the minute that trip ends.
+  const badged = new Map();
+  for (let landingNumber = 2; landingNumber <= 26; landingNumber += 1) {
+    const data = await buildDisplayData({ landingNumber });
+    for (const item of data.departures) {
+      if (!item.endsShift || !Number.isInteger(item.boatAssignment) || item.serviceId !== "1") continue;
+      badged.set(String(item.tripId), `${item.routeId}${item.boatAssignment}`);
+    }
+  }
+
+  const standalone = [], covered = [];
+  for (const [boat, list] of Object.entries(shiftFile.shifts.weekday)) {
+    for (const [index, entry] of list.slice(0, -1).entries()) {
+      const next = list[index + 1];
+      if (entry.endPlace !== next.startPlace) continue;
+      // Only the quick turns. A same-place changeover hours later is an ordinary break — the boat
+      // really does go to Pier C and come back — and the gap heuristic always caught those. The
+      // short ones are the population this rule is about and the ones that used to be dismissed.
+      const minutes = (time) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+      if (minutes(next.startTime) - minutes(entry.endTime) > 60) continue;
+      (shuttled.has(boat) ? covered : standalone).push({ boat, entry, next });
+    }
+  }
+  // The bundled sheet: eight changeovers stand on their own, six are covered by a shuttle.
+  assert.equal(standalone.length, 8);
+  assert.equal(covered.length, 6);
+
+  for (const { boat, next } of standalone) {
+    assert.ok(
+      pierC.departures.some((item) => item.tripId === `pierc:weekday:${boat}:${next.startTime}`),
+      `${boat} has no shuttle; its ${next.startTime} shift start belongs on Pier C`
+    );
+  }
+  for (const { boat, next } of covered) {
+    assert.ok(
+      !pierC.departures.some((item) => item.tripId === `pierc:weekday:${boat}:${next.startTime}`),
+      `${boat} changes crew by shuttle; it must not start a shift from Pier C`
+    );
+  }
+
+  // And the drop offs those eight changeovers produce, named by trip so that a boat's unrelated
+  // end-of-day badge cannot stand in for the mid-day one this rule is about.
+  const changeoverTrips = { AS2: "1017", AS3: "1018", ER2: "404", ER3: "330", ER6: "403", SG1: "758", SG2: "759", SG4: "929" };
+  assert.deepEqual(standalone.map((item) => item.boat).sort(), Object.keys(changeoverTrips).sort());
+  for (const [boat, tripId] of Object.entries(changeoverTrips)) {
+    assert.equal(badged.get(tripId), boat, `${boat}'s changeover trip ${tripId} must be badged as a drop off`);
+  }
+  // The shuttled six contribute no mid-day drop off of their own.
+  for (const { boat } of covered) {
+    const midday = [...badged].filter(([, name]) => name === boat).length;
+    assert.ok(midday <= 1, `${boat} should carry only its end-of-day badge, found ${midday}`);
+  }
+});
