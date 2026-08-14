@@ -1,0 +1,2481 @@
+{
+  "meta": {
+    "title": "NYC Ferry departure board — hardcoded NYC Ferry data",
+    "generatedAt": "2026-08-14T10:44:42.988Z",
+    "generator": "scripts/export-hardcoded-data.js",
+    "description": "Every piece of NYC Ferry data this repository carries that did not come from a published GTFS feed. Each section names the file it was read from; edit that file, not this one.",
+    "scope": "NYC Ferry only. The partner operators sharing these docks have their own hand-maintained data in this repository — NY Waterway route corrections, and transcribed timetables for the Governors Island, IKEA and Liberty Landing boats — and none of it is included here. Partner stop ids and partner on/off switches are stripped from the config below.",
+    "readOnly": "A snapshot for export. Nothing in the build reads this file back, so editing it changes nothing.",
+    "sources": [
+      "config/landings.json",
+      "config/display.json",
+      "config/crew-shuttles.json",
+      "content/boat-assignments.json",
+      "content/boat-shifts.json",
+      "content/vessels.json",
+      "scripts/out-of-service.js"
+    ]
+  },
+  "landings": {
+    "source": "config/landings.json",
+    "description": "Every landing the board can show, keyed by the landing number an agent dials. stopIds are NYC Ferry GTFS stops. Landing 27 (Pier C) is virtual — no feed contains the home port — so it carries its own coordinates and a stop id that exists only in this repository.",
+    "partnerStopIdsRemoved": [
+      "waterwayStopIds",
+      "seastreakStopIds",
+      "nyuStopIds",
+      "libertyStopIds",
+      "ikeaStopIds",
+      "giStopIds"
+    ],
+    "count": 26,
+    "landings": {
+      "1": {
+        "unused": true,
+        "name": "Unused"
+      },
+      "2": {
+        "name": "Astoria",
+        "stopIds": [
+          "89"
+        ]
+      },
+      "3": {
+        "name": "Atlantic Avenue",
+        "stopIds": [
+          "11"
+        ]
+      },
+      "4": {
+        "name": "Bay Ridge",
+        "stopIds": [
+          "23"
+        ]
+      },
+      "5": {
+        "name": "Brooklyn Navy Yard",
+        "stopIds": [
+          "120"
+        ]
+      },
+      "6": {
+        "name": "Corlears Hook",
+        "stopIds": [
+          "115"
+        ]
+      },
+      "7": {
+        "name": "DUMBO",
+        "stopIds": [
+          "20"
+        ]
+      },
+      "8": {
+        "name": "East 34th Street",
+        "stopIds": [
+          "17"
+        ]
+      },
+      "9": {
+        "name": "East 90th St",
+        "stopIds": [
+          "113"
+        ]
+      },
+      "10": {
+        "name": "Ferry Point Park",
+        "stopIds": [
+          "141"
+        ]
+      },
+      "11": {
+        "name": "Governors Island",
+        "stopIds": [
+          "111"
+        ]
+      },
+      "12": {
+        "name": "Greenpoint",
+        "stopIds": [
+          "18"
+        ]
+      },
+      "13": {
+        "name": "Hunters Point South",
+        "stopIds": [
+          "4"
+        ]
+      },
+      "14": {
+        "name": "Long Island City",
+        "stopIds": [
+          "90"
+        ]
+      },
+      "15": {
+        "name": "North Williamsburg",
+        "stopIds": [
+          "19"
+        ]
+      },
+      "16": {
+        "name": "Pier 11",
+        "displayName": "Wall St / Pier 11",
+        "stopIds": [
+          "87"
+        ]
+      },
+      "17": {
+        "name": "Red Hook",
+        "displayName": "Red Hook / Atlantic Basin",
+        "stopIds": [
+          "24"
+        ]
+      },
+      "18": {
+        "name": "Rockaway + Bus Stop",
+        "displayName": "Rockaway",
+        "stopIds": [
+          "88",
+          "16"
+        ]
+      },
+      "19": {
+        "name": "Roosevelt Island",
+        "stopIds": [
+          "25"
+        ]
+      },
+      "20": {
+        "name": "Soundview",
+        "stopIds": [
+          "112"
+        ]
+      },
+      "21": {
+        "name": "South Williamsburg",
+        "stopIds": [
+          "8"
+        ]
+      },
+      "22": {
+        "name": "St. George",
+        "stopIds": [
+          "137"
+        ]
+      },
+      "23": {
+        "name": "Stuyvesant Cove",
+        "stopIds": [
+          "114"
+        ]
+      },
+      "24": {
+        "name": "Sunset Park",
+        "displayName": "Sunset Park / BAT",
+        "stopIds": [
+          "118"
+        ]
+      },
+      "25": {
+        "name": "Battery Park City",
+        "displayName": "Battery Park City / Brookfield Place",
+        "stopIds": [
+          "136"
+        ]
+      },
+      "26": {
+        "name": "Pier 79",
+        "displayName": "Midtown West / Pier 79",
+        "stopIds": [
+          "138"
+        ]
+      },
+      "27": {
+        "name": "Pier C",
+        "displayName": "Pier C (Staff)",
+        "virtual": true,
+        "stopIds": [
+          "home-port"
+        ],
+        "latitude": 40.7045,
+        "longitude": -73.974
+      }
+    }
+  },
+  "display": {
+    "source": "config/display.json",
+    "description": "Which landing a kiosk shows and how much of it. A deployed staff or mobile server answers for every landing and uses landingNumber only as its default. busesEnabled keeps or drops connecting shuttle-bus routes, which for NYC Ferry means the Rockaway shuttles at landing 18.",
+    "partnerSwitchesRemoved": [
+      "waterwayEnabled",
+      "seastreakEnabled",
+      "nyuEnabled",
+      "libertyEnabled",
+      "ikeaEnabled",
+      "giEnabled"
+    ],
+    "settings": {
+      "landingNumber": 26,
+      "slideSeconds": 16,
+      "departureWindowMinutes": 500,
+      "departuresShown": 5,
+      "routesShown": 4,
+      "busesEnabled": false
+    }
+  },
+  "crewShuttles": {
+    "source": "config/crew-shuttles.json",
+    "description": "Crew shuttles, the home port, the holiday list and the thresholds used to spot a boat going out of service. None of this is published anywhere: the GTFS feed and the schedule workbook are both silent about moves made with no passengers aboard, so this file is maintained by hand and must be revisited whenever the schedule changes.",
+    "shuttleCount": 12,
+    "holidayCount": 11,
+    "config": {
+      "note": "Crew shuttles and home-port runs for NYC Ferry boats. Nothing here comes from the GTFS feed or the schedule workbook - both are silent about out-of-service moves - so this file is maintained by hand and must be revisited whenever the schedule changes. See ferryAssignments.md.",
+      "homePort": "Pier C",
+      "outOfService": {
+        "note": "How a boat going out of service is spotted. The workbook marks nothing, so it is inferred from holes in a boat's own run of trips. In the bundled schedule ordinary layovers reach 44 minutes and the next gap up is 90, so 60 sits in an empty valley between them - that valley is a property of this schedule, not a law, so re-check these when the schedule changes. Gaps at or above certainAfterMinutes mean the boat leaves and the Pier C run is shown; shorter ones are marked with a question mark instead, because an hour and a half at Rockaway is more likely a crew break with the boat tied up where it is.",
+        "gapMinutes": 60,
+        "certainAfterMinutes": 180
+      },
+      "holidays": {
+        "note": "Dates that run the WEEKEND shuttle set even though the GTFS feed runs weekday service. calendar_dates.txt is empty, so the feed itself has no idea a holiday is happening - this list is the only source. Weekend-falling holidays are left out because they change nothing. Starting list only: confirm against the operator's holiday service before relying on it.",
+        "dates": [
+          "2026-09-07",
+          "2026-11-26",
+          "2026-12-25",
+          "2027-01-01",
+          "2027-01-18",
+          "2027-02-15",
+          "2027-05-31",
+          "2027-07-05",
+          "2027-09-06",
+          "2027-11-25",
+          "2027-12-24"
+        ]
+      },
+      "shuttles": {
+        "note": "One entry is one departure to the home port carrying the crews being relieved off the boats listed. 'landing' is a key in config/landings.json. 'boats' is the route code plus boat number, the same label the board badges - a boat named here is swapping crew, not finishing, so it is never marked out of service on account of the shuttle.",
+        "weekend": [
+          {
+            "landing": 16,
+            "time": "13:45",
+            "boats": [
+              "RS1"
+            ]
+          },
+          {
+            "landing": 4,
+            "time": "14:30",
+            "boats": [
+              "SB1"
+            ]
+          },
+          {
+            "landing": 16,
+            "time": "14:35",
+            "boats": [
+              "ER3",
+              "RS5",
+              "RS2",
+              "AS2"
+            ]
+          },
+          {
+            "landing": 8,
+            "time": "14:40",
+            "boats": [
+              "SB2"
+            ]
+          },
+          {
+            "landing": 9,
+            "time": "14:50",
+            "boats": [
+              "AS1"
+            ]
+          },
+          {
+            "landing": 26,
+            "time": "15:00",
+            "boats": [
+              "SG1"
+            ]
+          },
+          {
+            "landing": 16,
+            "time": "15:10",
+            "boats": [
+              "SG2",
+              "RS6",
+              "RS3",
+              "ER1"
+            ]
+          },
+          {
+            "landing": 16,
+            "time": "15:45",
+            "boats": [
+              "ER2",
+              "SG3",
+              "RS4"
+            ]
+          }
+        ],
+        "weekday": [
+          {
+            "landing": 16,
+            "time": "12:45",
+            "boats": [
+              "RS1",
+              "RS4"
+            ]
+          },
+          {
+            "landing": 11,
+            "time": "13:15",
+            "boats": [
+              "SB2"
+            ]
+          },
+          {
+            "landing": 8,
+            "time": "13:30",
+            "boats": [
+              "SB1"
+            ]
+          },
+          {
+            "landing": 16,
+            "time": "13:45",
+            "boats": [
+              "RS3",
+              "RS6"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "crewModelConstants": {
+    "source": "scripts/out-of-service.js",
+    "description": "The constants the out-of-service model runs on. These are inference parameters, not published facts, and each was chosen against the shape of the bundled schedule — re-check them when the schedule changes.",
+    "homePortStopId": {
+      "value": "home-port",
+      "note": "Pier C is in no feed, so the virtual landing's one stop id exists only in this repository."
+    },
+    "crewServiceIds": {
+      "weekday": "crew-weekday",
+      "weekend": "crew-weekend",
+      "note": "Synthetic calendars. The feed's own weekday service cannot be reused, because on a holiday the feed still runs weekdays while the crews change on the weekend pattern."
+    },
+    "crewRoute": {
+      "id": "CREW",
+      "route": {
+        "id": "CREW",
+        "shortName": "CREW",
+        "name": "Crew shuttle",
+        "color": "#4A5B68",
+        "textColor": "#FFFFFF",
+        "mode": "ferry"
+      },
+      "note": "A crew shuttle belongs to no passenger route; borrowing one's colour would imply the boat is running that service."
+    },
+    "crewSwapWindowBefore": {
+      "seconds": 1800,
+      "minutes": 30,
+      "note": "How long before a boat's run ends a listed shuttle may be and still be read as the cause of the gap."
+    },
+    "crewSwapWindowAfter": {
+      "seconds": 5400,
+      "minutes": 90,
+      "note": "And how long after. A crew rides the shuttle shortly after stepping off, not six hours into a gap."
+    },
+    "shuttleReadyBefore": {
+      "seconds": 3600,
+      "minutes": 60,
+      "note": "A shuttle is listed at the minute it is ready and then waits for the boat to sail, so it can appear well before the crew it collects has finished. Bounded empirically: the widest real case in the bundled config is 31 minutes."
+    }
+  },
+  "boatAssignments": {
+    "source": "content/boat-assignments.json",
+    "description": "GTFS trip_short_name to the numbered boat that works it, imported from the seasonal workbook by scripts/import-boat-assignments.py. This is what lets the board label a sailing 'ER5', infer where a boat stops working, and predict the vessel on a sailing the feed has not reached.",
+    "workbook": "summer-2026.xlsx",
+    "count": 344,
+    "assignments": {
+      "1101": 1,
+      "1102": 1,
+      "1103": 1,
+      "1104": 1,
+      "1105": 1,
+      "1106": 1,
+      "1107": 1,
+      "1108": 1,
+      "1109": 1,
+      "1110": 1,
+      "1111": 1,
+      "1112": 1,
+      "1113": 1,
+      "1114": 1,
+      "1115": 1,
+      "1116": 1,
+      "1117": 1,
+      "1201": 2,
+      "1202": 2,
+      "1203": 2,
+      "1204": 2,
+      "1205": 2,
+      "1206": 2,
+      "1207": 2,
+      "1208": 2,
+      "1209": 2,
+      "1210": 2,
+      "1211": 2,
+      "1212": 2,
+      "1213": 2,
+      "1214": 2,
+      "1215": 2,
+      "1216": 2,
+      "1217": 2,
+      "1218": 2,
+      "1219": 2,
+      "1301": 3,
+      "1302": 3,
+      "1303": 3,
+      "1304": 3,
+      "1305": 3,
+      "1306": 3,
+      "1307": 3,
+      "1308": 3,
+      "1309": 3,
+      "1310": 3,
+      "1311": 3,
+      "1312": 3,
+      "1313": 3,
+      "1314": 3,
+      "1315": 3,
+      "1316": 3,
+      "1317": 3,
+      "1318": 3,
+      "1401": 4,
+      "1402": 4,
+      "1403": 4,
+      "1404": 4,
+      "1405": 4,
+      "1406": 4,
+      "1407": 4,
+      "1408": 4,
+      "1409": 4,
+      "1410": 4,
+      "1411": 4,
+      "1412": 4,
+      "1413": 4,
+      "1501": 5,
+      "1502": 5,
+      "1503": 5,
+      "1504": 5,
+      "1505": 5,
+      "1506": 5,
+      "1507": 5,
+      "1508": 5,
+      "1509": 5,
+      "1510": 5,
+      "1511": 5,
+      "1512": 5,
+      "1513": 5,
+      "1601": 6,
+      "1602": 6,
+      "1603": 6,
+      "1604": 6,
+      "1605": 6,
+      "1606": 6,
+      "1607": 6,
+      "1608": 6,
+      "1609": 6,
+      "1610": 6,
+      "1611": 6,
+      "1612": 6,
+      "1613": 6,
+      "1614": 6,
+      "1615": 6,
+      "1616": 6,
+      "1617": 6,
+      "1618": 6,
+      "1619": 6,
+      "1701": 7,
+      "1702": 7,
+      "1703": 7,
+      "1704": 7,
+      "1705": 7,
+      "1706": 7,
+      "1707": 7,
+      "1708": 7,
+      "1709": 7,
+      "1710": 7,
+      "1711": 7,
+      "1712": 7,
+      "1713": 7,
+      "2101": 1,
+      "2102": 1,
+      "2103": 1,
+      "2104": 1,
+      "2105": 1,
+      "2106": 1,
+      "2107": 1,
+      "2201": 2,
+      "2202": 2,
+      "2203": 2,
+      "2204": 2,
+      "2205": 2,
+      "2206": 2,
+      "2301": 3,
+      "2302": 3,
+      "2303": 3,
+      "2304": 3,
+      "2305": 3,
+      "2306": 3,
+      "2307": 3,
+      "2401": 4,
+      "2402": 4,
+      "2403": 4,
+      "2404": 4,
+      "2405": 4,
+      "2406": 4,
+      "2407": 4,
+      "2501": 5,
+      "2502": 5,
+      "2503": 5,
+      "2504": 5,
+      "2505": 5,
+      "2601": 6,
+      "2602": 6,
+      "2603": 6,
+      "2604": 6,
+      "2605": 6,
+      "2606": 6,
+      "2607": 6,
+      "2701": 7,
+      "2702": 7,
+      "2703": 7,
+      "2704": 7,
+      "2705": 7,
+      "2708": 7,
+      "2709": 7,
+      "2710": 7,
+      "2801": 8,
+      "2802": 8,
+      "2803": 8,
+      "2804": 8,
+      "2805": 8,
+      "2806": 8,
+      "2807": 8,
+      "2808": 8,
+      "2901": 9,
+      "2902": 9,
+      "2903": 9,
+      "2904": 9,
+      "2905": 9,
+      "2907": 9,
+      "2908": 9,
+      "2909": 9,
+      "3101": 1,
+      "3102": 1,
+      "3103": 1,
+      "3104": 1,
+      "3105": 1,
+      "3106": 1,
+      "3107": 1,
+      "3108": 1,
+      "3109": 1,
+      "3110": 1,
+      "3111": 1,
+      "3112": 1,
+      "3113": 1,
+      "3114": 1,
+      "3115": 1,
+      "3116": 1,
+      "3117": 1,
+      "3118": 1,
+      "3119": 1,
+      "3201": 2,
+      "3202": 2,
+      "3203": 2,
+      "3204": 2,
+      "3205": 2,
+      "3206": 2,
+      "3207": 2,
+      "3208": 2,
+      "3209": 2,
+      "3210": 2,
+      "3211": 2,
+      "3212": 2,
+      "3213": 2,
+      "3214": 2,
+      "3215": 2,
+      "3216": 2,
+      "3217": 2,
+      "3218": 2,
+      "3219": 2,
+      "3301": 3,
+      "3302": 3,
+      "3303": 3,
+      "3304": 3,
+      "3305": 3,
+      "3306": 3,
+      "3307": 3,
+      "3308": 3,
+      "3401": 4,
+      "3402": 4,
+      "3403": 4,
+      "3404": 4,
+      "3405": 4,
+      "3406": 4,
+      "3407": 4,
+      "3408": 4,
+      "3409": 4,
+      "3501": 5,
+      "3502": 5,
+      "3503": 5,
+      "3504": 5,
+      "3505": 5,
+      "3506": 5,
+      "3507": 5,
+      "3508": 5,
+      "3509": 5,
+      "3510": 5,
+      "3511": 5,
+      "3512": 5,
+      "3513": 5,
+      "3514": 5,
+      "3515": 5,
+      "3516": 5,
+      "3517": 5,
+      "3518": 5,
+      "3519": 5,
+      "3520": 5,
+      "3521": 5,
+      "4101": 1,
+      "4102": 1,
+      "4103": 1,
+      "4104": 1,
+      "4105": 1,
+      "4106": 1,
+      "4107": 1,
+      "4108": 1,
+      "4109": 1,
+      "4110": 1,
+      "4111": 1,
+      "4112": 1,
+      "4201": 2,
+      "4202": 2,
+      "4203": 2,
+      "4204": 2,
+      "4205": 2,
+      "4206": 2,
+      "4207": 2,
+      "4208": 2,
+      "4209": 2,
+      "4210": 2,
+      "4211": 2,
+      "4212": 2,
+      "4213": 2,
+      "4214": 2,
+      "4215": 2,
+      "4301": 3,
+      "4302": 3,
+      "4303": 3,
+      "4304": 3,
+      "4305": 3,
+      "4306": 3,
+      "4307": 3,
+      "4308": 3,
+      "4309": 3,
+      "4310": 3,
+      "4311": 3,
+      "4312": 3,
+      "4313": 3,
+      "4314": 3,
+      "4315": 3,
+      "8101": 1,
+      "8102": 1,
+      "8103": 1,
+      "8104": 1,
+      "8105": 1,
+      "8106": 1,
+      "8107": 1,
+      "8108": 1,
+      "8109": 1,
+      "8110": 1,
+      "8111": 1,
+      "8112": 1,
+      "8201": 2,
+      "8202": 2,
+      "8203": 2,
+      "8204": 2,
+      "8205": 2,
+      "8206": 2,
+      "8207": 2,
+      "8208": 2,
+      "8209": 2,
+      "8210": 2,
+      "8211": 2,
+      "8212": 2,
+      "8301": 3,
+      "8302": 3,
+      "8303": 3,
+      "8304": 3,
+      "8305": 3,
+      "8306": 3,
+      "8307": 3,
+      "8308": 3,
+      "8309": 3,
+      "8401": 4,
+      "8402": 4,
+      "8403": 4,
+      "8404": 4,
+      "8405": 4,
+      "8406": 4,
+      "8407": 4,
+      "8408": 4,
+      "8409": 4,
+      "8410": 4,
+      "8411": 4,
+      "8412": 4,
+      "9101": 1,
+      "9102": 1,
+      "9103": 1,
+      "9104": 1,
+      "9105": 1,
+      "9106": 1
+    }
+  },
+  "boatShifts": {
+    "source": "content/boat-shifts.json",
+    "description": "Published crew shift boundaries, imported from the workbook's cell notes by scripts/import-boat-shifts.py and verified against the bundled GTFS at import time — anything the feed disagreed with was dropped rather than guessed at.",
+    "workbook": "schedules/summer-2026-shift-notes.csv",
+    "count": 86,
+    "shifts": {
+      "weekday": {
+        "AS1": [
+          {
+            "shift": "AM",
+            "startTime": "06:03",
+            "startPlace": "East 90th St",
+            "endTime": "10:42",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!G3"
+          },
+          {
+            "shift": "PM",
+            "startTime": "16:52",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "20:42",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!G11"
+          }
+        ],
+        "AS2": [
+          {
+            "shift": "AM",
+            "startTime": "06:41",
+            "startPlace": "East 90th St",
+            "endTime": "13:14",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!H3"
+          },
+          {
+            "shift": "PM",
+            "startTime": "13:20",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:16",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!H11"
+          }
+        ],
+        "AS3": [
+          {
+            "shift": "AM",
+            "startTime": "06:22",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "14:11",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!I3"
+          },
+          {
+            "shift": "PM",
+            "startTime": "14:17",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "20:59",
+            "endPlace": "East 90th St",
+            "source": "weekday2!I11"
+          }
+        ],
+        "ER1": [
+          {
+            "shift": "AM",
+            "startTime": "06:06",
+            "startPlace": "Hunters Point South",
+            "endTime": "10:28",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!A19"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:46",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "20:02",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!A27",
+            "endNotePlace": "East 34th Street"
+          }
+        ],
+        "ER2": [
+          {
+            "shift": "AM",
+            "startTime": "06:26",
+            "startPlace": "East 34th Street",
+            "endTime": "14:31",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!B19"
+          },
+          {
+            "shift": "PM",
+            "startTime": "14:40",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:43",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!B27"
+          }
+        ],
+        "ER3": [
+          {
+            "shift": "AM",
+            "startTime": "06:31",
+            "startPlace": "Hunters Point South",
+            "endTime": "14:14",
+            "endPlace": "East 34th Street",
+            "source": "weekday2!C19"
+          },
+          {
+            "shift": "PM",
+            "startTime": "14:19",
+            "startPlace": "East 34th Street",
+            "endTime": "19:47",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!C27"
+          }
+        ],
+        "ER4": [
+          {
+            "shift": "AM",
+            "startTime": "06:51",
+            "startPlace": "East 34th Street",
+            "endTime": "10:28",
+            "endPlace": "East 34th Street",
+            "source": "weekday2!D19"
+          },
+          {
+            "shift": "PM",
+            "startTime": "16:16",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "20:44",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!D27"
+          }
+        ],
+        "ER5": [
+          {
+            "shift": "AM",
+            "startTime": "06:27",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "10:04",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!E19"
+          },
+          {
+            "shift": "PM",
+            "startTime": "16:31",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "22:03",
+            "endPlace": "East 34th Street",
+            "source": "weekday2!E27"
+          }
+        ],
+        "ER6": [
+          {
+            "shift": "AM",
+            "startTime": "06:39",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "13:54",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!F19"
+          },
+          {
+            "shift": "PM",
+            "startTime": "14:03",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:26",
+            "endPlace": "East 34th Street",
+            "source": "weekday2!F27"
+          }
+        ],
+        "RS1": [
+          {
+            "shift": "AM",
+            "startTime": "05:03",
+            "startPlace": "Ferry Point Park",
+            "endTime": "13:13",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!A3",
+            "endNoteTime": "13:05"
+          },
+          {
+            "shift": "PM",
+            "startTime": "13:13",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:08",
+            "endPlace": "Rockaway",
+            "source": "weekday2!A11"
+          }
+        ],
+        "RS2": [
+          {
+            "shift": "AM",
+            "startTime": "05:47",
+            "startPlace": "Ferry Point Park",
+            "endTime": "12:10",
+            "endPlace": "Rockaway",
+            "source": "weekday2!B3"
+          },
+          {
+            "shift": "PM",
+            "startTime": "16:12",
+            "startPlace": "Rockaway",
+            "endTime": "21:32",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!B11"
+          }
+        ],
+        "RS3": [
+          {
+            "shift": "AM",
+            "startTime": "06:31",
+            "startPlace": "Ferry Point Park",
+            "endTime": "14:19",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!C3",
+            "endNoteTime": "14:11"
+          },
+          {
+            "shift": "PM",
+            "startTime": "14:19",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "20:47",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!C11"
+          }
+        ],
+        "RS4": [
+          {
+            "shift": "AM",
+            "startTime": "05:05",
+            "startPlace": "Rockaway",
+            "endTime": "13:09",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!D3",
+            "endNoteTime": "12:59"
+          },
+          {
+            "shift": "PM",
+            "startTime": "13:09",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:07",
+            "endPlace": "Ferry Point Park",
+            "source": "weekday2!D11"
+          }
+        ],
+        "RS5": [
+          {
+            "shift": "AM",
+            "startTime": "05:49",
+            "startPlace": "Rockaway",
+            "endTime": "10:00",
+            "endPlace": "Rockaway",
+            "source": "weekday2!E3"
+          },
+          {
+            "shift": "PM",
+            "startTime": "16:06",
+            "startPlace": "Ferry Point Park",
+            "endTime": "21:28",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!E11"
+          }
+        ],
+        "RS6": [
+          {
+            "shift": "AM",
+            "startTime": "06:33",
+            "startPlace": "Rockaway",
+            "endTime": "14:19",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!F3",
+            "endNoteTime": "14:09"
+          },
+          {
+            "shift": "PM",
+            "startTime": "14:19",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "20:48",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!F11"
+          }
+        ],
+        "SB1": [
+          {
+            "shift": "AM",
+            "startTime": "06:40",
+            "startPlace": "Red Hook/Atlantic Basin",
+            "endTime": "13:45",
+            "endPlace": "East 34th Street",
+            "source": "weekday2!J3"
+          },
+          {
+            "shift": "PM",
+            "startTime": "13:51",
+            "startPlace": "East 34th Street",
+            "endTime": "21:41",
+            "endPlace": "East 34th Street",
+            "source": "weekday2!J11"
+          }
+        ],
+        "SB2": [
+          {
+            "shift": "AM",
+            "startTime": "06:33",
+            "startPlace": "East 34th Street",
+            "endTime": "13:24",
+            "endPlace": "Gov. Island/Yankee Pier",
+            "source": "weekday2!K3"
+          },
+          {
+            "shift": "PM",
+            "startTime": "13:53",
+            "startPlace": "Gov. Island/Yankee Pier",
+            "endTime": "21:33",
+            "endPlace": "Red Hook/Atlantic Basin",
+            "source": "weekday2!K11"
+          }
+        ],
+        "SG1": [
+          {
+            "shift": "AM",
+            "startTime": "06:16",
+            "startPlace": "St. George",
+            "endTime": "13:18",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!G19"
+          },
+          {
+            "shift": "PM",
+            "startTime": "13:24",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:20",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!G27"
+          }
+        ],
+        "SG2": [
+          {
+            "shift": "AM",
+            "startTime": "06:15",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "14:08",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!H19"
+          },
+          {
+            "shift": "PM",
+            "startTime": "14:14",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "22:08",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekday2!H27"
+          }
+        ],
+        "SG3": [
+          {
+            "shift": "AM",
+            "startTime": "06:21",
+            "startPlace": "St. George",
+            "endTime": "10:37",
+            "endPlace": "Midtown West/W 39th St-Pier 79",
+            "source": "weekday2!I19"
+          },
+          {
+            "shift": "PM",
+            "startTime": "16:54",
+            "startPlace": "Midtown West/W 39th St-Pier 79",
+            "endTime": "21:49",
+            "endPlace": "Midtown West/W 39th St-Pier 79",
+            "source": "weekday2!I27"
+          }
+        ],
+        "SG4": [
+          {
+            "shift": "AM",
+            "startTime": "06:22",
+            "startPlace": "Midtown West/W 39th St-Pier 79",
+            "endTime": "13:43",
+            "endPlace": "Midtown West/W 39th St-Pier 79",
+            "source": "weekday2!J19"
+          },
+          {
+            "shift": "PM",
+            "startTime": "13:50",
+            "startPlace": "Midtown West/W 39th St-Pier 79",
+            "endTime": "21:12",
+            "endPlace": "Midtown West/W 39th St-Pier 79",
+            "source": "weekday2!J27"
+          }
+        ]
+      },
+      "weekend": {
+        "AS1": [
+          {
+            "shift": "AM",
+            "startTime": "08:58",
+            "startPlace": "East 90th St",
+            "endTime": "15:20",
+            "endPlace": "East 90th St",
+            "source": "weekend2!J2"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:26",
+            "startPlace": "East 90th St",
+            "endTime": "21:29",
+            "endPlace": "East 90th St",
+            "source": "weekend2!J10"
+          }
+        ],
+        "AS2": [
+          {
+            "shift": "AM",
+            "startTime": "08:56",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "14:56",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!K2"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:05",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:05",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!K10"
+          }
+        ],
+        "AS3": [
+          {
+            "shift": "",
+            "startTime": "11:40",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:46",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!L2"
+          }
+        ],
+        "ER1": [
+          {
+            "shift": "AM",
+            "startTime": "08:35",
+            "startPlace": "East 34th Street",
+            "endTime": "15:08",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!A18"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:42",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:34",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!A26"
+          }
+        ],
+        "ER2": [
+          {
+            "shift": "AM",
+            "startTime": "09:05",
+            "startPlace": "East 34th Street",
+            "endTime": "15:48",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!B18"
+          },
+          {
+            "shift": "PM",
+            "startTime": "16:21",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "22:14",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!B26"
+          }
+        ],
+        "ER3": [
+          {
+            "shift": "AM",
+            "startTime": "08:47",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "14:42",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!C18"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:05",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:53",
+            "endPlace": "East 34th Street",
+            "source": "weekend2!C26"
+          }
+        ],
+        "ER4": [
+          {
+            "shift": "",
+            "startTime": "10:43",
+            "startPlace": "East 34th Street",
+            "endTime": "20:56",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!D18"
+          }
+        ],
+        "ER5": [
+          {
+            "shift": "",
+            "startTime": "10:32",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "20:39",
+            "endPlace": "East 34th Street",
+            "source": "weekend2!E18",
+            "endNotePlace": "Wall St/Pier 11"
+          }
+        ],
+        "ER6": [
+          {
+            "shift": "",
+            "startTime": "11:00",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:05",
+            "endPlace": "East 34th Street",
+            "source": "weekend2!F18"
+          }
+        ],
+        "ER7": [
+          {
+            "shift": "",
+            "startTime": "11:13",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:17",
+            "endPlace": "East 34th Street",
+            "source": "weekend2!G18"
+          }
+        ],
+        "RR1": [
+          {
+            "shift": "",
+            "startTime": "09:30",
+            "startPlace": "Long Island City",
+            "endTime": "18:46",
+            "endPlace": "Long Island City",
+            "source": "supplied by hand 2026-08-13 (RWY RKT column is unreadable)",
+            "endNoteTime": "17:30"
+          }
+        ],
+        "RS1": [
+          {
+            "shift": "AM",
+            "startTime": "07:52",
+            "startPlace": "Ferry Point Park",
+            "endTime": "14:10",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!A2",
+            "endNoteTime": "14:00"
+          },
+          {
+            "shift": "PM",
+            "startTime": "14:10",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:26",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!A10"
+          }
+        ],
+        "RS2": [
+          {
+            "shift": "AM",
+            "startTime": "08:42",
+            "startPlace": "Ferry Point Park",
+            "endTime": "15:00",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!B2",
+            "endNoteTime": "14:50"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:00",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "22:16",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!B10"
+          }
+        ],
+        "RS3": [
+          {
+            "shift": "AM",
+            "startTime": "09:32",
+            "startPlace": "Ferry Point Park",
+            "endTime": "15:50",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!C2",
+            "startNoteTime": "09:37",
+            "endNoteTime": "15:40"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:50",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:51",
+            "endPlace": "Rockaway",
+            "source": "weekend2!C10"
+          }
+        ],
+        "RS4": [
+          {
+            "shift": "AM",
+            "startTime": "09:05",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "16:40",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!D2",
+            "endNoteTime": "16:30"
+          },
+          {
+            "shift": "PM",
+            "startTime": "16:40",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:30",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!D10"
+          }
+        ],
+        "RS5": [
+          {
+            "shift": "AM",
+            "startTime": "08:47",
+            "startPlace": "Rockaway",
+            "endTime": "14:55",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!E2",
+            "endNoteTime": "14:46"
+          },
+          {
+            "shift": "PM",
+            "startTime": "14:55",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "20:57",
+            "endPlace": "Ferry Point Park",
+            "source": "weekend2!E10"
+          }
+        ],
+        "RS6": [
+          {
+            "shift": "AM",
+            "startTime": "09:37",
+            "startPlace": "Rockaway",
+            "endTime": "15:45",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!F2",
+            "endNoteTime": "15:36"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:45",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:47",
+            "endPlace": "Ferry Point Park",
+            "source": "weekend2!F10"
+          }
+        ],
+        "RS7": [
+          {
+            "shift": "",
+            "startTime": "11:15",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:04",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!G2"
+          }
+        ],
+        "RS8": [
+          {
+            "shift": "",
+            "startTime": "09:36",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "19:25",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!H2"
+          }
+        ],
+        "RS9": [
+          {
+            "shift": "",
+            "startTime": "10:26",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "20:15",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!I2"
+          }
+        ],
+        "SB1": [
+          {
+            "shift": "AM",
+            "startTime": "08:23",
+            "startPlace": "Bay Ridge",
+            "endTime": "14:59",
+            "endPlace": "Bay Ridge",
+            "source": "weekend2!L18"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:05",
+            "startPlace": "Bay Ridge",
+            "endTime": "22:07",
+            "endPlace": "Bay Ridge",
+            "source": "weekend2!L26"
+          }
+        ],
+        "SB2": [
+          {
+            "shift": "AM",
+            "startTime": "08:21",
+            "startPlace": "East 34th Street",
+            "endTime": "15:00",
+            "endPlace": "East 34th Street",
+            "source": "weekend2!M18"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:06",
+            "startPlace": "East 34th Street",
+            "endTime": "22:08",
+            "endPlace": "East 34th Street",
+            "source": "weekend2!M26"
+          }
+        ],
+        "SB3": [
+          {
+            "shift": "",
+            "startTime": "11:11",
+            "startPlace": "Bay Ridge",
+            "endTime": "20:27",
+            "endPlace": "Bay Ridge",
+            "source": "weekend2!N18"
+          }
+        ],
+        "SB4": [
+          {
+            "shift": "",
+            "startTime": "11:05",
+            "startPlace": "East 34th Street",
+            "endTime": "21:27",
+            "endPlace": "Bay Ridge",
+            "source": "weekend2!O18"
+          }
+        ],
+        "SG1": [
+          {
+            "shift": "AM",
+            "startTime": "09:17",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "15:31",
+            "endPlace": "Midtown West/W 39th St-Pier 79",
+            "source": "weekend2!H18"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:49",
+            "startPlace": "Midtown West/W 39th St-Pier 79",
+            "endTime": "22:15",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!H26"
+          }
+        ],
+        "SG2": [
+          {
+            "shift": "AM",
+            "startTime": "09:04",
+            "startPlace": "Midtown West/W 39th St-Pier 79",
+            "endTime": "15:31",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!I18"
+          },
+          {
+            "shift": "PM",
+            "startTime": "15:37",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "22:15",
+            "endPlace": "Midtown West/W 39th St-Pier 79",
+            "source": "weekend2!I26"
+          }
+        ],
+        "SG3": [
+          {
+            "shift": "AM",
+            "startTime": "09:55",
+            "startPlace": "Midtown West/W 39th St-Pier 79",
+            "endTime": "16:09",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!J18"
+          },
+          {
+            "shift": "PM",
+            "startTime": "16:15",
+            "startPlace": "Wall St/Pier 11",
+            "endTime": "21:37",
+            "endPlace": "Wall St/Pier 11",
+            "source": "weekend2!J26"
+          }
+        ],
+        "SG4": [
+          {
+            "shift": "",
+            "startTime": "11:04",
+            "startPlace": "Midtown West/W 39th St-Pier 79",
+            "endTime": "21:37",
+            "endPlace": "Midtown West/W 39th St-Pier 79",
+            "source": "weekend2!K18"
+          }
+        ]
+      }
+    }
+  },
+  "fleet": {
+    "source": "content/vessels.json",
+    "description": "The vessel roster. Used to turn a realtime vehicle label into a name a person recognises; the descriptive prose is editorial and is not read by the board.",
+    "updatedAt": "2026-07-12",
+    "count": 38,
+    "vessels": [
+      {
+        "id": "waves-of-wonder",
+        "name": "Waves of Wonder",
+        "number": "H-101",
+        "year": "2016",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Original river fleet",
+        "story": "A member of NYC Ferry’s original purpose-built river fleet. Add the vessel’s namesake story, milestones, and favorite photos here.",
+        "image": "/assets/vessels/waves-of-wonder.png",
+        "thumbnail": "/assets/vessels/waves-of-wonder.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:HB101.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:HB101.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/7/78/HB101.png"
+        }
+      },
+      {
+        "id": "sunset-crossing",
+        "name": "Sunset Crossing",
+        "number": "H-102",
+        "year": "2016",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Original river fleet",
+        "story": "A member of NYC Ferry’s original purpose-built river fleet. Add the vessel’s namesake story, milestones, and favorite photos here.",
+        "image": "/assets/vessels/sunset-crossing.png",
+        "thumbnail": "/assets/vessels/sunset-crossing.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:HB102.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:HB102.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a4/HB102.png"
+        }
+      },
+      {
+        "id": "happy-hauler",
+        "name": "Happy Hauler",
+        "number": "H-103",
+        "year": "2016",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Original river fleet",
+        "story": "A member of NYC Ferry’s original purpose-built river fleet. Add the vessel’s namesake story, milestones, and favorite photos here.",
+        "image": "/assets/vessels/happy-hauler.png",
+        "thumbnail": "/assets/vessels/happy-hauler.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H103.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H103.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/9/97/H103.png"
+        }
+      },
+      {
+        "id": "great-eagle",
+        "name": "Great Eagle",
+        "number": "H-104",
+        "year": "2016",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Original river fleet",
+        "story": "A member of NYC Ferry’s original purpose-built river fleet. Add the vessel’s namesake story, milestones, and favorite photos here.",
+        "image": "/assets/vessels/great-eagle.png",
+        "thumbnail": "/assets/vessels/great-eagle.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H104.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H104.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a0/H104.png"
+        }
+      },
+      {
+        "id": "owls-head",
+        "name": "Owl’s Head",
+        "number": "H-105",
+        "year": "2016",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Original river fleet",
+        "story": "A member of NYC Ferry’s original purpose-built river fleet. Add the vessel’s namesake story, milestones, and favorite photos here.",
+        "image": "/assets/vessels/owls-head.png",
+        "thumbnail": "/assets/vessels/owls-head.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H105.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H105.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b0/H105.png"
+        }
+      },
+      {
+        "id": "munsee",
+        "name": "Munsee",
+        "number": "H-106",
+        "year": "2016",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Original river fleet",
+        "story": "A member of NYC Ferry’s original purpose-built river fleet. Add the vessel’s namesake story, milestones, and favorite photos here.",
+        "image": "/assets/vessels/munsee.png",
+        "thumbnail": "/assets/vessels/munsee.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:HB 106.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:HB_106.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/31/HB_106.png"
+        }
+      },
+      {
+        "id": "lunchbox",
+        "name": "Lunchbox",
+        "number": "H-200",
+        "year": "2016–2017",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "Rockaway",
+        "capacity": 150,
+        "feature": "Open-water configuration",
+        "story": "Lunchbox is the first vessel ordered and built for NYC Ferry. It was named by second graders from Bay Ridge.",
+        "image": "/assets/vessels/lunchbox.jpg",
+        "thumbnail": "/assets/vessels/lunchbox.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:NYC Ferry Lunch Box H-200.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:NYC_Ferry_Lunch_Box_H-200.jpg",
+          "artist": "Alsuhr",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8b/NYC_Ferry_Lunch_Box_H-200.jpg"
+        }
+      },
+      {
+        "id": "urban-journey",
+        "name": "Urban Journey",
+        "number": "H-201",
+        "year": "2016–2017",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "Rockaway",
+        "capacity": 150,
+        "feature": "Open-water configuration",
+        "story": "Built in the first Rockaway group for longer runs across New York Harbor and Jamaica Bay. Add this vessel’s full story here.",
+        "image": "/assets/vessels/urban-journey.png",
+        "thumbnail": "/assets/vessels/urban-journey.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H201.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H201.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e0/H201.png"
+        }
+      },
+      {
+        "id": "friendship-express",
+        "name": "Friendship Express",
+        "number": "H-202",
+        "year": "2016–2017",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "Rockaway",
+        "capacity": 150,
+        "feature": "Open-water configuration",
+        "story": "Built in the first Rockaway group for longer runs across New York Harbor and Jamaica Bay. Add this vessel’s full story here.",
+        "image": "/assets/vessels/friendship-express.png",
+        "thumbnail": "/assets/vessels/friendship-express.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H202.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H202.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/05/H202.png"
+        }
+      },
+      {
+        "id": "connector",
+        "name": "Connector",
+        "number": "H-203",
+        "year": "2016–2017",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "Rockaway",
+        "capacity": 150,
+        "feature": "Open-water configuration",
+        "story": "Built in the first Rockaway group for longer runs across New York Harbor and Jamaica Bay. Add this vessel’s full story here.",
+        "image": "/assets/vessels/connector.png",
+        "thumbnail": "/assets/vessels/connector.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H203.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H203.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/7/78/H203.png"
+        }
+      },
+      {
+        "id": "opportunity",
+        "name": "Opportunity",
+        "number": "H-204",
+        "year": "2016–2017",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "Rockaway",
+        "capacity": 150,
+        "feature": "Open-water configuration",
+        "story": "Built in the first Rockaway group for longer runs across New York Harbor and Jamaica Bay. Add this vessel’s full story here.",
+        "image": "/assets/vessels/opportunity.png",
+        "thumbnail": "/assets/vessels/opportunity.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H204.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H204.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1b/H204.png"
+        }
+      },
+      {
+        "id": "flyer",
+        "name": "Flyer",
+        "number": "H-205",
+        "year": "2016–2017",
+        "generation": "1st generation",
+        "className": "T Class",
+        "type": "Rockaway",
+        "capacity": 150,
+        "feature": "Open-water configuration",
+        "story": "Built in the first Rockaway group for longer runs across New York Harbor and Jamaica Bay. Add this vessel’s full story here.",
+        "image": "/assets/vessels/flyer.png",
+        "thumbnail": "/assets/vessels/flyer.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H205.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H205.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c1/H205.png"
+        }
+      },
+      {
+        "id": "mcshiny",
+        "name": "McShiny",
+        "number": "H-206",
+        "year": "2017–2018",
+        "generation": "2nd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Upper deck",
+        "story": "Part of the second-generation standard fleet, with an open upper deck reached from the stern. Add this vessel’s full story here.",
+        "image": "/assets/vessels/mcshiny.png",
+        "thumbnail": "/assets/vessels/mcshiny.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H206.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H206.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b9/H206.png"
+        }
+      },
+      {
+        "id": "starlight",
+        "name": "Starlight",
+        "number": "H-207",
+        "year": "2017–2018",
+        "generation": "2nd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Upper deck",
+        "story": "Part of the second-generation standard fleet, with an open upper deck reached from the stern. Add this vessel’s full story here.",
+        "image": "/assets/vessels/starlight.png",
+        "thumbnail": "/assets/vessels/starlight.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H207.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H207.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/9/98/H207.png"
+        }
+      },
+      {
+        "id": "spring-mallard",
+        "name": "Spring Mallard",
+        "number": "H-208",
+        "year": "2017–2018",
+        "generation": "2nd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Upper deck",
+        "story": "Part of the second-generation standard fleet, with an open upper deck reached from the stern. Add this vessel’s full story here.",
+        "image": "/assets/vessels/spring-mallard.png",
+        "thumbnail": "/assets/vessels/spring-mallard.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H208.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H208.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/82/H208.png"
+        }
+      },
+      {
+        "id": "atlantic-compass",
+        "name": "Atlantic Compass",
+        "number": "H-209",
+        "year": "2017–2018",
+        "generation": "2nd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Upper deck",
+        "story": "Part of the second-generation standard fleet, with an open upper deck reached from the stern. Add this vessel’s full story here.",
+        "image": "/assets/vessels/atlantic-compass.png",
+        "thumbnail": "/assets/vessels/atlantic-compass.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H209.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H209.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/32/H209.png"
+        }
+      },
+      {
+        "id": "ferry-godmother",
+        "name": "Ferry Godmother",
+        "number": "H-107",
+        "year": "2018",
+        "generation": "2nd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Upper deck",
+        "story": "The final standard river boat delivered in this generation. Add the story behind its memorable name here.",
+        "image": "/assets/vessels/ferry-godmother.png",
+        "thumbnail": "/assets/vessels/ferry-godmother.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:HB 107.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:HB_107.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/47/HB_107.png"
+        }
+      },
+      {
+        "id": "ocean-queen-rockstar",
+        "name": "Ocean Queen Rockstar",
+        "number": "H-108",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A high-capacity K Class vessel built for busy, longer-distance service. Add its namesake story, milestones, and gallery here.",
+        "image": "/assets/vessels/ocean-queen-rockstar.jpg",
+        "thumbnail": "/assets/vessels/ocean-queen-rockstar.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H108.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H108.jpg",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3f/H108.jpg"
+        }
+      },
+      {
+        "id": "seas-the-day",
+        "name": "Seas the Day",
+        "number": "H-109",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A high-capacity K Class vessel built for busy, longer-distance service. Add its namesake story, milestones, and gallery here.",
+        "image": "/assets/vessels/seas-the-day.jpg",
+        "thumbnail": "/assets/vessels/seas-the-day.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:Seastheday.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:Seastheday.jpg",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/02/Seastheday.jpg"
+        }
+      },
+      {
+        "id": "golden-narrows",
+        "name": "Golden Narrows",
+        "number": "H-110",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A high-capacity K Class vessel built for busy, longer-distance service. Add its namesake story, milestones, and gallery here.",
+        "image": "/assets/vessels/golden-narrows.jpg",
+        "thumbnail": "/assets/vessels/golden-narrows.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H110.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H110.jpg",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/51/H110.jpg"
+        }
+      },
+      {
+        "id": "rainbow-cruise",
+        "name": "Rainbow Cruise",
+        "number": "H-111",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A high-capacity K Class vessel built for busy, longer-distance service. Add its namesake story, milestones, and gallery here.",
+        "image": "/assets/vessels/rainbow-cruise.png",
+        "thumbnail": "/assets/vessels/rainbow-cruise.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:HB113.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:HB113.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3b/HB113.png"
+        }
+      },
+      {
+        "id": "unity",
+        "name": "Unity",
+        "number": "H-112",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A high-capacity K Class vessel built for busy, longer-distance service. Add its namesake story, milestones, and gallery here.",
+        "image": "/assets/vessels/unity.jpg",
+        "thumbnail": "/assets/vessels/unity.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:Unityhb112.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:Unityhb112.jpg",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/80/Unityhb112.jpg"
+        }
+      },
+      {
+        "id": "traversity",
+        "name": "Traversity",
+        "number": "H-113",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A high-capacity K Class vessel built for busy, longer-distance service. Add its namesake story, milestones, and gallery here.",
+        "image": "/assets/vessels/traversity.jpg",
+        "thumbnail": "/assets/vessels/traversity.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:Traversity.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:Traversity.jpg",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b3/Traversity.jpg"
+        }
+      },
+      {
+        "id": "jewel-of-the-harbor",
+        "name": "Jewel of the Harbor",
+        "number": "H-114",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A high-capacity K Class vessel built for busy, longer-distance service. Add its namesake story, milestones, and gallery here.",
+        "image": "/assets/vessels/jewel-of-the-harbor.jpg",
+        "thumbnail": "/assets/vessels/jewel-of-the-harbor.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:Joh114.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:Joh114.jpg",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/01/Joh114.jpg"
+        }
+      },
+      {
+        "id": "koalafied-cruiser",
+        "name": "Koalafied Cruiser",
+        "number": "H-214",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A high-capacity K Class vessel built for busy, longer-distance service. Add its namesake story, milestones, and gallery here.",
+        "image": "/assets/vessels/koalafied-cruiser.jpg",
+        "thumbnail": "/assets/vessels/koalafied-cruiser.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:H-214.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:H-214.jpg",
+          "artist": "Transpoman",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5a/H-214.jpg"
+        }
+      },
+      {
+        "id": "dream-boat",
+        "name": "Dream Boat",
+        "number": "H-115",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "Student-named vessel",
+        "story": "One of the fleet’s student-named vessels. Add the students’ inspiration, vessel milestones, and photo gallery here.",
+        "image": "/assets/vessels/dream-boat.png",
+        "thumbnail": "/assets/vessels/dream-boat.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:Hb115.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:Hb115.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/9/97/Hb115.png"
+        }
+      },
+      {
+        "id": "forget-me-knot",
+        "name": "Forget Me Knot",
+        "number": "H-090",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "Student-named vessel",
+        "story": "One of the fleet’s student-named vessels. Add the students’ inspiration, vessel milestones, and photo gallery here.",
+        "image": "/assets/vessels/forget-me-knot.png",
+        "thumbnail": "/assets/vessels/forget-me-knot.png",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:Hb-90.png",
+          "filePage": "https://commons.wikimedia.org/wiki/File:Hb-90.png",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/6/69/Hb-90.png"
+        }
+      },
+      {
+        "id": "signs-to-liberty",
+        "name": "Signs to Liberty",
+        "number": "H-215",
+        "year": "2018–2019",
+        "generation": "2nd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "Student-named vessel",
+        "story": "One of the fleet’s student-named vessels. Add the students’ inspiration, vessel milestones, and photo gallery here.",
+        "image": "/assets/vessels/signs-to-liberty.jpg",
+        "thumbnail": "/assets/vessels/signs-to-liberty.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:NYC Ferry Vessel H-215.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:NYC_Ferry_Vessel_H-215.jpg",
+          "artist": "Transpoman",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/6/60/NYC_Ferry_Vessel_H-215.jpg"
+        }
+      },
+      {
+        "id": "river-sprinter",
+        "name": "River Sprinter",
+        "number": "H-119",
+        "year": "2019–2020",
+        "generation": "3rd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Tier 4 generation",
+        "story": "Part of the third-generation standard fleet. Add engine, shipyard, namesake, and service-history details here.",
+        "image": "/assets/vessels/river-sprinter.jpg",
+        "thumbnail": "/assets/vessels/river-sprinter.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:NYC Ferry Vessel HB-119.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:NYC_Ferry_Vessel_HB-119.jpg",
+          "artist": "Transpoman",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f6/NYC_Ferry_Vessel_HB-119.jpg"
+        }
+      },
+      {
+        "id": "bay-hopper",
+        "name": "Bay Hopper",
+        "number": "H-120",
+        "year": "2019–2020",
+        "generation": "3rd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Tier 4 generation",
+        "story": "Part of the third-generation standard fleet. Add engine, shipyard, namesake, and service-history details here.",
+        "image": "/assets/vessels/bay-hopper.jpg",
+        "thumbnail": "/assets/vessels/bay-hopper.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:Hb120.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:Hb120.jpg",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Hb120.jpg"
+        }
+      },
+      {
+        "id": "cyclone-shark",
+        "name": "Cyclone Shark",
+        "number": "H-121",
+        "year": "2019–2020",
+        "generation": "3rd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Tier 4 generation",
+        "story": "Part of the third-generation standard fleet. Add engine, shipyard, namesake, and service-history details here.",
+        "image": "/assets/vessels/cyclone-shark.jpg",
+        "thumbnail": "/assets/vessels/cyclone-shark.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:CSHB121.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:CSHB121.jpg",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/7/72/CSHB121.jpg"
+        }
+      },
+      {
+        "id": "white-sands",
+        "name": "White Sands",
+        "number": "H-501",
+        "year": "2019–2020",
+        "generation": "3rd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Tier 4 generation",
+        "story": "Part of the third-generation standard fleet. Add engine, shipyard, namesake, and service-history details here.",
+        "image": "/assets/vessels/white-sands.jpg",
+        "thumbnail": "/assets/vessels/white-sands.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:NYC Ferry Vessel White Sands.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:NYC_Ferry_Vessel_White_Sands.jpg",
+          "artist": "Transpoman",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3d/NYC_Ferry_Vessel_White_Sands.jpg"
+        }
+      },
+      {
+        "id": "tooth-ferry",
+        "name": "Tooth Ferry",
+        "number": "H-122",
+        "year": "2019–2020",
+        "generation": "3rd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Tier 4 generation",
+        "story": "Part of the third-generation standard fleet. Add engine, shipyard, namesake, and service-history details here.",
+        "image": "/assets/vessels/tooth-ferry.jpg",
+        "thumbnail": "/assets/vessels/tooth-ferry.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:NYC Ferry Vessel Tooth Ferry (HB-122).jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:NYC_Ferry_Vessel_Tooth_Ferry_(HB-122).jpg",
+          "artist": "Transpoman",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f5/NYC_Ferry_Vessel_Tooth_Ferry_%28HB-122%29.jpg"
+        }
+      },
+      {
+        "id": "time-traveler",
+        "name": "Time Traveler",
+        "number": "H-123",
+        "year": "2019–2020",
+        "generation": "3rd generation",
+        "className": "T Class",
+        "type": "River",
+        "capacity": 150,
+        "feature": "Final contract delivery",
+        "story": "The final vessel delivered under the original fleet contract. Add its namesake story and service milestones here.",
+        "image": "/assets/vessels/time-traveler.jpg",
+        "thumbnail": "/assets/vessels/time-traveler.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:HB123.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:HB123.jpg",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c5/HB123.jpg"
+        }
+      },
+      {
+        "id": "melting-pot",
+        "name": "Melting Pot",
+        "number": "H-091",
+        "year": "2020",
+        "generation": "3rd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A third-generation, high-capacity K Class vessel. Add its shipyard, namesake, technical details, and gallery here.",
+        "image": "/assets/vessels/melting-pot.jpg",
+        "thumbnail": "/assets/vessels/melting-pot.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:NYC Ferry Vessel H-91.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:NYC_Ferry_Vessel_H-91.jpg",
+          "artist": "Transpoman",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b8/NYC_Ferry_Vessel_H-91.jpg"
+        }
+      },
+      {
+        "id": "purpose",
+        "name": "Purpose",
+        "number": "H-401",
+        "year": "2020",
+        "generation": "3rd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A third-generation, high-capacity K Class vessel. Add its shipyard, namesake, technical details, and gallery here.",
+        "image": "/assets/vessels/purpose.jpg",
+        "thumbnail": "/assets/vessels/purpose.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:NYC Ferry Vessel H-401.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:NYC_Ferry_Vessel_H-401.jpg",
+          "artist": "Transpoman",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/9/94/NYC_Ferry_Vessel_H-401.jpg"
+        }
+      },
+      {
+        "id": "curiosity",
+        "name": "Curiosity",
+        "number": "H-301",
+        "year": "2020",
+        "generation": "3rd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A third-generation, high-capacity K Class vessel. Add its shipyard, namesake, technical details, and gallery here.",
+        "image": "/assets/vessels/curiosity.jpg",
+        "thumbnail": "/assets/vessels/curiosity.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:NYC Ferry Vessel Curiosity (H-301).jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:NYC_Ferry_Vessel_Curiosity_(H-301).jpg",
+          "artist": "Transpoman",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/6/63/NYC_Ferry_Vessel_Curiosity_%28H-301%29.jpg"
+        }
+      },
+      {
+        "id": "city-fishy",
+        "name": "City Fishy",
+        "number": "H-092",
+        "year": "2020",
+        "generation": "3rd generation",
+        "className": "K Class",
+        "type": "Rockaway",
+        "capacity": 350,
+        "feature": "High-capacity vessel",
+        "story": "A third-generation, high-capacity K Class vessel. Add its shipyard, namesake, technical details, and gallery here.",
+        "image": "/assets/vessels/city-fishy.jpg",
+        "thumbnail": "/assets/vessels/city-fishy.jpg",
+        "photoAttribution": {
+          "source": "Wikimedia Commons",
+          "fileTitle": "File:Cityfishy.jpg",
+          "filePage": "https://commons.wikimedia.org/wiki/File:Cityfishy.jpg",
+          "artist": "Rgrant3746",
+          "credit": "Own work",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/2/28/Cityfishy.jpg"
+        }
+      }
+    ]
+  }
+}

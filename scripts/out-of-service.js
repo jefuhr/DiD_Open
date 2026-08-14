@@ -133,8 +133,8 @@ export function serviceBreaks({
 // Scoped to the same kind of day, because a boat's weekend shuttle says nothing about its weekday,
 // and to a tight window, because a crew rides the shuttle shortly after stepping off — not six
 // hours into a gap that the shuttle plainly did not cause.
-const SWAP_WINDOW_BEFORE = 30 * 60;
-const SWAP_WINDOW_AFTER = 90 * 60;
+export const SWAP_WINDOW_BEFORE = 30 * 60;
+export const SWAP_WINDOW_AFTER = 90 * 60;
 
 function isCrewSwap({ crewSwaps, run, kind }) {
   if (!kind) return false;
@@ -336,7 +336,7 @@ export function crewSwapIndex({ shuttles = {}, landings }) {
 // Matched by boat and day rather than by place: the workbook writes place names ("Wall St/Pier 11")
 // and the shuttle config names landings, which are different vocabularies, and a boat swaps crew
 // once a day, so its own name and the changeover it brackets are specific enough.
-const SHUTTLE_READY_BEFORE = 60 * 60;
+export const SHUTTLE_READY_BEFORE = 60 * 60;
 
 function shuttleCovers({ crewSwaps, boat, kind, endSeconds, startSeconds }) {
   const swaps = crewSwaps.get(`${boat}|${kind}`);
