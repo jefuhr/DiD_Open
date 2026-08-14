@@ -435,6 +435,19 @@ function departureStatus(item) {
   const dropOffLabel = !noPickup && item.endsShift
     ? `<span class="drop-off-badge${item.endsShift === "unsure" ? " drop-off-unsure" : ""}" aria-label="${item.endsShift === "unsure" ? "Probably this boat's final trip: drop off only, unconfirmed" : "This boat's final trip: drop off only"}">FINAL${item.endsShift === "unsure" ? "?" : ""}</span>`
     : "";
+  // Which of the other Manhattan terminals this boat calls at on the way.
+  //
+  // Only NY Waterway's South Amboy route threads Pier 11, Brookfield Place and Pier 79 together,
+  // and it does it in four different orders. Two rows can both read "South Amboy" while only one
+  // of them stops at Brookfield Place, so the destination alone cannot answer the question an
+  // agent is actually asked: can I get from here to there on this boat. Each terminal gets its own
+  // colour so the answer is a glance rather than a read.
+  const viaTerminals = (item.viaTerminals || [])
+    .map((terminal) => {
+      const slug = String(terminal.code || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      return `<span class="via-terminal-badge via-terminal-${slug}" aria-label="Calls at ${escapeHtml(terminal.name || terminal.code)} on the way">VIA ${escapeHtml(terminal.code)}</span>`;
+    })
+    .join("");
   // Crew boat assignment ("ER5" = East River boat 5). Boat numbers restart per route, so the
   // route code is part of the label. NY Waterway and the shuttles have no assignment.
   const assignment = Number.isInteger(item.boatAssignment)
@@ -445,7 +458,7 @@ function departureStatus(item) {
   const crewBoats = item.crewShuttle && item.crewBoats?.length
     ? escapeHtml(item.crewBoats.join(" "))
     : "";
-  return { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats };
+  return { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals };
 }
 // The route's own colour, badge and operator labelling, shared by both views.
 function routeVisual(routeId, variant) {
@@ -469,10 +482,10 @@ function routeVisual(routeId, variant) {
 }
 
 function departureCell(item) {
-  const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats } = departureStatus(item);
+  const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } = departureStatus(item);
   return `<div class="departure-slot">
     <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta, item.live !== false))}</span></div>
-    <span class="departure-last-slot">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
+    <span class="departure-last-slot">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
   </div>`;
 }
 
@@ -581,7 +594,7 @@ function renderTimeline() {
 
   elements.departures.innerHTML = rows.map(({ departure, group }) => {
     const visual = routeVisual(group.routeId, group.variant);
-    const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats } =
+    const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } =
       departureStatus(departure);
     const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(visual.variantLabel)}</small>` : "";
     // "Northbound" says nothing about a boat going home empty, so the context line says what the
@@ -619,7 +632,7 @@ function renderTimeline() {
       <div class="tl-meta">
         <span class="tl-context">${escapeHtml(context)}</span>
         ${boat}
-        <span class="tl-status">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${dropOffLabel}${assignment}</span>
+        <span class="tl-status">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}</span>
       </div>
     </article>`;
   }).join("");
@@ -1007,7 +1020,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=51", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=52", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

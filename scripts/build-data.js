@@ -90,8 +90,25 @@ const WATERWAY_FERRIES_TYPED_AS_BUS = new Set([
   "76080"  // Hoboken / 14th St - Pier 11 / Wall St
 ]);
 
+// The three Manhattan terminals NY Waterway calls at, and the codes the crews use for them.
+//
+// One route links them: 77347, South Amboy - Pier 11/Wall St, which threads Pier 11, Brookfield
+// Place and Pier 79 together in four different orders depending on the run. Every other waterway
+// route touches at most one of the three, so on those the destination already tells the whole
+// story. On this one it does not: the 17:15 from Pier 11 and the 15:35 from Pier 11 both read
+// "South Amboy", but the first calls at Brookfield Place on the way and the second is direct.
+//
+// That difference is the reason for the badge. An agent at Pier 11 asked "can I get to Brookfield
+// Place?" has no way to answer it from a row that only names the far end.
+export const WATERWAY_MANHATTAN_TERMINALS = new Map([
+  ["2439146", { code: "PIER 11", name: "Pier 11 / Wall Street" }],
+  ["2729332", { code: "BPC", name: "Brookfield Place / Battery Park City" }],
+  ["2439145", { code: "P79", name: "Midtown West / Pier 79" }]
+]);
+
 export const PARTNER_FEEDS = {
   waterway: { prefix: "wtr:", directory: "gtfs/waterway", label: "NY Waterway", defaultColor: "#00558C", enabledKey: "waterwayEnabled", stopIdsKey: "waterwayStopIds", ferryRouteIds: WATERWAY_FERRIES_TYPED_AS_BUS,
+    connectingTerminals: WATERWAY_MANHATTAN_TERMINALS,
     // Departures carry the namespaced id by this point, so the prefix comes off first.
     lineOfRoute: (routeId) => WATERWAY_LINE_OF_ROUTE.get(String(routeId).replace(/^wtr:/, "")) },
   seastreak: { prefix: "sea:", directory: "gtfs/seastreak", label: "Seastreak", defaultColor: "#013067", enabledKey: "seastreakEnabled", stopIdsKey: "seastreakStopIds", destinationFromFinalStop: true },
@@ -220,6 +237,12 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
         destination, variant: null,
         nextStop: decodeEntities(stopsById.get(times[index + 1].stop_id)?.stop_name || "") || null,
         servesGovernorsIsland: false,
+        // Which of the other Manhattan terminals this boat calls at before it gets where it is
+        // going. The final stop is excluded because it is already the destination on the row, and
+        // the departure stop is excluded by construction — the slice starts after it.
+        viaTerminals: feed.connectingTerminals
+          ? times.slice(index + 1, -1).map((stopTime) => feed.connectingTerminals.get(stopTime.stop_id)).filter(Boolean)
+          : [],
         // Partner crews aren't in the NYC Ferry schedule workbook.
         boatAssignment: null,
         mode: modeOf(route),
@@ -553,7 +576,7 @@ export async function buildDisplayData({
 
   return {
     meta: {
-      schemaVersion: 8, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
+      schemaVersion: 9, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
       departuresShown, routesShown, busesEnabled,
       landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds: landingConfig.stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },

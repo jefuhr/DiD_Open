@@ -161,7 +161,7 @@ test("shows the crew boat assignment beside the boat name", async () => {
   assert.match(app, /routeShortName\(item\.routeId\)\}\$\{item\.boatAssignment\}/);
   assert.match(app, /class="boat-assignment"/);
   // The assignment sits between the status badge and the boat name in the same row.
-  assert.match(app, /\$\{delayLabel \|\| onTimeLabel \|\| scheduledLabel\}\$\{dropOffLabel\}\$\{assignment\}<span class="boat-name">/);
+  assert.match(app, /\$\{delayLabel \|\| onTimeLabel \|\| scheduledLabel\}\$\{viaTerminals\}\$\{dropOffLabel\}\$\{assignment\}<span class="boat-name">/);
   assert.match(css, /\.boat-assignment\{[^}]*flex:0 0 auto/);
 });
 
@@ -475,7 +475,9 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE } = {}) {
     setInterval: () => 0, clearInterval() {}, setTimeout: () => 0, clearTimeout() {},
     async fetch(url) {
       const path = String(url);
-      const body = path.startsWith("/api/display-data") ? payload
+      // Cloned, because a real fetch hands back a fresh object every time. Returning the shared
+      // fixture by reference lets one test's `data.calendars = []` reach every later test.
+      const body = path.startsWith("/api/display-data") ? structuredClone(payload)
         : path.startsWith("/api/landings") ? { landings: [] }
           : path.startsWith("/api/realtime") ? { available: false, stale: true, updates: [], vehicles: [] }
             : path.startsWith("/api/alerts") ? { available: true, stale: false, alerts: [] }
@@ -627,16 +629,88 @@ test("the browsed date is never persisted and resets when the landing changes", 
   assert.equal(view.run("viewDate"), null);
 });
 
-test("offline shell includes version 51 display assets", async () => {
+// "Calls at another Manhattan terminal on the way".
+//
+// Only NY Waterway's South Amboy route threads Pier 11, Brookfield Place and Pier 79 together, and
+// two rows can both read "South Amboy" while only one of them stops at Brookfield Place.
+function waterwaySailing(time, viaTerminals, destination = "South Amboy") {
+  const [hours, minutes] = time.split(":").map(Number);
+  return {
+    tripId: `wtr:t-${time}`, routeId: "wtr:77347", serviceId: "WKD", directionId: "0",
+    stopId: "wtr:2439146", departureTime: `${time}:00`, seconds: hours * 3600 + minutes * 60,
+    destination, variant: null, nextStop: null, servesGovernorsIsland: false, viaTerminals,
+    boatAssignment: null, mode: "ferry", operator: "NY Waterway", via: [],
+    endsShift: null, outOfService: false, crewShuttle: false, crewBoats: null,
+    departureTimeEnd: null, secondsEnd: null, endsDay: false
+  };
+}
+
+const BPC = { code: "BPC", name: "Brookfield Place / Battery Park City" };
+const PIER11 = { code: "PIER 11", name: "Pier 11 / Wall Street" };
+const P79 = { code: "P79", name: "Midtown West / Pier 79" };
+
+test("a boat calling at another Manhattan terminal is badged with it", async () => {
+  const payload = {
+    ...SAMPLE,
+    routes: { ...SAMPLE.routes, "wtr:77347": { id: "wtr:77347", shortName: "77347", name: "South Amboy - Pier 11/Wall St.", color: "#00558C", textColor: "#FFFFFF", mode: "ferry", operator: "NY Waterway" } },
+    departures: [
+      waterwaySailing("09:10", [BPC]),
+      waterwaySailing("09:20", []),
+      waterwaySailing("09:40", [BPC, PIER11]),
+      waterwaySailing("09:50", [P79])
+    ]
+  };
+  const view = await board({ payload });
+  view.run(`viewDate = "2026-08-14"; render();`);
+  const html = view.node("departures").innerHTML;
+
+  // One badge per intermediate terminal, each with its own colour class.
+  assert.match(html, /<span class="via-terminal-badge via-terminal-bpc"[^>]*>VIA BPC<\/span>/);
+  assert.match(html, /<span class="via-terminal-badge via-terminal-pier11"[^>]*>VIA PIER 11<\/span>/);
+  assert.match(html, /<span class="via-terminal-badge via-terminal-p79"[^>]*>VIA P79<\/span>/);
+  // The full terminal name reaches a screen reader; the badge itself only has room for the code.
+  assert.match(html, /aria-label="Calls at Brookfield Place \/ Battery Park City on the way"/);
+
+  // A boat calling at two of them carries both, in the order it reaches them.
+  const both = html.slice(html.indexOf("09:40"));
+  assert.ok(both.indexOf("VIA BPC") < both.indexOf("VIA PIER 11"));
+
+  // Four sailings carrying one, none, two and one terminal: four badges, and the direct 09:20 is
+  // not badged at all rather than being labelled "direct".
+  assert.equal([...html.matchAll(/via-terminal-badge/g)].length, 4);
+  const direct = html.slice(html.indexOf("09:20"), html.indexOf("09:40"));
+  assert.doesNotMatch(direct, /via-terminal-badge/);
+});
+
+test("the via-terminal badge borrows the SCHEDULED shape but none of the status colours", async () => {
+  const css = await readFile(cssPath, "utf8");
+  const badge = /\.via-terminal-badge\{([^}]*)\}/.exec(css)[1];
+  // Same silhouette as .scheduled-badge, so it reads as the same class of information.
+  for (const property of ["display:inline-flex", "padding:2px 5px", "border-radius:6px", "font-weight:950", "white-space:nowrap"]) {
+    assert.ok(badge.includes(property), `via badge should share ${property} with the scheduled badge`);
+  }
+  // Its own hue per terminal, and none of them a status colour: on-time green, late red, LAST
+  // yellow, FINAL amber or NO PICKUP grey would each make the badge mean the wrong thing.
+  const hues = ["via-terminal-bpc", "via-terminal-p79", "via-terminal-pier11"]
+    .map((name) => new RegExp(`\\.${name}\\{([^}]*)\\}`).exec(css)[1]);
+  assert.equal(new Set(hues).size, 3, "each terminal needs its own colour");
+  for (const rule of hues) {
+    for (const taken of ["#218a4b", "#b83224", "#ffd100", "#ffe6bf", "#4a5b68", "#e6eef2"]) {
+      assert.ok(!rule.includes(taken), `via badge must not reuse the status colour ${taken}`);
+    }
+  }
+});
+
+test("offline shell includes version 52 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=51/);
-  assert.match(index, /app\.js\?v=51/);
-  assert.match(worker, /nyc-ferry-did-shell-v51/);
-  assert.match(worker, /styles\.css\?v=51/);
-  assert.match(worker, /app\.js\?v=51/);
+  assert.match(index, /styles\.css\?v=52/);
+  assert.match(index, /app\.js\?v=52/);
+  assert.match(worker, /nyc-ferry-did-shell-v52/);
+  assert.match(worker, /styles\.css\?v=52/);
+  assert.match(worker, /app\.js\?v=52/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of

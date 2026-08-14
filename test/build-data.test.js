@@ -61,7 +61,7 @@ test("display data includes the configured slideshow interval and all directions
   assert.equal(data.meta.departureWindowMinutes, display.departureWindowMinutes);
   assert.equal(data.meta.departuresShown, display.departuresShown);
   assert.equal(data.meta.routesShown, display.routesShown);
-  assert.equal(data.meta.schemaVersion, 8);
+  assert.equal(data.meta.schemaVersion, 9);
   assert.ok(data.tripSchedules[data.departures[0].tripId]?.stops.length > 1);
   const directions = new Set(data.departures.map((item) => `${item.routeId}|${item.directionId}|${item.destination}`));
   assert.ok(directions.size > 4, "Pier 11 should require more than one four-route slide");
@@ -144,7 +144,7 @@ test("NY Waterway departures are omitted when waterwayEnabled is false", async (
   assert.equal(data.meta.waterway.enabled, false);
   assert.equal(data.meta.waterway.agencyName, null);
   assert.equal(data.departures.some((item) => item.routeId.startsWith("wtr:")), false);
-  assert.equal(data.meta.schemaVersion, 8);
+  assert.equal(data.meta.schemaVersion, 9);
 });
 
 test("NY Waterway departures are omitted for landings without a waterwayStopIds mapping", async () => {
@@ -926,4 +926,63 @@ test("Pier C shows every crew shuttle sailing out to collect a crew", async () =
     assert.equal(item.destination, "Pier C");
     assert.ok(item.departureTimeEnd, "the collecting landing keeps its range");
   }
+});
+
+// Which of the other Manhattan terminals a NY Waterway boat calls at on the way.
+//
+// Route 77347 (South Amboy - Pier 11/Wall St) is the only waterway route that touches more than
+// one of Pier 11, Brookfield Place and Pier 79, and it threads them in four different orders. Two
+// departures from Pier 11 can both read "South Amboy" while only one calls at Brookfield Place, so
+// the destination alone cannot answer whether a rider can get from here to there on this boat.
+test("waterway departures name the Manhattan terminals they call at on the way", async () => {
+  const [pier11, brookfield, pier79] = await Promise.all([
+    buildDisplayData({ landingNumber: 16, waterwayEnabled: true }),
+    buildDisplayData({ landingNumber: 25, waterwayEnabled: true }),
+    buildDisplayData({ landingNumber: 26, waterwayEnabled: true })
+  ]);
+  const codes = (data) => data.departures
+    .filter((item) => (item.viaTerminals || []).length)
+    .map((item) => `${item.departureTime.slice(0, 5)} ${item.viaTerminals.map((terminal) => terminal.code).join("+")}`)
+    .sort();
+
+  // Every Pier 11 connector sailing runs by way of Brookfield Place; the two direct ones are
+  // deliberately absent rather than badged.
+  assert.deepEqual(codes(pier11), [
+    "06:35 BPC", "07:40 BPC", "08:35 BPC", "09:35 BPC", "17:15 BPC", "18:15 BPC"
+  ]);
+  // The reverse, read from the other two terminals.
+  assert.deepEqual(codes(brookfield), ["15:25 PIER 11", "16:25 PIER 11"]);
+  assert.deepEqual(codes(pier79), ["15:10 BPC+PIER 11", "16:10 BPC+PIER 11"]);
+
+  // Order follows the boat, not the alphabet: from Pier 79 it reaches Brookfield Place first.
+  const [first] = pier79.departures.filter((item) => (item.viaTerminals || []).length);
+  assert.deepEqual(first.viaTerminals.map((terminal) => terminal.code), ["BPC", "PIER 11"]);
+  // The full name travels with the code, for the row's aria-label.
+  assert.equal(first.viaTerminals[0].name, "Brookfield Place / Battery Park City");
+
+  // A terminal is never listed as a "via" of itself, and never when it is the destination: the
+  // 08:35 from Pier 11 finishes at Pier 79 and is badged for Brookfield Place only.
+  const toPier79 = pier11.departures.find((item) => item.departureTime.startsWith("08:35") && item.destination.includes("39th"));
+  assert.deepEqual(toPier79.viaTerminals.map((terminal) => terminal.code), ["BPC"]);
+
+  // Nothing outside this route acquires the field's contents.
+  for (const data of [pier11, brookfield, pier79]) {
+    for (const item of data.departures.filter((row) => (row.viaTerminals || []).length)) {
+      assert.equal(item.routeId, "wtr:77347");
+    }
+  }
+});
+
+// NYC Ferry's own rows never carry the field at all — the client tolerates its absence rather than
+// the build stamping an empty array onto every departure in the system. Partner feeds all carry it
+// because they share one code path, but only the waterway feed is configured with terminals to
+// find, so for the others it is always empty.
+test("only the waterway feed can produce a via-terminal list", async () => {
+  const data = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true, seastreakEnabled: true });
+  const own = data.departures.filter((item) => !/^[a-z]+:/.test(String(item.routeId)));
+  assert.ok(own.length > 0, "landing 16 has NYC Ferry departures");
+  assert.ok(own.every((item) => item.viaTerminals === undefined), "NYC Ferry rows omit the field entirely");
+
+  const otherPartners = data.departures.filter((item) => /^[a-z]+:/.test(String(item.routeId)) && !String(item.routeId).startsWith("wtr:"));
+  assert.ok(otherPartners.every((item) => Array.isArray(item.viaTerminals) && item.viaTerminals.length === 0));
 });

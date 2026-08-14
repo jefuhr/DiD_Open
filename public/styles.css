@@ -31,6 +31,17 @@
 .nearest-icon{flex:0 0 auto;width:16px;height:16px;fill:none;stroke:var(--navy);stroke-width:2.2;stroke-linecap:round}.nearest-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A resolved fix is the one state worth colouring: it is the only one that does something when
    tapped. "here" stays quiet because the board already says where you are. */
+/* "Calls at another Manhattan terminal on the way". Built on the SCHEDULED badge's shape so it
+   reads as the same class of information, but in its own hues: this answers "can I get there on
+   this boat", not "is it running to time", and the two must never be confused for one another.
+   None of the three collides with a status colour — red for late, green for on time, yellow for
+   LAST, amber for FINAL, grey for NO PICKUP — and each terminal keeps its own, so a row carrying
+   two of them is still readable at a glance. */
+.via-terminal-badge{display:inline-flex;align-items:center;padding:2px 5px;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;letter-spacing:.03em;unicode-bidi:isolate}
+.via-terminal-bpc{color:#4a2597;background:#ede4fa;border:1px solid #9b74d8}
+.via-terminal-p79{color:#8a1257;background:#fde3f1;border:1px solid #d472a6}
+.via-terminal-pier11{color:#0d5c56;background:#ddf2f0;border:1px solid #5fb3aa}
+
 /* Date stepper, sitting under the departures list.
    Browsing turns it amber: a board showing a day that is not today must never be mistaken for the
    live one, and the tint is the fastest way to say so. */
