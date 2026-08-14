@@ -497,13 +497,19 @@ test("the Governors Island ferry runs weekends and holidays, in season, where it
     assert.ok(date >= startDate && date <= endDate, `holiday ${date} is outside the season`);
   }
 
-  // The switch is off wherever no giStopIds mapping exists, so no other landing grows a Trust row —
-  // including Governors Island itself, which the Trust serves but which is not in scope here.
-  for (const landingNumber of [16, 11]) {
-    const other = await buildDisplayData({ landingNumber });
-    assert.equal(other.meta.gi.enabled, false);
-    assert.equal(other.departures.some((item) => item.routeId.startsWith("gi:")), false);
-  }
+  // The switch is off wherever no giStopIds mapping exists, so a landing the Trust does not serve
+  // cannot grow a Trust row. Pier 11 is the case: the Trust's boats run between Brooklyn and the
+  // island and never call there.
+  const pier11 = await buildDisplayData({ landingNumber: 16 });
+  assert.equal(pier11.meta.gi.enabled, false);
+  assert.equal(pier11.departures.some((item) => item.routeId.startsWith("gi:")), false);
+
+  // Governors Island is not that case and used to be treated as one. The Trust's whole point is
+  // getting people to and from the island, so the island is where its boats matter most — see
+  // "every stop in the Trust's feed is attached to a landing".
+  const island = await buildDisplayData({ landingNumber: 11 });
+  assert.equal(island.meta.gi.enabled, true);
+  assert.ok(island.departures.some((item) => item.routeId.startsWith("gi:")));
 });
 
 // Out-of-service moves. Nothing here is in the GTFS feed or the schedule workbook — the workbook
@@ -1140,4 +1146,67 @@ test("drop offs and Pier C first departures agree about every weekday changeover
     assert.equal(run.destination, "Pier C");
     assert.equal(run.endsDay, false, `${boat}'s working continues with another boat, so ${entry.endTime} is not the end of its day`);
   }
+});
+
+// The Trust for Governors Island runs its own Brooklyn boats to the island, on its own piers, and
+// its whole network sits inside NYC Ferry's: all three of its stops are places NYC Ferry also
+// serves. So every one of them must be attached to a landing.
+//
+// Landing 11 was the one that was not. Both shore ends were wired up and the island itself was not,
+// which meant the sixteen sailings a day *off* the island — the ones you need when you are standing
+// on it and want to leave — appeared nowhere on the board.
+test("every stop in the Trust's feed is attached to a landing", async () => {
+  const [landings, stopsRaw] = await Promise.all([
+    readFile(new URL("../config/landings.json", import.meta.url), "utf8").then(JSON.parse),
+    readFile(new URL("../gtfs/gi/stops.txt", import.meta.url), "utf8")
+  ]);
+  const feedStops = parseCsv(stopsRaw).map((stop) => stop.stop_id);
+  assert.deepEqual(feedStops.slice().sort(), ["govisland", "pier6", "redhook"]);
+
+  const claimed = new Map();
+  for (const [number, landing] of Object.entries(landings)) {
+    for (const stopId of landing.giStopIds || []) {
+      assert.ok(!claimed.has(stopId), `${stopId} is claimed by both landing ${claimed.get(stopId)} and ${number}`);
+      claimed.set(stopId, number);
+    }
+  }
+  for (const stopId of feedStops) {
+    assert.ok(claimed.has(stopId), `no landing claims the Trust's "${stopId}" stop, so its boats are invisible there`);
+  }
+  // The island itself, which is the one that was missed.
+  assert.equal(claimed.get("govisland"), "11");
+});
+
+// Both directions of the Trust's service, counted against the transcribed timetable: seven sailings
+// from each shore pier, eight back from the island on each line.
+test("the Trust's boats show at the island as well as at both shore piers", async () => {
+  const [island, pier6, redHook] = await Promise.all([
+    buildDisplayData({ landingNumber: 11 }),
+    buildDisplayData({ landingNumber: 3 }),
+    buildDisplayData({ landingNumber: 17 })
+  ]);
+  const trust = (data) => data.departures.filter((item) => String(item.routeId).startsWith("gi:"));
+
+  assert.equal(island.meta.gi.enabled, true, "the Governors Island landing must read the Trust's feed");
+  assert.deepEqual(island.meta.gi.stopIds, ["govisland"]);
+  assert.equal(trust(island).length, 16, "eight off the island on each of the two lines");
+  // Leaving the island means going to one of the two Brooklyn piers, never to the island itself.
+  const destinations = [...new Set(trust(island).map((item) => item.destination))].sort();
+  assert.deepEqual(destinations, ["Brooklyn Bridge Park / Pier 6", "Red Hook / Atlantic Basin"]);
+  for (const item of trust(island)) {
+    assert.equal(item.operator, "The Trust for Governors Island");
+    assert.equal(item.mode, "ferry");
+  }
+
+  // The shore ends are unchanged, and from there the boats run to the island.
+  assert.equal(trust(pier6).length, 7);
+  assert.equal(trust(redHook).length, 7);
+  for (const item of [...trust(pier6), ...trust(redHook)]) {
+    assert.equal(item.destination, "Governors Island");
+  }
+
+  // NYC Ferry's own South Brooklyn boats also call at the island and are a different operator's
+  // service on different piers; adding the Trust must not have disturbed them.
+  assert.ok(island.departures.some((item) => item.routeId === "SB"));
+  assert.equal(island.departures.some((item) => item.routeId === "GI" && String(item.routeId).startsWith("gi:")), false);
 });

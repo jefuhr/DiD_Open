@@ -9,7 +9,7 @@
   "8": { "name": "East 34th Street", "stopIds": ["17"], "seastreakStopIds": ["168"], "nyuStopIds": ["13138"] },
   "9": { "name": "East 90th St", "stopIds": ["113"] },
   "10": { "name": "Ferry Point Park", "stopIds": ["141"] },
-  "11": { "name": "Governors Island", "stopIds": ["111"] },
+  "11": { "name": "Governors Island", "stopIds": ["111"], "giStopIds": ["govisland"] },
   "12": { "name": "Greenpoint", "stopIds": ["18"] },
   "13": { "name": "Hunters Point South", "stopIds": ["4"] },
   "14": { "name": "Long Island City", "stopIds": ["90"] },
