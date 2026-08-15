@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { landingChoices, loadAllLandingData, stopIdsForLanding } from "./lib/landing-data.js";
+import { landingChoices, loadAllLandingData, operatorRoster, stopIdsForLanding } from "./lib/landing-data.js";
 import { createManualOverrideService } from "./lib/manual-overrides.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
@@ -26,6 +26,9 @@ const sftpConfig = await loadSftpOverrideConfig({ configPath: SFTP_CONFIG, rootP
 const LANDING_CHOICES = landingChoices(JSON.parse(await readFile(path.join(ROOT, "config/landings.json"), "utf8")));
 const landingData = await loadAllLandingData({ root: ROOT, choices: LANDING_CHOICES });
 const displayDataJson = new Map([...landingData.byLanding].map(([id, data]) => [id, `${JSON.stringify(data)}\n`]));
+// The filter panel is per device and spans every landing, so it needs the whole roster rather
+// than whatever the landing on screen happens to carry.
+const OPERATORS = operatorRoster(landingData.byLanding);
 const realtimeStopsByLanding = new Map([...landingData.byLanding].map(([id, data]) => [id, stopIdsForLanding(data)]));
 console.log(`Loaded ${landingData.byLanding.size} of ${LANDING_CHOICES.length} landings; realtime covers ${landingData.merged.meta.landing.stopIds.length} stops.`);
 
@@ -49,7 +52,7 @@ async function serve(response, file) {
 async function handle(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
   if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), sftpOverride:sftpOverridePoller.status() });
-  if (url.pathname === "/api/landings") return json(response, 200, { landings: landingData.available, configured: displayConfig.landingNumber });
+  if (url.pathname === "/api/landings") return json(response, 200, { landings: landingData.available, operators: OPERATORS, configured: displayConfig.landingNumber });
   if (url.pathname === "/api/display-data") {
     const requested = url.searchParams.get("landingId");
     const landingNumber = requested === null ? Number(displayConfig.landingNumber) : Number(requested);

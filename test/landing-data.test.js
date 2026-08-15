@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { buildDisplayData } from "../scripts/build-data.js";
-import { landingChoices, loadAllLandingData, mergeDisplayData, stopIdsForLanding } from "../lib/landing-data.js";
+import { landingChoices, loadAllLandingData, mergeDisplayData, operatorRoster, stopIdsForLanding } from "../lib/landing-data.js";
 
 const root = new URL("..", import.meta.url).pathname;
 const landings = JSON.parse(await readFile(new URL("../config/landings.json", import.meta.url), "utf8"));
@@ -105,6 +105,27 @@ test("merging landings introduces no duplicate departures and keeps every trip s
   const keys = merged.departures.map((item) => `${item.tripId}|${item.stopId}`);
   assert.equal(new Set(keys).size, keys.length, "a trip calling at two landings must not collapse or duplicate");
   assert.deepEqual(Object.keys(merged.tripSchedules).sort(), ["t1", "t2"]);
+});
+
+test("the operator roster spans every landing, home agency first", () => {
+  const byLanding = new Map([
+    [1, { meta: { agencyName: "NYC Ferry" }, routes: { SG: { operator: "NYC Ferry" }, "wtr:1": { operator: "NY Waterway" } } }],
+    [2, { meta: { agencyName: "NYC Ferry" }, routes: { "sea:1": { operator: "Seastreak" }, "wtr:2": { operator: "NY Waterway" } } }],
+    // A route with no operator of its own belongs to the agency that published it.
+    [3, { meta: { agencyName: "NYC Ferry" }, routes: { ER: {} } }]
+  ]);
+  assert.deepEqual(operatorRoster(byLanding), ["NYC Ferry", "NY Waterway", "Seastreak"]);
+});
+
+test("a device filtering an operator it cannot see locally still gets the full roster", () => {
+  // The whole point of the global filter: Seastreak is offered at a landing Seastreak never calls
+  // at, because the setting follows the device rather than the dock.
+  const byLanding = new Map([
+    [1, { meta: { agencyName: "NYC Ferry" }, routes: { SG: { operator: "NYC Ferry" } } }],
+    [2, { meta: { agencyName: "NYC Ferry" }, routes: { "sea:1": { operator: "Seastreak" } } }]
+  ]);
+  assert.ok(operatorRoster(byLanding).includes("Seastreak"));
+  assert.deepEqual(operatorRoster(new Map()), []);
 });
 
 test("a landing's realtime stop set covers its partner operators, prefixes and all", async () => {

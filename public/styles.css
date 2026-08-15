@@ -72,6 +72,32 @@
 .nearest-button[data-state="error"]{border-color:#c8102e;color:#c8102e}.nearest-button[data-state="error"] .nearest-icon{stroke:#c8102e}
 .nearest-button[data-state="locating"] .nearest-icon{animation:nearest-pulse 1s ease-in-out infinite}
 @keyframes nearest-pulse{50%{opacity:.25}}
+/* Filter button: bottom-left of the footer, beside the date stepper. It lights up only while
+   something is actually being hidden, because a board that is not showing every boat has to say so
+   without being asked. */
+.filter-button{position:relative;flex:0 0 auto;display:flex;align-items:center;justify-content:center;min-width:44px;min-height:34px;padding:.4vh .5vw;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.filter-button:active{background:#e9f2f7}
+.filter-button:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
+.filter-icon{width:clamp(15px,2.1vh,19px);height:clamp(15px,2.1vh,19px);fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+.filter-button.is-filtering{border-color:var(--blue);background:#e8f5fc;color:#0b6c92}
+.filter-count{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:#c8102e;color:#fff;font:900 10px/16px Lato,Arial,sans-serif;text-align:center}
+/* Bottom sheet rather than a side drawer: the button is at the bottom of the screen and the board
+   it filters stays visible above it while operators are switched on and off. */
+.filter-menu{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end}
+.filter-menu-scrim{position:absolute;inset:0;background:rgba(0,15,37,.5)}
+.filter-menu-panel{position:relative;display:flex;flex-direction:column;gap:10px;width:100%;max-height:80%;padding:14px 14px calc(14px + env(safe-area-inset-bottom));background:var(--canvas);border-radius:14px 14px 0 0;box-shadow:0 0 40px rgba(0,15,37,.4);animation:filter-in .18s ease both}
+@keyframes filter-in{from{transform:translateY(12px);opacity:0}}
+.filter-menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.filter-menu-head strong{color:var(--navy);font:650 20px/1 Oswald,sans-serif;text-transform:uppercase}
+.filter-menu-close{padding:8px 14px;color:#fff;background:var(--navy);border:0;border-radius:8px;font:900 13px/1 Lato,Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.filter-list{flex:1 1 auto;overflow-y:auto;margin:0;padding:0;list-style:none}
+.filter-option{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:48px;margin-bottom:8px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.filter-option:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
+.filter-option-name{font:900 15px/1.2 Lato,Arial,sans-serif}
+.filter-option-state{flex:0 0 auto;font:900 11px/1 Lato,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.filter-option.is-shown{border-color:var(--blue);background:#e8f5fc;color:#0b6c92}
+.filter-reset{flex:0 0 auto;min-height:44px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);font:900 13px/1 Lato,Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.filter-reset:disabled{opacity:.4;cursor:default}
 .landing-menu{position:fixed;inset:0;z-index:60;display:flex}.landing-menu-scrim{position:absolute;inset:0;background:rgba(0,15,37,.5)}
 .landing-menu-panel{position:relative;display:flex;flex-direction:column;width:min(360px,86vw);max-height:100%;margin-right:auto;background:var(--canvas);box-shadow:0 0 40px rgba(0,15,37,.4);animation:menu-in .18s ease both}
 .landing-menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 14px 12px;background:#fff;border-bottom:1px solid var(--line)}.landing-menu-head strong{color:var(--navy);font:650 20px/1 Oswald,sans-serif;text-transform:uppercase}
@@ -142,6 +168,8 @@ body.menu-open{overflow:hidden}
      puts the control for the next one directly under the thumb that scrolled there. */
   .board-footer{gap:8px;margin-top:12px}
   .clock-toggle{min-width:64px;min-height:48px;padding:6px 10px;font-size:14px}
+  .filter-button{min-width:48px;min-height:48px;padding:6px 10px}
+  .filter-icon{width:20px;height:20px}
   .date-step{width:22%;min-height:48px;font-size:22px}
   .date-current{min-height:48px;padding:6px 10px;font-size:14px}
   /* The list keeps its amber edge on a phone precisely because this bar scrolls away with the

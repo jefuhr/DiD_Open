@@ -771,11 +771,11 @@ test("offline shell includes version 53 display assets", async () => {
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=53/);
-  assert.match(index, /app\.js\?v=53/);
-  assert.match(worker, /nyc-ferry-did-shell-v53/);
-  assert.match(worker, /styles\.css\?v=53/);
-  assert.match(worker, /app\.js\?v=53/);
+  assert.match(index, /styles\.css\?v=54/);
+  assert.match(index, /app\.js\?v=54/);
+  assert.match(worker, /nyc-ferry-did-shell-v54/);
+  assert.match(worker, /styles\.css\?v=54/);
+  assert.match(worker, /app\.js\?v=54/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of

@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
     <link rel="icon" href="/assets/kiosk-icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=53" />
+    <link rel="stylesheet" href="/styles.css?v=54" />
   </head>
   <body>
     <main class="screen" id="screen">
@@ -41,6 +41,12 @@
                after you have read today's boats and run out of them. The clock format sits beside
                it because both are about how the board is read rather than what it says. -->
           <div class="board-footer">
+            <button type="button" class="filter-button" id="filterButton" aria-expanded="false" aria-controls="filterMenu" aria-label="Filter operators">
+              <svg class="filter-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 5h18l-7 8v6l-4 2v-8Z" />
+              </svg>
+              <span class="filter-count" id="filterCount" hidden></span>
+            </button>
             <div class="date-bar" id="dateBar" data-state="today">
               <button type="button" class="date-step" id="datePrev" aria-label="Previous day">‹</button>
               <button type="button" class="date-current" id="dateCurrent" aria-label="Showing today's schedule">Today</button>
@@ -64,6 +70,19 @@
           <ul class="landing-list" id="landingList"></ul>
         </nav>
       </div>
+      <!-- Anchored to the footer rather than the landing drawer: hiding an operator is something you
+           do while looking at the board it changes, and the answer has to be visible behind it. -->
+      <div class="filter-menu" id="filterMenu" hidden>
+        <div class="filter-menu-scrim" id="filterMenuScrim"></div>
+        <div class="filter-menu-panel" id="filterMenuPanel" role="dialog" aria-modal="true" aria-label="Filter operators">
+          <div class="filter-menu-head">
+            <strong>Operators</strong>
+            <button type="button" class="filter-menu-close" id="filterMenuClose">Done</button>
+          </div>
+          <ul class="filter-list" id="filterList"></ul>
+          <button type="button" class="filter-reset" id="filterReset">Show all</button>
+        </div>
+      </div>
       <section class="manual-override" id="manualOverride" hidden aria-live="assertive" aria-atomic="true">
         <div class="manual-override-box" id="manualOverrideBox" data-size="short">
           <span class="manual-override-label">Service notice</span>
@@ -86,6 +105,6 @@
         <span class="service-alert-count" id="serviceAlertCount" hidden></span>
       </section>
     </main>
-    <script type="module" src="/app.js?v=53"></script>
+    <script type="module" src="/app.js?v=54"></script>
   </body>
 </html>
