@@ -6,6 +6,8 @@ GI-RH,gi-weekend,GI-RH-to-04,Governors Island,0
 GI-RH,gi-weekend,GI-RH-to-05,Governors Island,0
 GI-RH,gi-weekend,GI-RH-to-06,Governors Island,0
 GI-RH,gi-weekend,GI-RH-to-07,Governors Island,0
+GI-RH,gi-weekend,GI-RH-tonp-01,Governors Island,0
+GI-RH,gi-weekend,GI-RH-tonp-02,Governors Island,0
 GI-RH,gi-weekend,GI-RH-from-01,Red Hook / Atlantic Basin,1
 GI-RH,gi-weekend,GI-RH-from-02,Red Hook / Atlantic Basin,1
 GI-RH,gi-weekend,GI-RH-from-03,Red Hook / Atlantic Basin,1
@@ -21,6 +23,8 @@ GI-BBP,gi-weekend,GI-BBP-to-04,Governors Island,0
 GI-BBP,gi-weekend,GI-BBP-to-05,Governors Island,0
 GI-BBP,gi-weekend,GI-BBP-to-06,Governors Island,0
 GI-BBP,gi-weekend,GI-BBP-to-07,Governors Island,0
+GI-BBP,gi-weekend,GI-BBP-tonp-01,Governors Island,0
+GI-BBP,gi-weekend,GI-BBP-tonp-02,Governors Island,0
 GI-BBP,gi-weekend,GI-BBP-from-01,Brooklyn Bridge Park / Pier 6,1
 GI-BBP,gi-weekend,GI-BBP-from-02,Brooklyn Bridge Park / Pier 6,1
 GI-BBP,gi-weekend,GI-BBP-from-03,Brooklyn Bridge Park / Pier 6,1

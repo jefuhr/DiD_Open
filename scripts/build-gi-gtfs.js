@@ -61,6 +61,16 @@ const STOPS = [
 //
 // The 9:45 and 10:45 from Red Hook and the 10:15 from Pier 6 are marked FREE on the page. That is
 // fare information and the board has no fare concept, so it is recorded here and not modelled.
+//
+// noPickupFromShore is the end of each line's day: the boat leaves the shore on the same hourly
+// beat, but carries nobody outbound because it is going over to collect the last visitors rather
+// than to deliver any. Modelled as pickup_type 1 at the shore, which is exactly what it is, and
+// shown on the board as an out-of-service departure — crew need to know the boat leaves, and a
+// passenger needs to know they cannot be on it.
+//
+// !! NOT from SOURCE_URL. Unlike every other time in this file, these four are not published
+// !! anywhere: they were reported by staff who work the service. Nothing can check them for you,
+// !! not even a careful re-read of the operator's page, so leave this note where it is.
 const RED_HOOK = {
   routeId: "GI-RH",
   shortName: "RH",
@@ -68,6 +78,7 @@ const RED_HOOK = {
   shoreStop: "redhook",
   shoreName: "Red Hook / Atlantic Basin",
   fromShore: ["09:45", "10:45", "11:45", "12:45", "13:45", "14:45", "15:45"],
+  noPickupFromShore: ["16:45", "17:45"],
   fromIsland: ["10:30", "11:30", "12:30", "13:30", "14:30", "15:30", "16:30", "17:30"]
 };
 const PIER_6 = {
@@ -77,6 +88,7 @@ const PIER_6 = {
   shoreStop: "pier6",
   shoreName: "Brooklyn Bridge Park / Pier 6",
   fromShore: ["10:15", "11:15", "12:15", "13:15", "14:15", "15:15", "16:15"],
+  noPickupFromShore: ["17:15", "18:15"],
   fromIsland: ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
 };
 const LINES = [RED_HOOK, PIER_6];
@@ -109,10 +121,17 @@ function addMinutes(value, minutes) {
 
 export function buildTimetable() {
   const tripRows = [], stopTimeRows = [];
-  const push = (tripId, routeId, headsign, directionId, stops) => {
+  // noPickup marks the boarding stop of a trip nobody may board — the first stop, since every trip
+  // here is a single crossing. The far end stays open: it is an arrival, and an arrival is where
+  // the passengers this boat went to fetch actually get on for the return.
+  const push = (tripId, routeId, headsign, directionId, stops, noPickup = false) => {
     tripRows.push({ route_id: routeId, service_id: SERVICE_ID, trip_id: tripId, trip_headsign: headsign, direction_id: directionId });
     stops.forEach(([stopId, time], index) => {
-      stopTimeRows.push({ trip_id: tripId, arrival_time: hhmmss(time), departure_time: hhmmss(time), stop_id: stopId, stop_sequence: String(index + 1) });
+      stopTimeRows.push({
+        trip_id: tripId, arrival_time: hhmmss(time), departure_time: hhmmss(time),
+        stop_id: stopId, stop_sequence: String(index + 1),
+        pickup_type: noPickup && index === 0 ? "1" : "0", drop_off_type: "0"
+      });
     });
   };
 
@@ -121,6 +140,10 @@ export function buildTimetable() {
     line.fromShore.forEach((time, index) => {
       push(`${line.routeId}-to-${String(index + 1).padStart(2, "0")}`, line.routeId, "Governors Island", "0",
         [[line.shoreStop, time], ["govisland", addMinutes(time, crossing)]]);
+    });
+    (line.noPickupFromShore || []).forEach((time, index) => {
+      push(`${line.routeId}-tonp-${String(index + 1).padStart(2, "0")}`, line.routeId, "Governors Island", "0",
+        [[line.shoreStop, time], ["govisland", addMinutes(time, crossing)]], true);
     });
     line.fromIsland.forEach((time, index) => {
       push(`${line.routeId}-from-${String(index + 1).padStart(2, "0")}`, line.routeId, line.shoreName, "1",
@@ -146,7 +169,7 @@ async function main() {
     "calendar_dates.txt": toCsv(["service_id", "date", "exception_type"],
       HOLIDAYS.map((date) => ({ service_id: SERVICE_ID, date, exception_type: "1" }))),
     "trips.txt": toCsv(["route_id", "service_id", "trip_id", "trip_headsign", "direction_id"], tripRows),
-    "stop_times.txt": toCsv(["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence"], stopTimeRows),
+    "stop_times.txt": toCsv(["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "pickup_type", "drop_off_type"], stopTimeRows),
     "feed_info.txt": toCsv(["feed_publisher_name", "feed_publisher_url", "feed_lang", "feed_start_date", "feed_end_date", "feed_version"],
       [{ feed_publisher_name: AGENCY_NAME, feed_publisher_url: SOURCE_URL, feed_lang: "en", feed_start_date: SEASON_START, feed_end_date: SEASON_END, feed_version: `transcribed-${SOURCE_CHECKED_ON}` }])
   };
@@ -155,7 +178,7 @@ async function main() {
   for (const [name, contents] of Object.entries(files)) await writeFile(path.join(OUTPUT_DIR, name), contents, "utf8");
   console.log(`Wrote gtfs/gi/ from ${SOURCE_URL} as checked on ${SOURCE_CHECKED_ON}.`);
   for (const line of LINES) {
-    console.log(`  ${line.routeId}: ${line.fromShore.length} from ${line.shoreName}, ${line.fromIsland.length} from Governors Island`);
+    console.log(`  ${line.routeId}: ${line.fromShore.length} from ${line.shoreName} (+${(line.noPickupFromShore || []).length} no-pickup), ${line.fromIsland.length} from Governors Island`);
   }
   console.log(`  season ${SEASON_START}-${SEASON_END}, weekends plus ${HOLIDAYS.length} weekday holidays`);
 }

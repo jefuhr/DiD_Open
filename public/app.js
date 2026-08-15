@@ -418,7 +418,7 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
       const scheduledMoment = offset * 86400 + departure.seconds;
       // LAST means the last departure a passenger can take. A home-port run or a crew shuttle
       // leaves after it and carries nobody, so neither is allowed to claim the badge.
-      const carriesPassengers = !departure.outOfService && !departure.crewShuttle;
+      const carriesPassengers = !departure.outOfService && !departure.crewShuttle && !departure.arrival;
       const previousLast = carriesPassengers ? lastDepartures.get(slotKey) : null;
       if (carriesPassengers && (!previousLast || scheduledMoment > previousLast.scheduledMoment)) {
         lastDepartures.set(slotKey, { tripId: String(departure.tripId), scheduledMoment });
@@ -436,6 +436,7 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
         key, routeId: departure.routeId, directionId: departure.directionId,
         destination: departure.destination, via: departure.via || [], variant: departure.variant || null,
         outOfService: Boolean(departure.outOfService), crewShuttle: Boolean(departure.crewShuttle),
+        arrival: Boolean(departure.arrival),
         departures: []
       };
       group.departures.push({
@@ -578,7 +579,13 @@ function departureStatus(item) {
   // A boat with no passengers aboard has no schedule status worth showing — it is not late or on
   // time, it is simply not in service — so NO PICKUP takes that slot instead.
   const noPickup = item.outOfService || item.crewShuttle;
-  const scheduledLabel = !noPickup && !isLast && !delayLabel && !onTimeLabel
+  // A boat ending its run here. It is in service and full of passengers — it simply cannot be
+  // boarded — so it gets its own pair of badges rather than borrowing NO PICKUP, which says the
+  // opposite about the boat, or SCHEDULED, which invites someone to wait for it.
+  const arrivalLabel = item.arrival
+    ? `<span class="arrival-badge" aria-label="Arriving here, ending its run">ARRIVAL</span><span class="drop-off-only-badge" aria-label="Drop off only: this boat cannot be boarded">DROP OFF ONLY</span>`
+    : "";
+  const scheduledLabel = !noPickup && !item.arrival && !isLast && !delayLabel && !onTimeLabel
     ? `<span class="scheduled-badge" aria-label="Status: Scheduled">SCHEDULED</span>`
     : "";
   const noPickupLabel = noPickup
@@ -617,7 +624,7 @@ function departureStatus(item) {
   const crewBoats = item.crewShuttle && item.crewBoats?.length
     ? escapeHtml(item.crewBoats.join(" "))
     : "";
-  return { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals };
+  return { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals };
 }
 // The route's own colour, badge and operator labelling, shared by both views.
 function routeVisual(routeId, variant) {
@@ -641,10 +648,10 @@ function routeVisual(routeId, variant) {
 }
 
 function departureCell(item) {
-  const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } = departureStatus(item);
+  const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } = departureStatus(item);
   return `<div class="departure-slot">
     <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta, item.live !== false))}</span></div>
-    <span class="departure-last-slot">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
+    <span class="departure-last-slot">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
   </div>`;
 }
 
@@ -768,7 +775,7 @@ function renderTimeline() {
 
   elements.departures.innerHTML = rows.map(({ departure, group }) => {
     const visual = routeVisual(group.routeId, group.variant);
-    const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } =
+    const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } =
       departureStatus(departure);
     const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(visual.variantLabel)}</small>` : "";
     // "Northbound" says nothing about a boat going home empty, so the context line says what the
@@ -806,7 +813,7 @@ function renderTimeline() {
       <div class="tl-meta">
         <span class="tl-context">${escapeHtml(context)}</span>
         ${boat}
-        <span class="tl-status">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}</span>
+        <span class="tl-status">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}</span>
       </div>
     </article>`;
   }).join("");
@@ -1212,7 +1219,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=54", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=55", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

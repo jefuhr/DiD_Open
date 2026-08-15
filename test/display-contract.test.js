@@ -41,7 +41,9 @@ test("shows fresh late and on-time status in the reserved badge row", async () =
   assert.match(app, /class="on-time-badge"[^>]*>ON TIME<\/span>/);
   assert.match(app, /class="scheduled-badge"[^>]*>SCHEDULED<\/span>/);
   assert.match(app, /!isLast && !delayLabel && !onTimeLabel/);
-  assert.match(app, /departure-last-slot">\$\{lastLabel\}\$\{noPickupLabel\}\$\{delayLabel \|\| onTimeLabel \|\| scheduledLabel\}/);
+  // ARRIVAL sits with the other "what kind of move is this" badges, ahead of the running status,
+  // because whether a boat can be boarded at all is read before whether it is late.
+  assert.match(app, /departure-last-slot">\$\{lastLabel\}\$\{arrivalLabel\}\$\{noPickupLabel\}\$\{delayLabel \|\| onTimeLabel \|\| scheduledLabel\}/);
   assert.match(css, /\.vessel-delay-badge\{background:#b83224\}/);
   assert.match(css, /\.on-time-badge\{background:#218a4b\}/);
   assert.match(css, /\.scheduled-badge\{color:var\(--navy\);background:#e6eef2/);
@@ -53,7 +55,11 @@ test("shows fresh late and on-time status in the reserved badge row", async () =
 test("a boat's last trip is badged FINAL", async () => {
   const app = await readFile(appPath, "utf8");
   assert.match(app, />FINAL\$\{item\.endsShift === "unsure" \? "\?" : ""\}<\/span>/);
-  assert.doesNotMatch(app, /DROP OFF/, "the badge no longer says DROP OFF ONLY");
+  // Scoped to this badge rather than the whole file: an arriving boat that terminates here does
+  // say DROP OFF ONLY, and means it literally. What must not come back is FINAL wearing those
+  // words, because FINAL is inferred and DROP OFF ONLY reads as published fact.
+  assert.doesNotMatch(app, /class="drop-off-badge[^"]*"[^>]*>[^<]*DROP OFF/,
+    "the FINAL badge no longer says DROP OFF ONLY");
   // The reason survives for anyone reading by screen reader, where the word alone is thinner.
   assert.match(app, /aria-label="\$\{item\.endsShift === "unsure" \? "Probably this boat's final trip: drop off only, unconfirmed" : "This boat's final trip: drop off only"\}"/);
   // Distinct from LAST, which marks the last sailing a passenger can take on that route direction.
@@ -766,16 +772,16 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 53 display assets", async () => {
+test("offline shell includes version 55 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=54/);
-  assert.match(index, /app\.js\?v=54/);
-  assert.match(worker, /nyc-ferry-did-shell-v54/);
-  assert.match(worker, /styles\.css\?v=54/);
-  assert.match(worker, /app\.js\?v=54/);
+  assert.match(index, /styles\.css\?v=55/);
+  assert.match(index, /app\.js\?v=55/);
+  assert.match(worker, /nyc-ferry-did-shell-v55/);
+  assert.match(worker, /styles\.css\?v=55/);
+  assert.match(worker, /app\.js\?v=55/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
