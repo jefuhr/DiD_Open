@@ -190,9 +190,8 @@ export async function buildExport({ generatedAt = new Date().toISOString() } = {
     fleet: {
       source: "content/vessels.json",
       description:
-        "The vessel roster. Used to turn a realtime vehicle label into a name a person recognises; the " +
-        "descriptive prose is editorial and is not read by the board.",
-      updatedAt: fleet.updatedAt,
+        "The vessel roster. Used to turn a realtime vehicle label into a name a person recognises; each " +
+        "record carries only the id, name and hull number the match runs on.",
       count: (fleet.vessels || []).length,
       vessels: fleet.vessels || []
     }
