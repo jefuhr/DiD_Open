@@ -3,44 +3,74 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#001d41" />
+    <meta name="theme-color" content="#ff9dbb" />
     <meta name="robots" content="noindex" />
-    <title>Ferry Board — stats</title>
-    <link rel="icon" href="/assets/app-icon.png?v=58" type="image/png" />
+    <title>ferry board · stats</title>
+    <link rel="icon" href="/assets/app-icon.png?v=59" type="image/png" />
     <!-- Under /assets/ because that is a path the deployment's proxy forwards to this server. A
          stylesheet or script at the root would be served by juliet.nyc's landing page instead —
          the same reason the web app manifest lives there. -->
-    <link rel="stylesheet" href="/assets/stats.css?v=1" />
+    <link rel="stylesheet" href="/assets/stats.css?v=2" />
   </head>
   <body>
-    <main>
-      <h1>Ferry board stats</h1>
-      <p class="since" id="since">Loading…</p>
+    <header class="masthead">
+      <div class="masthead-inner">
+        <div class="brand">
+          <h1>ferry board</h1>
+          <p class="tagline">counting boats · <span class="pill">and who's looking</span></p>
+        </div>
+        <p class="since" id="since">loading…</p>
+      </div>
+      <div class="harbor" aria-hidden="true"><div class="wave"></div></div>
+    </header>
 
-      <section>
-        <h2>Boards opened</h2>
-        <ol class="bars" id="landings"></ol>
-        <p class="note">One per board opened or dock switched to. Background polling is not counted.</p>
+    <main>
+      <section class="tiles" id="tiles" aria-label="Headline numbers"></section>
+
+      <section class="card">
+        <h2 class="card-title"><span class="bowdot" aria-hidden="true"></span>Boards opened</h2>
+        <div class="chart" id="boardsChart"></div>
+        <p class="note">Two days, by the hour. One count per board opened or dock switched to —
+          background polling is not counted.</p>
       </section>
 
-      <section>
-        <h2>Requests</h2>
+      <section class="card">
+        <h2 class="card-title"><span class="bowdot" aria-hidden="true"></span>Busiest landings</h2>
+        <ol class="bars" id="landings"></ol>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title"><span class="bowdot" aria-hidden="true"></span>Live feed health</h2>
+        <div class="chart" id="feedChart"></div>
+        <dl class="rows" id="feed"></dl>
+        <p class="note">Every live-arrivals request, by what it could answer with: fresh from the
+          feed, served from cache, or nothing at all.</p>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title"><span class="bowdot" aria-hidden="true"></span>Response times</h2>
+        <table class="timings">
+          <thead><tr><th>Route</th><th>Requests</th><th>Median</th><th>95th</th></tr></thead>
+          <tbody id="latency"></tbody>
+        </table>
+        <p class="note">Last 24 hours, read off fixed histogram buckets — precise to the bucket
+          edge, which is plenty for telling whether something got slower.</p>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title small"><span class="bowdot" aria-hidden="true"></span>Requests</h2>
         <dl class="rows" id="routes"></dl>
       </section>
 
-      <section>
-        <h2>Responses</h2>
+      <section class="card">
+        <h2 class="card-title small"><span class="bowdot" aria-hidden="true"></span>Responses</h2>
         <dl class="rows" id="statuses"></dl>
       </section>
 
-      <section id="eventsSection" hidden>
-        <h2>Live data</h2>
-        <dl class="rows" id="events"></dl>
-      </section>
-
-      <p class="note">Counts of requests to this server since the date above. No cookies, no
-        identifiers, nothing recorded per visitor.</p>
+      <p class="footnote">Counts of requests to this server. No cookies, no identifiers, nothing
+        recorded per visitor — these numbers cannot tell you who, only how many.
+        <span id="refreshed"></span></p>
     </main>
-    <script src="/assets/stats.js?v=1"></script>
+    <script src="/assets/stats.js?v=2"></script>
   </body>
 </html>

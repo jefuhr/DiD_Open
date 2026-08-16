@@ -1,41 +1,188 @@
-/* Deliberately not the board's stylesheet: this page is read once by a person on a phone, not
-   watched across a room, so it wants none of the kiosk's sizing, and pulling styles.css in would
-   ship a whole departure board's worth of CSS to render nine numbers. */
-:root { color-scheme: dark; }
+/* ============================================================
+   ferry board · stats
+   juliet.nyc's hello harbor palette, with the East River in it
+   ============================================================
+
+   The variables, the card, the bow bullet and the pill are lifted from
+   juliet.nyc/css/style.css so this page reads as part of the same site rather than as a
+   dashboard bolted to its side. Copied rather than linked on purpose: that stylesheet is
+   served by the landing page at the site root, which is not a path the proxy forwards to
+   this server, and 596 lines of it are for a page this one shares nothing else with. */
+
+:root {
+  --pink-100: #fff5f8;
+  --pink-200: #ffe3ec;
+  --pink-300: #ffc9db;
+  --pink-400: #ff9dbb;
+  --pink-500: #ff6f9c;
+  --red:      #e8455f;
+  --ink:      #3b2b33;
+  --ink-soft: #715c66;
+
+  /* nyc ferry */
+  --navy: #0b3d91;
+  --cyan: #00a9e0;
+  --foam: #bfe8fb;
+
+  --radius: 18px;
+  --shadow: 0 4px 0 var(--pink-300), 0 14px 30px rgba(232, 69, 95, .12);
+  --font: "Trebuchet MS", "Segoe UI", Verdana, sans-serif;
+}
+
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  padding: 2rem 1.25rem 3rem;
-  background: #001d41;
-  color: #eef4ff;
-  font: 1rem/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font);
+  color: var(--ink);
+  line-height: 1.6;
+  background:
+    radial-gradient(circle at 12% 8%,  #fff 0 6px, transparent 7px) 0 0/64px 64px,
+    radial-gradient(circle at 62% 42%, #fff 0 5px, transparent 6px) 0 0/64px 64px,
+    linear-gradient(180deg, var(--pink-200), var(--pink-100) 420px);
+  background-attachment: fixed;
 }
 
-main { max-width: 34rem; margin: 0 auto; }
+/* ---------------- masthead ---------------- */
 
-h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; }
-h2 { margin: 0 0 0.75rem; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8fb4e8; }
+.masthead {
+  background: linear-gradient(180deg, var(--pink-400), var(--pink-300));
+  padding-top: 26px;
+  position: relative;
+}
+.masthead-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.brand h1 {
+  margin: 0;
+  font-size: clamp(1.9rem, 5vw, 2.6rem);
+  letter-spacing: -1px;
+}
+.tagline { margin: 0; color: #6d4150; }
+.pill {
+  background: var(--navy);
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 10px;
+  font-size: .82rem;
+  letter-spacing: .5px;
+}
+.since { margin: 0; color: #6d4150; font-size: .9rem; }
 
-section { margin-top: 2.5rem; }
+/* the wave line the ferry rides on the landing page */
+.harbor { height: 18px; overflow: hidden; }
+.wave {
+  height: 18px;
+  background:
+    radial-gradient(circle at 10px -6px, transparent 12px, var(--foam) 13px 15px, transparent 16px) 0 0/24px 18px repeat-x;
+  opacity: .9;
+}
 
-.since { margin: 0.375rem 0 0; color: #8fb4e8; font-size: 0.875rem; }
-.note { margin: 0.75rem 0 0; color: #7f9dc4; font-size: 0.8125rem; }
+/* ---------------- layout ---------------- */
 
-/* Landings, as bars. A count means little on its own — what a reader wants is which dock is busier
-   than which, and a bar answers that without a charting library. */
+main { max-width: 900px; margin: 0 auto; padding: 26px 24px 60px; }
+
+.card {
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  margin: 0 0 14px;
+  font-size: 1.35rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-title.small { font-size: 1.1rem; }
+
+/* the little bow bullet */
+.bowdot {
+  width: 20px; height: 14px;
+  flex: none;
+  background:
+    radial-gradient(circle at 50% 50%, var(--pink-300) 0 3px, transparent 4px),
+    linear-gradient(var(--red), var(--red));
+  clip-path: polygon(0 0, 42% 32%, 58% 32%, 100% 0, 100% 100%, 58% 68%, 42% 68%, 0 100%);
+  border-radius: 3px;
+}
+
+/* ---------------- headline tiles ---------------- */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.tile {
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 0 var(--pink-400);
+}
+.tile .value { font-size: 1.9rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .label { color: var(--ink-soft); font-size: .84rem; text-transform: uppercase; letter-spacing: .06em; }
+
+/* ---------------- charts ---------------- */
+
+.chart { overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: 120px; min-width: 320px; }
+.chart .axis { fill: var(--ink-soft); font-size: 9px; }
+.chart .gridline { stroke: var(--pink-200); stroke-width: 1; }
+.chart .area { fill: rgba(255, 111, 156, .18); }
+.chart .line { fill: none; stroke: var(--pink-500); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.chart .line.ok { stroke: var(--cyan); }
+.chart .line.stale { stroke: #e9a800; }
+.chart .line.bad { stroke: var(--red); }
+.chart .peak { fill: var(--red); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 6px 0 0; font-size: .84rem; color: var(--ink-soft); }
+.legend .key { display: inline-flex; align-items: center; gap: 5px; }
+.legend .swatch { width: 12px; height: 3px; border-radius: 2px; background: var(--pink-500); }
+.legend .swatch.ok { background: var(--cyan); }
+.legend .swatch.stale { background: #e9a800; }
+.legend .swatch.bad { background: var(--red); }
+
+/* ---------------- bars, rows, table ---------------- */
+
 .bars { margin: 0; padding: 0; list-style: none; }
-.bars li { margin-bottom: 0.625rem; }
-.bars .label { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.9375rem; }
-.bars .label span:last-child { color: #8fb4e8; font-variant-numeric: tabular-nums; }
-.bars .track { margin-top: 0.25rem; height: 0.375rem; border-radius: 999px; background: #0d305e; }
-.bars .fill { display: block; height: 100%; border-radius: 999px; background: #4d9fff; }
+.bars li { margin-bottom: 12px; }
+.bars .label { display: flex; justify-content: space-between; gap: 1rem; font-size: .95rem; }
+.bars .label span:last-child { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.bars .track { margin-top: 4px; height: 10px; border-radius: 999px; background: var(--pink-200); border: 2px solid var(--ink); overflow: hidden; }
+.bars .fill { display: block; height: 100%; background: linear-gradient(90deg, var(--pink-400), var(--pink-500)); }
 
-.rows { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 0.375rem 1rem; }
-.rows dt { color: #cddffa; font-size: 0.9375rem; overflow-wrap: anywhere; }
-.rows dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.rows { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; }
+.rows dt { color: var(--ink); font-size: .95rem; overflow-wrap: anywhere; }
+.rows dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
 
-.empty { color: #7f9dc4; }
+.timings { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.timings th, .timings td { text-align: right; padding: 6px 8px; border-bottom: 2px dotted var(--pink-300); }
+.timings th:first-child, .timings td:first-child { text-align: left; }
+.timings th { color: var(--ink-soft); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; }
+.timings td { font-variant-numeric: tabular-nums; }
+
+.status { border-radius: 999px; padding: 1px 10px; font-size: .82rem; }
+.status.good { background: #c9f2d7; }
+.status.warn { background: #ffe8b3; }
+.status.bad  { background: var(--pink-300); }
+
+.note { margin: 12px 0 0; color: var(--ink-soft); font-size: .85rem; }
+.footnote { color: var(--ink-soft); font-size: .85rem; text-align: center; margin: 30px 0 0; }
+.empty { color: var(--ink-soft); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .bars .fill { transition: width 0.3s ease; }
+  .bars .fill { transition: width .3s ease; }
 }

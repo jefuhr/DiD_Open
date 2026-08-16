@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { landingChoices, loadAllLandingData, operatorRoster, stopIdsForLanding } from "./lib/landing-data.js";
 import { createCounterService } from "./lib/counters.js";
+import { openStatsStore } from "./lib/stats-store.js";
 import { createManualOverrideService } from "./lib/manual-overrides.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
@@ -40,11 +41,51 @@ const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROO
 const LANDING_IDS = new Set(landingData.available.map((landing) => landing.id));
 const manualOverrideService = createManualOverrideService({ statePath: path.join(ROOT, "state/manual-overrides.json"), landingIds: LANDING_IDS });
 const sftpOverridePoller = createSftpOverridePoller({ config: sftpConfig, landingId: displayConfig.landingNumber, landingIds: LANDING_IDS, cacheService: manualOverrideService });
-const counters = createCounterService({ statePath: path.join(ROOT, "state/counters.json") });
+const statsStore = await openStatsStore({ databasePath: path.join(ROOT, "state/stats.db") });
+// The totals that existed before the history did. Folded into the hour they were last written and
+// marked, so the lifetime numbers on the stats page survive the deploy that gave them a time axis.
+const imported = await statsStore.importLegacyCounters(path.join(ROOT, "state/counters.json"));
+if (imported.imported) console.log(`Imported the previous counters, dating from ${imported.since}.`);
+statsStore.markSince(new Date().toISOString());
+const pruned = statsStore.prune();
+if (pruned.removed) console.log(`Pruned ${pruned.removed} stats rows older than ${pruned.cutoff}.`);
+const counters = createCounterService({ store: statsStore });
 // The counters key landings by number, which is what an agent dials and not what anyone reading a
 // stats page knows a dock by.
 const LANDING_NAMES = Object.fromEntries(landingData.available.map((landing) => [landing.id, landing.displayName || landing.name]));
 const STATS_PATHS = new Set(["/stats", "/ferryTimesMobile/stats"]);
+// Everything counted so far, including the current minute.
+//
+// The rollup runs on a timer, so anything counted since the last one is still only in memory. It is
+// pushed down before reading rather than merged on top afterwards: a histogram cannot be usefully
+// added to a percentile once the percentile has been taken, and one extra INSERT on a page nobody
+// keeps open is cheaper than carrying two half-answers around and reconciling them.
+function buildStats() {
+  counters.flush();
+  const landings = statsStore.totals("landing");
+  return {
+    since: statsStore.since(),
+    generatedAt: new Date().toISOString(),
+    routes: statsStore.totals("route"),
+    statuses: statsStore.totals("status"),
+    events: statsStore.totals("event"),
+    landings,
+    // Only the docks that have a count. Shipping all 30 names to render the four a board has
+    // actually been opened on is most of this payload for none of its meaning.
+    landingNames: Object.fromEntries(Object.keys(landings).map((id) => [id, LANDING_NAMES[id]]).filter(([, name]) => name)),
+    series: {
+      boards: statsStore.series("route", { hours: 48, keys: ["/api/display-data"] }),
+      requests: statsStore.series("route", { hours: 48 })
+    },
+    feed: {
+      ok: statsStore.series("event", { hours: 48, keys: ["realtime-ok"] }),
+      stale: statsStore.series("event", { hours: 48, keys: ["realtime-stale"] }),
+      unavailable: statsStore.series("event", { hours: 48, keys: ["realtime-unavailable"] })
+    },
+    latency: statsStore.latencies({ hours: 24 })
+  };
+}
+
 const TYPES = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".json":"application/json; charset=utf-8", ".png":"image/png", ".svg":"image/svg+xml", ".woff2":"font/woff2", ".webmanifest":"application/manifest+json; charset=utf-8" };
 
 function headers(response) {
@@ -59,17 +100,11 @@ async function serve(response, file) {
 }
 async function handle(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
-  if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), sftpOverride:sftpOverridePoller.status(), counters: await counters.snapshot() });
+  if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), sftpOverride:sftpOverridePoller.status(), counters: buildStats() });
   // The counters alone, for the public stats page. /api/health carries them too, but alongside the
   // SFTP poller's target host, its key fingerprints and its last error string — fine for an
   // operator hitting health directly, not something to put behind a page anyone can open.
-  if (url.pathname === "/api/stats") {
-    const stats = { since: null, landings: {}, ...await counters.snapshot() };
-    // Only the docks that have a count. Shipping all 28 names to render the four a board has
-    // actually been opened on is most of this payload for none of its meaning.
-    const landingNames = Object.fromEntries(Object.keys(stats.landings).map((id) => [id, LANDING_NAMES[id]]).filter(([, name]) => name));
-    return json(response, 200, { ...stats, landingNames });
-  }
+  if (url.pathname === "/api/stats") return json(response, 200, buildStats());
   if (url.pathname === "/api/landings") return json(response, 200, { landings: landingData.available, operators: OPERATORS, configured: displayConfig.landingNumber });
   if (url.pathname === "/api/display-data") {
     const requested = url.searchParams.get("landingId");
@@ -106,8 +141,11 @@ async function handle(request, response) {
     };
     // The status code says a payload went out; these say what was in it. A board that answers 200
     // from a stale cache all afternoon looks perfectly healthy from the outside.
+    // The healthy case is counted too. A timeline of failures alone cannot tell a quiet night
+    // apart from a feed that stopped being asked.
     if (!result.available) counters.event("realtime-unavailable");
     else if (result.stale) counters.event("realtime-stale");
+    else counters.event("realtime-ok");
     return json(response, result.available ? 200 : 503, result);
   }
   if (url.pathname === "/api/alerts") { const result = await serviceAlertService.getCurrent(); return json(response, result.available ? 200 : 503, result); }
@@ -136,6 +174,7 @@ async function handle(request, response) {
 // Counted once per request, from one place, after the response has gone out — so the count knows
 // the status it ended with and nothing on the request path can be slowed or broken by counting it.
 function count(request, response) {
+  const startedAt = process.hrtime.bigint();
   response.on("finish", () => {
     const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
     // Only the payload a board fetches when it opens or switches docks counts as viewing a landing.
@@ -150,7 +189,8 @@ function count(request, response) {
       // proxied one in with the served files.
       route: STATS_PATHS.has(url.pathname.replace(/\/+$/, "") || "/") ? "/stats" : url.pathname,
       landingId: url.pathname === "/api/display-data" && displayDataJson.has(landingId) ? landingId : undefined,
-      status: response.statusCode
+      status: response.statusCode,
+      durationMs: Number(process.hrtime.bigint() - startedAt) / 1e6
     });
   });
 }
@@ -163,5 +203,5 @@ server.listen(PORT, HOST, () => {
   sftpOverridePoller.start();
   counters.start();
 });
-const shutdown = () => server.close(() => void Promise.all([sftpOverridePoller.stop(), counters.stop()]).finally(() => process.exit(0)));
+const shutdown = () => server.close(() => void Promise.all([sftpOverridePoller.stop(), counters.stop()]).finally(() => { statsStore.close(); process.exit(0); }));
 process.on("SIGINT", shutdown); process.on("SIGTERM", shutdown);

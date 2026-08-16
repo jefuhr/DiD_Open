@@ -1,65 +1,51 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
 
 import { createCounterService, OTHER_ROUTE, routeKey, STATIC_ROUTE } from "../lib/counters.js";
 
-async function fixture(t) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "nycf-counters-test-"));
-  t.after(() => rm(directory, { recursive: true, force: true }));
-  return path.join(directory, "counters.json");
+// The store is the thing that touches disk, and it has its own tests. What matters here is what
+// gets handed to it, so it is stood in for by something that just remembers.
+function recorder() {
+  const written = [];
+  return {
+    written,
+    record(deltas, at) { written.push({ deltas, at }); },
+    last() { return written.at(-1)?.deltas; }
+  };
 }
 
-test("requests are counted by route, landing and status", async (t) => {
-  const statePath = await fixture(t);
-  const service = createCounterService({ statePath });
+test("requests are counted by route, landing and status", () => {
+  const store = recorder();
+  const counters = createCounterService({ store });
 
-  service.record({ route: "/api/display-data", landingId: 18, status: 200 });
-  service.record({ route: "/api/display-data", landingId: 18, status: 200 });
-  service.record({ route: "/api/display-data", landingId: 2, status: 200 });
-  service.record({ route: "/api/realtime", status: 503 });
+  counters.record({ route: "/api/display-data", landingId: 18, status: 200 });
+  counters.record({ route: "/api/display-data", landingId: 18, status: 200 });
+  counters.record({ route: "/api/display-data", landingId: 2, status: 200 });
+  counters.record({ route: "/api/realtime", status: 503 });
+  counters.flush();
 
-  const counts = await service.snapshot();
-  assert.equal(counts.routes["/api/display-data"], 3);
-  assert.equal(counts.routes["/api/realtime"], 1);
-  assert.deepEqual(counts.landings, { 18: 2, 2: 1 });
-  assert.deepEqual(counts.statuses, { 200: 3, 503: 1 });
-});
-
-// A landing count answers "how often was this board opened", so it has to come off the payload a
-// board fetches once per view. The polled routes carry landingId too, and counting those would
-// quietly turn the metric into how long a screen was left switched on.
-test("polling a landing does not count as viewing it", async (t) => {
-  const statePath = await fixture(t);
-  const service = createCounterService({ statePath });
-
-  service.record({ route: "/api/display-data", landingId: 18, status: 200 });
-  for (let poll = 0; poll < 240; poll += 1) service.record({ route: "/api/realtime", status: 200 });
-  for (let poll = 0; poll < 720; poll += 1) service.record({ route: "/api/override", status: 200 });
-
-  const counts = await service.snapshot();
-  assert.deepEqual(counts.landings, { 18: 1 });
-  assert.equal(counts.routes["/api/realtime"], 240);
-  assert.equal(counts.routes["/api/override"], 720);
+  const { counts } = store.last();
+  assert.deepEqual(counts.route, { "/api/display-data": 3, "/api/realtime": 1 });
+  assert.deepEqual(counts.landing, { 18: 2, 2: 1 });
+  assert.deepEqual(counts.status, { 200: 3, 503: 1 });
 });
 
 // The one way a fixed-key counter can grow without bound is by minting a key per path it is asked
 // for, which is exactly what a scanner walking a wordlist would do.
-test("unknown paths share one key rather than minting their own", async (t) => {
-  const statePath = await fixture(t);
-  const service = createCounterService({ statePath });
+test("unknown paths share one key rather than minting their own", () => {
+  const store = recorder();
+  const counters = createCounterService({ store });
 
   for (let attempt = 0; attempt < 500; attempt += 1) {
-    service.record({ route: `/wp-admin/${attempt}.php`, status: 404 });
+    counters.record({ route: `/wp-admin/${attempt}.php`, status: 404 });
   }
-  service.record({ route: "/assets/fonts/lato-regular-latin.woff2", status: 200 });
+  counters.record({ route: "/assets/fonts/lato-regular-latin.woff2", status: 200 });
+  counters.flush();
 
-  const counts = await service.snapshot();
-  assert.equal(counts.routes[OTHER_ROUTE], 500);
-  assert.equal(counts.routes[STATIC_ROUTE], 1);
-  assert.equal(Object.keys(counts.routes).length, 2);
+  const { counts } = store.last();
+  assert.equal(counts.route[OTHER_ROUTE], 500);
+  assert.equal(counts.route[STATIC_ROUTE], 1);
+  assert.equal(Object.keys(counts.route).length, 2);
 });
 
 test("a served file and a missing one are told apart", () => {
@@ -69,78 +55,103 @@ test("a served file and a missing one are told apart", () => {
   assert.equal(routeKey("/../../etc/passwd", 403), OTHER_ROUTE);
 });
 
-test("totals survive a restart and keep their original start date", async (t) => {
-  const statePath = await fixture(t);
-  const started = Date.parse("2026-08-16T09:00:00Z");
-  const service = createCounterService({ statePath, now: () => started });
+// A landing count answers "how often was this board opened", so it has to come off the payload a
+// board fetches once per view. The polled routes carry landingId too, and counting those would
+// quietly turn the metric into how long a screen was left switched on.
+test("polling a landing does not count as viewing it", () => {
+  const store = recorder();
+  const counters = createCounterService({ store });
 
-  service.record({ route: "/api/alerts", status: 200 });
-  service.event("realtime-stale");
-  await service.flush();
+  counters.record({ route: "/api/display-data", landingId: 18, status: 200 });
+  for (let poll = 0; poll < 240; poll += 1) counters.record({ route: "/api/realtime", status: 200 });
+  for (let poll = 0; poll < 720; poll += 1) counters.record({ route: "/api/override", status: 200 });
+  counters.flush();
 
-  const restarted = createCounterService({ statePath, now: () => started + 86_400_000 });
-  restarted.record({ route: "/api/alerts", status: 200 });
-
-  const counts = await restarted.snapshot();
-  assert.equal(counts.routes["/api/alerts"], 2);
-  assert.equal(counts.events["realtime-stale"], 1);
-  assert.equal(counts.since, "2026-08-16T09:00:00.000Z");
+  const { counts } = store.last();
+  assert.deepEqual(counts.landing, { 18: 1 });
+  assert.equal(counts.route["/api/realtime"], 240);
+  assert.equal(counts.route["/api/override"], 720);
 });
 
-test("a corrupt state file starts the totals over instead of taking the server down", async (t) => {
-  const statePath = await fixture(t);
-  await writeFile(statePath, "{ this is not json", "utf8");
+test("response times land in histogram buckets, keyed by route", () => {
+  const store = recorder();
+  const counters = createCounterService({ store });
 
-  const service = createCounterService({ statePath });
-  service.record({ route: "/healthz", status: 200 });
+  counters.record({ route: "/api/realtime", status: 200, durationMs: 3 });
+  counters.record({ route: "/api/realtime", status: 200, durationMs: 7 });
+  counters.record({ route: "/api/realtime", status: 200, durationMs: 9_000 });
+  counters.flush();
 
-  const counts = await service.snapshot();
-  assert.deepEqual(counts.routes, { "/healthz": 1 });
-  assert.ok(counts.since);
+  // -1 is the open-ended top bucket: neither SQLite nor JSON has an infinity to store.
+  assert.deepEqual(store.last().latency["/api/realtime"], { 5: 1, 10: 1, "-1": 1 });
 });
 
-test("hand-edited counts that are not counts are dropped", async (t) => {
-  const statePath = await fixture(t);
-  await writeFile(statePath, JSON.stringify({
-    version: 1,
-    since: "2026-08-16T09:00:00.000Z",
-    routes: { "/api/alerts": 4, "/api/realtime": "lots", "/healthz": -1, "/api/landings": 1.5 }
-  }), "utf8");
+test("counting drains, so the same request is never rolled up twice", () => {
+  const store = recorder();
+  const counters = createCounterService({ store });
 
-  const counts = await createCounterService({ statePath }).snapshot();
-  assert.deepEqual(counts.routes, { "/api/alerts": 4 });
+  counters.record({ route: "/api/alerts", status: 200 });
+  counters.flush();
+  counters.record({ route: "/api/alerts", status: 200 });
+  counters.flush();
+
+  assert.equal(store.written.length, 2);
+  assert.deepEqual(store.written[0].deltas.counts.route, { "/api/alerts": 1 });
+  assert.deepEqual(store.written[1].deltas.counts.route, { "/api/alerts": 1 });
 });
 
-// Flushing is on a timer, so a board that takes no traffic between two ticks should not rewrite an
-// identical file every five minutes for as long as it runs.
-test("an unchanged snapshot is not rewritten", async (t) => {
-  const statePath = await fixture(t);
-  const service = createCounterService({ statePath });
+// A board that takes no traffic between two ticks should not write an empty rollup every five
+// minutes for as long as it runs.
+test("an empty interval writes nothing", () => {
+  const store = recorder();
+  const counters = createCounterService({ store });
 
-  service.record({ route: "/healthz", status: 200 });
-  await service.flush();
-  const first = await readFile(statePath, "utf8");
-
-  await service.flush();
-  assert.equal(await readFile(statePath, "utf8"), first);
+  assert.equal(counters.flush(), false);
+  counters.record({ route: "/healthz", status: 200 });
+  assert.equal(counters.flush(), true);
+  assert.equal(counters.flush(), false);
+  assert.equal(store.written.length, 1);
 });
 
-test("stopping flushes what is still only in memory", async (t) => {
-  const statePath = await fixture(t);
-  const service = createCounterService({ statePath, flushIntervalMs: 60_000 });
-  service.start();
-  service.record({ route: "/api/landings", status: 200 });
-  await service.stop();
+test("peeking shows what has not been rolled up yet, without consuming it", () => {
+  const store = recorder();
+  const counters = createCounterService({ store });
 
-  const saved = JSON.parse(await readFile(statePath, "utf8"));
-  assert.equal(saved.routes["/api/landings"], 1);
+  counters.record({ route: "/stats", status: 200 });
+  assert.deepEqual(counters.peek().counts.route, { "/stats": 1 });
+  assert.deepEqual(counters.peek().counts.route, { "/stats": 1 }, "peeking twice must show the same thing");
+
+  counters.flush();
+  assert.deepEqual(counters.peek().counts.route, {});
+});
+
+// A store that throws must not take the board down with it: losing a few minutes of counting is a
+// far smaller problem than failing requests.
+test("a failing store costs counts, not requests", () => {
+  const counters = createCounterService({
+    store: { record() { throw new Error("disk is on fire"); } }
+  });
+
+  counters.record({ route: "/healthz", status: 200 });
+  assert.doesNotThrow(() => counters.flush());
+  assert.equal(counters.flush(), false, "the failed batch is dropped rather than retried forever");
 });
 
 // Counting must never be the reason a request fails, so the record path takes anything the server
 // can hand it without throwing.
 test("recording never throws on odd input", () => {
-  const service = createCounterService({ statePath: "/nonexistent/counters.json" });
-  assert.doesNotThrow(() => service.record());
-  assert.doesNotThrow(() => service.record({ route: undefined, landingId: NaN, status: undefined }));
-  assert.doesNotThrow(() => service.event(null));
+  const counters = createCounterService({ store: recorder() });
+  assert.doesNotThrow(() => counters.record());
+  assert.doesNotThrow(() => counters.record({ route: undefined, landingId: NaN, status: undefined, durationMs: NaN }));
+  assert.doesNotThrow(() => counters.event(null));
+});
+
+test("stopping rolls up what is still only in memory", () => {
+  const store = recorder();
+  const counters = createCounterService({ store, flushIntervalMs: 60_000 });
+  counters.start();
+  counters.record({ route: "/api/landings", status: 200 });
+  counters.stop();
+
+  assert.equal(store.last().counts.route["/api/landings"], 1);
 });
