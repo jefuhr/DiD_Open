@@ -36,8 +36,10 @@ console.log(`Loaded ${landingData.byLanding.size} of ${LANDING_CHOICES.length} l
 const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json") });
 const nyuRealtimeService = createNyuRealtimeService({ loadDisplay: async () => landingData.merged, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
 const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROOT, "state/service-alerts.json") });
-const manualOverrideService = createManualOverrideService({ statePath: path.join(ROOT, "state/manual-overrides.json") });
-const sftpOverridePoller = createSftpOverridePoller({ config: sftpConfig, landingId: displayConfig.landingNumber, cacheService: manualOverrideService });
+// The landings this server actually built, which is what a notice can meaningfully be posted for.
+const LANDING_IDS = new Set(landingData.available.map((landing) => landing.id));
+const manualOverrideService = createManualOverrideService({ statePath: path.join(ROOT, "state/manual-overrides.json"), landingIds: LANDING_IDS });
+const sftpOverridePoller = createSftpOverridePoller({ config: sftpConfig, landingId: displayConfig.landingNumber, landingIds: LANDING_IDS, cacheService: manualOverrideService });
 const counters = createCounterService({ statePath: path.join(ROOT, "state/counters.json") });
 // The counters key landings by number, which is what an agent dials and not what anyone reading a
 // stats page knows a dock by.

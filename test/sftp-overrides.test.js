@@ -12,6 +12,9 @@ import {
   parseSftpOverrideFile
 } from "../lib/sftp-overrides.js";
 
+// The landings this board serves, as the server hands them to the poller.
+const LANDING_IDS = Array.from({ length: 30 }, (_, index) => index + 2);
+
 test("loads and validates enabled SFTP configuration", async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "nycf-sftp-config-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
@@ -40,14 +43,14 @@ test("parses active and blank landing files while rejecting the wrong landing", 
     landingId: 10,
     message: " Landing temporarily closed. ",
     updatedAt: "2026-08-06T14:30:00Z"
-  }), 10), {
+  }), 10, LANDING_IDS), {
     landingId: 10,
     active: true,
     message: "Landing temporarily closed.",
     updatedAt: "2026-08-06T14:30:00.000Z"
   });
-  assert.equal(parseSftpOverrideFile('{"landingId":10,"message":""}', 10).active, false);
-  assert.throws(() => parseSftpOverrideFile('{"landingId":9,"message":"Wrong file"}', 10), /not landing 10/);
+  assert.equal(parseSftpOverrideFile('{"landingId":10,"message":""}', 10, LANDING_IDS).active, false);
+  assert.throws(() => parseSftpOverrideFile('{"landingId":9,"message":"Wrong file"}', 10, LANDING_IDS), /not landing 10/);
 });
 
 test("reports actionable SFTP errors without exposing credentials", () => {
@@ -72,6 +75,7 @@ test("health status includes the failed stage, retry counters, and safe target d
   const logged = [];
   const missingKey = Object.assign(new Error("key file missing"), { code: "ENOENT" });
   const poller = createSftpOverridePoller({
+    landingIds: LANDING_IDS,
     config: {
       enabled: true,
       host: "sftp.example.org",
@@ -110,6 +114,7 @@ test("host verification failures report configured and presented fingerprints", 
   const configured = Buffer.alloc(32, 5).toString("hex");
   const presented = Buffer.alloc(32, 9).toString("hex");
   const poller = createSftpOverridePoller({
+    landingIds: LANDING_IDS,
     config: {
       enabled: true,
       host: "sftp.example.org",
@@ -147,7 +152,7 @@ test("host verification failures report configured and presented fingerprints", 
 test("polls the configured landing file and stores the last valid notice locally", async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "nycf-sftp-poll-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
-  const cacheService = createManualOverrideService({ statePath: path.join(directory, "manual-overrides.json") });
+  const cacheService = createManualOverrideService({ statePath: path.join(directory, "manual-overrides.json"), landingIds: LANDING_IDS });
   const calls = { connect: 0, paths: [], end: 0 };
   const fingerprint = Buffer.alloc(32, 5).toString("hex");
   const responses = [
@@ -166,6 +171,7 @@ test("polls the configured landing file and stores the last valid notice locally
     async end() { calls.end += 1; }
   };
   const poller = createSftpOverridePoller({
+    landingIds: LANDING_IDS,
     config: {
       enabled: true,
       host: "sftp.example.org",
