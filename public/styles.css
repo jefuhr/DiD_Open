@@ -20,6 +20,10 @@
    at a glance which of these is inferred from a long gap rather than a boat plainly finishing. */
 .drop-off-badge.drop-off-unsure{color:#5c5140;background:#f4efe4;border-style:dashed}
 .time-range-dash{padding:0 .12em;font-weight:400}
+/* An arriving boat, ending its run here. Green rather than the grey of NO PICKUP: the boat is in
+   service and carrying people, it just cannot be joined. */
+.arrival-badge{display:inline-flex;align-items:center;padding:2px 5px;color:#0b5c33;background:#dcf3e5;border:1px solid #35aa65;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;letter-spacing:.03em}
+.drop-off-only-badge{display:inline-flex;align-items:center;padding:2px 5px;color:#0b5c33;background:#fff;border:1px solid #35aa65;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;letter-spacing:.03em}
 .drop-off-badge{display:inline-flex;align-items:center;padding:2px 5px;color:#7a4200;background:#ffe6bf;border:1px solid #d89a26;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;letter-spacing:.03em}
 .boat-name{min-width:0;color:#00749e;font-size:clamp(9px,1.3vh,13px);font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.departure-slot.unavailable{color:var(--muted);font-size:clamp(9px,1.3vh,12px);font-weight:700}.empty{display:grid;place-items:center;background:#fff;border:2px solid var(--line);border-radius:8px;text-align:center}.empty strong{display:block;color:var(--navy);font-size:2.5vw}.empty span{display:block;margin-top:1vh;color:var(--muted);font-size:1.15vw}
 .screen.override-active{grid-template-rows:minmax(0,1fr)}.screen.override-active .content,.screen.override-active .service-alert-bar{display:none}.manual-override{min-height:0;display:grid;place-items:center;padding:clamp(28px,5vh,76px) clamp(36px,6vw,120px);background:linear-gradient(135deg,#001d41 0%,#003d63 100%)}.manual-override-box{position:relative;width:100%;height:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;align-items:center;padding:clamp(28px,4vh,64px) clamp(40px,5vw,100px);overflow:hidden;background:#fff;border:clamp(7px,.75vw,14px) solid var(--warning);border-radius:clamp(12px,1.2vw,24px);box-shadow:0 2vh 5vh rgba(0,15,37,.35);text-align:center}.manual-override-label{justify-self:center;padding:.55em 1.1em;color:var(--navy);background:var(--warning);border-radius:999px;font-size:clamp(18px,1.6vw,30px);font-weight:950;letter-spacing:.12em;line-height:1;text-transform:uppercase}.manual-override-box p{align-self:center;margin:clamp(18px,3vh,44px) 0;color:var(--navy);font:900 clamp(38px,5.2vw,98px)/1.08 Lato,Arial,sans-serif;letter-spacing:-.025em;white-space:pre-wrap;overflow-wrap:anywhere}.manual-override-box[data-size="medium"] p{font-size:clamp(30px,4.1vw,76px)}.manual-override-box[data-size="long"] p{font-size:clamp(22px,2.8vw,52px);line-height:1.14}.manual-override-box small{color:var(--muted);font-size:clamp(14px,1.25vw,23px);font-weight:800;letter-spacing:.04em}
@@ -72,6 +76,32 @@
 .nearest-button[data-state="error"]{border-color:#c8102e;color:#c8102e}.nearest-button[data-state="error"] .nearest-icon{stroke:#c8102e}
 .nearest-button[data-state="locating"] .nearest-icon{animation:nearest-pulse 1s ease-in-out infinite}
 @keyframes nearest-pulse{50%{opacity:.25}}
+/* Filter button: bottom-left of the footer, beside the date stepper. It lights up only while
+   something is actually being hidden, because a board that is not showing every boat has to say so
+   without being asked. */
+.filter-button{position:relative;flex:0 0 auto;display:flex;align-items:center;justify-content:center;min-width:44px;min-height:34px;padding:.4vh .5vw;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.filter-button:active{background:#e9f2f7}
+.filter-button:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
+.filter-icon{width:clamp(15px,2.1vh,19px);height:clamp(15px,2.1vh,19px);fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+.filter-button.is-filtering{border-color:var(--blue);background:#e8f5fc;color:#0b6c92}
+.filter-count{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:#c8102e;color:#fff;font:900 10px/16px Lato,Arial,sans-serif;text-align:center}
+/* Bottom sheet rather than a side drawer: the button is at the bottom of the screen and the board
+   it filters stays visible above it while operators are switched on and off. */
+.filter-menu{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end}
+.filter-menu-scrim{position:absolute;inset:0;background:rgba(0,15,37,.5)}
+.filter-menu-panel{position:relative;display:flex;flex-direction:column;gap:10px;width:100%;max-height:80%;padding:14px 14px calc(14px + env(safe-area-inset-bottom));background:var(--canvas);border-radius:14px 14px 0 0;box-shadow:0 0 40px rgba(0,15,37,.4);animation:filter-in .18s ease both}
+@keyframes filter-in{from{transform:translateY(12px);opacity:0}}
+.filter-menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.filter-menu-head strong{color:var(--navy);font:650 20px/1 Oswald,sans-serif;text-transform:uppercase}
+.filter-menu-close{padding:8px 14px;color:#fff;background:var(--navy);border:0;border-radius:8px;font:900 13px/1 Lato,Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.filter-list{flex:1 1 auto;overflow-y:auto;margin:0;padding:0;list-style:none}
+.filter-option{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:48px;margin-bottom:8px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.filter-option:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
+.filter-option-name{font:900 15px/1.2 Lato,Arial,sans-serif}
+.filter-option-state{flex:0 0 auto;font:900 11px/1 Lato,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.filter-option.is-shown{border-color:var(--blue);background:#e8f5fc;color:#0b6c92}
+.filter-reset{flex:0 0 auto;min-height:44px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);font:900 13px/1 Lato,Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.filter-reset:disabled{opacity:.4;cursor:default}
 .landing-menu{position:fixed;inset:0;z-index:60;display:flex}.landing-menu-scrim{position:absolute;inset:0;background:rgba(0,15,37,.5)}
 .landing-menu-panel{position:relative;display:flex;flex-direction:column;width:min(360px,86vw);max-height:100%;margin-right:auto;background:var(--canvas);box-shadow:0 0 40px rgba(0,15,37,.4);animation:menu-in .18s ease both}
 .landing-menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 14px 12px;background:#fff;border-bottom:1px solid var(--line)}.landing-menu-head strong{color:var(--navy);font:650 20px/1 Oswald,sans-serif;text-transform:uppercase}
@@ -142,6 +172,8 @@ body.menu-open{overflow:hidden}
      puts the control for the next one directly under the thumb that scrolled there. */
   .board-footer{gap:8px;margin-top:12px}
   .clock-toggle{min-width:64px;min-height:48px;padding:6px 10px;font-size:14px}
+  .filter-button{min-width:48px;min-height:48px;padding:6px 10px}
+  .filter-icon{width:20px;height:20px}
   .date-step{width:22%;min-height:48px;font-size:22px}
   .date-current{min-height:48px;padding:6px 10px;font-size:14px}
   /* The list keeps its amber edge on a phone precisely because this bar scrolls away with the

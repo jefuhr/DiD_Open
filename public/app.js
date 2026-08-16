@@ -28,6 +28,13 @@ const elements = {
   dateNext: document.querySelector("#dateNext"),
   dateCurrent: document.querySelector("#dateCurrent"),
   clockToggle: document.querySelector("#clockToggle"),
+  filterButton: document.querySelector("#filterButton"),
+  filterCount: document.querySelector("#filterCount"),
+  filterMenu: document.querySelector("#filterMenu"),
+  filterMenuScrim: document.querySelector("#filterMenuScrim"),
+  filterMenuClose: document.querySelector("#filterMenuClose"),
+  filterList: document.querySelector("#filterList"),
+  filterReset: document.querySelector("#filterReset"),
   sortOptions: [...document.querySelectorAll("[data-sort]")]
 };
 
@@ -44,6 +51,14 @@ const sortKey = "nyc-ferry-did-sort";
 // all speak in) or 12-hour. Persisted per device like the sort choice: it is a reading preference,
 // not board config, and an agent who wants one wants it on every landing they open.
 const clockKey = "nyc-ferry-did-clock";
+// Which operators the board has been told to hide, as a list of operator names. Persisted per
+// device and deliberately not per landing: an agent who does not want to read NY Waterway boats
+// does not want to read them at Pier 79 either. Stored by name rather than by route id so a
+// partner adding a route does not quietly reappear on a board that hid the operator.
+const hiddenOperatorsKey = "nyc-ferry-did-hidden-operators";
+// Every operator the system serves anywhere, as /api/landings reports it. Cached like the landing
+// list so the panel is complete offline too.
+const operatorsKey = "nyc-ferry-did-operators";
 // The landing a location fix last resolved to, so the shortcut survives a reload.
 const nearestKey = "nyc-ferry-did-nearest";
 // A fix is only good for about the shift it was taken in. Crew move between landings, and a
@@ -79,6 +94,106 @@ function selectSort(next) {
   // Re-order in place: the menu stays open so the choice can be changed again, and nothing
   // needs refetching because sorting only touches the order cards are laid out in.
   render();
+}
+
+// Hiding operators.
+//
+// A landing like Pier 79 carries NYC Ferry, NY Waterway and the shuttles on one list, and an agent
+// working one of them is reading past the other two all day. The filter is purely a display cut:
+// nothing is refetched, and the hidden operators keep loading so that unhiding is instant and a
+// service alert about them still reaches the bar at the bottom.
+
+function agencyName() {
+  return data?.meta?.agencyName || "NYC Ferry";
+}
+
+function operatorOf(routeId) {
+  return data?.routes?.[routeId]?.operator || agencyName();
+}
+
+// Every operator the system serves, not merely the ones calling at the landing on screen: the
+// filter is one per-device setting that follows the agent between docks, so the panel has to offer
+// the same rows everywhere and the badge has to count the same hidden operators everywhere. A
+// panel that changed shape at every landing would read as a per-landing setting, which it is not.
+//
+// The roster comes from /api/landings, which builds it across every landing. Falling back to the
+// current payload covers the one case the roster cannot: a device that has never reached the
+// server. Ordering is the same either way — home agency first, partners alphabetically.
+function operatorList() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(operatorsKey) || "[]");
+    const roster = Array.isArray(stored) ? stored.filter((name) => typeof name === "string") : [];
+    if (roster.length) return roster;
+  } catch {
+    // Fall through to the landing's own operators.
+  }
+  const names = new Set(Object.keys(data?.routes || {}).map(operatorOf));
+  const home = agencyName();
+  const partners = [...names].filter((name) => name !== home).sort((left, right) => left.localeCompare(right));
+  return names.has(home) ? [home, ...partners] : partners;
+}
+
+function hiddenOperators() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(hiddenOperatorsKey) || "[]");
+    return new Set(Array.isArray(stored) ? stored.filter((name) => typeof name === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function isVisibleRoute(routeId) {
+  return !hiddenOperators().has(operatorOf(routeId));
+}
+
+function setOperatorHidden(name, hidden) {
+  const next = hiddenOperators();
+  if (hidden) next.add(name);
+  else next.delete(name);
+  localStorage.setItem(hiddenOperatorsKey, JSON.stringify([...next]));
+  renderFilterMenu();
+  // The list is rebuilt from scratch, so put the cursor back on the row that was just toggled —
+  // otherwise a keyboard user is dropped to the top of the panel after every single switch.
+  elements.filterList.querySelector(`[data-operator="${CSS.escape(name)}"]`)?.focus();
+  // Only the cut changes, not the schedule underneath it, so this is a re-render and nothing more.
+  render();
+}
+
+function showAllOperators() {
+  localStorage.removeItem(hiddenOperatorsKey);
+  renderFilterMenu();
+  render();
+}
+
+function renderFilterMenu() {
+  const hidden = hiddenOperators();
+  const operators = operatorList();
+  // The badge counts against the whole roster, so it reads the same at every landing — the setting
+  // is one thing that follows the device, and a count that dropped to zero on arriving somewhere a
+  // hidden operator does not call would suggest the filter had been forgotten.
+  const hiddenHere = operators.filter((name) => hidden.has(name));
+  elements.filterCount.hidden = hiddenHere.length === 0;
+  elements.filterCount.textContent = String(hiddenHere.length);
+  elements.filterButton.classList.toggle("is-filtering", hiddenHere.length > 0);
+  elements.filterButton.setAttribute("aria-label", hiddenHere.length
+    ? `Filter operators — ${hiddenHere.length} hidden`
+    : "Filter operators");
+  elements.filterReset.disabled = hiddenHere.length === 0;
+
+  elements.filterList.innerHTML = operators.map((name) => {
+    const shown = !hidden.has(name);
+    return `<li><button type="button" class="filter-option${shown ? " is-shown" : ""}" data-operator="${escapeHtml(name)}" role="switch" aria-checked="${shown}">
+      <span class="filter-option-name">${escapeHtml(name)}</span>
+      <span class="filter-option-state" aria-hidden="true">${shown ? "Shown" : "Hidden"}</span>
+    </button></li>`;
+  }).join("");
+}
+
+function setFilterOpen(open) {
+  elements.filterMenu.hidden = !open;
+  elements.filterButton.setAttribute("aria-expanded", String(open));
+  if (open) (elements.filterList.querySelector(".filter-option") || elements.filterMenuClose)?.focus();
+  else elements.filterButton.focus();
 }
 
 function clockFormat() {
@@ -303,7 +418,7 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
       const scheduledMoment = offset * 86400 + departure.seconds;
       // LAST means the last departure a passenger can take. A home-port run or a crew shuttle
       // leaves after it and carries nobody, so neither is allowed to claim the badge.
-      const carriesPassengers = !departure.outOfService && !departure.crewShuttle;
+      const carriesPassengers = !departure.outOfService && !departure.crewShuttle && !departure.arrival;
       const previousLast = carriesPassengers ? lastDepartures.get(slotKey) : null;
       if (carriesPassengers && (!previousLast || scheduledMoment > previousLast.scheduledMoment)) {
         lastDepartures.set(slotKey, { tripId: String(departure.tripId), scheduledMoment });
@@ -321,6 +436,7 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
         key, routeId: departure.routeId, directionId: departure.directionId,
         destination: departure.destination, via: departure.via || [], variant: departure.variant || null,
         outOfService: Boolean(departure.outOfService), crewShuttle: Boolean(departure.crewShuttle),
+        arrival: Boolean(departure.arrival),
         departures: []
       };
       group.departures.push({
@@ -463,7 +579,13 @@ function departureStatus(item) {
   // A boat with no passengers aboard has no schedule status worth showing — it is not late or on
   // time, it is simply not in service — so NO PICKUP takes that slot instead.
   const noPickup = item.outOfService || item.crewShuttle;
-  const scheduledLabel = !noPickup && !isLast && !delayLabel && !onTimeLabel
+  // A boat ending its run here. It is in service and full of passengers — it simply cannot be
+  // boarded — so it gets its own pair of badges rather than borrowing NO PICKUP, which says the
+  // opposite about the boat, or SCHEDULED, which invites someone to wait for it.
+  const arrivalLabel = item.arrival
+    ? `<span class="arrival-badge" aria-label="Arriving here, ending its run">ARRIVAL</span><span class="drop-off-only-badge" aria-label="Drop off only: this boat cannot be boarded">DROP OFF ONLY</span>`
+    : "";
+  const scheduledLabel = !noPickup && !item.arrival && !isLast && !delayLabel && !onTimeLabel
     ? `<span class="scheduled-badge" aria-label="Status: Scheduled">SCHEDULED</span>`
     : "";
   const noPickupLabel = noPickup
@@ -502,7 +624,7 @@ function departureStatus(item) {
   const crewBoats = item.crewShuttle && item.crewBoats?.length
     ? escapeHtml(item.crewBoats.join(" "))
     : "";
-  return { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals };
+  return { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals };
 }
 // The route's own colour, badge and operator labelling, shared by both views.
 function routeVisual(routeId, variant) {
@@ -526,10 +648,10 @@ function routeVisual(routeId, variant) {
 }
 
 function departureCell(item) {
-  const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } = departureStatus(item);
+  const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } = departureStatus(item);
   return `<div class="departure-slot">
     <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta, item.live !== false))}</span></div>
-    <span class="departure-last-slot">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
+    <span class="departure-last-slot">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
   </div>`;
 }
 
@@ -623,8 +745,23 @@ function render() {
   return sortedBy() === "route" ? renderRouteBoard() : renderTimeline();
 }
 
+// An empty board caused by the filter is not a schedule fact, and must never be read as one.
+function emptyFilterBoard() {
+  return `<div class="empty"><div><strong>EVERYTHING IS HIDDEN</strong><span>All operators are filtered out. Tap the filter button to show them again.</span></div></div>`;
+}
+
+// Scoped to this landing on purpose, where the panel's list is global: the question here is not
+// "has everything been hidden" but "is this board empty because of the filter", and a landing that
+// only NYC Ferry calls at goes blank the moment NYC Ferry is hidden — however many partners are
+// still shown elsewhere.
+function allOperatorsHidden() {
+  const hidden = hiddenOperators();
+  const here = new Set(Object.keys(data?.routes || {}).map(operatorOf));
+  return here.size > 0 && [...here].every((name) => hidden.has(name));
+}
+
 function renderTimeline() {
-  const rows = timelineDepartures();
+  const rows = timelineDepartures().filter(({ group }) => isVisibleRoute(group.routeId));
   elements.departures.dataset.view = "timeline";
   // The column head describes the route board's three columns; a timeline row is not columnar,
   // and the phone stylesheet hides it anyway.
@@ -632,13 +769,13 @@ function renderTimeline() {
   elements.routeCount.textContent = `${rows.length} departure${rows.length === 1 ? "" : "s"}`;
 
   if (!rows.length) {
-    elements.departures.innerHTML = emptyBoard();
+    elements.departures.innerHTML = allOperatorsHidden() ? emptyFilterBoard() : emptyBoard();
     return;
   }
 
   elements.departures.innerHTML = rows.map(({ departure, group }) => {
     const visual = routeVisual(group.routeId, group.variant);
-    const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } =
+    const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } =
       departureStatus(departure);
     const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(visual.variantLabel)}</small>` : "";
     // "Northbound" says nothing about a boat going home empty, so the context line says what the
@@ -676,7 +813,7 @@ function renderTimeline() {
       <div class="tl-meta">
         <span class="tl-context">${escapeHtml(context)}</span>
         ${boat}
-        <span class="tl-status">${lastLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}</span>
+        <span class="tl-status">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}</span>
       </div>
     </article>`;
   }).join("");
@@ -684,7 +821,7 @@ function renderTimeline() {
 
 function renderRouteBoard() {
   const departuresShown = displayCount("departuresShown");
-  const groups = routeDirectionGroups();
+  const groups = routeDirectionGroups().filter((group) => isVisibleRoute(group.routeId));
   elements.departures.dataset.view = "routes";
   elements.columnHead.hidden = false;
   // Staff view: no slideshow paging. Every route direction stays on screen and
@@ -692,7 +829,7 @@ function renderRouteBoard() {
   elements.routeCount.textContent = `${groups.length} route direction${groups.length === 1 ? "" : "s"}`;
 
   if (!groups.length) {
-    elements.departures.innerHTML = emptyBoard();
+    elements.departures.innerHTML = allOperatorsHidden() ? emptyFilterBoard() : emptyBoard();
     return;
   }
 
@@ -871,6 +1008,9 @@ async function load() {
   viewDate = null;
   elements.landing.textContent = data.meta.landing.displayName;
   renderLandingList();
+  // The operator rows come from the payload, so a new landing means a new list — and a filter that
+  // named an operator this landing does not carry means an unlit button rather than a stale badge.
+  renderFilterMenu();
   renderNearest();
   await loadManualOverride();
   updateClock();
@@ -896,10 +1036,14 @@ async function loadLandings() {
     if (!response.ok) throw new Error();
     const payload = await response.json();
     localStorage.setItem(landingsKey, JSON.stringify(payload.landings || []));
+    if (Array.isArray(payload.operators) && payload.operators.length) {
+      localStorage.setItem(operatorsKey, JSON.stringify(payload.operators));
+    }
   } catch {
     // Keep whatever list was saved; the menu still works offline.
   }
   renderLandingList();
+  renderFilterMenu();
 }
 
 // The nearest-landing shortcut.
@@ -1035,14 +1179,23 @@ for (const button of elements.sortOptions) {
   button.addEventListener("click", () => selectSort(button.dataset.sort));
 }
 elements.clockToggle.addEventListener("click", toggleClockFormat);
+elements.filterButton.addEventListener("click", () => setFilterOpen(elements.filterMenu.hidden));
+elements.filterMenuClose.addEventListener("click", () => setFilterOpen(false));
+elements.filterMenuScrim.addEventListener("click", () => setFilterOpen(false));
+elements.filterReset.addEventListener("click", showAllOperators);
+elements.filterList.addEventListener("click", (event) => {
+  const option = event.target.closest("[data-operator]");
+  if (option) setOperatorHidden(option.dataset.operator, option.getAttribute("aria-checked") === "true");
+});
 elements.datePrev.addEventListener("click", () => stepDate(-1));
 elements.dateNext.addEventListener("click", () => stepDate(1));
 elements.dateCurrent.addEventListener("click", showToday);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.landingMenu.hidden) return setMenuOpen(false);
+  if (event.key === "Escape" && !elements.filterMenu.hidden) return setFilterOpen(false);
   // Arrow keys page through the schedule, which is how anyone reaches for a date stepper on a
   // desktop board. Only when the landing menu is closed and nothing is being typed into.
-  if (!elements.landingMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (!elements.landingMenu.hidden || !elements.filterMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (event.key === "ArrowLeft") stepDate(-1);
   else if (event.key === "ArrowRight") stepDate(1);
@@ -1066,7 +1219,7 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=53", { updateViaCache: "none" })
+  navigator.serviceWorker.register("/sw.js?v=55", { updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

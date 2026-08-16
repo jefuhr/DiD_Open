@@ -458,14 +458,19 @@ test("the Trust's Governors Island ferry sails from Red Hook and Pier 6", async 
   assert.equal(redHook.meta.gi.enabled, true);
   const fromRedHook = redHook.departures.filter((item) => item.routeId.startsWith("gi:"));
   assert.deepEqual(fromRedHook.map((item) => item.departureTime),
-    ["09:45:00", "10:45:00", "11:45:00", "12:45:00", "13:45:00", "14:45:00", "15:45:00"]);
+    ["09:45:00", "10:45:00", "11:45:00", "12:45:00", "13:45:00", "14:45:00", "15:45:00", "16:45:00", "17:45:00"]);
   assert.ok(fromRedHook.every((item) => item.destination === "Governors Island"));
+  // The last two leave empty to go and fetch the last visitors, so they are shown but marked.
+  assert.deepEqual(fromRedHook.filter((item) => item.outOfService).map((item) => item.departureTime),
+    ["16:45:00", "17:45:00"]);
 
   const pier6 = await buildDisplayData({ landingNumber: 3 });
   const fromPier6 = pier6.departures.filter((item) => item.routeId.startsWith("gi:"));
   assert.deepEqual(fromPier6.map((item) => item.departureTime),
-    ["10:15:00", "11:15:00", "12:15:00", "13:15:00", "14:15:00", "15:15:00", "16:15:00"]);
+    ["10:15:00", "11:15:00", "12:15:00", "13:15:00", "14:15:00", "15:15:00", "16:15:00", "17:15:00", "18:15:00"]);
   assert.ok(fromPier6.every((item) => item.destination === "Governors Island"));
+  assert.deepEqual(fromPier6.filter((item) => item.outOfService).map((item) => item.departureTime),
+    ["17:15:00", "18:15:00"]);
 
   // The Trust's boat, not the NYC Ferry South Brooklyn route that also calls at the island.
   assert.equal(redHook.routes["gi:GI-RH"].operator, "The Trust for Governors Island");
@@ -474,7 +479,64 @@ test("the Trust's Governors Island ferry sails from Red Hook and Pier 6", async 
 
   // The return sailings are the last stop of their trip, so they are arrivals and must never be
   // shown as departures from the Brooklyn side — otherwise each landing doubles.
-  assert.equal(fromRedHook.length + fromPier6.length, 14);
+  assert.equal(fromRedHook.length + fromPier6.length, 18);
+});
+
+// pickup_type 1 means "nobody boards here". Seastreak's feed is full of them — its long routes
+// drop off on the way back and those calls are not departures — and showing them would put
+// hundreds of unboardable rows on the board. The Trust's four end-of-day runs are the opposite
+// case and the only feed opted in, so the two behaviours have to stay apart.
+// A departure board does not normally show a trip's last stop, because arriving is not departing.
+// Seastreak's New Jersey commuter boats end their run in Manhattan and the operator flags those
+// calls itself, so they are shown as arrivals — named for where the boat is coming from, and
+// barred from claiming LAST, which belongs to the last sailing someone can actually take.
+test("Seastreak's terminating boats show as arrivals at both Manhattan piers", async () => {
+  const [east34, pier79] = await Promise.all([
+    buildDisplayData({ landingNumber: 8 }),
+    buildDisplayData({ landingNumber: 26 })
+  ]);
+  const arrivals = (data) => data.departures.filter((item) => item.arrival);
+
+  for (const data of [east34, pier79]) {
+    assert.ok(arrivals(data).length > 0, "the commuter boats terminate here and must be shown");
+    for (const item of arrivals(data)) {
+      assert.match(item.destination, /^Arrives from .+/, "an arrival names its origin, not a destination");
+      assert.ok(String(item.routeId).startsWith("sea:"), "only the opted-in feed contributes arrivals");
+      assert.equal(item.outOfService, false, "an arriving boat is in service and full of passengers");
+      assert.equal(item.crewShuttle, false);
+    }
+  }
+
+  // West 39th St is Pier 79 on this board, and its boats are Belford's.
+  assert.equal(pier79.meta.seastreak.enabled, true);
+  assert.ok(arrivals(pier79).some((item) => item.destination === "Arrives from Belford, NJ"));
+  // The ordinary sailings come with them: the pier gets the whole service, not only the arrivals.
+  assert.ok(pier79.departures.some((item) => String(item.routeId).startsWith("sea:") && !item.arrival),
+    "Pier 79 must also show the boats leaving for New Jersey");
+
+  assert.ok(arrivals(east34).some((item) => /Highlands/.test(item.destination)));
+});
+
+test("only the opted-in feed shows its no-pickup sailings; everyone else's stay hidden", async () => {
+  const redHook = await buildDisplayData({ landingNumber: 17 });
+  const shown = redHook.departures.filter((item) => item.outOfService && String(item.routeId).startsWith("gi:"));
+  assert.equal(shown.length, 2, "the Trust's two Red Hook run-overs are shown, flagged");
+
+  // Every landing at once: no partner other than the Trust may contribute a no-pickup row.
+  const landings = JSON.parse(await readFile(new URL("../config/landings.json", import.meta.url), "utf8"));
+  let seastreakRows = 0;
+  for (const [id, landing] of Object.entries(landings)) {
+    if (landing.unused) continue;
+    const data = await buildDisplayData({ landingNumber: Number(id) });
+    for (const item of data.departures) {
+      const routeId = String(item.routeId);
+      if (routeId.startsWith("sea:")) seastreakRows += 1;
+      if (!item.outOfService || routeId.startsWith("gi:")) continue;
+      assert.ok(!/^(wtr|sea|nyu|lib|ike):/.test(routeId),
+        `${routeId} at landing ${id} leaked a no-pickup call onto the board`);
+    }
+  }
+  assert.ok(seastreakRows > 0, "Seastreak still runs; only its unboardable calls are hidden");
 });
 
 test("the Governors Island ferry runs weekends and holidays, in season, where it docks", async () => {
@@ -1178,7 +1240,8 @@ test("every stop in the Trust's feed is attached to a landing", async () => {
 });
 
 // Both directions of the Trust's service, counted against the transcribed timetable: seven sailings
-// from each shore pier, eight back from the island on each line.
+// from each shore pier plus two end-of-day runs that carry nobody outbound, and eight back from the
+// island on each line.
 test("the Trust's boats show at the island as well as at both shore piers", async () => {
   const [island, pier6, redHook] = await Promise.all([
     buildDisplayData({ landingNumber: 11 }),
@@ -1199,8 +1262,8 @@ test("the Trust's boats show at the island as well as at both shore piers", asyn
   }
 
   // The shore ends are unchanged, and from there the boats run to the island.
-  assert.equal(trust(pier6).length, 7);
-  assert.equal(trust(redHook).length, 7);
+  assert.equal(trust(pier6).length, 9);
+  assert.equal(trust(redHook).length, 9);
   for (const item of [...trust(pier6), ...trust(redHook)]) {
     assert.equal(item.destination, "Governors Island");
   }

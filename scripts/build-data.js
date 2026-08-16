@@ -111,7 +111,7 @@ export const PARTNER_FEEDS = {
     connectingTerminals: WATERWAY_MANHATTAN_TERMINALS,
     // Departures carry the namespaced id by this point, so the prefix comes off first.
     lineOfRoute: (routeId) => WATERWAY_LINE_OF_ROUTE.get(String(routeId).replace(/^wtr:/, "")) },
-  seastreak: { prefix: "sea:", directory: "gtfs/seastreak", label: "Seastreak", defaultColor: "#013067", enabledKey: "seastreakEnabled", stopIdsKey: "seastreakStopIds", destinationFromFinalStop: true },
+  seastreak: { prefix: "sea:", directory: "gtfs/seastreak", label: "Seastreak", defaultColor: "#013067", enabledKey: "seastreakEnabled", stopIdsKey: "seastreakStopIds", destinationFromFinalStop: true, showDropOffArrivals: true },
   // NYU publishes no GTFS at all — gtfs/nyu/ is reconstructed from its Passio GO backend by
   // scripts/fetch-nyu-gtfs.js. Once written it is an ordinary static feed, so it needs no special
   // handling here beyond its own prefix and switches.
@@ -124,7 +124,7 @@ export const PARTNER_FEEDS = {
   // The Trust runs its own Brooklyn boats to Governors Island, which are not the NYC Ferry South
   // Brooklyn route that also calls there — different operator, different piers, weekends only.
   // Transcribed from the operator's schedule page by scripts/build-gi-gtfs.js; see that file.
-  gi: { prefix: "gi:", directory: "gtfs/gi", label: "Governors Island Ferry", defaultColor: "#00BBE3", enabledKey: "giEnabled", stopIdsKey: "giStopIds" }
+  gi: { prefix: "gi:", directory: "gtfs/gi", label: "Governors Island Ferry", defaultColor: "#00BBE3", enabledKey: "giEnabled", stopIdsKey: "giStopIds", showNoPickup: true }
 };
 
 // NY Waterway publishes one trip per origin-destination pair, so a boat that calls at two terminals
@@ -220,7 +220,14 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
     if (!busesEnabled && modeOf(route) === "bus") continue;
     for (let index = 0; index < times.length - 1; index += 1) {
       const current = times[index];
-      if (!selectedStops.has(current.stop_id) || current.pickup_type === "1") continue;
+      if (!selectedStops.has(current.stop_id)) continue;
+      // A stop nobody may board is normally not a departure at all, and dropping it is what keeps
+      // Seastreak's hundreds of drop-off-only calls off the board. One feed wants the opposite: the
+      // Trust's last boats of the day leave the shore empty to go and collect the last visitors, and
+      // a crew board that hid them would show the pier going quiet an hour before the boat does. So
+      // that feed shows them, flagged out of service — which is what NO PICKUP already means here.
+      const noPickup = current.pickup_type === "1";
+      if (noPickup && !feed.showNoPickup) continue;
       const departureTime = current.departure_time || current.arrival_time;
       if (!departureTime) continue;
       const finalStop = stopsById.get(times.at(-1).stop_id);
@@ -248,7 +255,7 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
         mode: modeOf(route),
         operator: agencyName,
         // Partner operators publish no crew schedule, so none of this is knowable for them.
-        endsShift: null, outOfService: false, crewShuttle: false, crewBoats: null,
+        endsShift: null, outOfService: noPickup, crewShuttle: false, crewBoats: null,
         departureTimeEnd: null, secondsEnd: null, endsDay: false,
         via: [],
         // Kept only to stitch split sailings back together below, then discarded.
@@ -261,6 +268,39 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
             seconds: timeToSeconds(stopTime.arrival_time || stopTime.departure_time)
           }))
       });
+    }
+
+    // Arrivals that terminate here, drop-off only.
+    //
+    // A departure board shows departures, so a trip's last stop is normally not a row at all. But
+    // Seastreak's New Jersey commuter boats end their run in Manhattan, and "when does the
+    // Highlands boat get in" is a question crew are asked at the pier all morning. The operator
+    // flags those calls itself with pickup_type 1 on the final stop, so the board is reading a
+    // published fact rather than guessing which arrivals matter.
+    //
+    // Only the final stop, and only when flagged: a mid-route drop-off is already covered as a
+    // departure above, and an unflagged terminus is just the end of a trip nobody asked about.
+    if (feed.showDropOffArrivals && times.length > 1) {
+      const last = times.at(-1);
+      const arrivalTime = last.arrival_time || last.departure_time;
+      if (last.pickup_type === "1" && selectedStops.has(last.stop_id) && arrivalTime) {
+        const origin = decodeEntities(stopsById.get(times[0].stop_id)?.stop_name || "");
+        departures.push({
+          tripId: prefixed(tripId), routeId: prefixed(trip.route_id), serviceId: prefixed(trip.service_id),
+          directionId: trip.direction_id, stopId: prefixed(last.stop_id),
+          departureTime: arrivalTime, seconds: timeToSeconds(arrivalTime),
+          // The row's headline. An arrival has no destination — it is the destination — so the
+          // line says where the boat is coming from instead, which is the only thing left to ask.
+          destination: origin ? `Arrives from ${origin}` : "Arrives",
+          variant: null, nextStop: null, servesGovernorsIsland: false, viaTerminals: [],
+          boatAssignment: null, mode: modeOf(route), operator: agencyName,
+          endsShift: null, outOfService: false, crewShuttle: false, crewBoats: null,
+          departureTimeEnd: null, secondsEnd: null, endsDay: false, via: [],
+          // What makes the row read as an arrival rather than a sailing anyone can join.
+          arrival: true,
+          onward: []
+        });
+      }
     }
   }
 
