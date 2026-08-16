@@ -788,8 +788,12 @@ test("offline shell includes version 57 display assets", async () => {
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
   assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=57"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon\.png\?v=57"/);
-  assert.match(worker, /'\/assets\/app-icon\.png\?v=57'/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=57"/);
+  assert.match(index, /rel="manifest" href="\/site\.webmanifest\?v=57"/);
+  for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
+    assert.ok(worker.includes(`'/assets/${asset}?v=57'`), `${asset} is missing from the offline shell`);
+  }
+  assert.ok(worker.includes("'/site.webmanifest?v=57'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -864,5 +868,42 @@ test("no file carries an unresolved merge conflict", async () => {
     for (const marker of ["<<<<<<<", "=======", ">>>>>>>"]) {
       assert.doesNotMatch(text, new RegExp(`^${marker}`, "m"), `${name} still has a ${marker} conflict marker`);
     }
+  }
+});
+
+// The manifest is what makes an Android home-screen install an app rather than a bookmark: without
+// it the board gets no name, no standalone launch and no icon of its own. It is also the kind of
+// file that fails silently — a wrong icon path is not an error, it is just an install with a blank
+// tile — so every path it names is checked to exist.
+test("the web app manifest names a real icon for every size it claims", async () => {
+  const [raw, index] = await Promise.all([
+    readFile(new URL("../public/site.webmanifest", import.meta.url), "utf8"),
+    readFile(indexPath, "utf8")
+  ]);
+  const manifest = JSON.parse(raw);
+  assert.equal(manifest.display, "standalone");
+  assert.equal(manifest.start_url, "/");
+  // The label under the icon. It matches what iOS is told in apple-mobile-web-app-title, so the
+  // same board does not land on two phones under two different names.
+  assert.equal(manifest.short_name, "Ferry Board");
+  assert.match(index, /name="apple-mobile-web-app-title" content="Ferry Board"/);
+  // The theme colour is the board's navy, and it agrees with the meta tag the browser reads first.
+  assert.match(index, new RegExp(`name="theme-color" content="${manifest.theme_color}"`));
+
+  // Android needs a 192 and a 512 to treat this as installable, plus a maskable one so launchers
+  // that crop to a circle do not cut the whiskers off.
+  const sizes = manifest.icons.map((icon) => `${icon.sizes} ${icon.purpose}`);
+  assert.ok(sizes.includes("192x192 any"));
+  assert.ok(sizes.includes("512x512 any"));
+  assert.ok(sizes.includes("512x512 maskable"));
+
+  for (const icon of manifest.icons) {
+    const file = icon.src.split("?")[0].replace(/^\//, "");
+    const bytes = await readFile(new URL(`../public/${file}`, import.meta.url));
+    // A PNG header, and the dimensions the manifest promises — a 512 entry pointing at a 128 file
+    // installs as a blurry tile and nothing anywhere says so.
+    assert.equal(bytes.subarray(1, 4).toString(), "PNG", `${file} is not a PNG`);
+    const [width, height] = [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
+    assert.equal(`${width}x${height}`, icon.sizes, `${file} is ${width}x${height}, not ${icon.sizes}`);
   }
 });

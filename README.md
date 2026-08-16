@@ -122,9 +122,9 @@ the staff board shows every route direction at once and never pages. each depart
 
 ## landings
 
-[`config/landings.json`](./config/landings.json) is the source of truth for which landings exist and which GTFS stops they map to. the build validates against that file, not a hardcoded range, so adding a landing there (plus a matching `overrides/NN.json`) is all it takes.
+[`config/landings.json`](./config/landings.json) is the source of truth for which landings exist and which GTFS stops they map to. the build validates against that file, not a hardcoded range, so adding a landing there is all it takes. if that landing is meant to receive SFTP notices, it also needs a file of its own on the SFTP server — see *SFTP landing notices*.
 
-landings `2` through `24` are alphabetical. `25` and `26` were added later so existing kiosk numbers stayed put, and `28` and `29` later still for the same reason. Rockaway (`18`) covers both the ferry landing and the shuttle-bus stop next to it.
+landings `2` through `24` are alphabetical. `25` and `26` were added later so existing kiosk numbers stayed put, and `28` through `31` later still for the same reason. `1` is unused and `27` (Pier C) is the virtual home-port landing. Rockaway (`18`) covers both the ferry landing and the shuttle-bus stop next to it.
 
 Governors Island is two landings because it is two piers a walk apart: `11` Yankee Pier takes NYC Ferry's South Brooklyn boat and the Trust's Red Hook and Brooklyn Bridge Park boats, `29` Soissons Landing takes the Trust's Manhattan boat from the Battery Maritime Building. `28` Whitehall is the Manhattan end of that crossing, shared with the Staten Island Ferry, Seastreak and the Statue of Liberty boats from Battery Park a couple of hundred metres away. `30` Liberty Island and `31` Ellis Island are the far end of that last one. none of `28`, `29`, `30` or `31` is an NYC Ferry stop — see *partner operators* below.
 
@@ -318,17 +318,17 @@ full file contract and integration notes: [`override.md`](./override.md).
 
 Power Automate never calls the kiosk. it writes a small JSON file to an SFTP server, and each kiosk polls read-only for the one file matching its `landingNumber` — landing 2 reads `/overrides/02.json`, landing 10 reads `/overrides/10.json`.
 
-an active notice hides the departure board, the ad, and the service-alert strip, and replaces them with a full-screen notice panel. a blank message brings the normal display back. the last valid result is cached locally, so an SFTP outage never changes the screen on its own.
+an active notice hides the departure board and the service-alert strip, and replaces them with a full-screen notice panel. a blank message brings the normal display back. the last valid result is cached locally, so an SFTP outage never changes the screen on its own.
 
 ### set up the server
 
 1. create `/overrides` on the SFTP server.
-2. upload the 25 starter files from [`overrides/`](./overrides) — landings 2 through 26, all blank.
+2. create one file per landing that should be able to receive a notice, named for its landing number — `02.json` through `31.json`. each starts blank: `{"landingId": 2, "message": ""}`. (these no longer ship in the repo; a blank file is the whole format.)
 3. give the Power Automate account write access to those files.
 4. give each kiosk account read-only access. kiosks must never have write access.
 5. record the server's SHA256 host-key fingerprint. from a trusted machine: `ssh-keyscan -t ed25519 <host> | ssh-keygen -lf - -E sha256`. confirm it with the server admin before using it.
 
-then configure [`config/sftp.json`](./config/sftp.json) on each kiosk:
+then configure `config/sftp.json` on each kiosk. it carries a host, a username and a key path, so it is deployment secrets rather than source and is **not committed** — create it on the box. with no such file the poller stays off and the rest of the board runs normally; a file that exists and is malformed still fails loudly, because that is a kiosk that was meant to receive notices and cannot.
 
 ```json
 {

@@ -10,9 +10,12 @@
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
     <link rel="icon" href="/assets/app-icon.png?v=57" type="image/png" />
-    <!-- Same file: an iPhone adding the board to its home screen uses this one, and without it iOS
-         screenshots the page instead of showing an icon at all. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon.png?v=57" />
+    <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
+         screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=57" />
+    <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
+         come from the manifest, which is why the board installs as a bare shortcut without it. -->
+    <link rel="manifest" href="/site.webmanifest?v=57" />
     <link rel="stylesheet" href="/styles.css?v=57" />
   </head>
   <body>

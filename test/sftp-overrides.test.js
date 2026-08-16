@@ -197,3 +197,24 @@ test("polls the configured landing file and stores the last valid notice locally
   await poller.stop();
   assert.equal(calls.end, 1);
 });
+
+// config/sftp.json is deployment secrets — a host, a username, a key path — so it is not committed,
+// and reading it unconditionally meant a clean checkout could not start the server at all.
+test("a missing SFTP config leaves the feature off instead of stopping the board", async () => {
+  const config = await loadSftpOverrideConfig({
+    configPath: path.join(os.tmpdir(), "did-sftp-does-not-exist", "sftp.json"),
+    rootPath: os.tmpdir()
+  });
+  assert.equal(config.enabled, false);
+  assert.equal(config.pollSeconds, 10);
+  assert.equal(config.readyTimeoutSeconds, 15);
+});
+
+// A file that is there and wrong is someone having configured this and made a mistake. Swallowing
+// that would leave a kiosk quietly unable to receive the notices it was set up to show.
+test("a malformed SFTP config still throws", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "did-sftp-"));
+  const configPath = path.join(directory, "sftp.json");
+  await writeFile(configPath, "{ not json", "utf8");
+  await assert.rejects(() => loadSftpOverrideConfig({ configPath, rootPath: directory }));
+});
