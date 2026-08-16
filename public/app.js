@@ -1260,7 +1260,12 @@ if ("serviceWorker" in navigator) {
     reloadingForUpdate = true;
     window.location.reload();
   });
-  navigator.serviceWorker.register("/sw.js?v=57", { updateViaCache: "none" })
+  // The worker is fetched from the site root, so its scope covers the board wherever the board is
+  // mounted — but the document it has to precache is wherever this page is, which is the root on a
+  // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
+  // between an offline shell and an install that fails on a 404.
+  const base = new URL("./", location).pathname;
+  navigator.serviceWorker.register(`/sw.js?v=58&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

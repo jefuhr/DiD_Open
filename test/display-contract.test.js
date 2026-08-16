@@ -772,28 +772,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 57 display assets", async () => {
+test("offline shell includes version 58 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=57/);
-  assert.match(index, /app\.js\?v=57/);
-  assert.match(worker, /nyc-ferry-did-shell-v57/);
-  assert.match(worker, /styles\.css\?v=57/);
-  assert.match(worker, /app\.js\?v=57/);
+  assert.match(index, /styles\.css\?v=58/);
+  assert.match(index, /app\.js\?v=58/);
+  assert.match(worker, /nyc-ferry-did-shell-v58/);
+  assert.match(worker, /styles\.css\?v=58/);
+  assert.match(worker, /app\.js\?v=58/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=57"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=57"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=57"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=58"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=58"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=58"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=57'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=58'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=57'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=58'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -919,11 +919,30 @@ test("the web app manifest names a real icon for every size it claims", async ()
 // the site root — a manifest, an icon, a worker — is quietly served by the landing page instead.
 // This is the check that would have caught the manifest 404ing in production.
 test("the page only fetches absolute paths the deployment proxies", async () => {
-  const index = await readFile(indexPath, "utf8");
-  const forwarded = /^\/(?:app\.js|styles\.css|assets\/|api\/|ferryTimesMobile\/)/;
+  const [index, app, worker] = await Promise.all([
+    readFile(indexPath, "utf8"), readFile(appPath, "utf8"), readFile(workerPath, "utf8")
+  ]);
+  const forwarded = /^\/(?:app\.js|styles\.css|sw\.js|assets\/|api\/|ferryTimesMobile\/)/;
   const referenced = [...index.matchAll(/(?:href|src)="(\/[^"]*)"/g)].map((match) => match[1]);
   assert.ok(referenced.length > 0);
   for (const url of referenced) {
     assert.match(url, forwarded, `${url} is not a path the proxy forwards to the board`);
+  }
+
+  // The worker is registered from JavaScript rather than a tag, so it has to be checked separately
+  // — and it is the one that was actually broken: /sw.js 404ed on juliet.nyc for as long as the
+  // offline shell has existed, because nothing forwarded it.
+  const registration = app.match(/serviceWorker\.register\(`([^`]+)`/)?.[1];
+  assert.ok(registration, "the service worker registration URL should be findable");
+  assert.match(registration, forwarded);
+
+  // Every precached path is fetched by the worker at install time, and one 404 fails the whole
+  // install, so they have to be forwarded too. The list's first entry is BASE — the document's own
+  // directory, supplied by the page — which is in scope by construction and is not a literal here.
+  const files = worker.match(/const FILES=\[([^\]]+)\]/)?.[1];
+  assert.ok(files, "the precache list should be findable");
+  assert.ok(files.startsWith("BASE,"), "the document entry should come from the page, not a hardcoded path");
+  for (const url of [...files.matchAll(/'(\/[^']*)'/g)].map((match) => match[1])) {
+    assert.match(url, forwarded, `${url} is precached but not forwarded, so the install would fail`);
   }
 });
