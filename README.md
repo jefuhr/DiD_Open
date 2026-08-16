@@ -126,7 +126,7 @@ the staff board shows every route direction at once and never pages. each depart
 
 landings `2` through `24` are alphabetical. `25` and `26` were added later so existing kiosk numbers stayed put, and `28` and `29` later still for the same reason. Rockaway (`18`) covers both the ferry landing and the shuttle-bus stop next to it.
 
-Governors Island is two landings because it is two piers a walk apart: `11` Yankee Pier takes NYC Ferry's South Brooklyn boat and the Trust's Red Hook and Brooklyn Bridge Park boats, `29` Soissons Landing takes the Trust's Manhattan boat from the Battery Maritime Building. `28` Whitehall is the Manhattan end of that crossing, shared with the Staten Island Ferry and Seastreak. neither `28` nor `29` is an NYC Ferry stop — see *partner operators* below.
+Governors Island is two landings because it is two piers a walk apart: `11` Yankee Pier takes NYC Ferry's South Brooklyn boat and the Trust's Red Hook and Brooklyn Bridge Park boats, `29` Soissons Landing takes the Trust's Manhattan boat from the Battery Maritime Building. `28` Whitehall is the Manhattan end of that crossing, shared with the Staten Island Ferry, Seastreak and the Statue of Liberty boats from Battery Park a couple of hundred metres away. `30` Liberty Island and `31` Ellis Island are the far end of that last one. none of `28`, `29`, `30` or `31` is an NYC Ferry stop — see *partner operators* below.
 
 ## shuttle buses
 
@@ -165,6 +165,7 @@ landings that share a dock with another ferry operator can show its departures n
 | IKEA Brooklyn Ferry | [`gtfs/ikea/`](./gtfs/ikea) — transcribed, see below | `ike:` | text badge, `IKEA` |
 | The Trust for Governors Island | [`gtfs/gi/`](./gtfs/gi) — transcribed, see below | `gi:` | [`public/assets/gi.png`](./public/assets/gi.png) |
 | Staten Island Ferry | [`gtfs/siferry/`](./gtfs/siferry) — NYC DOT download | `sif:` | text badge, `SIF` |
+| Statue City Cruises | [`gtfs/statue/`](./gtfs/statue) — NPS download, seasonal | `sta:` | text badge, route id |
 
 which landings pull which operator:
 
@@ -179,11 +180,13 @@ which landings pull which operator:
 | `28` Whitehall / Battery Maritime Building | none — NYC Ferry does not call here | Staten Island Ferry `whitehall` Whitehall Ferry Terminal · Seastreak `170` Battery Maritime Building Slip 5 · Trust `bmb` Battery Maritime Building / Slip 7 |
 | `29` Governors Island / Soissons Landing | none — NYC Ferry does not call here | Trust `soissons` Governors Island / Soissons Landing |
 | `22` St. George | `137` St. George | Staten Island Ferry `stgeorge` St. George Ferry Terminal |
+| `30` Liberty Island | none — NYC Ferry does not call here | Statue City Cruises `LI` Liberty Island |
+| `31` Ellis Island | none — NYC Ferry does not call here | Statue City Cruises `EI` Ellis Island |
 
 each operator has two switches, and either one off means none of its data is read:
 
-- `waterwayEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` / `ikeaEnabled` / `giEnabled` / `siferryEnabled` in `config/display.json` — the whole kiosk.
-- `waterwayStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` / `ikeaStopIds` / `giStopIds` / `siferryStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
+- `waterwayEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` / `ikeaEnabled` / `giEnabled` / `siferryEnabled` / `statueEnabled` in `config/display.json` — the whole kiosk.
+- `waterwayStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` / `ikeaStopIds` / `giStopIds` / `siferryStopIds` / `statueStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
 
 good to know:
 
@@ -195,6 +198,8 @@ good to know:
 - four NY Waterway routes are tagged `route_type` 3 (bus) in the Trillium feed although they are ferries: `19750` Edgewater – Brookfield Place, `19751` Edgewater – Pier 11, `74376` Port Liberte – Pier 11 and `76080` Hoboken/14th St – Pier 11. with `busesEnabled: false` that dropped them from the board entirely — about a third of NY Waterway's service at Pier 11. `WATERWAY_FERRIES_TYPED_AS_BUS` in [`scripts/build-data.js`](./scripts/build-data.js) reclassifies exactly those four. it changes no times, and it lives in code so that dropping in a fresh feed can't quietly reintroduce the bug. everything else typed as a bus in that feed really is one.
 - a feed can list the same sailing under two trip ids, which used to render as two identical rows. the build drops a departure only when another one already matches it on service, route, stop, minute *and* destination — a duplicate row, never a time.
 - NY Waterway, Seastreak, Liberty Landing, the IKEA boat, the Trust and the Staten Island Ferry publish no realtime feed here, so their rows show scheduled times only: no boat name, no delay badge. that's expected. NYU does have live estimates — see below.
+- the Statue of Liberty boats run loops — Battery Park, Liberty Island, Ellis Island, Battery Park, and the mirror of that from Liberty State Park — so a trip's last stop is also its first. rows show the `stop_headsign` NPS puts on each call, naming the island that call is bound for, rather than the trip's final stop, which would tell someone at Battery Park the boat is going to Battery Park. `30` Liberty Island and `31` Ellis Island are landings of their own; Battery Park shares `28` with the Whitehall terminal a couple of hundred metres away.
+- **known bad, upstream:** NPS spells Liberty State Park correctly on sixteen calls and `Libery State Park` on one. `headsignFixes` in `PARTNER_FEEDS` corrects that one destination label. it is the only text correction in the build and it touches nothing else — no time, no route, no stop — and a headsign that is merely terse is left as published.
 - **known bad, upstream:** the Staten Island Ferry feed has fifteen trips that leave St. George and arrive at St. George twenty-five minutes later — the Whitehall crossing with the wrong stop id on the far end. all fifteen sit on the `threeboat` service, whose calendar is all zeros with no exception dates, so nothing renders them today. the build drops any leg whose next stop is the stop it just left, so St. George cannot advertise boats to itself if a fresh download turns that service on. no published time is changed and no far end is guessed at.
 - the Staten Island Ferry feed carries no vehicle data at all: `block_id`, `trip_headsign` and `direction_id` are empty on all 416 trips, and NYC DOT publishes no GTFS-realtime for it. destinations fall through to each trip's final stop, which is what the terminal signs say anyway.
 - **known bad, upstream:** at Brookfield Place the board shows the South Amboy boat leaving at 6:50 AM, 7:55 AM, 3:50 PM and 4:50 PM. NY Waterway publishes 6:25 AM, 7:30 AM, 3:25 PM and 4:25 PM. route `77347` in the bundled feed carries a stale set of trips that put Brookfield Place *after* Pier 11 rather than before it; the current trips alongside them are right, and Pier 11's own times are right, so the two afternoon ones are also the duplicates the build now drops there. this is not patched here — correcting it means editing published times, and the real fix is a fresher NY Waterway feed. the bundled one is `UTC: 07-Oct-2025`. check for a newer Trillium release before trusting Brookfield Place's South Amboy rows.
@@ -203,6 +208,8 @@ good to know:
 to add a partner at another landing, find its `stop_id` in that feed's `stops.txt` and add the matching `...StopIds` array to the landing in `config/landings.json`.
 
 the Seastreak feed comes from [transit.land `f-drk-seastreak`](https://www.transit.land/feeds/f-drk-seastreak), published at `https://seastreak.com/api/transit/google_transit.zip`.
+
+the Statue of Liberty ferry feed is the National Park Service's, published at `https://www.nps.gov/external-resources/gtfs/stli/statue-of-liberty-ferries.zip` and listed on [NPS developer resources](https://www.nps.gov/subjects/developer/gtfs.htm). the bundled copy is feed version `20260601`, and it is **seasonal**: its only calendar runs `20260523`–`20260907`, so its rows stop appearing after that until a fresh copy is dropped in. the badge shows the feed's route id (`NY`, `NJ`, `LIBP`, `EILILSP`) because NPS publishes no route short names and no operator mark ships with this repo — the route's full name sits beside it.
 
 the Staten Island Ferry feed is NYC DOT's own, published at `https://www.nyc.gov/html/dot/downloads/misc/siferry-gtfs.zip` and listed on [NYC Open Data](https://data.cityofnewyork.us/Transportation/Staten-Island-Ferry-Schedule-General-Transit-Feed-/b57i-ri22). the bundled copy is `siferry-gtfs_2026.1`, feed version `18`, covering `20260101`–`20280117`. it is a plain download: drop in a fresh one and restart.
 

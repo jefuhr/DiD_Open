@@ -26,6 +26,8 @@
   "25": { "name": "Battery Park City", "displayName": "Battery Park City / Brookfield Place", "stopIds": ["136"], "waterwayStopIds": ["2729332"], "libertyStopIds": ["2557122"] },
   "27": { "name": "Pier C", "displayName": "Pier C (Staff)", "virtual": true, "stopIds": ["home-port"], "latitude": 40.7045, "longitude": -73.974 },
   "26": { "name": "Pier 79", "displayName": "Midtown West / Pier 79", "stopIds": ["138"], "waterwayStopIds": ["2439145"], "seastreakStopIds": ["8306"], "ikeaStopIds": ["midtown"] },
-  "28": { "name": "Whitehall", "displayName": "Whitehall / Battery Maritime Building", "stopIds": [], "latitude": 40.70136, "longitude": -74.012666, "siferryStopIds": ["whitehall"], "seastreakStopIds": ["170"], "giStopIds": ["bmb"] },
-  "29": { "name": "Soissons Landing", "displayName": "Governors Island / Soissons Landing", "stopIds": [], "latitude": 40.6893, "longitude": -74.0169, "giStopIds": ["soissons"] }
+  "28": { "name": "Whitehall", "displayName": "Whitehall / Battery Maritime Building", "stopIds": [], "latitude": 40.70136, "longitude": -74.012666, "siferryStopIds": ["whitehall"], "seastreakStopIds": ["170"], "giStopIds": ["bmb"], "statueStopIds": ["BP"] },
+  "29": { "name": "Soissons Landing", "displayName": "Governors Island / Soissons Landing", "stopIds": [], "latitude": 40.6893, "longitude": -74.0169, "giStopIds": ["soissons"] },
+  "30": { "name": "Liberty Island", "displayName": "Liberty Island", "stopIds": [], "latitude": 40.689834, "longitude": -74.047706, "statueStopIds": ["LI"] },
+  "31": { "name": "Ellis Island", "displayName": "Ellis Island", "stopIds": [], "latitude": 40.698939, "longitude": -74.040506, "statueStopIds": ["EI"] }
 }

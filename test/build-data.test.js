@@ -1310,12 +1310,12 @@ test("a landing NYC Ferry does not call at still builds from its partners", asyn
     assert.ok(data.departures.length > 0);
     for (const item of data.departures) {
       assert.notEqual(item.operator, "NYC Ferry");
-      assert.match(String(item.routeId), /^(sif|sea|gi):/);
+      assert.match(String(item.routeId), /^(sif|sea|gi|sta):/);
     }
   }
 
   const operators = [...new Set(whitehall.departures.map((item) => item.operator))].sort();
-  assert.deepEqual(operators, ["Seastreak", "Staten Island Ferry", "The Trust for Governors Island"]);
+  assert.deepEqual(operators, ["Seastreak", "Staten Island Ferry", "Statue City Cruises", "The Trust for Governors Island"]);
 
   // The island end of the same crossing, and only that: NYC Ferry and the Brooklyn boats tie up at
   // Yankee Pier, which is landing 11, and must not appear here.
@@ -1394,4 +1394,40 @@ test("St. George shows the Staten Island Ferry, and never a boat sailing to itse
   for (const item of data.departures) {
     assert.notEqual(item.destination, "St. George Ferry Terminal");
   }
+});
+
+// The Statue of Liberty boats run loops, which is the one thing about this feed that needs care:
+// a loop's last stop is also its first, so the usual "destination is the trip's final stop"
+// fallback would tell someone boarding at Battery Park that the boat is bound for Battery Park.
+test("the Statue of Liberty loops name the island they are bound for, not where they started", async () => {
+  const [whitehall, liberty, ellis] = await Promise.all([
+    buildDisplayData({ landingNumber: 28 }),
+    buildDisplayData({ landingNumber: 30 }),
+    buildDisplayData({ landingNumber: 31 })
+  ]);
+  const statue = (data) => data.departures.filter((item) => String(item.routeId).startsWith("sta:"));
+
+  // Battery Park shares landing 28 with the Whitehall terminal, a couple of hundred metres away.
+  assert.ok(statue(whitehall).length > 0);
+  assert.deepEqual([...new Set(statue(whitehall).map((item) => item.destination))], ["Liberty Island"]);
+
+  // The islands are landings of their own, and every boat leaving them is going somewhere else.
+  for (const [data, here] of [[liberty, "Liberty Island"], [ellis, "Ellis Island"]]) {
+    assert.ok(statue(data).length > 0);
+    assert.equal(data.meta.landing.displayName, here);
+    for (const item of statue(data)) {
+      assert.equal(item.operator, "Statue City Cruises");
+      assert.notEqual(item.destination, here, "a loop must never advertise a boat to the pier it leaves from");
+    }
+  }
+
+  // NPS spells Liberty State Park correctly on sixteen calls and "Libery State Park" on one. The
+  // correction is a spelling fix to a destination label and nothing else.
+  const raw = await readFile(new URL("../gtfs/statue/stop_times.txt", import.meta.url), "utf8");
+  assert.ok(parseCsv(raw).some((row) => row.stop_headsign === "Libery State Park"),
+    "the upstream misspelling this correction exists for is still in the bundled feed");
+  for (const data of [liberty, ellis]) {
+    for (const item of statue(data)) assert.notEqual(item.destination, "Libery State Park");
+  }
+  assert.ok(statue(liberty).some((item) => item.destination === "Liberty State Park"));
 });

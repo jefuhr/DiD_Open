@@ -11,5 +11,6 @@
   "ikeaEnabled": true,
   "giEnabled": true,
   "siferryEnabled": true,
+  "statueEnabled": true,
   "busesEnabled": false
 }

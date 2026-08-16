@@ -1,0 +1,7 @@
+﻿route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color,route_sort_order,continuous_pickup,continuous_drop_off
+NY,NPS,,Battery Park Full Loop,,4,https://www.cityexperiences.com/new-york/city-cruises/statue/new-york-reserve/,,,,,
+LIBP,NPS,,Liberty Island - Battery Park Evening Return ONLY,,4,,,,,,
+EIBP,NPS,,Ellis Island - Battery Park Evening Return ONLY,,4,,,,,,
+NJ,NPS,,Liberty State Park Loop,,4,https://www.cityexperiences.com/new-york/city-cruises/statue/new-jersey-reserve/,,,,,
+LSPClr,NPS,,Liberty Island Liberty State Park Evening Return ONLY,,4,,,,,,
+EILILSP,NPS,,Ellis Island Liberty State Park Evening Return ONLY,,4,,,,,,

@@ -1,0 +1,5 @@
+﻿stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding
+EI,,Ellis Island,,40.698939,-74.040506,,,,,,1
+LI,,Liberty Island,,40.689834,-74.047706,,,,,,1
+BP,,Battery Park,,40.701617,-74.016198,,,,,,1
+LSP,,Liberty State Park,,40.707675,-74.033775,,,,,,1

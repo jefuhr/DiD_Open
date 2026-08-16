@@ -1,0 +1,47 @@
+﻿route_id,service_id,trip_id,trip_headsign,direction_id,block_id,shape_id,wheelchair_accessible,bikes_allowed
+NY,daily,Battery Park Loop_T01,,1,,NY,1,2
+NY,daily,Battery Park Loop_T02,,1,,NY,1,2
+NY,daily,Battery Park Loop_T03,,1,,NY,1,2
+NY,daily,Battery Park Loop_T04,,1,,NY,1,2
+NY,daily,Battery Park Loop_T05,,1,,NY,1,2
+NY,daily,Battery Park Loop_T06,,1,,NY,1,2
+NY,daily,Battery Park Loop_T07,,1,,NY,1,2
+NY,daily,Battery Park Loop_T08,,1,,NY,1,2
+NY,daily,Battery Park Loop_T09,,1,,NY,1,2
+NY,daily,Battery Park Loop_T10,,1,,NY,1,2
+NY,daily,Battery Park Loop_T11,,1,,NY,1,2
+NY,daily,Battery Park Loop_T12,,1,,NY,1,2
+NY,daily,Battery Park Loop_T13,,1,,NY,1,2
+NY,daily,Battery Park Loop_T14,,1,,NY,1,2
+NY,daily,Battery Park Loop_T15,,1,,NY,1,2
+NY,daily,Battery Park Loop_T16,,1,,NY,1,2
+NY,daily,Battery Park Loop_T17,,1,,NY,1,2
+NY,daily,Battery Park Loop_T18,,1,,NY,1,2
+NY,daily,Battery Park Loop_T19,,1,,NY,1,2
+NY,daily,Battery Park Loop_T20,,1,,NY,1,2
+NY,daily,Battery Park Loop_T21,,1,,NY,1,2
+NY,daily,Battery Park Loop_T22,,1,,NY,1,2
+NY,daily,Battery Park Loop_T23,,1,,NY,1,2
+NY,daily,Battery Park Loop_T24,,1,,NY,1,2
+LIBP,daily,Liberty Island - Battery Park Evening Return ONLY_T01,,1,,LIBP,1,2
+LIBP,daily,Liberty Island - Battery Park Evening Return ONLY_T02,,1,,LIBP,1,2
+LIBP,daily,Liberty Island - Battery Park Evening Return ONLY_T03,,1,,LIBP,1,2
+EIBP,daily,Ellis Island - Battery Park Evening Return ONLY_T01,,1,,EIBP,1,2
+EIBP,daily,Ellis Island - Battery Park Evening Return ONLY_T02,,1,,EIBP,1,2
+NJ,daily,Liberty State Park Loop_T01,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T02,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T03,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T04,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T05,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T06,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T07,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T08,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T09,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T10,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T11,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T12,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T13,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T14,,1,,NJ,1,2
+NJ,daily,Liberty State Park Loop_T15,,1,,NJ,1,2
+LSPClr,daily,Liberty State Park Evening Return ONLY_T01,,1,,LSPClr,1,2
+EILILSP,daily,Liberty State Park EI evening Return ONLY_T01,,1,,EILILSP,1,2

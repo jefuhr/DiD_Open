@@ -12,8 +12,8 @@
 // editing it changes nothing. Edit the sources named in each section's `source` field.
 //
 // NYC Ferry only. The partner operators that share these docks — NY Waterway, Seastreak, NYU
-// Langone, Liberty Landing, the IKEA boat, the Trust's Governors Island boats and the Staten
-// Island Ferry — each have their own feed, corrections and transcribed timetables in this
+// Langone, Liberty Landing, the IKEA boat, the Trust's Governors Island boats, the Staten Island
+// Ferry and the Statue of Liberty boats — each have their own feed, corrections and transcribed timetables in this
 // repository, and none of it is here. Their stop ids and their on/off switches are stripped out
 // of the two config files that carry them, so what remains is NYC Ferry's own.
 //
@@ -65,9 +65,9 @@ export async function buildExport({ generatedAt = new Date().toISOString() } = {
   const shiftCount = Object.values(shifts).reduce(
     (total, byBoat) => total + Object.values(byBoat).reduce((sum, list) => sum + list.length, 0), 0
   );
-  // Two landings are docks NYC Ferry does not call at — Whitehall and Soissons Landing, which are
-  // served entirely by partner operators — so once the partner keys are stripped their stopIds are
-  // empty. An empty array would read as data that went missing on the way out, which is exactly
+  // Four landings are docks NYC Ferry does not call at — Whitehall, Soissons Landing, Liberty
+  // Island and Ellis Island, all served entirely by partner operators — so once the partner keys
+  // are stripped their stopIds are empty. An empty array would read as data that went missing on the way out, which is exactly
   // what this export's own tests watch for, so the absence is stated instead of implied.
   const ferryLandings = Object.fromEntries(
     Object.entries(landings).map(([number, landing]) => {
@@ -88,7 +88,8 @@ export async function buildExport({ generatedAt = new Date().toISOString() } = {
       scope:
         "NYC Ferry only. The partner operators sharing these docks have their own hand-maintained " +
         "data in this repository — NY Waterway route corrections, transcribed timetables for the " +
-        "Governors Island, IKEA and Liberty Landing boats, and NYC DOT's Staten Island Ferry feed — " +
+        "Governors Island, IKEA and Liberty Landing boats, and downloads for the Staten Island Ferry " +
+        "and the Statue of Liberty boats — " +
         "and none of it is included here. Partner stop ids and partner on/off switches are stripped " +
         "from the config below.",
       readOnly:

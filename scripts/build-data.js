@@ -135,7 +135,23 @@ export const PARTNER_FEEDS = {
   // what the boat's own signage says anyway. It carries no block_id and no vehicle data of any
   // kind, and NYC DOT publishes no GTFS-realtime for the ferry, so these rows are schedule-only:
   // no live estimates and no vessel names, which is why nothing here opts into realtime.
-  siferry: { prefix: "sif:", directory: "gtfs/siferry", label: "Staten Island Ferry", defaultColor: "#FF8330", enabledKey: "siferryEnabled", stopIdsKey: "siferryStopIds", operatorName: "Staten Island Ferry" }
+  siferry: { prefix: "sif:", directory: "gtfs/siferry", label: "Staten Island Ferry", defaultColor: "#FF8330", enabledKey: "siferryEnabled", stopIdsKey: "siferryStopIds", operatorName: "Staten Island Ferry" },
+  // The Statue of Liberty and Ellis Island boats, from the GTFS the National Park Service publishes
+  // at https://www.nps.gov/external-resources/gtfs/stli/statue-of-liberty-ferries.zip. A download
+  // like the Staten Island feed, not a transcription, and seasonal — the bundled copy runs
+  // 2026-05-23 to 2026-09-07, after which its rows stop appearing until a fresh one is dropped in.
+  //
+  // Its trips are loops: Battery Park to Liberty Island to Ellis Island and back to Battery Park,
+  // and the mirror of that from Liberty State Park in New Jersey. A loop's last stop is also its
+  // first, so the usual "destination is the trip's final stop" fallback would tell someone boarding
+  // at Battery Park that the boat is going to Battery Park. The feed carries a stop_headsign on
+  // every call that matters, naming the island that call is bound for, and that is what the board
+  // shows — which is also what a visitor is actually asking.
+  //
+  // NPS publishes the feed under its own name; the boats, the tickets and the pier signs all say
+  // Statue City Cruises, so that is the operator the board names.
+  statue: { prefix: "sta:", directory: "gtfs/statue", label: "Statue of Liberty Ferry", defaultColor: "#1B6E3C", enabledKey: "statueEnabled", stopIdsKey: "statueStopIds", operatorName: "Statue City Cruises",
+    headsignFixes: { "Libery State Park": "Liberty State Park" } }
 };
 
 // NY Waterway publishes one trip per origin-destination pair, so a boat that calls at two terminals
@@ -259,7 +275,13 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
       // Seastreak's headsigns name a region ("Manhattan", "New Jersey"), which tells a rider
       // standing in Manhattan nothing, so that feed is configured to show the trip's last stop
       // instead. NY Waterway's headsigns already name the terminal, so it keeps the headsign.
-      const headsign = current.stop_headsign || trip.trip_headsign;
+      // A published headsign, with one class of correction allowed: a misspelling of a place the
+      // same feed spells correctly everywhere else. NPS writes "Libery State Park" on exactly one
+      // of its seventeen Liberty State Park calls, and a board that printed it would look like it
+      // had the bug. Nothing but the spelling of a destination label is touched — no time, no
+      // route, no stop, and a headsign that is merely terse or unhelpful is left exactly as it is.
+      const publishedHeadsign = current.stop_headsign || trip.trip_headsign;
+      const headsign = feed.headsignFixes?.[publishedHeadsign] || publishedHeadsign;
       const destination = decodeEntities(feed.destinationFromFinalStop
         ? (finalStop?.stop_name || headsign || "Destination unavailable")
         : (headsign || finalStop?.stop_name || "Destination unavailable"));
@@ -664,7 +686,7 @@ export async function buildDisplayData({
       timezone: agency.agency_timezone || "America/New_York", agencyName: agency.agency_name || "NYC Ferry", feedVersion: feed.feed_version,
       feedStartDate: isoDate(feed.feed_start_date), feedEndDate: isoDate(feed.feed_end_date),
       sourceHash: createHash("sha256").update(routesRaw + tripsRaw + timesRaw).digest("hex").slice(0, 16),
-      waterway: partners.waterway, seastreak: partners.seastreak, nyu: partners.nyu, liberty: partners.liberty, ikea: partners.ikea, gi: partners.gi, siferry: partners.siferry
+      waterway: partners.waterway, seastreak: partners.seastreak, nyu: partners.nyu, liberty: partners.liberty, ikea: partners.ikea, gi: partners.gi, siferry: partners.siferry, statue: partners.statue
     },
     calendars, exceptions,
     routes: routeData, departures, tripSchedules
