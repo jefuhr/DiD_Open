@@ -404,7 +404,7 @@ messages can be up to 2,000 characters. a malformed file, wrong landing id, fail
 
 replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/`, `gtfs/seastreak/` and `gtfs/siferry/` — when a new feed is published, then restart. four directories have no upstream file to drop in and are regenerated instead: `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js`, and `gtfs/gi/` with `node scripts/build-gi-gtfs.js` (re-read the operator's page first — those last three are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
-any edit to `public/index.html`, `public/sw.js`, `public/app.js` or `public/styles.css` must bump the shared cache-busting version (currently `56`) in `index.html` and `sw.js` — `test/display-contract.test.js` checks that they agree.
+any edit to `public/index.html`, `public/sw.js`, `public/app.js` or `public/styles.css` must bump the shared cache-busting version (currently `57`) in `index.html` and `sw.js` — `test/display-contract.test.js` checks that they agree.
 
 ## Docker
 

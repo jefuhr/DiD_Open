@@ -772,16 +772,24 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 56 display assets", async () => {
+test("offline shell includes version 57 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=56/);
-  assert.match(index, /app\.js\?v=56/);
-  assert.match(worker, /nyc-ferry-did-shell-v56/);
-  assert.match(worker, /styles\.css\?v=56/);
-  assert.match(worker, /app\.js\?v=56/);
+  assert.match(index, /styles\.css\?v=57/);
+  assert.match(index, /app\.js\?v=57/);
+  assert.match(worker, /nyc-ferry-did-shell-v57/);
+  assert.match(worker, /styles\.css\?v=57/);
+  assert.match(worker, /app\.js\?v=57/);
+
+  // The app icon, on the same version as everything else. It is what an installed board shows on a
+  // home screen, so it has to be in the precache: an icon that only exists online is missing on
+  // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
+  // link specifically and falls back to a screenshot of the page without one.
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=57"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon\.png\?v=57"/);
+  assert.match(worker, /'\/assets\/app-icon\.png\?v=57'/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
