@@ -1366,3 +1366,32 @@ test("the Staten Island Ferry is labelled by its own name, not its publisher's",
   assert.equal(data.meta.siferry.enabled, true);
   assert.deepEqual(data.meta.siferry.stopIds, ["whitehall"]);
 });
+
+// St. George is the other end of the Whitehall crossing, so it reads the same feed from the other
+// side. It is also where that feed's one defect shows up.
+test("St. George shows the Staten Island Ferry, and never a boat sailing to itself", async () => {
+  const data = await buildDisplayData({ landingNumber: 22 });
+  const siferry = data.departures.filter((item) => String(item.routeId).startsWith("sif:"));
+  assert.ok(siferry.length > 0);
+  assert.deepEqual(data.meta.siferry.stopIds, ["stgeorge"]);
+  // Everything leaving St. George is bound for Whitehall; there is nowhere else on the route.
+  for (const item of siferry) {
+    assert.equal(item.operator, "Staten Island Ferry");
+    assert.equal(item.destination, "Whitehall Ferry Terminal");
+  }
+  // NYC Ferry still calls here and must be untouched by the partner arriving.
+  assert.ok(data.departures.some((item) => item.operator === "NYC Ferry"));
+
+  // The feed carries fifteen trips that leave St. George and arrive at St. George twenty-five
+  // minutes later — the Whitehall crossing with the wrong stop id on the far end. They sit on the
+  // dormant "threeboat" service, so nothing renders them today, but the feed is a drop-in download
+  // and the guard has to hold whatever a fresh one turns on.
+  const raw = await readFile(new URL("../gtfs/siferry/stop_times.txt", import.meta.url), "utf8");
+  const byTrip = new Map();
+  for (const row of parseCsv(raw)) byTrip.set(row.trip_id, [...(byTrip.get(row.trip_id) || []), row]);
+  const degenerate = [...byTrip.values()].filter((times) => new Set(times.map((item) => item.stop_id)).size === 1);
+  assert.equal(degenerate.length, 15, "the upstream defect this guard exists for is still in the bundled feed");
+  for (const item of data.departures) {
+    assert.notEqual(item.destination, "St. George Ferry Terminal");
+  }
+});

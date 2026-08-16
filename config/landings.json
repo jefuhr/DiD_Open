@@ -20,7 +20,7 @@
   "19": { "name": "Roosevelt Island", "displayName": "Roosevelt Island", "stopIds": ["25"] },
   "20": { "name": "Soundview", "displayName": "Soundview", "stopIds": ["112"] },
   "21": { "name": "South Williamsburg", "displayName": "South Williamsburg", "stopIds": ["8"] },
-  "22": { "name": "St. George", "displayName": "St. George", "stopIds": ["137"] },
+  "22": { "name": "St. George", "displayName": "St. George", "stopIds": ["137"], "siferryStopIds": ["stgeorge"] },
   "23": { "name": "Stuyvesant Cove", "displayName": "Stuyvesant Cove", "stopIds": ["114"] },
   "24": { "name": "Sunset Park", "displayName": "Sunset Park / BAT", "stopIds": ["118"], "nyuStopIds": ["13139"] },
   "25": { "name": "Battery Park City", "displayName": "Battery Park City / Brookfield Place", "stopIds": ["136"], "waterwayStopIds": ["2729332"], "libertyStopIds": ["2557122"] },

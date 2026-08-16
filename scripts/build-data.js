@@ -245,6 +245,14 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
       // that feed shows them, flagged out of service — which is what NO PICKUP already means here.
       const noPickup = current.pickup_type === "1";
       if (noPickup && !feed.showNoPickup) continue;
+      // A leg that arrives where it departed is not a sailing anyone can take. NYC DOT's feed has
+      // fifteen of them, all on its dormant "threeboat" service: St. George at :00 to St. George at
+      // :25, which is the Whitehall crossing with the wrong stop id on the far end. That service has
+      // an all-zero calendar and no exception dates, so nothing renders them today — but the feed is
+      // a drop-in download, and the day DOT switches three-boat service on, St. George would start
+      // advertising boats to itself. Declining to show the leg is not a correction to published
+      // data: the times are left exactly as they are, and the far end is simply not guessed at.
+      if (times[index + 1].stop_id === current.stop_id) continue;
       const departureTime = current.departure_time || current.arrival_time;
       if (!departureTime) continue;
       const finalStop = stopsById.get(times.at(-1).stop_id);
