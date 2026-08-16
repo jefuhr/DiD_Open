@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "NYC Ferry departure board — hardcoded NYC Ferry data",
-    "generatedAt": "2026-08-14T10:44:42.988Z",
+    "generatedAt": "2026-08-16T02:42:10.055Z",
     "generator": "scripts/export-hardcoded-data.js",
     "description": "Every piece of NYC Ferry data this repository carries that did not come from a published GTFS feed. Each section names the file it was read from; edit that file, not this one.",
     "scope": "NYC Ferry only. The partner operators sharing these docks have their own hand-maintained data in this repository — NY Waterway route corrections, and transcribed timetables for the Governors Island, IKEA and Liberty Landing boats — and none of it is included here. Partner stop ids and partner on/off switches are stripped from the config below.",
@@ -31,88 +31,103 @@
     "landings": {
       "1": {
         "unused": true,
-        "name": "Unused"
+        "name": "Unused",
+        "displayName": "Unused"
       },
       "2": {
         "name": "Astoria",
+        "displayName": "Astoria",
         "stopIds": [
           "89"
         ]
       },
       "3": {
         "name": "Atlantic Avenue",
+        "displayName": "Atlantic Avenue",
         "stopIds": [
           "11"
         ]
       },
       "4": {
         "name": "Bay Ridge",
+        "displayName": "Bay Ridge",
         "stopIds": [
           "23"
         ]
       },
       "5": {
         "name": "Brooklyn Navy Yard",
+        "displayName": "Brooklyn Navy Yard",
         "stopIds": [
           "120"
         ]
       },
       "6": {
         "name": "Corlears Hook",
+        "displayName": "Corlears Hook",
         "stopIds": [
           "115"
         ]
       },
       "7": {
         "name": "DUMBO",
+        "displayName": "DUMBO",
         "stopIds": [
           "20"
         ]
       },
       "8": {
         "name": "East 34th Street",
+        "displayName": "East 34th Street",
         "stopIds": [
           "17"
         ]
       },
       "9": {
         "name": "East 90th St",
+        "displayName": "East 90th St",
         "stopIds": [
           "113"
         ]
       },
       "10": {
         "name": "Ferry Point Park",
+        "displayName": "Ferry Point Park",
         "stopIds": [
           "141"
         ]
       },
       "11": {
         "name": "Governors Island",
+        "displayName": "Governors Island",
         "stopIds": [
           "111"
         ]
       },
       "12": {
         "name": "Greenpoint",
+        "displayName": "Greenpoint",
         "stopIds": [
           "18"
         ]
       },
       "13": {
         "name": "Hunters Point South",
+        "displayName": "Hunters Point South",
         "stopIds": [
           "4"
         ]
       },
       "14": {
         "name": "Long Island City",
+        "displayName": "Long Island City",
         "stopIds": [
           "90"
         ]
       },
       "15": {
         "name": "North Williamsburg",
+        "displayName": "North Williamsburg",
         "stopIds": [
           "19"
         ]
@@ -141,30 +156,35 @@
       },
       "19": {
         "name": "Roosevelt Island",
+        "displayName": "Roosevelt Island",
         "stopIds": [
           "25"
         ]
       },
       "20": {
         "name": "Soundview",
+        "displayName": "Soundview",
         "stopIds": [
           "112"
         ]
       },
       "21": {
         "name": "South Williamsburg",
+        "displayName": "South Williamsburg",
         "stopIds": [
           "8"
         ]
       },
       "22": {
         "name": "St. George",
+        "displayName": "St. George",
         "stopIds": [
           "137"
         ]
       },
       "23": {
         "name": "Stuyvesant Cove",
+        "displayName": "Stuyvesant Cove",
         "stopIds": [
           "114"
         ]
