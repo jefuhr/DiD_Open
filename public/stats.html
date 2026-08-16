@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#001d41" />
+    <meta name="robots" content="noindex" />
+    <title>Ferry Board — stats</title>
+    <link rel="icon" href="/assets/app-icon.png?v=58" type="image/png" />
+    <!-- Under /assets/ because that is a path the deployment's proxy forwards to this server. A
+         stylesheet or script at the root would be served by juliet.nyc's landing page instead —
+         the same reason the web app manifest lives there. -->
+    <link rel="stylesheet" href="/assets/stats.css?v=1" />
+  </head>
+  <body>
+    <main>
+      <h1>Ferry board stats</h1>
+      <p class="since" id="since">Loading…</p>
+
+      <section>
+        <h2>Boards opened</h2>
+        <ol class="bars" id="landings"></ol>
+        <p class="note">One per board opened or dock switched to. Background polling is not counted.</p>
+      </section>
+
+      <section>
+        <h2>Requests</h2>
+        <dl class="rows" id="routes"></dl>
+      </section>
+
+      <section>
+        <h2>Responses</h2>
+        <dl class="rows" id="statuses"></dl>
+      </section>
+
+      <section id="eventsSection" hidden>
+        <h2>Live data</h2>
+        <dl class="rows" id="events"></dl>
+      </section>
+
+      <p class="note">Counts of requests to this server since the date above. No cookies, no
+        identifiers, nothing recorded per visitor.</p>
+    </main>
+    <script src="/assets/stats.js?v=1"></script>
+  </body>
+</html>

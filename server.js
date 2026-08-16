@@ -4,6 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { landingChoices, loadAllLandingData, operatorRoster, stopIdsForLanding } from "./lib/landing-data.js";
+import { createCounterService } from "./lib/counters.js";
 import { createManualOverrideService } from "./lib/manual-overrides.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
@@ -37,6 +38,11 @@ const nyuRealtimeService = createNyuRealtimeService({ loadDisplay: async () => l
 const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROOT, "state/service-alerts.json") });
 const manualOverrideService = createManualOverrideService({ statePath: path.join(ROOT, "state/manual-overrides.json") });
 const sftpOverridePoller = createSftpOverridePoller({ config: sftpConfig, landingId: displayConfig.landingNumber, cacheService: manualOverrideService });
+const counters = createCounterService({ statePath: path.join(ROOT, "state/counters.json") });
+// The counters key landings by number, which is what an agent dials and not what anyone reading a
+// stats page knows a dock by.
+const LANDING_NAMES = Object.fromEntries(landingData.available.map((landing) => [landing.id, landing.displayName || landing.name]));
+const STATS_PATHS = new Set(["/stats", "/ferryTimesMobile/stats"]);
 const TYPES = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".json":"application/json; charset=utf-8", ".png":"image/png", ".svg":"image/svg+xml", ".woff2":"font/woff2", ".webmanifest":"application/manifest+json; charset=utf-8" };
 
 function headers(response) {
@@ -51,7 +57,17 @@ async function serve(response, file) {
 }
 async function handle(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
-  if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), sftpOverride:sftpOverridePoller.status() });
+  if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), sftpOverride:sftpOverridePoller.status(), counters: await counters.snapshot() });
+  // The counters alone, for the public stats page. /api/health carries them too, but alongside the
+  // SFTP poller's target host, its key fingerprints and its last error string — fine for an
+  // operator hitting health directly, not something to put behind a page anyone can open.
+  if (url.pathname === "/api/stats") {
+    const stats = { since: null, landings: {}, ...await counters.snapshot() };
+    // Only the docks that have a count. Shipping all 28 names to render the four a board has
+    // actually been opened on is most of this payload for none of its meaning.
+    const landingNames = Object.fromEntries(Object.keys(stats.landings).map((id) => [id, LANDING_NAMES[id]]).filter(([, name]) => name));
+    return json(response, 200, { ...stats, landingNames });
+  }
   if (url.pathname === "/api/landings") return json(response, 200, { landings: landingData.available, operators: OPERATORS, configured: displayConfig.landingNumber });
   if (url.pathname === "/api/display-data") {
     const requested = url.searchParams.get("landingId");
@@ -86,6 +102,10 @@ async function handle(request, response) {
       updates: stops ? updates.filter((update) => stops.has(String(update.stopId))) : updates,
       nyu: { available: nyu.available, stale: nyu.stale, fetchedAt: nyu.fetchedAt, error: nyu.error }
     };
+    // The status code says a payload went out; these say what was in it. A board that answers 200
+    // from a stale cache all afternoon looks perfectly healthy from the outside.
+    if (!result.available) counters.event("realtime-unavailable");
+    else if (result.stale) counters.event("realtime-stale");
     return json(response, result.available ? 200 : 503, result);
   }
   if (url.pathname === "/api/alerts") { const result = await serviceAlertService.getCurrent(); return json(response, result.available ? 200 : 503, result); }
@@ -102,14 +122,44 @@ async function handle(request, response) {
       return json(response, status, { error: status === 500 ? "Manual override unavailable." : error.message });
     }
   }
+  // Reachable as /stats on a kiosk and as /ferryTimesMobile/stats on juliet.nyc. Whether the
+  // proxy hands the prefix on or strips it is the proxy's business and not visible from here, so
+  // both arrivals are answered rather than guessed between. Extensionless, with or without the
+  // trailing slash a browser may add.
+  if (STATS_PATHS.has(url.pathname.replace(/\/+$/, "") || "/")) return serve(response, path.join(PUBLIC, "stats.html"));
   let relative; try { relative = decodeURIComponent(url.pathname === "/" ? "index.html" : url.pathname.replace(/^\/+/, "")); } catch { return json(response, 400, { error:"Invalid path" }); }
   const file = path.resolve(PUBLIC, relative); if (!file.startsWith(`${PUBLIC}${path.sep}`)) return json(response, 403, { error:"Forbidden" });
   return serve(response, file);
 }
-const server = http.createServer((request, response) => handle(request, response).catch((error) => { console.error(error); if (!response.headersSent) json(response, 500, { error:"Internal server error" }); }));
+// Counted once per request, from one place, after the response has gone out — so the count knows
+// the status it ended with and nothing on the request path can be slowed or broken by counting it.
+function count(request, response) {
+  response.on("finish", () => {
+    const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
+    // Only the payload a board fetches when it opens or switches docks counts as viewing a landing.
+    // Realtime and override both carry landingId too, and both are polled — every 15 and every 5
+    // seconds — so counting those would measure how long a board was left on, which is a different
+    // question wearing this one's clothes. A request with no landingId is a kiosk on the landing it
+    // was configured for, and is the view it looks like rather than nothing at all.
+    const requested = url.searchParams.get("landingId");
+    const landingId = requested === null ? Number(displayConfig.landingNumber) : Number(requested);
+    counters.record({
+      // Both spellings of the stats page are the same page, and counting them apart would put the
+      // proxied one in with the served files.
+      route: STATS_PATHS.has(url.pathname.replace(/\/+$/, "") || "/") ? "/stats" : url.pathname,
+      landingId: url.pathname === "/api/display-data" && displayDataJson.has(landingId) ? landingId : undefined,
+      status: response.statusCode
+    });
+  });
+}
+const server = http.createServer((request, response) => {
+  count(request, response);
+  return handle(request, response).catch((error) => { console.error(error); if (!response.headersSent) json(response, 500, { error:"Internal server error" }); });
+});
 server.listen(PORT, HOST, () => {
   console.log(`NYC Ferry DiD ready at http://${HOST}:${PORT}`);
   sftpOverridePoller.start();
+  counters.start();
 });
-const shutdown = () => server.close(() => void sftpOverridePoller.stop().finally(() => process.exit(0)));
+const shutdown = () => server.close(() => void Promise.all([sftpOverridePoller.stop(), counters.stop()]).finally(() => process.exit(0)));
 process.on("SIGINT", shutdown); process.on("SIGTERM", shutdown);

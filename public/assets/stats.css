@@ -1,0 +1,41 @@
+/* Deliberately not the board's stylesheet: this page is read once by a person on a phone, not
+   watched across a room, so it wants none of the kiosk's sizing, and pulling styles.css in would
+   ship a whole departure board's worth of CSS to render nine numbers. */
+:root { color-scheme: dark; }
+
+body {
+  margin: 0;
+  padding: 2rem 1.25rem 3rem;
+  background: #001d41;
+  color: #eef4ff;
+  font: 1rem/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+main { max-width: 34rem; margin: 0 auto; }
+
+h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; }
+h2 { margin: 0 0 0.75rem; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8fb4e8; }
+
+section { margin-top: 2.5rem; }
+
+.since { margin: 0.375rem 0 0; color: #8fb4e8; font-size: 0.875rem; }
+.note { margin: 0.75rem 0 0; color: #7f9dc4; font-size: 0.8125rem; }
+
+/* Landings, as bars. A count means little on its own — what a reader wants is which dock is busier
+   than which, and a bar answers that without a charting library. */
+.bars { margin: 0; padding: 0; list-style: none; }
+.bars li { margin-bottom: 0.625rem; }
+.bars .label { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.9375rem; }
+.bars .label span:last-child { color: #8fb4e8; font-variant-numeric: tabular-nums; }
+.bars .track { margin-top: 0.25rem; height: 0.375rem; border-radius: 999px; background: #0d305e; }
+.bars .fill { display: block; height: 100%; border-radius: 999px; background: #4d9fff; }
+
+.rows { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 0.375rem 1rem; }
+.rows dt { color: #cddffa; font-size: 0.9375rem; overflow-wrap: anywhere; }
+.rows dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+.empty { color: #7f9dc4; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .bars .fill { transition: width 0.3s ease; }
+}
