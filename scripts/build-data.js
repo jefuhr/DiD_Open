@@ -124,7 +124,18 @@ export const PARTNER_FEEDS = {
   // The Trust runs its own Brooklyn boats to Governors Island, which are not the NYC Ferry South
   // Brooklyn route that also calls there — different operator, different piers, weekends only.
   // Transcribed from the operator's schedule page by scripts/build-gi-gtfs.js; see that file.
-  gi: { prefix: "gi:", directory: "gtfs/gi", label: "Governors Island Ferry", defaultColor: "#00BBE3", enabledKey: "giEnabled", stopIdsKey: "giStopIds", showNoPickup: true }
+  gi: { prefix: "gi:", directory: "gtfs/gi", label: "Governors Island Ferry", defaultColor: "#00BBE3", enabledKey: "giEnabled", stopIdsKey: "giStopIds", showNoPickup: true },
+  // The Staten Island Ferry, from the GTFS NYC DOT publishes at
+  // https://www.nyc.gov/html/dot/downloads/misc/siferry-gtfs.zip. Unlike the transcribed feeds
+  // above this one is a real download, so replacing gtfs/siferry/ with a fresh copy is all a
+  // schedule change needs.
+  //
+  // The feed leaves trip_headsign empty on all 416 trips, so every row's destination falls through
+  // to the trip's final stop — "St. George Ferry Terminal" or "Whitehall Ferry Terminal", which is
+  // what the boat's own signage says anyway. It carries no block_id and no vehicle data of any
+  // kind, and NYC DOT publishes no GTFS-realtime for the ferry, so these rows are schedule-only:
+  // no live estimates and no vessel names, which is why nothing here opts into realtime.
+  siferry: { prefix: "sif:", directory: "gtfs/siferry", label: "Staten Island Ferry", defaultColor: "#FF8330", enabledKey: "siferryEnabled", stopIdsKey: "siferryStopIds", operatorName: "Staten Island Ferry" }
 };
 
 // NY Waterway publishes one trip per origin-destination pair, so a boat that calls at two terminals
@@ -201,7 +212,13 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
   const tripsById = new Map(trips.map((item) => [item.trip_id, item]));
   const selectedStops = new Set(stopIds);
   for (const stopId of selectedStops) if (!stopsById.has(stopId)) throw new Error(`Landing ${landingNumber} references missing ${feed.label} stop ${stopId}.`);
-  const agencyName = parseCsv(agencyRaw)[0]?.agency_name || feed.label;
+  // The operator's name as the board should say it. Normally that is whatever the feed's agency.txt
+  // says, which is how every partner here got its name. NYC DOT is the exception: it publishes the
+  // Staten Island Ferry under the department's legal name, which is not what the boat, the terminal
+  // signs, or anyone at the pier calls it, and which would fill the operator filter and every route
+  // row with "New York City Department of Transportation". The correction lives in PARTNER_FEEDS
+  // rather than in gtfs/siferry/agency.txt so that dropping in a fresh download cannot undo it.
+  const agencyName = feed.operatorName || parseCsv(agencyRaw)[0]?.agency_name || feed.label;
   const prefixed = (value) => `${feed.prefix}${value}`;
   // route_type as the feed means it, not as it says it. See WATERWAY_FERRIES_TYPED_AS_BUS.
   const modeOf = (route) => (route.route_type === "3" && !feed.ferryRouteIds?.has(route.route_id) ? "bus" : "ferry");
@@ -430,7 +447,23 @@ export async function buildDisplayData({
   // and no feed contains it. Its landing is virtual: everything on it is derived from the crew
   // schedule's shift starts rather than read out of stop_times.txt.
   const isVirtual = landingConfig.virtual === true;
-  const selectedStops = new Set(landingConfig.stopIds);
+  // A landing the home agency does not call at.
+  //
+  // Every landing used to be an NYC Ferry stop with partners alongside it, so stopIds could be
+  // assumed present and its first entry could be trusted to carry the landing's position. Whitehall
+  // breaks that: the Staten Island Ferry, Seastreak and the Trust's Manhattan boat all berth there
+  // and NYC Ferry does not stop there at all. Soissons Landing is the same case on the island.
+  //
+  // Such a landing is not virtual — it is a real dock with real published departures — so it keeps
+  // going through the ordinary path, contributing no NYC Ferry departures because it matches no
+  // NYC Ferry stop, and takes its position from config instead of from a stops.txt row it has none
+  // of. Everything downstream is unchanged: partner stop ids were never read from here.
+  const stopIds = landingConfig.stopIds || [];
+  const partnerOnly = !isVirtual && stopIds.length === 0;
+  if (partnerOnly && !(Number.isFinite(Number(landingConfig.latitude)) && Number.isFinite(Number(landingConfig.longitude)))) {
+    throw new Error(`Landing ${landingNumber} has no NYC Ferry stopIds, so config/landings.json must give it a latitude and longitude.`);
+  }
+  const selectedStops = new Set(stopIds);
   const governorsIslandStops = new Set(landings["11"]?.stopIds || []);
   if (!isVirtual) {
     for (const stopId of selectedStops) if (!stopsById.has(stopId)) throw new Error(`Landing ${landingNumber} references missing GTFS stop ${stopId}.`);
@@ -515,9 +548,9 @@ export async function buildDisplayData({
     color: color(item.route_color, "#004E72"), textColor: color(item.route_text_color, "#FFFFFF"), mode: item.route_type === "3" ? "bus" : "ferry",
     operator: agency.agency_name || "NYC Ferry"
   }]));
-  const stopDetails = isVirtual
+  const stopDetails = isVirtual || partnerOnly
     ? [{ stop_lat: landingConfig.latitude, stop_lon: landingConfig.longitude }]
-    : landingConfig.stopIds.map((id) => stopsById.get(id));
+    : stopIds.map((id) => stopsById.get(id));
   const feed = parseCsv(feedRaw)[0] || {};
   let calendars = parseCsv(calendarRaw).map((item) => ({ serviceId: item.service_id, weekdays: [item.sunday,item.monday,item.tuesday,item.wednesday,item.thursday,item.friday,item.saturday].map((v) => v === "1"), startDate: isoDate(item.start_date), endDate: isoDate(item.end_date) }));
   let exceptions = parseCsv(datesRaw).map((item) => ({ serviceId: item.service_id, date: isoDate(item.date), added: item.exception_type === "1" }));
@@ -618,12 +651,12 @@ export async function buildDisplayData({
     meta: {
       schemaVersion: 9, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
       departuresShown, routesShown, busesEnabled,
-      landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds: landingConfig.stopIds,
+      landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },
       timezone: agency.agency_timezone || "America/New_York", agencyName: agency.agency_name || "NYC Ferry", feedVersion: feed.feed_version,
       feedStartDate: isoDate(feed.feed_start_date), feedEndDate: isoDate(feed.feed_end_date),
       sourceHash: createHash("sha256").update(routesRaw + tripsRaw + timesRaw).digest("hex").slice(0, 16),
-      waterway: partners.waterway, seastreak: partners.seastreak, nyu: partners.nyu, liberty: partners.liberty, ikea: partners.ikea, gi: partners.gi
+      waterway: partners.waterway, seastreak: partners.seastreak, nyu: partners.nyu, liberty: partners.liberty, ikea: partners.ikea, gi: partners.gi, siferry: partners.siferry
     },
     calendars, exceptions,
     routes: routeData, departures, tripSchedules

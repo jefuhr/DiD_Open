@@ -1,0 +1,2 @@
+﻿feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version,feed_contact_email,feed_contact_url
+New York City Department of Transportation,https://www1.nyc.gov/html/dot/html/about/datafeeds.shtml#ferry,en,20260101,20280117,18,ferryaccessrequest@dot.nyc.gov,

@@ -1,0 +1,3 @@
+﻿stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding
+stgeorge,,St. George Ferry Terminal,"Located at 1 Bay Street, Staten Island, at the intersection of Bay Street and Richmond Terrace. Passengers using wheelchairs or carrying bicycles are encouraged to board on the  lower level.",40.644169,-74.072201,,,0,,,1
+whitehall,,Whitehall Ferry Terminal,"Located at Peter Minuit Plaza, at the intersection of Whitehall and Water Streets in Manhattan. Passengers using wheelchairs or carrying bicycles are encouraged to use the lower level for boarding.",40.70136,-74.012666,,,0,,,1

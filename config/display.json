@@ -10,5 +10,6 @@
   "libertyEnabled": true,
   "ikeaEnabled": true,
   "giEnabled": true,
+  "siferryEnabled": true,
   "busesEnabled": false
 }

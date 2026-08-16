@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "NYC Ferry departure board — hardcoded NYC Ferry data",
-    "generatedAt": "2026-08-16T02:45:45.997Z",
+    "generatedAt": "2026-08-16T03:26:49.054Z",
     "generator": "scripts/export-hardcoded-data.js",
     "description": "Every piece of NYC Ferry data this repository carries that did not come from a published GTFS feed. Each section names the file it was read from; edit that file, not this one.",
-    "scope": "NYC Ferry only. The partner operators sharing these docks have their own hand-maintained data in this repository — NY Waterway route corrections, and transcribed timetables for the Governors Island, IKEA and Liberty Landing boats — and none of it is included here. Partner stop ids and partner on/off switches are stripped from the config below.",
+    "scope": "NYC Ferry only. The partner operators sharing these docks have their own hand-maintained data in this repository — NY Waterway route corrections, transcribed timetables for the Governors Island, IKEA and Liberty Landing boats, and NYC DOT's Staten Island Ferry feed — and none of it is included here. Partner stop ids and partner on/off switches are stripped from the config below.",
     "readOnly": "A snapshot for export. Nothing in the build reads this file back, so editing it changes nothing.",
     "sources": [
       "config/landings.json",
@@ -18,21 +18,23 @@
   },
   "landings": {
     "source": "config/landings.json",
-    "description": "Every landing the board can show, keyed by the landing number an agent dials. stopIds are NYC Ferry GTFS stops. Landing 27 (Pier C) is virtual — no feed contains the home port — so it carries its own coordinates and a stop id that exists only in this repository.",
+    "description": "Every landing the board can show, keyed by the landing number an agent dials. stopIds are NYC Ferry GTFS stops. Landing 27 (Pier C) is virtual — no feed contains the home port — so it carries its own coordinates and a stop id that exists only in this repository. A landing marked nycFerryCalls: false is a real dock that NYC Ferry does not serve: its departures all belong to partner operators, so it has no NYC Ferry stop id and carries its own coordinates.",
     "partnerStopIdsRemoved": [
       "waterwayStopIds",
       "seastreakStopIds",
       "nyuStopIds",
       "libertyStopIds",
       "ikeaStopIds",
-      "giStopIds"
+      "giStopIds",
+      "siferryStopIds"
     ],
-    "count": 26,
+    "count": 28,
     "landings": {
       "1": {
         "unused": true,
         "name": "Unused",
-        "displayName": "Unused"
+        "displayName": "Unused",
+        "nycFerryCalls": false
       },
       "2": {
         "name": "Astoria",
@@ -98,8 +100,8 @@
         ]
       },
       "11": {
-        "name": "Governors Island",
-        "displayName": "Governors Island",
+        "name": "Yankee Pier",
+        "displayName": "Governors Island / Yankee Pier",
         "stopIds": [
           "111"
         ]
@@ -219,6 +221,20 @@
         ],
         "latitude": 40.7045,
         "longitude": -73.974
+      },
+      "28": {
+        "name": "Whitehall",
+        "displayName": "Whitehall / Battery Maritime Building",
+        "latitude": 40.70136,
+        "longitude": -74.012666,
+        "nycFerryCalls": false
+      },
+      "29": {
+        "name": "Soissons Landing",
+        "displayName": "Governors Island / Soissons Landing",
+        "latitude": 40.6893,
+        "longitude": -74.0169,
+        "nycFerryCalls": false
       }
     }
   },
@@ -231,7 +247,8 @@
       "nyuEnabled",
       "libertyEnabled",
       "ikeaEnabled",
-      "giEnabled"
+      "giEnabled",
+      "siferryEnabled"
     ],
     "settings": {
       "landingNumber": 26,

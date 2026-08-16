@@ -1,4 +1,6 @@
 stop_id,stop_name,stop_lat,stop_lon
 redhook,Red Hook / Atlantic Basin,40.680957,-74.013358
 pier6,Brooklyn Bridge Park / Pier 6,40.692315,-74.002073
-govisland,Governors Island,40.686640,-74.016482
+govisland,Governors Island / Yankee Pier,40.686640,-74.016482
+soissons,Governors Island / Soissons Landing,40.689300,-74.016900
+bmb,Battery Maritime Building / Slip 7,40.700894,-74.011612

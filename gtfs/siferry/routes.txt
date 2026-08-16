@@ -1,0 +1,2 @@
+﻿route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color,route_sort_order,continuous_pickup,continuous_drop_off
+SIF,NYC DOT,,Staten Island Ferry,The Ferry operates between the St. George Ferry Terminal on Staten Island and the Whitehall Terminal in Lower Manhattan. The trip is free and take about 25 minutes. The ferry does not carry cars.,4,,FF8330,000000,,,

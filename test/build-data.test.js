@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, symlink, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import { buildDisplayData, decodeEntities, parseCsv } from "../scripts/build-data.js";
 
 test("every configured landing builds departures", async () => {
@@ -459,7 +462,7 @@ test("the Trust's Governors Island ferry sails from Red Hook and Pier 6", async 
   const fromRedHook = redHook.departures.filter((item) => item.routeId.startsWith("gi:"));
   assert.deepEqual(fromRedHook.map((item) => item.departureTime),
     ["09:45:00", "10:45:00", "11:45:00", "12:45:00", "13:45:00", "14:45:00", "15:45:00", "16:45:00", "17:45:00"]);
-  assert.ok(fromRedHook.every((item) => item.destination === "Governors Island"));
+  assert.ok(fromRedHook.every((item) => item.destination === "Governors Island / Yankee Pier"));
   // The last two leave empty to go and fetch the last visitors, so they are shown but marked.
   assert.deepEqual(fromRedHook.filter((item) => item.outOfService).map((item) => item.departureTime),
     ["16:45:00", "17:45:00"]);
@@ -468,7 +471,7 @@ test("the Trust's Governors Island ferry sails from Red Hook and Pier 6", async 
   const fromPier6 = pier6.departures.filter((item) => item.routeId.startsWith("gi:"));
   assert.deepEqual(fromPier6.map((item) => item.departureTime),
     ["10:15:00", "11:15:00", "12:15:00", "13:15:00", "14:15:00", "15:15:00", "16:15:00", "17:15:00", "18:15:00"]);
-  assert.ok(fromPier6.every((item) => item.destination === "Governors Island"));
+  assert.ok(fromPier6.every((item) => item.destination === "Governors Island / Yankee Pier"));
   assert.deepEqual(fromPier6.filter((item) => item.outOfService).map((item) => item.departureTime),
     ["17:15:00", "18:15:00"]);
 
@@ -1223,7 +1226,7 @@ test("every stop in the Trust's feed is attached to a landing", async () => {
     readFile(new URL("../gtfs/gi/stops.txt", import.meta.url), "utf8")
   ]);
   const feedStops = parseCsv(stopsRaw).map((stop) => stop.stop_id);
-  assert.deepEqual(feedStops.slice().sort(), ["govisland", "pier6", "redhook"]);
+  assert.deepEqual(feedStops.slice().sort(), ["bmb", "govisland", "pier6", "redhook", "soissons"]);
 
   const claimed = new Map();
   for (const [number, landing] of Object.entries(landings)) {
@@ -1237,6 +1240,11 @@ test("every stop in the Trust's feed is attached to a landing", async () => {
   }
   // The island itself, which is the one that was missed.
   assert.equal(claimed.get("govisland"), "11");
+  // The island has two piers and they are a walk apart, so each is its own landing: the Brooklyn
+  // boats and NYC Ferry berth at Yankee Pier, the Manhattan boat at Soissons Landing. A single
+  // island landing claiming both would put a boat on a board it does not call at.
+  assert.equal(claimed.get("soissons"), "29");
+  assert.equal(claimed.get("bmb"), "28");
 });
 
 // Both directions of the Trust's service, counted against the transcribed timetable: seven sailings
@@ -1264,12 +1272,97 @@ test("the Trust's boats show at the island as well as at both shore piers", asyn
   // The shore ends are unchanged, and from there the boats run to the island.
   assert.equal(trust(pier6).length, 9);
   assert.equal(trust(redHook).length, 9);
+  // The pier is named, not just the island: the Trust's Manhattan boat ties up at Soissons Landing
+  // on the other side of it, so a row reading only "Governors Island" would not say which.
   for (const item of [...trust(pier6), ...trust(redHook)]) {
-    assert.equal(item.destination, "Governors Island");
+    assert.equal(item.destination, "Governors Island / Yankee Pier");
   }
 
   // NYC Ferry's own South Brooklyn boats also call at the island and are a different operator's
   // service on different piers; adding the Trust must not have disturbed them.
   assert.ok(island.departures.some((item) => item.routeId === "SB"));
   assert.equal(island.departures.some((item) => item.routeId === "GI" && String(item.routeId).startsWith("gi:")), false);
+});
+
+// Whitehall and Soissons Landing: two real docks the home agency does not call at.
+//
+// Every landing before these was an NYC Ferry stop with partners alongside it, so the build could
+// assume a stop id existed and read the landing's position off its stops.txt row. These have no
+// NYC Ferry stop at all — the Staten Island Ferry, Seastreak and the Trust's Manhattan boat berth
+// at Whitehall, and only the Trust's boat calls at Soissons — so they carry their own coordinates
+// and are built entirely from partner feeds.
+test("a landing NYC Ferry does not call at still builds from its partners", async () => {
+  const [whitehall, soissons] = await Promise.all([
+    buildDisplayData({ landingNumber: 28 }),
+    buildDisplayData({ landingNumber: 29 })
+  ]);
+
+  // Position comes from config, because there is no feed row to take it from. Without it the
+  // nearest-landing button would skip the landing entirely rather than send anyone to it.
+  assert.equal(whitehall.meta.landing.latitude, 40.70136);
+  assert.equal(whitehall.meta.landing.longitude, -74.012666);
+  assert.deepEqual(whitehall.meta.landing.stopIds, []);
+  assert.equal(soissons.meta.landing.latitude, 40.6893);
+
+  // Nothing here belongs to the home agency: every row is a partner's, and no NYC Ferry route id
+  // can appear on a board built from stops NYC Ferry does not have.
+  for (const data of [whitehall, soissons]) {
+    assert.ok(data.departures.length > 0);
+    for (const item of data.departures) {
+      assert.notEqual(item.operator, "NYC Ferry");
+      assert.match(String(item.routeId), /^(sif|sea|gi):/);
+    }
+  }
+
+  const operators = [...new Set(whitehall.departures.map((item) => item.operator))].sort();
+  assert.deepEqual(operators, ["Seastreak", "Staten Island Ferry", "The Trust for Governors Island"]);
+
+  // The island end of the same crossing, and only that: NYC Ferry and the Brooklyn boats tie up at
+  // Yankee Pier, which is landing 11, and must not appear here.
+  assert.deepEqual([...new Set(soissons.departures.map((item) => item.operator))], ["The Trust for Governors Island"]);
+  assert.deepEqual([...new Set(soissons.departures.map((item) => item.destination))], ["Battery Maritime Building"]);
+});
+
+test("a landing with no NYC Ferry stop and no coordinates is rejected rather than guessed at", async () => {
+  // A real root, with only config/landings.json swapped: everything else is symlinked to this
+  // repository's own files, so the build runs exactly as it does in production and the only thing
+  // under test is the missing position.
+  const root = await mkdtemp(path.join(tmpdir(), "did-landing-"));
+  const repo = fileURLToPath(new URL("..", import.meta.url));
+  for (const name of ["gtfs", "content", "public"]) await symlink(path.join(repo, name), path.join(root, name));
+  await mkdir(path.join(root, "config"));
+  for (const name of ["display.json", "crew-shuttles.json"]) {
+    await symlink(path.join(repo, "config", name), path.join(root, "config", name));
+  }
+  const landings = JSON.parse(await readFile(path.join(repo, "config/landings.json"), "utf8"));
+  delete landings["28"].latitude;
+  delete landings["28"].longitude;
+  await writeFile(path.join(root, "config/landings.json"), JSON.stringify(landings), "utf8");
+
+  await assert.rejects(
+    () => buildDisplayData({ root, landingNumber: 28 }),
+    /must give it a latitude and longitude/
+  );
+  // The same root builds the landing fine once the position is there, so the rejection is about
+  // the missing coordinates and not about the fixture.
+  await writeFile(path.join(root, "config/landings.json"), await readFile(path.join(repo, "config/landings.json"), "utf8"), "utf8");
+  const data = await buildDisplayData({ root, landingNumber: 28 });
+  assert.equal(data.meta.landing.latitude, 40.70136);
+});
+
+// NYC DOT publishes the Staten Island Ferry under the department's legal name, which is not what
+// anyone at the terminal calls it and would fill the operator filter with it.
+test("the Staten Island Ferry is labelled by its own name, not its publisher's", async () => {
+  const data = await buildDisplayData({ landingNumber: 28 });
+  const siferry = data.departures.filter((item) => String(item.routeId).startsWith("sif:"));
+  assert.ok(siferry.length > 0);
+  for (const item of siferry) {
+    assert.equal(item.operator, "Staten Island Ferry");
+    assert.equal(item.mode, "ferry");
+    // The feed leaves every trip_headsign empty, so the destination falls through to the trip's
+    // final stop — which is what the terminal's own signage says.
+    assert.equal(item.destination, "St. George Ferry Terminal");
+  }
+  assert.equal(data.meta.siferry.enabled, true);
+  assert.deepEqual(data.meta.siferry.stopIds, ["whitehall"]);
 });

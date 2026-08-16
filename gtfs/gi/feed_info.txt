@@ -1,2 +1,2 @@
 feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
-The Trust for Governors Island,https://www.govisland.org/visit/ferry,en,20260523,20261101,transcribed-2026-08-12
+The Trust for Governors Island,https://www.govisland.com/plan-your-visit/ferry,en,20260101,20271231,transcribed-2026-08-15

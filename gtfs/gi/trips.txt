@@ -1,13 +1,13 @@
 route_id,service_id,trip_id,trip_headsign,direction_id
-GI-RH,gi-weekend,GI-RH-to-01,Governors Island,0
-GI-RH,gi-weekend,GI-RH-to-02,Governors Island,0
-GI-RH,gi-weekend,GI-RH-to-03,Governors Island,0
-GI-RH,gi-weekend,GI-RH-to-04,Governors Island,0
-GI-RH,gi-weekend,GI-RH-to-05,Governors Island,0
-GI-RH,gi-weekend,GI-RH-to-06,Governors Island,0
-GI-RH,gi-weekend,GI-RH-to-07,Governors Island,0
-GI-RH,gi-weekend,GI-RH-tonp-01,Governors Island,0
-GI-RH,gi-weekend,GI-RH-tonp-02,Governors Island,0
+GI-RH,gi-weekend,GI-RH-to-01,Governors Island / Yankee Pier,0
+GI-RH,gi-weekend,GI-RH-to-02,Governors Island / Yankee Pier,0
+GI-RH,gi-weekend,GI-RH-to-03,Governors Island / Yankee Pier,0
+GI-RH,gi-weekend,GI-RH-to-04,Governors Island / Yankee Pier,0
+GI-RH,gi-weekend,GI-RH-to-05,Governors Island / Yankee Pier,0
+GI-RH,gi-weekend,GI-RH-to-06,Governors Island / Yankee Pier,0
+GI-RH,gi-weekend,GI-RH-to-07,Governors Island / Yankee Pier,0
+GI-RH,gi-weekend,GI-RH-tonp-01,Governors Island / Yankee Pier,0
+GI-RH,gi-weekend,GI-RH-tonp-02,Governors Island / Yankee Pier,0
 GI-RH,gi-weekend,GI-RH-from-01,Red Hook / Atlantic Basin,1
 GI-RH,gi-weekend,GI-RH-from-02,Red Hook / Atlantic Basin,1
 GI-RH,gi-weekend,GI-RH-from-03,Red Hook / Atlantic Basin,1
@@ -16,15 +16,15 @@ GI-RH,gi-weekend,GI-RH-from-05,Red Hook / Atlantic Basin,1
 GI-RH,gi-weekend,GI-RH-from-06,Red Hook / Atlantic Basin,1
 GI-RH,gi-weekend,GI-RH-from-07,Red Hook / Atlantic Basin,1
 GI-RH,gi-weekend,GI-RH-from-08,Red Hook / Atlantic Basin,1
-GI-BBP,gi-weekend,GI-BBP-to-01,Governors Island,0
-GI-BBP,gi-weekend,GI-BBP-to-02,Governors Island,0
-GI-BBP,gi-weekend,GI-BBP-to-03,Governors Island,0
-GI-BBP,gi-weekend,GI-BBP-to-04,Governors Island,0
-GI-BBP,gi-weekend,GI-BBP-to-05,Governors Island,0
-GI-BBP,gi-weekend,GI-BBP-to-06,Governors Island,0
-GI-BBP,gi-weekend,GI-BBP-to-07,Governors Island,0
-GI-BBP,gi-weekend,GI-BBP-tonp-01,Governors Island,0
-GI-BBP,gi-weekend,GI-BBP-tonp-02,Governors Island,0
+GI-BBP,gi-weekend,GI-BBP-to-01,Governors Island / Yankee Pier,0
+GI-BBP,gi-weekend,GI-BBP-to-02,Governors Island / Yankee Pier,0
+GI-BBP,gi-weekend,GI-BBP-to-03,Governors Island / Yankee Pier,0
+GI-BBP,gi-weekend,GI-BBP-to-04,Governors Island / Yankee Pier,0
+GI-BBP,gi-weekend,GI-BBP-to-05,Governors Island / Yankee Pier,0
+GI-BBP,gi-weekend,GI-BBP-to-06,Governors Island / Yankee Pier,0
+GI-BBP,gi-weekend,GI-BBP-to-07,Governors Island / Yankee Pier,0
+GI-BBP,gi-weekend,GI-BBP-tonp-01,Governors Island / Yankee Pier,0
+GI-BBP,gi-weekend,GI-BBP-tonp-02,Governors Island / Yankee Pier,0
 GI-BBP,gi-weekend,GI-BBP-from-01,Brooklyn Bridge Park / Pier 6,1
 GI-BBP,gi-weekend,GI-BBP-from-02,Brooklyn Bridge Park / Pier 6,1
 GI-BBP,gi-weekend,GI-BBP-from-03,Brooklyn Bridge Park / Pier 6,1
@@ -33,3 +33,155 @@ GI-BBP,gi-weekend,GI-BBP-from-05,Brooklyn Bridge Park / Pier 6,1
 GI-BBP,gi-weekend,GI-BBP-from-06,Brooklyn Bridge Park / Pier 6,1
 GI-BBP,gi-weekend,GI-BBP-from-07,Brooklyn Bridge Park / Pier 6,1
 GI-BBP,gi-weekend,GI-BBP-from-08,Brooklyn Bridge Park / Pier 6,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-01,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-02,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-03,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-04,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-05,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-06,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-07,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-08,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-09,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-10,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-11,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-12,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-13,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-14,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-15,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-16,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-17,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-18,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-19,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-20,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-21,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-22,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-23,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-24,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-25,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-26,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-to-27,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-01,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-02,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-03,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-04,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-05,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-06,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-07,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-08,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-09,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-10,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-11,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-12,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-13,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-14,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-15,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-16,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-17,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-18,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-19,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-20,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-21,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-22,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-23,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-24,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-25,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-26,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-27,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-28,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-29,Battery Maritime Building,1
+GI-MAN,gi-mh-weekday,GI-MAN-weekday-from-30,Battery Maritime Building,1
+GI-MAN,gi-mh-friday,GI-MAN-friday-to-01,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-friday,GI-MAN-friday-to-02,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-friday,GI-MAN-friday-from-01,Battery Maritime Building,1
+GI-MAN,gi-mh-friday,GI-MAN-friday-from-02,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-01,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-02,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-03,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-04,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-05,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-06,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-07,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-08,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-09,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-10,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-11,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-12,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-13,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-14,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-15,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-16,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-17,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-18,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-19,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-20,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-21,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-22,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-23,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-24,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-25,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-26,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-27,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-28,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-29,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-30,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-31,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-32,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-33,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-34,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-35,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-36,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-37,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-38,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-39,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-40,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-41,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-42,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-to-43,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-01,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-02,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-03,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-04,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-05,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-06,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-07,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-08,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-09,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-10,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-11,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-12,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-13,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-14,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-15,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-16,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-17,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-18,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-19,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-20,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-21,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-22,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-23,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-24,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-25,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-26,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-27,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-28,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-29,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-30,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-31,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-32,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-33,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-34,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-35,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-36,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-37,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-38,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-39,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-40,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-41,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-42,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-43,Battery Maritime Building,1
+GI-MAN,gi-mh-weekend,GI-MAN-weekend-from-44,Battery Maritime Building,1
+GI-MAN,gi-mh-saturday,GI-MAN-saturday-to-01,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-saturday,GI-MAN-saturday-to-02,Governors Island / Soissons Landing,0
+GI-MAN,gi-mh-saturday,GI-MAN-saturday-from-01,Battery Maritime Building,1
+GI-MAN,gi-mh-saturday,GI-MAN-saturday-from-02,Battery Maritime Building,1

@@ -124,7 +124,9 @@ the staff board shows every route direction at once and never pages. each depart
 
 [`config/landings.json`](./config/landings.json) is the source of truth for which landings exist and which GTFS stops they map to. the build validates against that file, not a hardcoded range, so adding a landing there (plus a matching `overrides/NN.json`) is all it takes.
 
-landings `2` through `24` are alphabetical. `25` and `26` were added later so existing kiosk numbers stayed put. Rockaway (`18`) covers both the ferry landing and the shuttle-bus stop next to it.
+landings `2` through `24` are alphabetical. `25` and `26` were added later so existing kiosk numbers stayed put, and `28` and `29` later still for the same reason. Rockaway (`18`) covers both the ferry landing and the shuttle-bus stop next to it.
+
+Governors Island is two landings because it is two piers a walk apart: `11` Yankee Pier takes NYC Ferry's South Brooklyn boat and the Trust's Red Hook and Brooklyn Bridge Park boats, `29` Soissons Landing takes the Trust's Manhattan boat from the Battery Maritime Building. `28` Whitehall is the Manhattan end of that crossing, shared with the Staten Island Ferry and Seastreak. neither `28` nor `29` is an NYC Ferry stop — see *partner operators* below.
 
 ## shuttle buses
 
@@ -161,6 +163,8 @@ landings that share a dock with another ferry operator can show its departures n
 | NYU Langone Ferry | [`gtfs/nyu/`](./gtfs/nyu) — generated, see below | `nyu:` | [`public/assets/nyu.png`](./public/assets/nyu.png) |
 | Liberty Landing Ferry | [`gtfs/liberty/`](./gtfs/liberty) — transcribed, see below | `lib:` | [`public/assets/cityferry.png`](./public/assets/cityferry.png) |
 | IKEA Brooklyn Ferry | [`gtfs/ikea/`](./gtfs/ikea) — transcribed, see below | `ike:` | text badge, `IKEA` |
+| The Trust for Governors Island | [`gtfs/gi/`](./gtfs/gi) — transcribed, see below | `gi:` | [`public/assets/gi.png`](./public/assets/gi.png) |
+| Staten Island Ferry | [`gtfs/siferry/`](./gtfs/siferry) — NYC DOT download | `sif:` | text badge, `SIF` |
 
 which landings pull which operator:
 
@@ -171,27 +175,34 @@ which landings pull which operator:
 | `24` Sunset Park / BAT | `118` Sunset Park/BAT | NYU `13139` Brooklyn Army Terminal |
 | `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | NY Waterway `2729332` Brookfield Place/Battery Park City · Liberty Landing `2557122` Brookfield Place Terminal |
 | `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | NY Waterway `2439145` Midtown / W 39th Street · IKEA `midtown` Midtown / W 39th Street |
+| `11` Governors Island / Yankee Pier | `111` Governors Island | Trust `govisland` Governors Island / Yankee Pier |
+| `28` Whitehall / Battery Maritime Building | none — NYC Ferry does not call here | Staten Island Ferry `whitehall` Whitehall Ferry Terminal · Seastreak `170` Battery Maritime Building Slip 5 · Trust `bmb` Battery Maritime Building / Slip 7 |
+| `29` Governors Island / Soissons Landing | none — NYC Ferry does not call here | Trust `soissons` Governors Island / Soissons Landing |
 
 each operator has two switches, and either one off means none of its data is read:
 
-- `waterwayEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` / `ikeaEnabled` in `config/display.json` — the whole kiosk.
-- `waterwayStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` / `ikeaStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
+- `waterwayEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` / `ikeaEnabled` / `giEnabled` / `siferryEnabled` in `config/display.json` — the whole kiosk.
+- `waterwayStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` / `ikeaStopIds` / `giStopIds` / `siferryStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
 
 good to know:
 
-- every departure and route carries an `operator` taken from its feed's `agency.txt`, and the board prints a small operator label under the route name.
+- every departure and route carries an `operator` taken from its feed's `agency.txt`, and the board prints a small operator label under the route name. one feed overrides it: NYC DOT publishes the Staten Island Ferry under the department's legal name, so `operatorName` in `PARTNER_FEEDS` labels those rows `Staten Island Ferry` instead. the override lives in code so a fresh download can't undo it.
+- a landing does not have to be an NYC Ferry stop. `28` Whitehall and `29` Soissons Landing are real docks NYC Ferry does not serve, so they carry an empty `stopIds` plus their own `latitude`/`longitude` and are built entirely from partner feeds. a landing with no `stopIds` and no coordinates is rejected by the build.
 - partner ids are namespaced with the prefix above so they can't collide with NYC Ferry ids or each other.
 - partner badges show the operator's mark instead of the GTFS short name, because those short names are useless to riders — NY Waterway publishes internal all-digit route ids, Seastreak names every route "Seastreak", and NYU and Liberty Landing publish no short name at all. a partner route with a real short name (W44, Greenwich) keeps it.
 - Seastreak's headsigns only name a region ("Manhattan", "New Jersey"), so its rows show the trip's last stop instead — Highlands NJ, Atlantic Highlands NJ, Battery Maritime Building. NY Waterway headsigns already name the terminal and are used as published.
 - four NY Waterway routes are tagged `route_type` 3 (bus) in the Trillium feed although they are ferries: `19750` Edgewater – Brookfield Place, `19751` Edgewater – Pier 11, `74376` Port Liberte – Pier 11 and `76080` Hoboken/14th St – Pier 11. with `busesEnabled: false` that dropped them from the board entirely — about a third of NY Waterway's service at Pier 11. `WATERWAY_FERRIES_TYPED_AS_BUS` in [`scripts/build-data.js`](./scripts/build-data.js) reclassifies exactly those four. it changes no times, and it lives in code so that dropping in a fresh feed can't quietly reintroduce the bug. everything else typed as a bus in that feed really is one.
 - a feed can list the same sailing under two trip ids, which used to render as two identical rows. the build drops a departure only when another one already matches it on service, route, stop, minute *and* destination — a duplicate row, never a time.
-- NY Waterway, Seastreak, Liberty Landing and the IKEA boat publish no realtime feed here, so their rows show scheduled times only: no boat name, no delay badge. that's expected. NYU does have live estimates — see below.
+- NY Waterway, Seastreak, Liberty Landing, the IKEA boat, the Trust and the Staten Island Ferry publish no realtime feed here, so their rows show scheduled times only: no boat name, no delay badge. that's expected. NYU does have live estimates — see below.
+- the Staten Island Ferry feed carries no vehicle data at all: `block_id`, `trip_headsign` and `direction_id` are empty on all 416 trips, and NYC DOT publishes no GTFS-realtime for it. destinations fall through to each trip's final stop, which is what the terminal signs say anyway.
 - **known bad, upstream:** at Brookfield Place the board shows the South Amboy boat leaving at 6:50 AM, 7:55 AM, 3:50 PM and 4:50 PM. NY Waterway publishes 6:25 AM, 7:30 AM, 3:25 PM and 4:25 PM. route `77347` in the bundled feed carries a stale set of trips that put Brookfield Place *after* Pier 11 rather than before it; the current trips alongside them are right, and Pier 11's own times are right, so the two afternoon ones are also the duplicates the build now drops there. this is not patched here — correcting it means editing published times, and the real fix is a fresher NY Waterway feed. the bundled one is `UTC: 07-Oct-2025`. check for a newer Trillium release before trusting Brookfield Place's South Amboy rows.
 - a partner feed only contributes departures whose service is in effect today. if a third-party feed lapses, its rows silently vanish, so the build prints a `WARNING: the <operator> feed ... expired on <date>` line rather than leaving you to debug an empty row.
 
 to add a partner at another landing, find its `stop_id` in that feed's `stops.txt` and add the matching `...StopIds` array to the landing in `config/landings.json`.
 
 the Seastreak feed comes from [transit.land `f-drk-seastreak`](https://www.transit.land/feeds/f-drk-seastreak), published at `https://seastreak.com/api/transit/google_transit.zip`.
+
+the Staten Island Ferry feed is NYC DOT's own, published at `https://www.nyc.gov/html/dot/downloads/misc/siferry-gtfs.zip` and listed on [NYC Open Data](https://data.cityofnewyork.us/Transportation/Staten-Island-Ferry-Schedule-General-Transit-Feed-/b57i-ri22). the bundled copy is `siferry-gtfs_2026.1`, feed version `18`, covering `20260101`–`20280117`. it is a plain download: drop in a fresh one and restart.
 
 ## the Liberty Landing Ferry timetable is transcribed
 
@@ -380,9 +391,9 @@ messages can be up to 2,000 characters. a malformed file, wrong landing id, fail
 
 ## updating the schedule
 
-replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/` and `gtfs/seastreak/` — when a new feed is published, then restart. three directories have no upstream file to drop in and are regenerated instead: `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, and `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js` (re-read the operator's page first — both of those last two are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
+replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/`, `gtfs/seastreak/` and `gtfs/siferry/` — when a new feed is published, then restart. four directories have no upstream file to drop in and are regenerated instead: `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js`, and `gtfs/gi/` with `node scripts/build-gi-gtfs.js` (re-read the operator's page first — those last three are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
-any edit to `public/index.html` or `public/sw.js` must bump their shared cache-busting version (currently `32`) in both files — `test/display-contract.test.js` checks that they agree.
+any edit to `public/index.html`, `public/sw.js`, `public/app.js` or `public/styles.css` must bump the shared cache-busting version (currently `56`) in `index.html` and `sw.js` — `test/display-contract.test.js` checks that they agree.
 
 ## Docker
 

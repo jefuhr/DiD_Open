@@ -1,0 +1,5 @@
+﻿service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+weekday,1,1,1,1,1,0,0,20260101,20280128
+weekend,0,0,0,0,0,1,1,20260103,20280130
+holiday,0,0,0,0,0,0,0,20260101,20280117
+threeboat,0,0,0,0,0,0,0,20260101,20280130
