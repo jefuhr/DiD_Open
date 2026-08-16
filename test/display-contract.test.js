@@ -772,16 +772,16 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 55 display assets", async () => {
+test("offline shell includes version 56 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=55/);
-  assert.match(index, /app\.js\?v=55/);
-  assert.match(worker, /nyc-ferry-did-shell-v55/);
-  assert.match(worker, /styles\.css\?v=55/);
-  assert.match(worker, /app\.js\?v=55/);
+  assert.match(index, /styles\.css\?v=56/);
+  assert.match(index, /app\.js\?v=56/);
+  assert.match(worker, /nyc-ferry-did-shell-v56/);
+  assert.match(worker, /styles\.css\?v=56/);
+  assert.match(worker, /app\.js\?v=56/);
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of

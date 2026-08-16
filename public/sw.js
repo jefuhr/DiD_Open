@@ -1,5 +1,5 @@
-const SHELL='nyc-ferry-did-shell-v55',DATA='nyc-ferry-did-data-v55';
-const FILES=['/','/index.html','/styles.css?v=55','/app.js?v=55','/assets/kiosk-icon.svg','/assets/waterway.png','/assets/seastreak.png','/assets/nyu.png','/assets/cityferry.png','/assets/gi.png','/assets/fonts/lato-regular-latin.woff2','/assets/fonts/lato-bold-latin.woff2','/assets/fonts/lato-black-latin.woff2','/assets/fonts/oswald-variable-latin.woff2'];
+const SHELL='nyc-ferry-did-shell-v56',DATA='nyc-ferry-did-data-v56';
+const FILES=['/','/index.html','/styles.css?v=56','/app.js?v=56','/assets/kiosk-icon.svg','/assets/waterway.png','/assets/seastreak.png','/assets/nyu.png','/assets/cityferry.png','/assets/gi.png','/assets/fonts/lato-regular-latin.woff2','/assets/fonts/lato-bold-latin.woff2','/assets/fonts/lato-black-latin.woff2','/assets/fonts/oswald-variable-latin.woff2'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(SHELL).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('nyc-ferry-did-')&&![SHELL,DATA].includes(key)).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 async function networkFirst(request,cacheName){const cache=await caches.open(cacheName);try{const response=await fetch(request);if(response.ok)await cache.put(request,response.clone());return response}catch{const saved=await cache.match(request);if(saved)return saved;throw new Error('offline')}}
