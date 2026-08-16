@@ -59,6 +59,10 @@ const hiddenOperatorsKey = "nyc-ferry-did-hidden-operators";
 // Every operator the system serves anywhere, as /api/landings reports it. Cached like the landing
 // list so the panel is complete offline too.
 const operatorsKey = "nyc-ferry-did-operators";
+// Which landings have been starred, as a list of landing ids. Persisted per device like the other
+// reading preferences: an agent works a handful of docks out of the 26 on the list, and the ones
+// they work do not change because they opened the board somewhere else.
+const favouriteLandingsKey = "nyc-ferry-did-favourite-landings";
 // The landing a location fix last resolved to, so the shortcut survives a reload.
 const nearestKey = "nyc-ferry-did-nearest";
 // A fix is only good for about the shift it was taken in. Crew move between landings, and a
@@ -1018,16 +1022,51 @@ async function load() {
   loadServiceAlerts();
 }
 
+function favouriteLandings() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(favouriteLandingsKey) || "[]");
+    return new Set(Array.isArray(stored) ? stored.filter(Number.isInteger) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function setLandingFavourite(landingNumber, favourite) {
+  const next = favouriteLandings();
+  if (favourite) next.add(landingNumber);
+  else next.delete(landingNumber);
+  localStorage.setItem(favouriteLandingsKey, JSON.stringify([...next]));
+  renderLandingList();
+  // The list is rebuilt and reordered under the tap, so put the cursor back on the star that was
+  // just pressed rather than dropping a keyboard user wherever that row landed.
+  elements.landingList.querySelector(`[data-favourite-id="${landingNumber}"]`)?.focus();
+}
+
+// The star, drawn once rather than shipped as an asset: the menu is the one place offline has to
+// keep working, and an inline path cannot fail to load.
+const starIcon = `<svg class="landing-star-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.6l2.6 5.28 5.83.85-4.22 4.11.996 5.8L12 16.9l-5.21 2.74.995-5.8-4.22-4.11 5.83-.85z"/></svg>`;
+
 function renderLandingList() {
   const landings = JSON.parse(localStorage.getItem(landingsKey) || "[]");
   if (!landings.length) return;
   const current = data?.meta?.landingNumber;
-  elements.landingList.innerHTML = landings.map((landing) => `<li>
+  const favourites = favouriteLandings();
+  // Starred landings float to the top, in the list's own order underneath. Someone who works two
+  // docks should find both without scrolling; the rest of the system stays where it always was.
+  const ordered = [
+    ...landings.filter((landing) => favourites.has(landing.id)),
+    ...landings.filter((landing) => !favourites.has(landing.id))
+  ];
+  elements.landingList.innerHTML = ordered.map((landing) => {
+    const starred = favourites.has(landing.id);
+    const name = escapeHtml(landing.displayName);
+    return `<li class="landing-row${starred ? " is-favourite" : ""}">
+    <button type="button" class="landing-star" data-favourite-id="${landing.id}" aria-pressed="${starred}" aria-label="${starred ? `Remove ${name} from favourites` : `Add ${name} to favourites`}" title="${starred ? "Remove from favourites" : "Add to favourites"}">${starIcon}</button>
     <button type="button" class="landing-option${landing.id === current ? " is-current" : ""}" data-landing-id="${landing.id}"${landing.id === current ? ' aria-current="true"' : ""}>
-      <span class="landing-option-number">${escapeHtml(landing.id)}</span>
-      <span class="landing-option-name">${escapeHtml(landing.displayName)}</span>
+      <span class="landing-option-name">${name}</span>
     </button>
-  </li>`).join("");
+  </li>`;
+  }).join("");
 }
 
 async function loadLandings() {
@@ -1172,6 +1211,8 @@ elements.menuButton.addEventListener("click", () => setMenuOpen(elements.landing
 elements.landingMenuClose.addEventListener("click", () => setMenuOpen(false));
 elements.landingMenuScrim.addEventListener("click", () => setMenuOpen(false));
 elements.landingList.addEventListener("click", (event) => {
+  const star = event.target.closest("[data-favourite-id]");
+  if (star) return setLandingFavourite(Number(star.dataset.favouriteId), star.getAttribute("aria-pressed") !== "true");
   const option = event.target.closest("[data-landing-id]");
   if (option) selectLanding(Number(option.dataset.landingId));
 });
