@@ -172,15 +172,15 @@ which landings pull which operator:
 | landing | NYC Ferry stop | partner stop |
 |---|---|---|
 | `8` East 34th Street | `17` East 34th Street | Seastreak `168` East 35th St., NYC · NYU `13138` East 34th Street |
-| `16` Wall St / Pier 11 | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street · IKEA `pier11` Pier 11 / Wall Street |
+| `16` Pier 11 / Wall st | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street · IKEA `pier11` Pier 11 / Wall Street |
 | `24` Sunset Park / BAT | `118` Sunset Park/BAT | NYU `13139` Brooklyn Army Terminal |
 | `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | NY Waterway `2729332` Brookfield Place/Battery Park City · Liberty Landing `2557122` Brookfield Place Terminal |
 | `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | NY Waterway `2439145` Midtown / W 39th Street · IKEA `midtown` Midtown / W 39th Street |
 | `11` Governors Island / Yankee Pier | `111` Governors Island | Trust `govisland` Governors Island / Yankee Pier |
-| `28` Whitehall / Battery Maritime Building | none — NYC Ferry does not call here | Staten Island Ferry `whitehall` Whitehall Ferry Terminal · Seastreak `170` Battery Maritime Building Slip 5 · Trust `bmb` Battery Maritime Building / Slip 7 |
+| `28` Battery / Whitehall | none — NYC Ferry does not call here | Staten Island Ferry `whitehall` Whitehall Ferry Terminal · Seastreak `170` Battery Maritime Building Slip 5 · Trust `bmb` Battery Maritime Building / Slip 7 |
 | `29` Governors Island / Soissons Landing | none — NYC Ferry does not call here | Trust `soissons` Governors Island / Soissons Landing |
 | `22` St. George | `137` St. George | Staten Island Ferry `stgeorge` St. George Ferry Terminal |
-| `30` Liberty Island | none — NYC Ferry does not call here | Statue City Cruises `LI` Liberty Island |
+| `30` Liberty Island / Statue of Liberty | none — NYC Ferry does not call here | Statue City Cruises `LI` Liberty Island |
 | `31` Ellis Island | none — NYC Ferry does not call here | Statue City Cruises `EI` Ellis Island |
 
 each operator has two switches, and either one off means none of its data is read:

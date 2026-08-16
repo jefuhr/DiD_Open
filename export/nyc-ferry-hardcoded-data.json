@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "NYC Ferry departure board — hardcoded NYC Ferry data",
-    "generatedAt": "2026-08-16T03:53:24.702Z",
+    "generatedAt": "2026-08-16T04:16:33.991Z",
     "generator": "scripts/export-hardcoded-data.js",
     "description": "Every piece of NYC Ferry data this repository carries that did not come from a published GTFS feed. Each section names the file it was read from; edit that file, not this one.",
     "scope": "NYC Ferry only. The partner operators sharing these docks have their own hand-maintained data in this repository — NY Waterway route corrections, transcribed timetables for the Governors Island, IKEA and Liberty Landing boats, and downloads for the Staten Island Ferry and the Statue of Liberty boats — and none of it is included here. Partner stop ids and partner on/off switches are stripped from the config below.",
@@ -39,42 +39,42 @@
       },
       "2": {
         "name": "Astoria",
-        "displayName": "Astoria",
+        "displayName": "Astoria / 30th Av",
         "stopIds": [
           "89"
         ]
       },
       "3": {
         "name": "Atlantic Avenue",
-        "displayName": "Atlantic Avenue",
+        "displayName": "Atlantic Avenue / Pier 6",
         "stopIds": [
           "11"
         ]
       },
       "4": {
         "name": "Bay Ridge",
-        "displayName": "Bay Ridge",
+        "displayName": "Bay Ridge / Veterans Memorial Pier",
         "stopIds": [
           "23"
         ]
       },
       "5": {
         "name": "Brooklyn Navy Yard",
-        "displayName": "Brooklyn Navy Yard",
+        "displayName": "Brooklyn Navy Yard / ARES",
         "stopIds": [
           "120"
         ]
       },
       "6": {
         "name": "Corlears Hook",
-        "displayName": "Corlears Hook",
+        "displayName": "Corlears Hook / Grand St",
         "stopIds": [
           "115"
         ]
       },
       "7": {
         "name": "DUMBO",
-        "displayName": "DUMBO",
+        "displayName": "DUMBO / Fulton Ferry",
         "stopIds": [
           "20"
         ]
@@ -88,14 +88,14 @@
       },
       "9": {
         "name": "East 90th St",
-        "displayName": "East 90th St",
+        "displayName": "East 90th St / Gracie Mansion",
         "stopIds": [
           "113"
         ]
       },
       "10": {
         "name": "Ferry Point Park",
-        "displayName": "Ferry Point Park",
+        "displayName": "Ferry Point Park / Throgg's Neck",
         "stopIds": [
           "141"
         ]
@@ -109,35 +109,35 @@
       },
       "12": {
         "name": "Greenpoint",
-        "displayName": "Greenpoint",
+        "displayName": "Greenpoint / India St",
         "stopIds": [
           "18"
         ]
       },
       "13": {
         "name": "Hunters Point South",
-        "displayName": "Hunters Point South",
+        "displayName": "Hunters Point South / LIC",
         "stopIds": [
           "4"
         ]
       },
       "14": {
         "name": "Long Island City",
-        "displayName": "Long Island City",
+        "displayName": "Long Island City / Gantry Plaza",
         "stopIds": [
           "90"
         ]
       },
       "15": {
         "name": "North Williamsburg",
-        "displayName": "North Williamsburg",
+        "displayName": "North Williamsburg / North 5th St",
         "stopIds": [
           "19"
         ]
       },
       "16": {
         "name": "Pier 11",
-        "displayName": "Wall St / Pier 11",
+        "displayName": "Pier 11 / Wall st",
         "stopIds": [
           "87"
         ]
@@ -151,7 +151,7 @@
       },
       "18": {
         "name": "Rockaway + Bus Stop",
-        "displayName": "Rockaway",
+        "displayName": "Rockaway / Beach 108th St",
         "stopIds": [
           "88",
           "16"
@@ -173,7 +173,7 @@
       },
       "21": {
         "name": "South Williamsburg",
-        "displayName": "South Williamsburg",
+        "displayName": "South Williamsburg / Schaefer Landing",
         "stopIds": [
           "8"
         ]
@@ -187,7 +187,7 @@
       },
       "23": {
         "name": "Stuyvesant Cove",
-        "displayName": "Stuyvesant Cove",
+        "displayName": "Stuyvesant Cove / East 14th St",
         "stopIds": [
           "114"
         ]
@@ -225,7 +225,7 @@
       },
       "28": {
         "name": "Whitehall",
-        "displayName": "Whitehall / Battery Maritime Building",
+        "displayName": "Battery / Whitehall",
         "latitude": 40.70136,
         "longitude": -74.012666,
         "nycFerryCalls": false
@@ -239,7 +239,7 @@
       },
       "30": {
         "name": "Liberty Island",
-        "displayName": "Liberty Island",
+        "displayName": "Liberty Island / Statue of Liberty",
         "latitude": 40.689834,
         "longitude": -74.047706,
         "nycFerryCalls": false

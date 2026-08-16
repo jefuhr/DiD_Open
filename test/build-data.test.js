@@ -1412,9 +1412,12 @@ test("the Statue of Liberty loops name the island they are bound for, not where 
   assert.deepEqual([...new Set(statue(whitehall).map((item) => item.destination))], ["Liberty Island"]);
 
   // The islands are landings of their own, and every boat leaving them is going somewhere else.
-  for (const [data, here] of [[liberty, "Liberty Island"], [ellis, "Ellis Island"]]) {
+  // "here" is the island as the NPS feed names it, not as config/landings.json labels the landing:
+  // the destination on a row comes from the feed, and a board's display name is free to change
+  // without that meaning anything about which boat goes where.
+  for (const [data, number, here] of [[liberty, 30, "Liberty Island"], [ellis, 31, "Ellis Island"]]) {
     assert.ok(statue(data).length > 0);
-    assert.equal(data.meta.landing.displayName, here);
+    assert.equal(data.meta.landingNumber, number);
     for (const item of statue(data)) {
       assert.equal(item.operator, "Statue City Cruises");
       assert.notEqual(item.destination, here, "a loop must never advertise a boat to the pier it leaves from");
