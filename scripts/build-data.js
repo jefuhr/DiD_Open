@@ -642,7 +642,20 @@ export async function buildDisplayData({
   const partners = {};
   for (const [name, feed] of Object.entries(PARTNER_FEEDS)) {
     const stopIds = landingConfig[feed.stopIdsKey] || [];
-    const enabled = (partnerOverrides[name] ?? display[feed.enabledKey]) === true && stopIds.length > 0;
+    // A missing switch means on, not off.
+    //
+    // config/display.json is the one file a deployment never overwrites — it holds the box's own
+    // landingNumber and settings — so a release that adds an operator arrives with its switch
+    // absent from the live config, and a switch read as false made the new operator invisible on
+    // the very deploy that shipped it. That failure is silent: the landings appear, the boats do
+    // not, and nothing in the logs says why.
+    //
+    // Defaulting to on is safe because the switch is not what decides where an operator shows. The
+    // per-landing stop ids below do, and they live in config/landings.json, which every deploy does
+    // ship. An operator with no stopIds anywhere stays off no matter what this reads. Turning one
+    // off deliberately still works — the key is present in the repo's own display.json for every
+    // operator — it now has to say so rather than be omitted.
+    const enabled = (partnerOverrides[name] ?? display[feed.enabledKey] ?? true) === true && stopIds.length > 0;
     partners[name] = { enabled, agencyName: null, stopIds };
     if (!enabled) continue;
     const merged = await buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabled });

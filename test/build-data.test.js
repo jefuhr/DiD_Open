@@ -1431,3 +1431,43 @@ test("the Statue of Liberty loops name the island they are bound for, not where 
   }
   assert.ok(statue(liberty).some((item) => item.destination === "Liberty State Park"));
 });
+
+// The switch a deployment cannot ship.
+//
+// config/display.json is the one file a deploy never overwrites, because it holds the box's own
+// landingNumber. So an operator added in a release arrives with its switch missing from the live
+// config, and a missing switch read as false hid the new operator on the very deploy that shipped
+// it — silently, with the landings present and the boats absent.
+test("an operator whose switch is missing from display.json is on, not off", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "did-switch-"));
+  const repo = fileURLToPath(new URL("..", import.meta.url));
+  for (const name of ["gtfs", "content", "public"]) await symlink(path.join(repo, name), path.join(root, name));
+  await mkdir(path.join(root, "config"));
+  for (const name of ["landings.json", "crew-shuttles.json"]) {
+    await symlink(path.join(repo, "config", name), path.join(root, "config", name));
+  }
+  const display = JSON.parse(await readFile(path.join(repo, "config/display.json"), "utf8"));
+  // A live box that has never heard of these two, which is exactly what the drift looks like.
+  delete display.statueEnabled;
+  delete display.siferryEnabled;
+  await writeFile(path.join(root, "config/display.json"), JSON.stringify(display), "utf8");
+
+  const liberty = await buildDisplayData({ root, landingNumber: 30 });
+  assert.equal(liberty.meta.statue.enabled, true);
+  assert.ok(liberty.departures.length > 0, "Liberty Island must not deploy as an empty board");
+
+  const whitehall = await buildDisplayData({ root, landingNumber: 28 });
+  assert.equal(whitehall.meta.siferry.enabled, true);
+
+  // Off still means off: the switch has to say so rather than be left out.
+  await writeFile(path.join(root, "config/display.json"), JSON.stringify({ ...display, statueEnabled: false }), "utf8");
+  const disabled = await buildDisplayData({ root, landingNumber: 30 });
+  assert.equal(disabled.meta.statue.enabled, false);
+  assert.equal(disabled.departures.length, 0);
+
+  // And an operator no landing has stop ids for stays off regardless, which is what actually
+  // decides where an operator appears.
+  const astoria = await buildDisplayData({ root, landingNumber: 2 });
+  assert.equal(astoria.meta.statue.enabled, false);
+  assert.equal(astoria.meta.seastreak.enabled, false);
+});

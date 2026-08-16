@@ -188,6 +188,8 @@ each operator has two switches, and either one off means none of its data is rea
 - `waterwayEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` / `ikeaEnabled` / `giEnabled` / `siferryEnabled` / `statueEnabled` in `config/display.json` — the whole kiosk.
 - `waterwayStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` / `ikeaStopIds` / `giStopIds` / `siferryStopIds` / `statueStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
 
+a missing `...Enabled` key means **on**, not off. `config/display.json` is the one file a deploy never overwrites — it holds the box's own `landingNumber` — so a release that adds an operator arrives with its switch absent from the live config, and reading that as off hid the new operator on the very deploy that shipped it, silently. defaulting to on is safe because the switch is not what decides where an operator appears: the per-landing `...StopIds` arrays do, and those live in `config/landings.json`, which every deploy ships. to turn an operator off, say `false` — omitting the key no longer does it.
+
 good to know:
 
 - every departure and route carries an `operator` taken from its feed's `agency.txt`, and the board prints a small operator label under the route name. one feed overrides it: NYC DOT publishes the Staten Island Ferry under the department's legal name, so `operatorName` in `PARTNER_FEEDS` labels those rows `Staten Island Ferry` instead. the override lives in code so a fresh download can't undo it.
