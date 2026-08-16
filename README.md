@@ -172,7 +172,7 @@ which landings pull which operator:
 | landing | NYC Ferry stop | partner stop |
 |---|---|---|
 | `8` East 34th Street | `17` East 34th Street | Seastreak `168` East 35th St., NYC · NYU `13138` East 34th Street |
-| `16` Pier 11 / Wall st | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street · IKEA `pier11` Pier 11 / Wall Street |
+| `16` Pier 11 / Wall St | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street · IKEA `pier11` Pier 11 / Wall Street |
 | `24` Sunset Park / BAT | `118` Sunset Park/BAT | NYU `13139` Brooklyn Army Terminal |
 | `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | NY Waterway `2729332` Brookfield Place/Battery Park City · Liberty Landing `2557122` Brookfield Place Terminal |
 | `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | NY Waterway `2439145` Midtown / W 39th Street · IKEA `midtown` Midtown / W 39th Street |
