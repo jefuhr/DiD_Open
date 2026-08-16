@@ -392,6 +392,18 @@ messages can be up to 2,000 characters. a malformed file, wrong landing id, fail
 
 ## offline behavior
 
+**the service worker does not run on juliet.nyc.** the board is proxied at `/ferryTimesMobile/`, and the proxy forwards only `/ferryTimesMobile/`, `/app.js`, `/styles.css`, `/assets/` and `/api/` to this server — everything else at the root belongs to the landing page. `app.js` registers the worker from `/sw.js`, which is not one of those paths, so it 404s and the worker has never installed there. the cache-busting version bumps are real for a board served at the root and ceremonial on juliet.nyc.
+
+two lines of nginx fix it, alongside the existing `location = /app.js` rules:
+
+```nginx
+location = /sw.js { proxy_pass http://ferry_did; include /etc/nginx/snippets/juliet-proxy.conf; }
+```
+
+the precache list also names `/` and `/index.html`, which under that host are the landing page rather than the board, so those entries need to become `/ferryTimesMobile/` before `cache.addAll` can succeed. until both are done, offline means the browser's own cache and nothing more.
+
+the web app manifest is served from `/assets/` precisely because of this: it is a path the proxy already forwards.
+
 - the schedule, landing map, fonts, and display code all live on the device.
 - the last good realtime response is written atomically to `state/realtime.json`.
 - live vehicle assignments are matched against the local vessel roster to get boat names.

@@ -789,11 +789,11 @@ test("offline shell includes version 57 display assets", async () => {
   // link specifically and falls back to a screenshot of the page without one.
   assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=57"/);
   assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=57"/);
-  assert.match(index, /rel="manifest" href="\/site\.webmanifest\?v=57"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=57"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
     assert.ok(worker.includes(`'/assets/${asset}?v=57'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/site.webmanifest?v=57'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=57'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -877,12 +877,17 @@ test("no file carries an unresolved merge conflict", async () => {
 // tile — so every path it names is checked to exist.
 test("the web app manifest names a real icon for every size it claims", async () => {
   const [raw, index] = await Promise.all([
-    readFile(new URL("../public/site.webmanifest", import.meta.url), "utf8"),
+    readFile(new URL("../public/assets/site.webmanifest", import.meta.url), "utf8"),
     readFile(indexPath, "utf8")
   ]);
   const manifest = JSON.parse(raw);
   assert.equal(manifest.display, "standalone");
-  assert.equal(manifest.start_url, "/");
+  // The deployment proxies the board at /ferryTimesMobile/ and serves a different site at the
+  // root, so an installed board that started at "/" would open the landing page instead. The
+  // scope keeps the installed window on the board rather than wandering onto the rest of the host.
+  assert.equal(manifest.start_url, "/ferryTimesMobile/");
+  assert.equal(manifest.scope, "/ferryTimesMobile/");
+  assert.ok(manifest.start_url.startsWith(manifest.scope), "start_url has to sit inside the scope");
   // The label under the icon. It matches what iOS is told in apple-mobile-web-app-title, so the
   // same board does not land on two phones under two different names.
   assert.equal(manifest.short_name, "Ferry Board");
@@ -905,5 +910,20 @@ test("the web app manifest names a real icon for every size it claims", async ()
     assert.equal(bytes.subarray(1, 4).toString(), "PNG", `${file} is not a PNG`);
     const [width, height] = [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
     assert.equal(`${width}x${height}`, icon.sizes, `${file} is ${width}x${height}, not ${icon.sizes}`);
+  }
+});
+
+// Everything the page asks the browser to fetch by absolute path has to be a path the deployment's
+// proxy actually forwards to this server. juliet.nyc serves a different site at the root and
+// forwards only /ferryTimesMobile/, /app.js, /styles.css, /assets/ and /api/, so a file added at
+// the site root — a manifest, an icon, a worker — is quietly served by the landing page instead.
+// This is the check that would have caught the manifest 404ing in production.
+test("the page only fetches absolute paths the deployment proxies", async () => {
+  const index = await readFile(indexPath, "utf8");
+  const forwarded = /^\/(?:app\.js|styles\.css|assets\/|api\/|ferryTimesMobile\/)/;
+  const referenced = [...index.matchAll(/(?:href|src)="(\/[^"]*)"/g)].map((match) => match[1]);
+  assert.ok(referenced.length > 0);
+  for (const url of referenced) {
+    assert.match(url, forwarded, `${url} is not a path the proxy forwards to the board`);
   }
 });

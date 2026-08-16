@@ -14,8 +14,10 @@
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
     <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=57" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
-         come from the manifest, which is why the board installs as a bare shortcut without it. -->
-    <link rel="manifest" href="/site.webmanifest?v=57" />
+         come from the manifest, which is why the board installs as a bare shortcut without it.
+         It lives under /assets/ because that is a path the deployment's proxy forwards to this
+         server — a manifest at the site root is served by the landing page, not by the board. -->
+    <link rel="manifest" href="/assets/site.webmanifest?v=57" />
     <link rel="stylesheet" href="/styles.css?v=57" />
   </head>
   <body>
