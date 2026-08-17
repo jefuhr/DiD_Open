@@ -269,7 +269,9 @@ body.menu-open{overflow:hidden}
      battery. */
   .board{padding:calc(4px + env(safe-area-inset-top)) 12px 8px}
   .board-heading{gap:10px;padding-bottom:8px}
-  .board-heading h1{font-size:27px}
+  /* "Governors Island / Yankee Pier" ellipsised down to "GOVERNO…" once the rail took its width.
+     A landing name that cannot be read is not worth the single line it was holding out for. */
+  .board-heading h1{font-size:23px;line-height:1.08;white-space:normal}
   .board-state{gap:8px}
   .route-count,.status{padding:5px 8px;font-size:12px}
   .clock{gap:7px}.clock time{font-size:27px}.clock span{font-size:12px}
@@ -277,8 +279,15 @@ body.menu-open{overflow:hidden}
   .menu-button{width:40px}
   .nearest-button{gap:7px;padding:0 10px;font-size:13px}
   .departures{gap:8px;padding-top:8px;--route-row:clamp(56px,8vh,72px)}
-  .departures[data-view="timeline"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;grid-auto-rows:auto;align-content:start;align-items:stretch}
-  .departure.timeline-row{gap:4px;padding:9px 12px}
+  /* Wrapping flex rather than a grid. A grid sizes its rows by an algorithm that has the container's
+     own height as an input, and at a landing with 246 sailings the rows came out a fraction of the
+     height their contents need — every card clipped through the middle of its own text. A flex line
+     is as tall as the tallest card on it and has no opinion about the box it is in. */
+  .departures[data-view="timeline"]{display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;align-items:stretch;gap:8px;grid-template-rows:none}
+  .departure.timeline-row{flex:0 0 calc(50% - 4px);gap:4px;padding:9px 12px}
+  /* 120 cards each running their own entry animation inside a finger-scrolled list is where iOS
+     starts handing back half-painted rows. The animation is a nicety; a legible row is not. */
+  .departures .departure{animation:none}
   .tl-head{gap:9px}
   .tl-head time{font-size:23px}
   .timeline-row .route-badge{width:54px;height:31px}
@@ -296,11 +305,22 @@ body.menu-open{overflow:hidden}
   .timeline-row .scheduled-badge,.timeline-row .boat-assignment,.timeline-row .via-terminal-badge,
   .timeline-row .no-pickup-badge,.timeline-row .arrival-badge,.timeline-row .drop-off-only-badge,
   .timeline-row .drop-off-badge{font-size:12px;padding:2px 6px}
-  /* The route board keeps one card per row: its four departure slots have nowhere to go in half a
-     screen's width. Only the type comes back down to size. */
+  /* The route board keeps one card per row: its departure slots have nowhere to go in half a
+     screen's width.
+
+     Its columns stop being percentages here. 15% of a kiosk is enough for a route badge and its
+     name; 15% of a tablet that has just given a quarter of itself to the landing rail is about
+     twenty pixels, and a partner wordmark plus overflow-wrap:anywhere turns "HOBOKEN" into a
+     column of single letters. A fixed first column is the only one that cannot collapse. */
+  .column-head,.departure{grid-template-columns:172px minmax(0,1fr) minmax(0,2.4fr)}
   .route-badge{width:56px;height:34px}.route-badge b{font-size:20px}
-  .route-badge-image{width:84px}
+  .route-badge-image{width:66px}
   .route-name{font-size:11px}.route-operator{font-size:9px}
+  /* Three sailings ahead instead of five. The five were overflowing the card and getting sliced
+     down their right-hand edge, which is worse than showing fewer and showing them whole. */
+  .departure-slots{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .departure-slot:nth-child(n+4){display:none}
+  .departure-slot{padding:0 8px}
   .destination strong{font-size:19px}.destination span{font-size:10px}
   .via{font-size:11px}
   .slot-time-row time{font-size:20px}.slot-relative{font-size:13px}

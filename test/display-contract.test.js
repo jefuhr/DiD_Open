@@ -776,28 +776,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 59 display assets", async () => {
+test("offline shell includes version 60 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=59/);
-  assert.match(index, /app\.js\?v=59/);
-  assert.match(worker, /nyc-ferry-did-shell-v59/);
-  assert.match(worker, /styles\.css\?v=59/);
-  assert.match(worker, /app\.js\?v=59/);
+  assert.match(index, /styles\.css\?v=60/);
+  assert.match(index, /app\.js\?v=60/);
+  assert.match(worker, /nyc-ferry-did-shell-v60/);
+  assert.match(worker, /styles\.css\?v=60/);
+  assert.match(worker, /app\.js\?v=60/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=59"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=59"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=59"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=60"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=60"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=60"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=59'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=60'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=59'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=60'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -862,8 +862,15 @@ test("a tablet gets its own layout, and a landing rail it can hide", async () =>
   // The gap the phone breakpoint leaves behind: above 820px an iPad was being handed the kiosk
   // board, which sizes itself in vh and so sprawls on a screen that is tall rather than wide.
   assert.match(css, /@media\(min-width:821px\) and \(max-width:1200px\) and \(orientation:portrait\)\{/);
-  // Two columns of sailings, which is the whole point of having the width.
-  assert.match(css, /\.departures\[data-view="timeline"\]\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  // Two columns of sailings, which is the whole point of having the width. Wrapping flex, not a
+  // grid: grid row sizing takes the container's height as an input, and at a 246-sailing landing it
+  // handed back rows a fraction of the height their cards needed, clipping every one mid-text.
+  assert.match(css, /\.departures\[data-view="timeline"\]\{display:flex;flex-direction:row;flex-wrap:wrap/);
+  assert.match(css, /\.departure\.timeline-row\{flex:0 0 calc\(50% - 4px\)/);
+  // The route board's percentage columns collapse once the rail takes its share of the width, which
+  // is what set partner wordmarks one letter per line.
+  assert.match(css, /\.column-head,\.departure\{grid-template-columns:172px minmax\(0,1fr\) minmax\(0,2\.4fr\)\}/);
+  assert.match(css, /\.departure-slot:nth-child\(n\+4\)\{display:none\}/);
   // iPadOS draws its status bar over a home-screen app, and the kiosk layout made no room for it.
   assert.match(css, /\.board\{padding:calc\(4px \+ env\(safe-area-inset-top\)\)/);
   // Docked, the rail sits beside the board rather than over it: no scrim, and the board moves over.
