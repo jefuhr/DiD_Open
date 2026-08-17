@@ -267,7 +267,8 @@ test("SFTP landing notices replace all GTFS display regions", async () => {
   assert.match(app, /\/api\/override\?landingId=/);
   assert.match(app, /setInterval\(loadManualOverride, 5_000\)/);
   assert.match(app, /manualOverrideMessage\.textContent/);
-  assert.match(css, /\.screen\.override-active \.content,\.screen\.override-active \.service-alert-bar\{display:none\}/);
+  // A notice takes the whole screen: the board, the alert strip and the docked landing rail all go.
+  assert.match(css, /\.screen\.override-active \.content,\.screen\.override-active \.service-alert-bar,\.screen\.override-active \.landing-menu\{display:none\}/);
   assert.match(css, /\.manual-override-box\{/);
 });
 
@@ -491,7 +492,10 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = 
       getItem: (key) => (store.has(key) ? store.get(key) : null),
       setItem: (key, value) => store.set(key, String(value)), removeItem: (key) => store.delete(key)
     },
-    navigator: {}, location: { reload() {} }, window: {},
+    // A desktop-shaped window: the landing rail docks only on a tablet, so under test the menu is
+    // the drawer every other assertion here expects it to be.
+    navigator: {}, location: { reload() {} },
+    window: { matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) },
     setInterval: () => 0, clearInterval() {}, setTimeout: () => 0, clearTimeout() {},
     async fetch(url) {
       const path = String(url);
@@ -772,28 +776,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 58 display assets", async () => {
+test("offline shell includes version 59 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=58/);
-  assert.match(index, /app\.js\?v=58/);
-  assert.match(worker, /nyc-ferry-did-shell-v58/);
-  assert.match(worker, /styles\.css\?v=58/);
-  assert.match(worker, /app\.js\?v=58/);
+  assert.match(index, /styles\.css\?v=59/);
+  assert.match(index, /app\.js\?v=59/);
+  assert.match(worker, /nyc-ferry-did-shell-v59/);
+  assert.match(worker, /styles\.css\?v=59/);
+  assert.match(worker, /app\.js\?v=59/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=58"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=58"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=58"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=59"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=59"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=59"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=58'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=59'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=58'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=59'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -853,6 +857,29 @@ test("the nearest-landing button locates on tap and then shortcuts", async () =>
 });
 
 // A merge once shipped conflict markers in index.html and sw.js. Nothing caught it: the contract
+test("a tablet gets its own layout, and a landing rail it can hide", async () => {
+  const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
+  // The gap the phone breakpoint leaves behind: above 820px an iPad was being handed the kiosk
+  // board, which sizes itself in vh and so sprawls on a screen that is tall rather than wide.
+  assert.match(css, /@media\(min-width:821px\) and \(max-width:1200px\) and \(orientation:portrait\)\{/);
+  // Two columns of sailings, which is the whole point of having the width.
+  assert.match(css, /\.departures\[data-view="timeline"\]\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  // iPadOS draws its status bar over a home-screen app, and the kiosk layout made no room for it.
+  assert.match(css, /\.board\{padding:calc\(4px \+ env\(safe-area-inset-top\)\)/);
+  // Docked, the rail sits beside the board rather than over it: no scrim, and the board moves over.
+  assert.match(css, /body\.sidebar-docked \.screen\{padding-left:var\(--rail\)\}/);
+  assert.match(css, /body\.sidebar-docked \.landing-menu-scrim\{display:none\}/);
+  // And it stops being a full-viewport sheet, or an invisible layer eats every tap on the board.
+  assert.match(css, /body\.sidebar-docked \.landing-menu\{z-index:40;right:auto;width:var\(--rail\)\}/);
+  // Touch and width together. Width alone would dock a rail onto the kiosk display.
+  assert.match(app, /matchMedia\("\(min-width:821px\) and \(max-width:1400px\) and \(pointer:coarse\)"\)/);
+  // Shown by default, hidden only because someone hid it, and remembered either way.
+  assert.match(app, /localStorage\.getItem\(railKey\) !== "hidden"/);
+  assert.match(app, /localStorage\.setItem\(railKey, open \? "shown" : "hidden"\)/);
+  // Rotating an iPad crosses the boundary, so the rail cannot be decided once at startup.
+  assert.match(app, /railMedia\.addEventListener\("change", applyRail\)/);
+});
+
 // tests only look for patterns they expect, so text nobody asserts on rode all the way to a live
 // board and rendered as "<<<<<<< HEAD ======= >>>>>>> staff" above the departures. This is the
 // cheap guard that would have.

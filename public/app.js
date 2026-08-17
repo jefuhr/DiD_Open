@@ -1184,18 +1184,44 @@ function locateNearest() {
   );
 }
 
-function setMenuOpen(open) {
+// A tablet has the width to hold the landing list beside the board rather than over it, so on one
+// the list is docked: it is on screen by default and the hamburger takes it away, which is the
+// opposite of what the same button does on a phone. Same markup and same open/closed state either
+// way — only what "open" looks like changes.
+//
+// Not width alone: a coarse pointer is what separates a tablet from the kiosk display and from a
+// desktop window that happens to be this narrow, and the kiosk board must keep its whole screen.
+const railMedia = window.matchMedia("(min-width:821px) and (max-width:1400px) and (pointer:coarse)");
+const railKey = "nyc-ferry-did-landing-rail";
+const railDocked = () => railMedia.matches;
+
+function setMenuOpen(open, moveFocus = true) {
   elements.landingMenu.hidden = !open;
   elements.menuButton.setAttribute("aria-expanded", String(open));
   document.body.classList.toggle("menu-open", open);
+  // Only the docked rail is a preference. A drawer is always closed to begin with.
+  if (railDocked()) localStorage.setItem(railKey, open ? "shown" : "hidden");
+  if (!moveFocus) return;
   if (open) (elements.landingList.querySelector(".is-current") || elements.landingMenuClose)?.focus();
   else elements.menuButton.focus();
 }
 
+// Runs at startup and again whenever the device is rotated or the window resized across the
+// boundary, because a layout that only settles on load is wrong the moment an iPad is turned.
+function applyRail() {
+  const docked = railDocked();
+  document.body.classList.toggle("sidebar-docked", docked);
+  elements.landingMenuClose.textContent = docked ? "Hide" : "Done";
+  setMenuOpen(docked && localStorage.getItem(railKey) !== "hidden", false);
+}
+
 async function selectLanding(landingNumber) {
-  if (!Number.isInteger(landingNumber) || landingNumber === data?.meta?.landingNumber) return setMenuOpen(false);
+  // Picking a landing dismisses a drawer, because a drawer is in the way of the answer. A docked
+  // rail is not in the way of anything, so it stays where it is.
+  const dismiss = () => { if (!railDocked()) setMenuOpen(false); };
+  if (!Number.isInteger(landingNumber) || landingNumber === data?.meta?.landingNumber) return dismiss();
   localStorage.setItem(landingKey, String(landingNumber));
-  setMenuOpen(false);
+  dismiss();
   elements.departures.innerHTML = `<div class="empty"><div><strong>Loading…</strong><span>Switching landing.</span></div></div>`;
   await load().catch(() => {
     elements.departures.innerHTML = `<div class="empty"><div><strong>Landing unavailable</strong><span>That landing could not be loaded.</span></div></div>`;
@@ -1232,16 +1258,19 @@ elements.datePrev.addEventListener("click", () => stepDate(-1));
 elements.dateNext.addEventListener("click", () => stepDate(1));
 elements.dateCurrent.addEventListener("click", showToday);
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !elements.landingMenu.hidden) return setMenuOpen(false);
+  if (event.key === "Escape" && !elements.landingMenu.hidden && !railDocked()) return setMenuOpen(false);
   if (event.key === "Escape" && !elements.filterMenu.hidden) return setFilterOpen(false);
   // Arrow keys page through the schedule, which is how anyone reaches for a date stepper on a
   // desktop board. Only when the landing menu is closed and nothing is being typed into.
-  if (!elements.landingMenu.hidden || !elements.filterMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
+  // A docked rail does not swallow the arrow keys: it is part of the board, not a dialog over it.
+  if ((!elements.landingMenu.hidden && !railDocked()) || !elements.filterMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (event.key === "ArrowLeft") stepDate(-1);
   else if (event.key === "ArrowRight") stepDate(1);
 });
 
+railMedia.addEventListener("change", applyRail);
+applyRail();
 renderSortToggle();
 renderClockToggle();
 renderNearest();
