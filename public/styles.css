@@ -352,3 +352,12 @@ body.sidebar-docked .landing-menu-panel{width:var(--rail);height:100%;max-height
 body.sidebar-docked .landing-menu-head{padding-top:calc(14px + env(safe-area-inset-top))}
 /* A docked rail scrolls its own list. The page behind it must stay scrollable. */
 body.sidebar-docked.menu-open{overflow:visible}
+
+/* East River runs three variants and the badge is one fixed width, sized for a route letter and a
+   single-character chip beside it. A and B fit. LOCAL is five characters and was being cut off
+   against the badge's own edge, so only that variant is allowed to widen to what it is naming —
+   the others keep their width, and the column of badges beside them stays a column.
+
+   Three classes deep on purpose: the phone and tablet layers both set a fixed .route-badge width,
+   and this has to outrank them without being repeated inside each one. */
+.departure.variant-local .route-badge{width:auto;padding:0 5px;gap:4px}

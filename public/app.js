@@ -782,6 +782,9 @@ function renderTimeline() {
     const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } =
       departureStatus(departure);
     const variantBadge = group.variant ? `<small class="route-variant">${escapeHtml(visual.variantLabel)}</small>` : "";
+    // The route board has carried this class all along; the timeline needs it too, because the
+    // width a badge needs depends on which variant it is naming.
+    const variantClass = group.variant ? ` variant-${group.variant.toLowerCase()}` : "";
     // "Northbound" says nothing about a boat going home empty, so the context line says what the
     // move is instead — the same words the route board puts under the destination.
     const context = group.crewShuttle || group.outOfService
@@ -807,7 +810,7 @@ function renderTimeline() {
     // The destination gets a line of its own because it is the longest thing on the row and the
     // one that reads worst truncated.
     const notInService = group.outOfService || group.crewShuttle ? " timeline-row-oos" : "";
-    return `<article class="departure timeline-row route-${visual.routeClass}${notInService}"${visual.style}>
+    return `<article class="departure timeline-row route-${visual.routeClass}${variantClass}${notInService}"${visual.style}>
       <div class="tl-head">
         <time>${departureLabel(departure)}</time>
         <span class="route-badge${visual.partnerLogo ? " route-badge-image" : ""}">${visual.badgeContent}${variantBadge}</span>

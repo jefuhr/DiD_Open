@@ -776,28 +776,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 60 display assets", async () => {
+test("offline shell includes version 61 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=60/);
-  assert.match(index, /app\.js\?v=60/);
-  assert.match(worker, /nyc-ferry-did-shell-v60/);
-  assert.match(worker, /styles\.css\?v=60/);
-  assert.match(worker, /app\.js\?v=60/);
+  assert.match(index, /styles\.css\?v=61/);
+  assert.match(index, /app\.js\?v=61/);
+  assert.match(worker, /nyc-ferry-did-shell-v61/);
+  assert.match(worker, /styles\.css\?v=61/);
+  assert.match(worker, /app\.js\?v=61/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=60"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=60"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=60"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=61"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=61"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=61"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=60'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=61'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=60'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=61'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -857,6 +857,18 @@ test("the nearest-landing button locates on tap and then shortcuts", async () =>
 });
 
 // A merge once shipped conflict markers in index.html and sw.js. Nothing caught it: the contract
+test("the LOCAL badge is allowed the width its own word needs", async () => {
+  const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
+  // Both views name the variant, so both have to carry the class the width hangs off. The timeline
+  // did not, which is where LOCAL was being cut off against the edge of its own badge.
+  assert.match(app, /const variantClass = group\.variant \? ` variant-\$\{group\.variant\.toLowerCase\(\)\}` : ""/);
+  assert.match(app, /class="departure timeline-row route-\$\{visual\.routeClass\}\$\{variantClass\}/);
+  assert.match(app, /class="departure route-\$\{routeClass\}\$\{variantClass\}/);
+  // Only this variant widens. A and B fit the fixed width and stay in a column with every other route.
+  assert.match(css, /\.departure\.variant-local \.route-badge\{width:auto/);
+  assert.doesNotMatch(css, /\.departure\.variant-a \.route-badge\{width:auto/);
+});
+
 test("a tablet gets its own layout, and a landing rail it can hide", async () => {
   const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
   // The gap the phone breakpoint leaves behind: above 820px an iPad was being handed the kiosk
