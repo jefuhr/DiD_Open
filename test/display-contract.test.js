@@ -776,28 +776,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 64 display assets", async () => {
+test("offline shell includes version 65 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=64/);
-  assert.match(index, /app\.js\?v=64/);
-  assert.match(worker, /nyc-ferry-did-shell-v64/);
-  assert.match(worker, /styles\.css\?v=64/);
-  assert.match(worker, /app\.js\?v=64/);
+  assert.match(index, /styles\.css\?v=65/);
+  assert.match(index, /app\.js\?v=65/);
+  assert.match(worker, /nyc-ferry-did-shell-v65/);
+  assert.match(worker, /styles\.css\?v=65/);
+  assert.match(worker, /app\.js\?v=65/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=64"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=64"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=64"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=65"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=65"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=65"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=64'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=65'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=64'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=65'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -869,34 +869,66 @@ test("the LOCAL badge is allowed the width its own word needs", async () => {
   assert.doesNotMatch(css, /\.departure\.variant-a \.route-badge\{width:auto/);
 });
 
-test("a tablet gets its own layout, and a landing rail it can hide", async () => {
+test("anything wider than a phone gets the roomy layout, and a landing rail it can hide", async () => {
   const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
-  // The gap the phone breakpoint leaves behind: above 820px an iPad was being handed the kiosk
-  // board, which sizes itself in vh and so sprawls on a screen that is tall rather than wide.
-  assert.match(css, /@media\(min-width:821px\) and \(max-width:1200px\) and \(orientation:portrait\)\{/);
+  // The gap the phone breakpoint leaves behind: above 820px the kiosk board was being handed to
+  // everything, and it sizes itself in vh, so it sprawls on any screen that is not the one it was
+  // drawn for. This was portrait-only and capped at 1200px, which left a tablet turned sideways and
+  // every desktop on the kiosk layout. Width is the thing that matters, not orientation.
+  assert.match(css, /@media\(min-width:821px\)\{/);
+  assert.doesNotMatch(css, /@media\(min-width:821px\) and \(max-width:1200px\) and \(orientation:portrait\)\{/);
   // Two columns of sailings, which is the whole point of having the width. Wrapping flex, not a
   // grid: grid row sizing takes the container's height as an input, and at a 246-sailing landing it
   // handed back rows a fraction of the height their cards needed, clipping every one mid-text.
-  assert.match(css, /\.departures\[data-view="timeline"\]\{display:flex;flex-direction:row;flex-wrap:wrap/);
-  assert.match(css, /\.departure\.timeline-row\{flex:0 0 calc\(50% - 4px\)/);
+  assert.match(css, /:root\[data-surface="app"\] \.departures\[data-view="timeline"\]\{display:flex;flex-direction:row;flex-wrap:wrap/);
+  assert.match(css, /:root\[data-surface="app"\] \.departure\.timeline-row\{flex:0 0 calc\(50% - 4px\)/);
   // The route board's percentage columns collapse once the rail takes its share of the width, which
   // is what set partner wordmarks one letter per line.
-  assert.match(css, /\.column-head,\.departure\{grid-template-columns:172px minmax\(0,1fr\) minmax\(0,2\.4fr\)\}/);
-  assert.match(css, /\.departure-slot:nth-child\(n\+4\)\{display:none\}/);
+  assert.match(css, /:root\[data-surface="app"\] \.column-head, :root\[data-surface="app"\] \.departure\{grid-template-columns:172px minmax\(0,1fr\) minmax\(0,2\.4fr\)\}/);
+  assert.match(css, /:root\[data-surface="app"\] \.departure-slot:nth-child\(n\+4\)\{display:none\}/);
   // iPadOS draws its status bar over a home-screen app, and the kiosk layout made no room for it.
-  assert.match(css, /\.board\{padding:calc\(4px \+ env\(safe-area-inset-top\)\)/);
+  assert.match(css, /:root\[data-surface="app"\] \.board\{padding:calc\(4px \+ env\(safe-area-inset-top\)\)/);
   // Docked, the rail sits beside the board rather than over it: no scrim, and the board moves over.
   assert.match(css, /body\.sidebar-docked \.screen\{padding-left:var\(--rail\)\}/);
   assert.match(css, /body\.sidebar-docked \.landing-menu-scrim\{display:none\}/);
   // And it stops being a full-viewport sheet, or an invisible layer eats every tap on the board.
   assert.match(css, /body\.sidebar-docked \.landing-menu\{z-index:40;right:auto;width:var\(--rail\)\}/);
-  // Touch and width together. Width alone would dock a rail onto the kiosk display.
-  assert.match(app, /matchMedia\("\(min-width:821px\) and \(max-width:1400px\) and \(pointer:coarse\)"\)/);
+  // Width, and then the surface. A mouse is no longer a reason to hide the list — a desktop docks
+  // it too — so the kiosk is the only thing held back, and it is held back by what it is.
+  assert.match(app, /matchMedia\("\(min-width:821px\)"\)/);
+  assert.match(app, /dataset\.surface !== "kiosk" && railMedia\.matches/);
   // Shown by default, hidden only because someone hid it, and remembered either way.
   assert.match(app, /localStorage\.getItem\(railKey\) !== "hidden"/);
   assert.match(app, /localStorage\.setItem\(railKey, open \? "shown" : "hidden"\)/);
   // Rotating an iPad crosses the boundary, so the rail cannot be decided once at startup.
   assert.match(app, /railMedia\.addEventListener\("change", applyRail\)/);
+});
+
+// The roomy layout is now width-only, which puts it one missing attribute away from reflowing the
+// signage display and giving away a quarter of its screen to a list nobody standing at a terminal
+// can tap. Everything that keeps the kiosk out of it is asserted here, because none of it is
+// visible from the kiosk itself until it is already wrong on a wall.
+test("the kiosk keeps its whole screen", async () => {
+  const [app, css, index] = await Promise.all([
+    readFile(appPath, "utf8"), readFile(cssPath, "utf8"), readFile(indexPath, "utf8")
+  ]);
+  // The surface is decided from the path, before the first paint, so the board never reflows once
+  // its module loads. The kiosk is served at the root; the public board is proxied under a prefix.
+  assert.match(index, /dataset\.surface\s*=\s*\n?\s*new URL\("\.\/", location\)\.pathname === "\/" \? "kiosk" : "app"/);
+  // app.js derives the same answer for itself rather than trusting the document, which is what
+  // covers a shell cached by an older worker being driven by this script.
+  assert.match(app, /if \(!document\.documentElement\.dataset\.surface\) \{/);
+  // Every rule in the roomy block is scoped. One unscoped selector leaks the whole layout onto the
+  // kiosk, and it would leak silently — this is the assertion that catches that.
+  const roomy = css.split("@media(min-width:821px){")[1].split("\n/* Docked landing rail.")[0];
+  const selectors = roomy.replace(/\/\*[\s\S]*?\*\//g, "").match(/[^{}]+(?=\{)/g) || [];
+  assert.ok(selectors.length > 20, "expected the roomy block to still hold its rules");
+  for (const selector of selectors) {
+    for (const one of selector.split(",")) {
+      assert.ok(one.trim().startsWith(':root[data-surface="app"]'),
+        `unscoped selector would leak the roomy layout onto the kiosk: ${one.trim()}`);
+    }
+  }
 });
 
 // tests only look for patterns they expect, so text nobody asserts on rode all the way to a live

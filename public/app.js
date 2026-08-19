@@ -1295,11 +1295,25 @@ function locateNearest() {
 // opposite of what the same button does on a phone. Same markup and same open/closed state either
 // way — only what "open" looks like changes.
 //
-// Not width alone: a coarse pointer is what separates a tablet from the kiosk display and from a
-// desktop window that happens to be this narrow, and the kiosk board must keep its whole screen.
-const railMedia = window.matchMedia("(min-width:821px) and (max-width:1400px) and (pointer:coarse)");
+// Width alone, and then the surface. This used to also require a coarse pointer and a width under
+// 1400px, which meant a desktop never docked the rail and read the landing list as a drawer over a
+// board drawn for a screen it wasn't sitting at. A mouse is not a reason to hide the list; the only
+// board that genuinely needs its whole screen is the signage display, and that is what the surface
+// says. index.html sets it before the first paint.
+const railMedia = window.matchMedia("(min-width:821px)");
 const railKey = "nyc-ferry-did-landing-rail";
-const railDocked = () => railMedia.matches;
+// index.html stamps this before the first paint, which is what the stylesheet reads. Deriving it
+// again here rather than trusting the attribute covers the one case where the two could disagree:
+// a document cached by an older service worker being driven by this script. Getting it wrong on a
+// kiosk means the signage loses a quarter of its screen to a list nobody standing there can tap.
+// Read off the path as a string rather than through new URL(): this runs at module top level, where
+// a throw takes the whole board down with it, and location is not always the fully-formed thing a
+// browser hands you.
+if (!document.documentElement.dataset.surface) {
+  const directory = String(location.pathname || "/").replace(/[^/]*$/, "");
+  document.documentElement.dataset.surface = directory === "/" ? "kiosk" : "app";
+}
+const railDocked = () => document.documentElement.dataset.surface !== "kiosk" && railMedia.matches;
 
 function setMenuOpen(open, moveFocus = true) {
   elements.landingMenu.hidden = !open;
@@ -1410,7 +1424,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=61&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=62&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

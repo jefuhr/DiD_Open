@@ -258,59 +258,63 @@ body.menu-open{overflow:hidden}
   .departures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;grid-auto-rows:auto;align-items:start;overflow:visible}
 }
 
-/* Tablet, portrait. Neither of the two layouts above fits: the phone breakpoint stops at 820px, so
-   an iPad gets the kiosk board — which is drawn for a 16:9 screen and sizes itself in vh. Turned
-   upright there is far more height than the type needs and far more width than one sailing needs,
-   so every clamp() pins to its maximum and the rows drift apart with a column of dead space down
-   the middle of each one. Fixed px sizing puts the rows back to a readable density and two columns
-   put the width back to work.
+/* The roomy layout: anything wider than a phone that is not the kiosk.
 
-   The two columns read left-to-right then down, which is the same order a phone reads in and the
-   order the DOM is already in. A time-ordered list down each column would read better still, but
-   only if the list's height is known, and it isn't: it changes with the day, the filter and the
-   landing. */
-@media(min-width:821px) and (max-width:1200px) and (orientation:portrait){
+   The kiosk board is drawn for a fixed 16:9 screen and sizes itself in vh, which is right for the
+   one display it was made for and wrong for everything else. Above the phone breakpoint every
+   clamp() pins to its maximum, the rows drift apart, and a column of dead space opens down the
+   middle of each one. Fixed px sizing puts the rows back to a readable density, and two columns put
+   the width back to work.
+
+   This used to be portrait-only and capped at 1200px, so a tablet turned sideways — and every
+   desktop — fell back to the kiosk board. Orientation was never the thing that mattered: width is.
+
+   Scoped to data-surface="app" so the signage display itself is untouched. The kiosk is served at
+   the site root and the public board under /ferryTimesMobile/, the same split the service worker
+   already relies on, and the kiosk keeps its whole screen.
+
+   The two columns read left-to-right then down, which is the order a phone reads in and the order
+   the DOM is already in. A time-ordered list down each column would read better still, but only if
+   the list's height is known, and it isn't: it changes with the day, the filter and the landing. */
+@media(min-width:821px){
   /* iPadOS draws its status bar over the top of a home-screen app. The kiosk has no notch to clear
      and so never made room for one, which is why the landing name sits under the clock and the
      battery. */
-  .board{padding:calc(4px + env(safe-area-inset-top)) 12px 8px}
-  .board-heading{gap:10px;padding-bottom:8px}
+  :root[data-surface="app"] .board{padding:calc(4px + env(safe-area-inset-top)) 12px 8px}
+  :root[data-surface="app"] .board-heading{gap:10px;padding-bottom:8px}
   /* "Governors Island / Yankee Pier" ellipsised down to "GOVERNO…" once the rail took its width.
      A landing name that cannot be read is not worth the single line it was holding out for. */
-  .board-heading h1{font-size:23px;line-height:1.08;white-space:normal}
-  .board-state{gap:8px}
-  .route-count,.status{padding:5px 8px;font-size:12px}
-  .clock{gap:7px}.clock time{font-size:27px}.clock span{font-size:12px}
-  .menu-button,.nearest-button{height:40px}
-  .menu-button{width:40px}
-  .nearest-button{gap:7px;padding:0 10px;font-size:13px}
-  .departures{gap:8px;padding-top:8px;--route-row:clamp(56px,8vh,72px)}
+  :root[data-surface="app"] .board-heading h1{font-size:23px;line-height:1.08;white-space:normal}
+  :root[data-surface="app"] .board-state{gap:8px}
+  :root[data-surface="app"] .route-count, :root[data-surface="app"] .status{padding:5px 8px;font-size:12px}
+  :root[data-surface="app"] .clock{gap:7px}:root[data-surface="app"] .clock time{font-size:27px}:root[data-surface="app"] .clock span{font-size:12px}
+  :root[data-surface="app"] .menu-button, :root[data-surface="app"] .nearest-button{height:40px}
+  :root[data-surface="app"] .menu-button{width:40px}
+  :root[data-surface="app"] .nearest-button{gap:7px;padding:0 10px;font-size:13px}
+  :root[data-surface="app"] .departures{gap:8px;padding-top:8px;--route-row:clamp(56px,8vh,72px)}
   /* Wrapping flex rather than a grid. A grid sizes its rows by an algorithm that has the container's
      own height as an input, and at a landing with 246 sailings the rows came out a fraction of the
      height their contents need — every card clipped through the middle of its own text. A flex line
      is as tall as the tallest card on it and has no opinion about the box it is in. */
-  .departures[data-view="timeline"]{display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;align-items:stretch;gap:8px;grid-template-rows:none}
-  .departure.timeline-row{flex:0 0 calc(50% - 4px);gap:4px;padding:9px 12px}
+  :root[data-surface="app"] .departures[data-view="timeline"]{display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;align-items:stretch;gap:8px;grid-template-rows:none}
+  :root[data-surface="app"] .departure.timeline-row{flex:0 0 calc(50% - 4px);gap:4px;padding:9px 12px}
   /* 120 cards each running their own entry animation inside a finger-scrolled list is where iOS
      starts handing back half-painted rows. The animation is a nicety; a legible row is not. */
-  .departures .departure{animation:none}
-  .tl-head{gap:9px}
-  .tl-head time{font-size:23px}
-  .timeline-row .route-badge{width:54px;height:31px}
-  .timeline-row .route-badge b{font-size:19px}
-  .timeline-row .route-badge-image{width:76px}
-  .timeline-row .route-variant{font-size:10px}
-  .tl-relative{font-size:14px}
-  .tl-dest{font-size:19px}
-  .tl-meta{gap:7px}
-  .tl-context{font-size:11px}
-  .tl-boat{font-size:12px}
-  .tl-boat::before{margin-right:5px}
-  .tl-status{gap:5px}
-  .timeline-row .departure-last-badge,.timeline-row .vessel-delay-badge,.timeline-row .on-time-badge,
-  .timeline-row .scheduled-badge,.timeline-row .boat-assignment,.timeline-row .via-terminal-badge,
-  .timeline-row .no-pickup-badge,.timeline-row .arrival-badge,.timeline-row .drop-off-only-badge,
-  .timeline-row .drop-off-badge{font-size:12px;padding:2px 6px}
+  :root[data-surface="app"] .departures .departure{animation:none}
+  :root[data-surface="app"] .tl-head{gap:9px}
+  :root[data-surface="app"] .tl-head time{font-size:23px}
+  :root[data-surface="app"] .timeline-row .route-badge{width:54px;height:31px}
+  :root[data-surface="app"] .timeline-row .route-badge b{font-size:19px}
+  :root[data-surface="app"] .timeline-row .route-badge-image{width:76px}
+  :root[data-surface="app"] .timeline-row .route-variant{font-size:10px}
+  :root[data-surface="app"] .tl-relative{font-size:14px}
+  :root[data-surface="app"] .tl-dest{font-size:19px}
+  :root[data-surface="app"] .tl-meta{gap:7px}
+  :root[data-surface="app"] .tl-context{font-size:11px}
+  :root[data-surface="app"] .tl-boat{font-size:12px}
+  :root[data-surface="app"] .tl-boat::before{margin-right:5px}
+  :root[data-surface="app"] .tl-status{gap:5px}
+  :root[data-surface="app"] .timeline-row .departure-last-badge, :root[data-surface="app"] .timeline-row .vessel-delay-badge, :root[data-surface="app"] .timeline-row .on-time-badge, :root[data-surface="app"] .timeline-row .scheduled-badge, :root[data-surface="app"] .timeline-row .boat-assignment, :root[data-surface="app"] .timeline-row .via-terminal-badge, :root[data-surface="app"] .timeline-row .no-pickup-badge, :root[data-surface="app"] .timeline-row .arrival-badge, :root[data-surface="app"] .timeline-row .drop-off-only-badge, :root[data-surface="app"] .timeline-row .drop-off-badge{font-size:12px;padding:2px 6px}
   /* The route board keeps one card per row: its departure slots have nowhere to go in half a
      screen's width.
 
@@ -318,27 +322,28 @@ body.menu-open{overflow:hidden}
      name; 15% of a tablet that has just given a quarter of itself to the landing rail is about
      twenty pixels, and a partner wordmark plus overflow-wrap:anywhere turns "HOBOKEN" into a
      column of single letters. A fixed first column is the only one that cannot collapse. */
-  .column-head,.departure{grid-template-columns:172px minmax(0,1fr) minmax(0,2.4fr)}
-  .route-badge{width:56px;height:34px}.route-badge b{font-size:20px}
-  .route-badge-image{width:66px}
-  .route-name{font-size:11px}.route-operator{font-size:9px}
+  :root[data-surface="app"] .column-head, :root[data-surface="app"] .departure{grid-template-columns:172px minmax(0,1fr) minmax(0,2.4fr)}
+  :root[data-surface="app"] .route-badge{width:56px;height:34px}:root[data-surface="app"] .route-badge b{font-size:20px}
+  :root[data-surface="app"] .route-badge-image{width:66px}
+  :root[data-surface="app"] .route-name{font-size:11px}:root[data-surface="app"] .route-operator{font-size:9px}
   /* Three sailings ahead instead of five. The five were overflowing the card and getting sliced
      down their right-hand edge, which is worse than showing fewer and showing them whole. */
-  .departure-slots{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .departure-slot:nth-child(n+4){display:none}
-  .departure-slot{padding:0 8px}
-  .destination strong{font-size:19px}.destination span{font-size:10px}
-  .via{font-size:11px}
-  .slot-time-row time{font-size:20px}.slot-relative{font-size:13px}
-  .boat-name{font-size:11px}
+  :root[data-surface="app"] .departure-slots{grid-template-columns:repeat(3,minmax(0,1fr))}
+  :root[data-surface="app"] .departure-slot:nth-child(n+4){display:none}
+  :root[data-surface="app"] .departure-slot{padding:0 8px}
+  :root[data-surface="app"] .destination strong{font-size:19px}:root[data-surface="app"] .destination span{font-size:10px}
+  :root[data-surface="app"] .via{font-size:11px}
+  :root[data-surface="app"] .slot-time-row time{font-size:20px}:root[data-surface="app"] .slot-relative{font-size:13px}
+  :root[data-surface="app"] .boat-name{font-size:11px}
   /* Footer controls stay thumb-sized: this is a touchscreen, whatever its width. */
-  .board-footer{gap:8px;margin-top:8px}
-  .filter-button{min-width:48px;min-height:48px}
-  .filter-icon{width:20px;height:20px}
-  .date-step{min-height:48px;font-size:22px}
-  .date-current{min-height:48px;font-size:15px}
-  .clock-toggle{min-width:68px;min-height:48px;font-size:15px}
-  .service-alert-copy strong,.service-alert-copy>span{font-size:14px}
+  :root[data-surface="app"] .board-footer{gap:8px;margin-top:8px}
+  :root[data-surface="app"] .filter-button{min-width:48px;min-height:48px}
+  :root[data-surface="app"] .filter-icon{width:20px;height:20px}
+  :root[data-surface="app"] .date-step{min-height:48px;font-size:22px}
+  :root[data-surface="app"] .date-current{min-height:48px;font-size:15px}
+  :root[data-surface="app"] .clock-toggle{min-width:68px;min-height:48px;font-size:15px}
+  :root[data-surface="app"] .service-alert-copy strong, :root[data-surface="app"] .service-alert-copy>span{font-size:14px}
+
 }
 
 /* Docked landing rail. A tablet is wide enough to keep the landing list on screen permanently, so
