@@ -81,7 +81,9 @@ const THEMES = [
   { id: "hello-kitty", name: "Hello Kitty", note: "Pink, with the East River running through it", color: "#ff9dbb" },
   { id: "cinnamoroll", name: "Cinnamoroll", note: "Sky blue and quiet", color: "#7ec8f0" },
   { id: "pompompurin", name: "Pompompurin", note: "Butter yellow, brown beret", color: "#ffd94a" },
-  { id: "kuromi", name: "Kuromi", note: "Purple, with a loud pink streak", color: "#4a2d6b" }
+  { id: "kuromi", name: "Kuromi", note: "Purple, with a loud pink streak", color: "#4a2d6b" },
+  { id: "windows-xp", name: "Windows XP", note: "Luna blue and Tahoma", color: "#0058ee" },
+  { id: "hacker", name: "Hacker", note: "Green phosphor on black", color: "#000000" }
 ];
 // The landing a location fix last resolved to, so the shortcut survives a reload.
 const nearestKey = "nyc-ferry-did-nearest";
@@ -1408,7 +1410,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=60&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=61&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

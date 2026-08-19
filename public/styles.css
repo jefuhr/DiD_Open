@@ -549,3 +549,99 @@ body.sidebar-docked.menu-open{overflow:visible}
 :root[data-theme="kuromi"] .boat-name,
 :root[data-theme="kuromi"] .tl-boat{color:#8e3fb0}
 :root[data-theme="kuromi"] .landing-star[aria-pressed="true"]{color:#ff6fae}
+
+/* ============================================================
+   Windows XP. Luna: the beige-grey control face, the blue title bar, the 3px rounded buttons with
+   their dark blue outline. Tahoma is the face XP actually shipped its UI in and is still present on
+   every Windows machine; the fallbacks are the nearest thing elsewhere.
+   ============================================================ */
+:root[data-theme="windows-xp"]{
+  --navy:#0a246a;--blue:#316ac5;--ink:#000;--muted:#4d4d4d;
+  --canvas:#ece9d8;--card:#fff;--line:#aca899;--sunken:#d4d0c8;
+}
+/* Two type elements deep so it outranks the base rules' `font:` shorthand, which resets the family
+   along with everything else and would otherwise win on specificity. */
+html[data-theme="windows-xp"] body *{font-family:Tahoma,"Segoe UI",Verdana,Geneva,sans-serif}
+/* The Luna button: a dark blue hairline, 3px corners, and a face that lifts from white at the top
+   to the control grey at the bottom. */
+html[data-theme="windows-xp"] body .menu-button,
+html[data-theme="windows-xp"] body .nearest-button,
+html[data-theme="windows-xp"] body .clock-toggle,
+html[data-theme="windows-xp"] body .filter-button,
+html[data-theme="windows-xp"] body .filter-reset,
+html[data-theme="windows-xp"] body .sort-option,
+html[data-theme="windows-xp"] body .date-bar{
+  border:1px solid #003c74;border-radius:3px;background:linear-gradient(180deg,#fff 0,#f2f0e6 46%,#ece9d8 100%)
+}
+:root[data-theme="windows-xp"] .departure,
+:root[data-theme="windows-xp"] .empty,
+:root[data-theme="windows-xp"] .filter-option{border:1px solid var(--line);border-radius:3px;box-shadow:none}
+:root[data-theme="windows-xp"] .departure{border-left:.45vw solid var(--route-color)}
+/* Selection is Luna's blue with white on it, everywhere something is chosen. */
+:root[data-theme="windows-xp"] .clock-toggle[aria-pressed="true"],
+:root[data-theme="windows-xp"] .filter-button.is-filtering,
+:root[data-theme="windows-xp"] .filter-option.is-shown,
+:root[data-theme="windows-xp"] .nearest-button[data-state="ready"],
+:root[data-theme="windows-xp"] .sort-option[aria-pressed="true"]{
+  border-color:#003c74;background:linear-gradient(180deg,#4b96f3 0,#1c66d6 100%);color:#fff
+}
+:root[data-theme="windows-xp"] .nearest-button[data-state="ready"] .nearest-icon{stroke:#fff}
+/* The title bar. This is the one flourish worth spending: nothing says XP faster. */
+:root[data-theme="windows-xp"] .landing-menu-head,
+:root[data-theme="windows-xp"] .filter-menu-head{
+  background:linear-gradient(180deg,#0058ee 0,#3f8cf3 8%,#0058ee 40%,#0054e3 88%,#003ec9 100%);border-bottom:0
+}
+:root[data-theme="windows-xp"] .landing-menu-head strong,
+:root[data-theme="windows-xp"] .filter-menu-head strong{color:#fff;text-shadow:1px 1px 1px rgba(0,0,0,.45)}
+/* The close button becomes the title bar's own red X button. */
+:root[data-theme="windows-xp"] .landing-menu-close,
+:root[data-theme="windows-xp"] .filter-menu-close{
+  background:linear-gradient(180deg,#e8846b 0,#d75f42 42%,#b8341a 100%);border:1px solid #a02f14;border-radius:3px
+}
+:root[data-theme="windows-xp"] .filter-menu-panel,
+:root[data-theme="windows-xp"] .landing-menu-panel{border:1px solid #003c74;border-radius:0}
+:root[data-theme="windows-xp"] .sort-toggle{background:var(--canvas)}
+:root[data-theme="windows-xp"] .landing-star[aria-pressed="true"]{color:#f0b400}
+
+/* ============================================================
+   Hacker. Green phosphor on black. Fixedsys is the ask and is named first, but it is a bitmap face
+   that ships with Windows and cannot be webfonted here, so it only resolves on a machine that has
+   it — everywhere else this falls through to the nearest terminal faces rather than silently
+   landing on Arial.
+   ============================================================ */
+:root[data-theme="hacker"]{
+  --navy:#00ff41;--blue:#00ff41;--ink:#2be82b;--muted:#1f9c33;
+  --canvas:#000;--card:#050d05;--line:#0f3d0f;--sunken:#0a2410;
+}
+html[data-theme="hacker"] body *{
+  font-family:Fixedsys,"Fixedsys Excelsior","Courier New",Consolas,"Lucida Console",monospace
+}
+/* A CRT does not cast a shadow, it bleeds light. */
+:root[data-theme="hacker"] .departure{box-shadow:none;border:1px solid var(--line);border-left:.45vw solid var(--route-color)}
+:root[data-theme="hacker"] .board-heading h1,
+:root[data-theme="hacker"] .clock time{text-shadow:0 0 8px rgba(0,255,65,.45)}
+:root[data-theme="hacker"] .empty{background:var(--card)}
+:root[data-theme="hacker"] .scheduled-badge{color:var(--ink);background:#06220c;border-color:var(--line)}
+:root[data-theme="hacker"] .slot-relative,
+:root[data-theme="hacker"] .tl-relative,
+:root[data-theme="hacker"] .boat-name,
+:root[data-theme="hacker"] .tl-boat{color:#19c93a}
+:root[data-theme="hacker"] .departure.timeline-row-oos{background:#040a04}
+:root[data-theme="hacker"] .timeline-row-oos .tl-dest{color:var(--muted)}
+:root[data-theme="hacker"] .service-alert-bar{color:var(--ink);background:#04140a;border-top-color:#1f9c33}
+:root[data-theme="hacker"] .service-alert-bar.active{color:#001a06;background:#00e03a}
+:root[data-theme="hacker"] .service-alert-bar.stale{background:#08180c}
+:root[data-theme="hacker"] .service-alert-bar.unavailable{color:var(--muted);background:#060f06}
+:root[data-theme="hacker"] .manual-override{background:linear-gradient(135deg,#000 0,#04200f 100%)}
+/* The browsed-day tint has to stay obviously not-live without becoming the only warm thing on a
+   black screen, so it says so in the same phosphor, dimmed and outlined instead. */
+:root[data-theme="hacker"] .date-bar[data-state="browsing"]{background:#1a1a04;border-color:#8a8a20}
+:root[data-theme="hacker"] .date-bar[data-state="browsing"] .date-current{color:#e8e83a;border-inline-color:#6d6d18}
+:root[data-theme="hacker"] .date-bar[data-state="browsing"] .date-step{color:#b8b830}
+:root[data-theme="hacker"] .landing-menu-head,
+:root[data-theme="hacker"] .sort-toggle{background:var(--card)}
+:root[data-theme="hacker"] .sort-option{background:var(--canvas)}
+:root[data-theme="hacker"] .filter-menu-scrim,
+:root[data-theme="hacker"] .landing-menu-scrim{background:rgba(0,0,0,.78)}
+:root[data-theme="hacker"] .route-badge{box-shadow:none}
+:root[data-theme="hacker"] .landing-star[aria-pressed="true"]{color:#00ff41}
