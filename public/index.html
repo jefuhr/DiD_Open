@@ -9,16 +9,27 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
-    <link rel="icon" href="/assets/app-icon.png?v=61" type="image/png" />
+    <link rel="icon" href="/assets/app-icon.png?v=62" type="image/png" />
     <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=61" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=62" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
          come from the manifest, which is why the board installs as a bare shortcut without it.
          It lives under /assets/ because that is a path the deployment's proxy forwards to this
          server — a manifest at the site root is served by the landing page, not by the board. -->
-    <link rel="manifest" href="/assets/site.webmanifest?v=61" />
-    <link rel="stylesheet" href="/styles.css?v=61" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=62" />
+    <link rel="stylesheet" href="/styles.css?v=62" />
+    <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
+         after the board has already been drawn once, and a saved theme applied there arrives as a
+         visible flash of the other one. -->
+    <script>
+      try {
+        var saved = localStorage.getItem("nyc-ferry-did-theme");
+        document.documentElement.dataset.theme = saved === "hello-kitty" ? "hello-kitty" : "nyc-ferry";
+      } catch (error) {
+        document.documentElement.dataset.theme = "nyc-ferry";
+      }
+    </script>
   </head>
   <body>
     <main class="screen" id="screen">
@@ -54,6 +65,14 @@
                 <path d="M3 5h18l-7 8v6l-4 2v-8Z" />
               </svg>
               <span class="filter-count" id="filterCount" hidden></span>
+            </button>
+            <!-- Beside the filter because both are the same kind of control: neither changes what the
+                 board knows, only how it is read. -->
+            <button type="button" class="filter-button theme-button" id="themeButton" aria-expanded="false" aria-controls="themeMenu" aria-label="Theme">
+              <svg class="filter-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none" />
+              </svg>
             </button>
             <div class="date-bar" id="dateBar" data-state="today">
               <button type="button" class="date-step" id="datePrev" aria-label="Previous day">‹</button>
@@ -91,6 +110,18 @@
           <button type="button" class="filter-reset" id="filterReset">Show all</button>
         </div>
       </div>
+      <!-- Same sheet shape and the same option rows as the operator filter: it is opened from the
+           button beside it and does the same class of thing, so it should not look like a new idea. -->
+      <div class="filter-menu theme-menu" id="themeMenu" hidden>
+        <div class="filter-menu-scrim" id="themeMenuScrim"></div>
+        <div class="filter-menu-panel" role="dialog" aria-modal="true" aria-label="Theme">
+          <div class="filter-menu-head">
+            <strong>Theme</strong>
+            <button type="button" class="filter-menu-close" id="themeMenuClose">Done</button>
+          </div>
+          <ul class="filter-list" id="themeList"></ul>
+        </div>
+      </div>
       <section class="manual-override" id="manualOverride" hidden aria-live="assertive" aria-atomic="true">
         <div class="manual-override-box" id="manualOverrideBox" data-size="short">
           <span class="manual-override-label">Service notice</span>
@@ -113,6 +144,6 @@
         <span class="service-alert-count" id="serviceAlertCount" hidden></span>
       </section>
     </main>
-    <script type="module" src="/app.js?v=61"></script>
+    <script type="module" src="/app.js?v=62"></script>
   </body>
 </html>

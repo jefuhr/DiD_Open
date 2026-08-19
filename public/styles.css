@@ -361,3 +361,107 @@ body.sidebar-docked.menu-open{overflow:visible}
    Three classes deep on purpose: the phone and tablet layers both set a fixed .route-badge width,
    and this has to outrank them without being repeated inside each one. */
 .departure.variant-local .route-badge{width:auto;padding:0 5px;gap:4px}
+
+/* Theme picker. Borrows the filter sheet's shape and rows wholesale — same button size, same
+   bottom sheet, same option — because it sits next to it and does the same class of thing. The
+   only new part is the second line under each name, which is what a theme needs and an operator
+   switch does not. */
+.theme-button .filter-icon{fill:none}
+.theme-option .filter-option-name{display:flex;flex-direction:column;gap:3px}
+.theme-option-note{font:800 11px/1.2 Lato,Arial,sans-serif;color:var(--muted);letter-spacing:.02em}
+.theme-option.is-shown .theme-option-note{color:inherit;opacity:.8}
+
+/* ============================================================
+   Hello Kitty. The palette and the chunky ink-outlined cards are lifted from juliet.nyc, retuned
+   to the one thing this board must never lose: a departure has to stay readable across a terminal
+   at a glance. Only the chrome is repainted — route colours, status badges and every layout rule
+   above are left exactly as they are, because a rider reading ON TIME green or a LAST yellow is
+   reading service information, not decoration.
+   ============================================================ */
+:root[data-theme="hello-kitty"]{
+  --pink-100:#fff5f8;--pink-200:#ffe3ec;--pink-300:#ffc9db;--pink-400:#ff9dbb;--pink-500:#ff6f9c;
+  /* Standing in for --navy, so every heading, badge and pressed control comes through together.
+     Deeper than juliet's #e8455f: that is a headline colour on a big screen, and this has to hold
+     up at 11px on a phone in daylight. */
+  --navy:#8c1038;
+  --blue:#d81e5b;
+  --ink:#3b2b33;
+  --muted:#7a626c;
+  --canvas:#fff5f8;
+  --line:#ffc9db;
+  font-family:"Trebuchet MS","Segoe UI",Verdana,sans-serif;
+}
+/* Oswald is the signage face and belongs to the ferry livery. Everywhere it is set above, the
+   pink board uses the same rounded stack as the rest of itself. */
+:root[data-theme="hello-kitty"] .board-heading h1,
+:root[data-theme="hello-kitty"] .clock time,
+:root[data-theme="hello-kitty"] .route-badge b,
+:root[data-theme="hello-kitty"] .slot-time-row time,
+:root[data-theme="hello-kitty"] .tl-head time,
+:root[data-theme="hello-kitty"] .filter-menu-head strong,
+:root[data-theme="hello-kitty"] .landing-menu-head strong,
+:root[data-theme="hello-kitty"] .boat-assignment{font-family:"Trebuchet MS","Segoe UI",Verdana,sans-serif}
+/* The polka dots from the site's body, pinned behind the board. Fixed so a scrolling phone list
+   slides over a still background rather than dragging the pattern with it. */
+:root[data-theme="hello-kitty"] body{
+  background:
+    radial-gradient(circle at 12% 8%,#fff 0 5px,transparent 6px) 0 0/64px 64px,
+    radial-gradient(circle at 62% 42%,#fff 0 4px,transparent 5px) 0 0/64px 64px,
+    linear-gradient(180deg,var(--pink-200),var(--pink-100) 420px) fixed;
+}
+/* Cards get the site's outline-and-drop-shadow treatment. The route colour keeps the left edge:
+   it is the fastest read on the card and nothing decorative is allowed to take it. */
+:root[data-theme="hello-kitty"] .departure{
+  border:2px solid var(--ink);border-left-width:.45vw;border-radius:14px;
+  box-shadow:0 3px 0 var(--pink-300);
+}
+:root[data-theme="hello-kitty"] .empty{border-color:var(--ink);border-radius:14px;box-shadow:0 3px 0 var(--pink-300)}
+/* Controls: rounder, outlined in ink, and sitting on a pink shadow the way the site's buttons do. */
+:root[data-theme="hello-kitty"] .menu-button,
+:root[data-theme="hello-kitty"] .nearest-button,
+:root[data-theme="hello-kitty"] .clock-toggle,
+:root[data-theme="hello-kitty"] .filter-button,
+:root[data-theme="hello-kitty"] .date-bar,
+:root[data-theme="hello-kitty"] .filter-option,
+:root[data-theme="hello-kitty"] .filter-reset,
+:root[data-theme="hello-kitty"] .sort-option{border:2px solid var(--ink);border-radius:12px}
+:root[data-theme="hello-kitty"] .filter-menu-close,
+:root[data-theme="hello-kitty"] .landing-menu-close{border-radius:999px;box-shadow:0 3px 0 var(--pink-400)}
+:root[data-theme="hello-kitty"] .route-count,
+:root[data-theme="hello-kitty"] .status{border-color:var(--pink-400);border-radius:999px}
+:root[data-theme="hello-kitty"] .filter-menu-panel,
+:root[data-theme="hello-kitty"] .landing-menu-panel{border:2px solid var(--ink)}
+:root[data-theme="hello-kitty"] .filter-menu-panel{border-radius:18px 18px 0 0}
+:root[data-theme="hello-kitty"] .filter-menu-scrim,
+:root[data-theme="hello-kitty"] .landing-menu-scrim{background:rgba(59,43,51,.45)}
+/* Pressed and selected states read pink rather than the ferry's cyan. */
+:root[data-theme="hello-kitty"] .menu-button:active,
+:root[data-theme="hello-kitty"] .nearest-button:active,
+:root[data-theme="hello-kitty"] .clock-toggle:active,
+:root[data-theme="hello-kitty"] .filter-button:active,
+:root[data-theme="hello-kitty"] .date-step:active,
+:root[data-theme="hello-kitty"] .date-current:active,
+:root[data-theme="hello-kitty"] .landing-option:active,
+:root[data-theme="hello-kitty"] .sort-option:active{background:var(--pink-200)}
+:root[data-theme="hello-kitty"] .clock-toggle[aria-pressed="true"],
+:root[data-theme="hello-kitty"] .filter-button.is-filtering,
+:root[data-theme="hello-kitty"] .filter-option.is-shown,
+:root[data-theme="hello-kitty"] .nearest-button[data-state="ready"]{border-color:var(--blue);background:var(--pink-200);color:var(--navy)}
+:root[data-theme="hello-kitty"] .nearest-button[data-state="ready"] .nearest-icon{stroke:var(--navy)}
+/* Countdowns and vessel names are the board's own accent colour; on this theme they follow the
+   pink rather than staying the one blue thing left on the card. */
+:root[data-theme="hello-kitty"] .slot-relative,
+:root[data-theme="hello-kitty"] .tl-relative,
+:root[data-theme="hello-kitty"] .boat-name,
+:root[data-theme="hello-kitty"] .tl-boat{color:#b3164a}
+:root[data-theme="hello-kitty"] .scheduled-badge{background:var(--pink-200);border-color:var(--pink-400)}
+:root[data-theme="hello-kitty"] .departure.timeline-row-oos{background:var(--pink-200)}
+:root[data-theme="hello-kitty"] .timeline-row-oos .tl-dest{color:var(--muted)}
+:root[data-theme="hello-kitty"] .service-alert-bar{background:var(--pink-100);border-top-color:var(--pink-400)}
+:root[data-theme="hello-kitty"] .manual-override{background:linear-gradient(135deg,#8c1038 0%,#e8455f 100%)}
+/* The rail's own edge, and the sticky phone heading, both sit on the polka dots: they need the
+   board's flat canvas under them or the pattern shows through the type. */
+:root[data-theme="hello-kitty"] .board-heading{background:var(--canvas)}
+:root[data-theme="hello-kitty"] .landing-menu-head,
+:root[data-theme="hello-kitty"] .sort-toggle{background:var(--pink-100)}
+:root[data-theme="hello-kitty"] .landing-star[aria-pressed="true"]{color:var(--pink-500)}

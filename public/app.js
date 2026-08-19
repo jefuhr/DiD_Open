@@ -35,6 +35,11 @@ const elements = {
   filterMenuClose: document.querySelector("#filterMenuClose"),
   filterList: document.querySelector("#filterList"),
   filterReset: document.querySelector("#filterReset"),
+  themeButton: document.querySelector("#themeButton"),
+  themeMenu: document.querySelector("#themeMenu"),
+  themeMenuScrim: document.querySelector("#themeMenuScrim"),
+  themeMenuClose: document.querySelector("#themeMenuClose"),
+  themeList: document.querySelector("#themeList"),
   sortOptions: [...document.querySelectorAll("[data-sort]")]
 };
 
@@ -63,6 +68,15 @@ const operatorsKey = "nyc-ferry-did-operators";
 // reading preferences: an agent works a handful of docks out of the 26 on the list, and the ones
 // they work do not change because they opened the board somewhere else.
 const favouriteLandingsKey = "nyc-ferry-did-favourite-landings";
+// Which paint the board wears. Persisted per device like the other reading preferences, and read
+// again by the inline script in index.html so the choice is on the document before the first paint.
+const themeKey = "nyc-ferry-did-theme";
+// The board's own livery first, so a device that has never been told otherwise looks like the
+// terminal signage it is modelled on.
+const THEMES = [
+  { id: "nyc-ferry", name: "NYC Ferry", note: "Terminal signage blue", color: "#001d41" },
+  { id: "hello-kitty", name: "Hello Kitty", note: "Pink, with the East River running through it", color: "#ff9dbb" }
+];
 // The landing a location fix last resolved to, so the shortcut survives a reload.
 const nearestKey = "nyc-ferry-did-nearest";
 // A fix is only good for about the shift it was taken in. Crew move between landings, and a
@@ -198,6 +212,47 @@ function setFilterOpen(open) {
   elements.filterButton.setAttribute("aria-expanded", String(open));
   if (open) (elements.filterList.querySelector(".filter-option") || elements.filterMenuClose)?.focus();
   else elements.filterButton.focus();
+}
+
+function activeTheme() {
+  const saved = localStorage.getItem(themeKey);
+  return THEMES.some((theme) => theme.id === saved) ? saved : THEMES[0].id;
+}
+
+function applyTheme() {
+  const theme = THEMES.find((entry) => entry.id === activeTheme()) || THEMES[0];
+  document.documentElement.dataset.theme = theme.id;
+  // The status bar of an installed board is painted from this, so it has to move with the theme or
+  // a pink board keeps a navy notch.
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme.color);
+}
+
+function renderThemeMenu() {
+  const current = activeTheme();
+  elements.themeList.innerHTML = THEMES.map((theme) => {
+    const chosen = theme.id === current;
+    return `<li><button type="button" class="filter-option theme-option${chosen ? " is-shown" : ""}" data-theme="${escapeHtml(theme.id)}" role="radio" aria-checked="${chosen}">
+      <span class="filter-option-name">${escapeHtml(theme.name)}<small class="theme-option-note">${escapeHtml(theme.note)}</small></span>
+      <span class="filter-option-state" aria-hidden="true">${chosen ? "On" : ""}</span>
+    </button></li>`;
+  }).join("");
+}
+
+function selectTheme(id) {
+  if (!THEMES.some((theme) => theme.id === id)) return;
+  localStorage.setItem(themeKey, id);
+  applyTheme();
+  // The sheet stays open so the two can be compared against the board behind it, which is the whole
+  // reason this lives in the footer rather than in the landing drawer.
+  renderThemeMenu();
+  elements.themeList.querySelector(`[data-theme="${CSS.escape(id)}"]`)?.focus();
+}
+
+function setThemeOpen(open) {
+  elements.themeMenu.hidden = !open;
+  elements.themeButton.setAttribute("aria-expanded", String(open));
+  if (open) (elements.themeList.querySelector(".theme-option") || elements.themeMenuClose)?.focus();
+  else elements.themeButton.focus();
 }
 
 function clockFormat() {
@@ -1257,16 +1312,24 @@ elements.filterList.addEventListener("click", (event) => {
   const option = event.target.closest("[data-operator]");
   if (option) setOperatorHidden(option.dataset.operator, option.getAttribute("aria-checked") === "true");
 });
+elements.themeButton.addEventListener("click", () => setThemeOpen(elements.themeMenu.hidden));
+elements.themeMenuClose.addEventListener("click", () => setThemeOpen(false));
+elements.themeMenuScrim.addEventListener("click", () => setThemeOpen(false));
+elements.themeList.addEventListener("click", (event) => {
+  const option = event.target.closest("[data-theme]");
+  if (option) selectTheme(option.dataset.theme);
+});
 elements.datePrev.addEventListener("click", () => stepDate(-1));
 elements.dateNext.addEventListener("click", () => stepDate(1));
 elements.dateCurrent.addEventListener("click", showToday);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.landingMenu.hidden && !railDocked()) return setMenuOpen(false);
   if (event.key === "Escape" && !elements.filterMenu.hidden) return setFilterOpen(false);
+  if (event.key === "Escape" && !elements.themeMenu.hidden) return setThemeOpen(false);
   // Arrow keys page through the schedule, which is how anyone reaches for a date stepper on a
   // desktop board. Only when the landing menu is closed and nothing is being typed into.
   // A docked rail does not swallow the arrow keys: it is part of the board, not a dialog over it.
-  if ((!elements.landingMenu.hidden && !railDocked()) || !elements.filterMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
+  if ((!elements.landingMenu.hidden && !railDocked()) || !elements.filterMenu.hidden || !elements.themeMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (event.key === "ArrowLeft") stepDate(-1);
   else if (event.key === "ArrowRight") stepDate(1);
@@ -1274,6 +1337,8 @@ document.addEventListener("keydown", (event) => {
 
 railMedia.addEventListener("change", applyRail);
 applyRail();
+applyTheme();
+renderThemeMenu();
 renderSortToggle();
 renderClockToggle();
 renderNearest();
@@ -1297,7 +1362,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=58&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=59&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }
