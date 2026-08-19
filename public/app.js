@@ -73,9 +73,15 @@ const favouriteLandingsKey = "nyc-ferry-did-favourite-landings";
 const themeKey = "nyc-ferry-did-theme";
 // The board's own livery first, so a device that has never been told otherwise looks like the
 // terminal signage it is modelled on.
+// Night sits second because it is the only one of these anybody picks for a reason other than
+// liking it — a board read on a dark bridge at 3am is a working need, not a mood.
 const THEMES = [
   { id: "nyc-ferry", name: "NYC Ferry", note: "Terminal signage blue", color: "#001d41" },
-  { id: "hello-kitty", name: "Hello Kitty", note: "Pink, with the East River running through it", color: "#ff9dbb" }
+  { id: "night", name: "Night", note: "Dark, for a wheelhouse after dark", color: "#0d1b26" },
+  { id: "hello-kitty", name: "Hello Kitty", note: "Pink, with the East River running through it", color: "#ff9dbb" },
+  { id: "cinnamoroll", name: "Cinnamoroll", note: "Sky blue and quiet", color: "#7ec8f0" },
+  { id: "pompompurin", name: "Pompompurin", note: "Butter yellow, brown beret", color: "#ffd94a" },
+  { id: "kuromi", name: "Kuromi", note: "Purple, with a loud pink streak", color: "#4a2d6b" }
 ];
 // The landing a location fix last resolved to, so the shortcut survives a reload.
 const nearestKey = "nyc-ferry-did-nearest";
@@ -242,9 +248,13 @@ function selectTheme(id) {
   if (!THEMES.some((theme) => theme.id === id)) return;
   localStorage.setItem(themeKey, id);
   applyTheme();
-  // The sheet stays open so the two can be compared against the board behind it, which is the whole
-  // reason this lives in the footer rather than in the landing drawer.
+  // The sheet stays open so the themes can be compared against the board behind it, which is the
+  // whole reason this lives in the footer rather than in the landing drawer.
   renderThemeMenu();
+  // The favourite mark is baked into the landing list's markup, so it only changes when that list
+  // is rebuilt. Without this the kitty arrives on the next reload, which reads as the picker having
+  // half worked.
+  renderLandingList();
   elements.themeList.querySelector(`[data-theme="${CSS.escape(id)}"]`)?.focus();
 }
 
@@ -1100,15 +1110,51 @@ function setLandingFavourite(landingNumber, favourite) {
   elements.landingList.querySelector(`[data-favourite-id="${landingNumber}"]`)?.focus();
 }
 
-// The star, drawn once rather than shipped as an asset: the menu is the one place offline has to
-// keep working, and an inline path cannot fail to load.
-const starIcon = `<svg class="landing-star-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.6l2.6 5.28 5.83.85-4.22 4.11.996 5.8L12 16.9l-5.21 2.74.995-5.8-4.22-4.11 5.83-.85z"/></svg>`;
+// The favourite marks, drawn rather than shipped as assets: the menu is the one place offline has
+// to keep working, and an inline path cannot fail to load.
+//
+// Every one of these is a single filled path in currentColor with no internal colours, which is
+// what lets .landing-star[aria-pressed] keep saying starred-or-not by colour alone — the same
+// mechanism the plain star has always used. They are silhouettes on purpose: at the 22px these
+// render at, whiskers and facial features turn to grey mush, and the head shape is the only part
+// doing any work.
+function characterMark(paths) {
+  return `<svg class="landing-star-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths}</svg>`;
+}
+
+const starIcon = characterMark(`<path d="M12 3.6l2.6 5.28 5.83.85-4.22 4.11.996 5.8L12 16.9l-5.21 2.74.995-5.8-4.22-4.11 5.83-.85z"/>`);
+
+// Head plus pointed ears, and the bow she is never without — on the left, as she wears it.
+const kittyIcon = characterMark(`<path d="M6.4 6.1 4.5 2.9c-.2-.4.2-.8.6-.6l3.6 1.7A9.6 7.9 0 0 1 14.6 3.6l2.9-1.4c.4-.2.8.2.6.6l-1.5 2.7a7.6 7.6 0 0 1 2.3 4.6 5.4 5.4 0 0 1 1.5-.5l1.1-1.5c.3-.4.9-.1.8.4l-.3 1.6.8 1c.3.4-.1.9-.5.7l-1.6-.6-1.6.5a7.2 7.2 0 0 1-6.4 8.9A7.9 7.9 0 0 1 4 12.7a7.6 7.6 0 0 1 2.4-6.6Z"/>`);
+
+// Round head, and the two long ears that hang past his chin.
+const cinnamorollIcon = characterMark(`<path d="M12 3.4a6.4 6.4 0 0 1 6 4.1c1.6-.7 3.4-.4 4.2.8.8 1.3.1 3-1.5 4a5.9 5.9 0 0 1-2.7.9 6.4 6.4 0 0 1-1.6 1.9 5.6 5.6 0 0 1 .3 3.9c-.5 1.5-2 2.4-3.3 2-1.3-.4-1.9-2-1.4-3.5a5.2 5.2 0 0 1 .8-1.5 7.4 7.4 0 0 1-2.2-.5c-1 1.3-2.6 2-3.8 1.5-1.3-.5-1.7-2.1-1-3.5a5.3 5.3 0 0 1 1.4-1.7A6.1 6.1 0 0 1 12 3.4Z"/>`);
+
+// Round head under the beret, with its little stalk on top and the ears sitting low and floppy.
+const pompompurinIcon = characterMark(`<path d="M12.6 1.6c.5 0 .7.5.5.9l-.4.7a5 5 0 0 1 3.1 2.2 6.7 6.7 0 0 1 2.9 3.4 4.3 4.3 0 0 1 2.6 1.5c.9 1.3.4 3-1.1 3.8a4.6 4.6 0 0 1-2.3.5 7.3 7.3 0 0 1-11.2.4 4.5 4.5 0 0 1-2.6-.4c-1.6-.8-2.1-2.6-1.2-3.9a4.4 4.4 0 0 1 2.7-1.6 6.7 6.7 0 0 1 4.4-4.1A5.6 5.6 0 0 1 11.9 2c.1-.3.4-.4.7-.4Z"/>`);
+
+// The jester hood: one peak leaning over, and a point down each side of the face.
+const kuromiIcon = characterMark(`<path d="M11.4 2.1c1.4-.6 3 .1 3.6 1.5.3.7.3 1.4 0 2a7 7 0 0 1 2.8 2.8l3.1 1.4c.5.2.5.9 0 1.1l-2.6 1.1a7.1 7.1 0 0 1-1 3.6 6.9 6.9 0 0 1-11.6 0 7.1 7.1 0 0 1-1-3.6L2.1 10.9c-.5-.2-.5-.9 0-1.1l3.1-1.4a7 7 0 0 1 3.6-3.1 2.7 2.7 0 0 1 2.6-3.2Z"/>`);
+
+// Only the Sanrio themes swap the mark. NYC Ferry and Night keep the plain star: one is the board's
+// own livery and the other is a working night shift, and neither is asking for a cartoon.
+const THEME_MARKS = {
+  "hello-kitty": kittyIcon,
+  cinnamoroll: cinnamorollIcon,
+  pompompurin: pompompurinIcon,
+  kuromi: kuromiIcon
+};
+
+function favouriteMark() {
+  return THEME_MARKS[activeTheme()] || starIcon;
+}
 
 function renderLandingList() {
   const landings = JSON.parse(localStorage.getItem(landingsKey) || "[]");
   if (!landings.length) return;
   const current = data?.meta?.landingNumber;
   const favourites = favouriteLandings();
+  const mark = favouriteMark();
   // Starred landings float to the top, in the list's own order underneath. Someone who works two
   // docks should find both without scrolling; the rest of the system stays where it always was.
   const ordered = [
@@ -1119,7 +1165,7 @@ function renderLandingList() {
     const starred = favourites.has(landing.id);
     const name = escapeHtml(landing.displayName);
     return `<li class="landing-row${starred ? " is-favourite" : ""}">
-    <button type="button" class="landing-star" data-favourite-id="${landing.id}" aria-pressed="${starred}" aria-label="${starred ? `Remove ${name} from favourites` : `Add ${name} to favourites`}" title="${starred ? "Remove from favourites" : "Add to favourites"}">${starIcon}</button>
+    <button type="button" class="landing-star" data-favourite-id="${landing.id}" aria-pressed="${starred}" aria-label="${starred ? `Remove ${name} from favourites` : `Add ${name} to favourites`}" title="${starred ? "Remove from favourites" : "Add to favourites"}">${mark}</button>
     <button type="button" class="landing-option${landing.id === current ? " is-current" : ""}" data-landing-id="${landing.id}"${landing.id === current ? ' aria-current="true"' : ""}>
       <span class="landing-option-name">${name}</span>
     </button>
@@ -1362,7 +1408,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=59&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=60&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

@@ -9,23 +9,24 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
-    <link rel="icon" href="/assets/app-icon.png?v=62" type="image/png" />
+    <link rel="icon" href="/assets/app-icon.png?v=63" type="image/png" />
     <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=62" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=63" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
          come from the manifest, which is why the board installs as a bare shortcut without it.
          It lives under /assets/ because that is a path the deployment's proxy forwards to this
          server — a manifest at the site root is served by the landing page, not by the board. -->
-    <link rel="manifest" href="/assets/site.webmanifest?v=62" />
-    <link rel="stylesheet" href="/styles.css?v=62" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=63" />
+    <link rel="stylesheet" href="/styles.css?v=63" />
     <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
          after the board has already been drawn once, and a saved theme applied there arrives as a
          visible flash of the other one. -->
     <script>
       try {
         var saved = localStorage.getItem("nyc-ferry-did-theme");
-        document.documentElement.dataset.theme = saved === "hello-kitty" ? "hello-kitty" : "nyc-ferry";
+        var known = ["night", "hello-kitty", "cinnamoroll", "pompompurin", "kuromi"];
+        document.documentElement.dataset.theme = known.indexOf(saved) === -1 ? "nyc-ferry" : saved;
       } catch (error) {
         document.documentElement.dataset.theme = "nyc-ferry";
       }
@@ -144,6 +145,6 @@
         <span class="service-alert-count" id="serviceAlertCount" hidden></span>
       </section>
     </main>
-    <script type="module" src="/app.js?v=62"></script>
+    <script type="module" src="/app.js?v=63"></script>
   </body>
 </html>

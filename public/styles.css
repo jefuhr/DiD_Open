@@ -1,10 +1,16 @@
 @font-face{font-family:Lato;src:url('/assets/fonts/lato-regular-latin.woff2')}@font-face{font-family:Lato;src:url('/assets/fonts/lato-bold-latin.woff2');font-weight:700}@font-face{font-family:Lato;src:url('/assets/fonts/lato-black-latin.woff2');font-weight:900}@font-face{font-family:Oswald;src:url('/assets/fonts/oswald-variable-latin.woff2');font-weight:500 700}
-:root{--navy:#001d41;--blue:#00a1df;--warning:#ffd100;--ink:#102f47;--muted:#536e7f;--canvas:#f1f7fa;--line:#bfd8e4;--departures-shown:4;font-family:Lato,Arial,sans-serif;color:var(--ink);background:var(--canvas);font-synthesis:none}:root[data-departures-shown="1"]{--departures-shown:1}:root[data-departures-shown="2"]{--departures-shown:2}:root[data-departures-shown="3"]{--departures-shown:3}:root[data-departures-shown="4"]{--departures-shown:4}:root[data-departures-shown="5"]{--departures-shown:5}
+/* --card is every raised surface: a departure card, a control, a panel. --sunken is the tint those
+   take while pressed. Both exist so a dark theme is a change of palette rather than seventeen
+   overrides of a hardcoded white, and both default to exactly what was written literally before, so
+   the NYC Ferry livery is untouched. Two whites are deliberately NOT this variable: badge text on a
+   saturated fill, and .route-badge-image, whose chip has to stay white because partner wordmarks are
+   dark ink on transparency and vanish without it. */
+:root{--navy:#001d41;--blue:#00a1df;--warning:#ffd100;--ink:#102f47;--muted:#536e7f;--canvas:#f1f7fa;--line:#bfd8e4;--card:#fff;--sunken:#e9f2f7;--departures-shown:4;font-family:Lato,Arial,sans-serif;color:var(--ink);background:var(--canvas);font-synthesis:none}:root[data-departures-shown="1"]{--departures-shown:1}:root[data-departures-shown="2"]{--departures-shown:2}:root[data-departures-shown="3"]{--departures-shown:3}:root[data-departures-shown="4"]{--departures-shown:4}:root[data-departures-shown="5"]{--departures-shown:5}
 *{box-sizing:border-box}[hidden]{display:none!important}html,body{width:100%;height:100%;margin:0;overflow:hidden}body{background:var(--canvas)}
 .screen{width:100vw;height:100vh;height:100dvh;display:grid;grid-template-rows:minmax(0,1fr) auto}.content{display:grid;grid-template-columns:minmax(0,1fr);min-height:0}.board{display:flex;flex-direction:column;min-width:0;min-height:0;padding:.8vh 1vw .6vh}
-.board-heading{display:flex;align-items:center;justify-content:space-between;gap:1vw;padding:0 .5vw .5vh}.board-heading h1{margin:0;margin-right:auto;color:var(--navy);font:650 clamp(20px,3vh,36px)/1 Oswald,sans-serif;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.board-state{display:flex;align-items:center;gap:.6vw}.route-count,.status{padding:.5vh .6vw;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--muted);font-size:clamp(10px,1.5vh,14px);font-weight:900;white-space:nowrap}.status{display:flex;align-items:center;gap:.4vw}.status i{width:8px;height:8px;border-radius:50%;background:#35aa65;box-shadow:0 0 0 3px rgba(53,170,101,.14)}.clock{display:flex;align-items:baseline;gap:.5vw}.clock time{color:var(--navy);font:700 clamp(20px,3.2vh,36px)/1 Oswald,sans-serif}.clock span{color:var(--muted);font-size:clamp(10px,1.5vh,14px);font-weight:700;white-space:nowrap}
+.board-heading{display:flex;align-items:center;justify-content:space-between;gap:1vw;padding:0 .5vw .5vh}.board-heading h1{margin:0;margin-right:auto;color:var(--navy);font:650 clamp(20px,3vh,36px)/1 Oswald,sans-serif;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.board-state{display:flex;align-items:center;gap:.6vw}.route-count,.status{padding:.5vh .6vw;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--muted);font-size:clamp(10px,1.5vh,14px);font-weight:900;white-space:nowrap}.status{display:flex;align-items:center;gap:.4vw}.status i{width:8px;height:8px;border-radius:50%;background:#35aa65;box-shadow:0 0 0 3px rgba(53,170,101,.14)}.clock{display:flex;align-items:baseline;gap:.5vw}.clock time{color:var(--navy);font:700 clamp(20px,3.2vh,36px)/1 Oswald,sans-serif}.clock span{color:var(--muted);font-size:clamp(10px,1.5vh,14px);font-weight:700;white-space:nowrap}
 .column-head,.departure{display:grid;grid-template-columns:15% 19% 1fr;align-items:center}.column-head{padding:0 .6vw .4vh;color:var(--muted);font-size:clamp(9px,1.2vh,12px);font-weight:900;letter-spacing:.1em;text-transform:uppercase}.departures{flex:1;min-height:0;display:grid;--route-row:clamp(50px,7.4vh,76px);grid-auto-rows:var(--route-row);align-content:start;gap:.5vh;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent}.departures::-webkit-scrollbar{width:10px}.departures::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}.departures::-webkit-scrollbar-track{background:transparent}
-.departure{--route-color:#004e72;--route-text:#fff;min-height:0;padding:0 .6vw;background:#fff;border-left:.45vw solid var(--route-color);box-shadow:0 .2vh .6vh rgba(0,29,65,.08);border-radius:6px;overflow:hidden;animation:slide-in .28s ease both}.departure.route-AS{--route-color:#ff6b00;--route-text:#fff}.departure.route-ER,.departure.route-ER.variant-a,.departure.route-ER.variant-b,.departure.route-ER.variant-local{--route-color:#00839c;--route-text:#fff}.departure.route-GI{--route-color:#9795a0;--route-text:#fff}.departure.route-RES{--route-color:#00a1e1;--route-text:#001d41}.departure.route-RR{--route-color:#ff8672;--route-text:#001d41}.departure.route-RS{--route-color:#4e008e;--route-text:#fff}.departure.route-RWS{--route-color:#00a1e1;--route-text:#001d41}.departure.route-SB{--route-color:#ffd100;--route-text:#001d41}.departure.route-SG{--route-color:#d0006f;--route-text:#fff}
+.departure{--route-color:#004e72;--route-text:#fff;min-height:0;padding:0 .6vw;background:var(--card);border-left:.45vw solid var(--route-color);box-shadow:0 .2vh .6vh rgba(0,29,65,.08);border-radius:6px;overflow:hidden;animation:slide-in .28s ease both}.departure.route-AS{--route-color:#ff6b00;--route-text:#fff}.departure.route-ER,.departure.route-ER.variant-a,.departure.route-ER.variant-b,.departure.route-ER.variant-local{--route-color:#00839c;--route-text:#fff}.departure.route-GI{--route-color:#9795a0;--route-text:#fff}.departure.route-RES{--route-color:#00a1e1;--route-text:#001d41}.departure.route-RR{--route-color:#ff8672;--route-text:#001d41}.departure.route-RS{--route-color:#4e008e;--route-text:#fff}.departure.route-RWS{--route-color:#00a1e1;--route-text:#001d41}.departure.route-SB{--route-color:#ffd100;--route-text:#001d41}.departure.route-SG{--route-color:#d0006f;--route-text:#fff}
 .route{min-width:0;display:flex;align-items:center;gap:.5vw}.route-badge{flex:0 0 auto;width:clamp(44px,3.4vw,66px);height:clamp(26px,4.4vh,46px);display:flex;align-items:center;justify-content:center;gap:.3vw;border:2px solid var(--route-color);border-radius:6px;background:var(--route-color);color:var(--route-text);box-shadow:inset 0 0 0 1px rgba(0,29,65,.08)}.route-badge b{font:700 clamp(14px,2.5vh,25px)/1 Oswald}.route-badge-image{width:clamp(78px,6.4vw,118px);padding:.15vw;background:#fff}.route-badge-logo{max-width:100%;max-height:100%;display:block;object-fit:contain}.route-variant{padding:.2em .35em;color:var(--route-color);background:var(--route-text);border-radius:4px;font-size:clamp(7px,1vh,10px);font-weight:950;letter-spacing:.04em;text-transform:uppercase}.route-name{min-width:0;color:var(--navy);font-size:clamp(9px,1.35vh,13px);font-weight:900;line-height:1.08;text-transform:uppercase;overflow-wrap:anywhere}.route-operator{display:block;margin-top:.2vh;color:var(--muted);font-size:clamp(7px,1vh,10px);font-weight:800;letter-spacing:.08em;text-transform:uppercase}.destination{min-width:0;padding-right:.6vw}.destination strong{display:block;color:var(--navy);font-size:clamp(14px,2.5vh,25px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}/* Intermediate calls sit with the destination but must never compete with it: a rider wants the far
    end first and the stops on the way second. */
 .approx{color:#b06a00;font-weight:900;text-decoration:none;padding-left:.1em}
@@ -12,7 +18,7 @@
 .via{display:block;color:var(--muted);font-size:clamp(9px,1.35vh,13px);font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .destination span{display:block;margin-top:.2vh;color:var(--muted);font-size:clamp(8px,1.2vh,12px);font-weight:800;text-transform:uppercase;letter-spacing:.06em}
 .departure-slots{height:100%;display:grid;grid-template-columns:repeat(var(--departures-shown),minmax(0,1fr));align-items:stretch;border-left:1px solid var(--line)}.departure-slot{min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:.3vh;padding:0 .5vw;border-right:1px solid var(--line)}.departure-slot:last-child{border-right:0}.slot-time-row{display:flex;align-items:baseline;gap:.4vw;white-space:nowrap;min-width:0;overflow:hidden}.slot-time-row time{color:var(--navy);font:650 clamp(15px,2.7vh,27px)/1 Oswald}.slot-relative{color:#00749e;font:900 clamp(10px,1.6vh,15px)/1 Lato,Arial,sans-serif;white-space:nowrap}
-.departure-last-slot{display:flex;align-items:center;gap:4px;min-height:clamp(14px,2vh,22px);overflow:hidden;white-space:nowrap}.departure-last-badge{display:inline-flex;align-items:center;padding:2px 5px;color:var(--navy);background:var(--warning);border:2px solid #d89a26;border-radius:8px;font-size:clamp(9px,1.4vh,13px);font-weight:950;letter-spacing:.06em;line-height:1;white-space:nowrap}.vessel-delay-badge,.on-time-badge,.scheduled-badge{display:inline-flex;align-items:center;padding:2px 5px;color:#fff;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;unicode-bidi:isolate}.vessel-delay-badge{background:#b83224}.on-time-badge{background:#218a4b}.scheduled-badge{color:var(--navy);background:#e6eef2;border:1px solid var(--line)}.boat-assignment{flex:0 0 auto;display:inline-flex;align-items:center;padding:1px 4px;color:var(--navy);background:#fff;border:1.5px solid var(--navy);border-radius:5px;font:900 clamp(9px,1.4vh,13px)/1 Oswald,Lato,Arial,sans-serif;letter-spacing:.03em;white-space:nowrap}/* Moves that carry no passengers. Deliberately not coloured like a status badge: NO PICKUP is not
+.departure-last-slot{display:flex;align-items:center;gap:4px;min-height:clamp(14px,2vh,22px);overflow:hidden;white-space:nowrap}.departure-last-badge{display:inline-flex;align-items:center;padding:2px 5px;color:var(--navy);background:var(--warning);border:2px solid #d89a26;border-radius:8px;font-size:clamp(9px,1.4vh,13px);font-weight:950;letter-spacing:.06em;line-height:1;white-space:nowrap}.vessel-delay-badge,.on-time-badge,.scheduled-badge{display:inline-flex;align-items:center;padding:2px 5px;color:#fff;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;unicode-bidi:isolate}.vessel-delay-badge{background:#b83224}.on-time-badge{background:#218a4b}.scheduled-badge{color:var(--navy);background:#e6eef2;border:1px solid var(--line)}.boat-assignment{flex:0 0 auto;display:inline-flex;align-items:center;padding:1px 4px;color:var(--navy);background:var(--card);border:1.5px solid var(--navy);border-radius:5px;font:900 clamp(9px,1.4vh,13px)/1 Oswald,Lato,Arial,sans-serif;letter-spacing:.03em;white-space:nowrap}/* Moves that carry no passengers. Deliberately not coloured like a status badge: NO PICKUP is not
    a running state the way ON TIME is, and an agent scanning the board should be able to tell the
    difference without reading. */
 .no-pickup-badge{display:inline-flex;align-items:center;padding:2px 5px;color:#fff;background:#4a5b68;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;letter-spacing:.03em}
@@ -23,15 +29,15 @@
 /* An arriving boat, ending its run here. Green rather than the grey of NO PICKUP: the boat is in
    service and carrying people, it just cannot be joined. */
 .arrival-badge{display:inline-flex;align-items:center;padding:2px 5px;color:#0b5c33;background:#dcf3e5;border:1px solid #35aa65;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;letter-spacing:.03em}
-.drop-off-only-badge{display:inline-flex;align-items:center;padding:2px 5px;color:#0b5c33;background:#fff;border:1px solid #35aa65;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;letter-spacing:.03em}
+.drop-off-only-badge{display:inline-flex;align-items:center;padding:2px 5px;color:#0b5c33;background:var(--card);border:1px solid #35aa65;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;letter-spacing:.03em}
 .drop-off-badge{display:inline-flex;align-items:center;padding:2px 5px;color:#7a4200;background:#ffe6bf;border:1px solid #d89a26;border-radius:6px;font-size:clamp(9px,1.4vh,13px);font-weight:950;line-height:1;white-space:nowrap;letter-spacing:.03em}
-.boat-name{min-width:0;color:#00749e;font-size:clamp(9px,1.3vh,13px);font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.departure-slot.unavailable{color:var(--muted);font-size:clamp(9px,1.3vh,12px);font-weight:700}.empty{display:grid;place-items:center;background:#fff;border:2px solid var(--line);border-radius:8px;text-align:center}.empty strong{display:block;color:var(--navy);font-size:2.5vw}.empty span{display:block;margin-top:1vh;color:var(--muted);font-size:1.15vw}
-.screen.override-active{grid-template-rows:minmax(0,1fr)}.screen.override-active .content,.screen.override-active .service-alert-bar,.screen.override-active .landing-menu{display:none}.manual-override{min-height:0;display:grid;place-items:center;padding:clamp(28px,5vh,76px) clamp(36px,6vw,120px);background:linear-gradient(135deg,#001d41 0%,#003d63 100%)}.manual-override-box{position:relative;width:100%;height:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;align-items:center;padding:clamp(28px,4vh,64px) clamp(40px,5vw,100px);overflow:hidden;background:#fff;border:clamp(7px,.75vw,14px) solid var(--warning);border-radius:clamp(12px,1.2vw,24px);box-shadow:0 2vh 5vh rgba(0,15,37,.35);text-align:center}.manual-override-label{justify-self:center;padding:.55em 1.1em;color:var(--navy);background:var(--warning);border-radius:999px;font-size:clamp(18px,1.6vw,30px);font-weight:950;letter-spacing:.12em;line-height:1;text-transform:uppercase}.manual-override-box p{align-self:center;margin:clamp(18px,3vh,44px) 0;color:var(--navy);font:900 clamp(38px,5.2vw,98px)/1.08 Lato,Arial,sans-serif;letter-spacing:-.025em;white-space:pre-wrap;overflow-wrap:anywhere}.manual-override-box[data-size="medium"] p{font-size:clamp(30px,4.1vw,76px)}.manual-override-box[data-size="long"] p{font-size:clamp(22px,2.8vw,52px);line-height:1.14}.manual-override-box small{color:var(--muted);font-size:clamp(14px,1.25vw,23px);font-weight:800;letter-spacing:.04em}
+.boat-name{min-width:0;color:#00749e;font-size:clamp(9px,1.3vh,13px);font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.departure-slot.unavailable{color:var(--muted);font-size:clamp(9px,1.3vh,12px);font-weight:700}.empty{display:grid;place-items:center;background:var(--card);border:2px solid var(--line);border-radius:8px;text-align:center}.empty strong{display:block;color:var(--navy);font-size:2.5vw}.empty span{display:block;margin-top:1vh;color:var(--muted);font-size:1.15vw}
+.screen.override-active{grid-template-rows:minmax(0,1fr)}.screen.override-active .content,.screen.override-active .service-alert-bar,.screen.override-active .landing-menu{display:none}.manual-override{min-height:0;display:grid;place-items:center;padding:clamp(28px,5vh,76px) clamp(36px,6vw,120px);background:linear-gradient(135deg,#001d41 0%,#003d63 100%)}.manual-override-box{position:relative;width:100%;height:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;align-items:center;padding:clamp(28px,4vh,64px) clamp(40px,5vw,100px);overflow:hidden;background:var(--card);border:clamp(7px,.75vw,14px) solid var(--warning);border-radius:clamp(12px,1.2vw,24px);box-shadow:0 2vh 5vh rgba(0,15,37,.35);text-align:center}.manual-override-label{justify-self:center;padding:.55em 1.1em;color:var(--navy);background:var(--warning);border-radius:999px;font-size:clamp(18px,1.6vw,30px);font-weight:950;letter-spacing:.12em;line-height:1;text-transform:uppercase}.manual-override-box p{align-self:center;margin:clamp(18px,3vh,44px) 0;color:var(--navy);font:900 clamp(38px,5.2vw,98px)/1.08 Lato,Arial,sans-serif;letter-spacing:-.025em;white-space:pre-wrap;overflow-wrap:anywhere}.manual-override-box[data-size="medium"] p{font-size:clamp(30px,4.1vw,76px)}.manual-override-box[data-size="long"] p{font-size:clamp(22px,2.8vw,52px);line-height:1.14}.manual-override-box small{color:var(--muted);font-size:clamp(14px,1.25vw,23px);font-weight:800;letter-spacing:.04em}
 .service-alert-bar{z-index:48;min-height:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:clamp(8px,1vw,16px);padding:5px clamp(12px,1.5vw,24px);color:var(--navy);background:#f5f9f8;border-top:3px solid #ffd100;box-shadow:0 -6px 18px rgba(0,29,65,.08);text-align:left}.service-alert-bar.active{background:#fff3c7}.service-alert-bar.stale{background:#f7f1df}.service-alert-bar.unavailable{color:#536b78;background:#edf2f2}.service-alert-icon{width:clamp(24px,3.4vh,36px);height:clamp(24px,3.4vh,36px);overflow:visible;fill:#ffd100;stroke:var(--navy);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}.service-alert-copy{min-width:0}.service-alert-heading{display:flex;align-items:baseline;gap:clamp(6px,.7vw,12px);min-width:0}.service-alert-copy strong,.service-alert-copy small{display:block}.service-alert-copy strong{flex:0 0 auto;font-size:clamp(11px,1.6vh,15px);font-weight:950;letter-spacing:.04em;text-transform:uppercase}.service-alert-copy>span{display:-webkit-box;overflow:hidden;margin-top:1px;font-size:clamp(11px,1.6vh,15px);font-weight:800;line-height:1.12;-webkit-box-orient:vertical;-webkit-line-clamp:2}.service-alert-copy small{min-width:0;margin:0;color:var(--muted);font-size:clamp(8px,1.2vh,11px);font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.service-alert-count{min-width:34px;min-height:26px;display:grid;place-items:center;padding:3px 8px;color:#fff;background:var(--navy);border-radius:999px;font-size:clamp(11px,1.6vh,15px);font-weight:950}
 .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-.menu-button{flex:0 0 auto;display:grid;place-items:center;width:38px;height:38px;padding:0;background:#fff;border:1px solid var(--line);border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}.menu-button:active{background:#e9f2f7}.menu-button:focus-visible,.landing-option:focus-visible,.landing-menu-close:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.menu-button{flex:0 0 auto;display:grid;place-items:center;width:38px;height:38px;padding:0;background:var(--card);border:1px solid var(--line);border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}.menu-button:active{background:var(--sunken)}.menu-button:focus-visible,.landing-option:focus-visible,.landing-menu-close:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 .menu-icon,.menu-icon::before,.menu-icon::after{display:block;width:18px;height:2.5px;background:var(--navy);border-radius:2px}.menu-icon{position:relative}.menu-icon::before,.menu-icon::after{content:"";position:absolute;left:0}.menu-icon::before{top:-6px}.menu-icon::after{top:6px}
-.nearest-button{flex:0 0 auto;display:inline-flex;align-items:center;gap:.4vw;max-width:34vw;height:38px;padding:0 .6vw;background:#fff;border:1px solid var(--line);border-radius:8px;color:var(--navy);font:900 clamp(10px,1.5vh,14px)/1 Lato,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}.nearest-button:active{background:#e9f2f7}.nearest-button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}.nearest-button:disabled{cursor:default}
+.nearest-button{flex:0 0 auto;display:inline-flex;align-items:center;gap:.4vw;max-width:34vw;height:38px;padding:0 .6vw;background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--navy);font:900 clamp(10px,1.5vh,14px)/1 Lato,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}.nearest-button:active{background:var(--sunken)}.nearest-button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}.nearest-button:disabled{cursor:default}
 .nearest-icon{flex:0 0 auto;width:16px;height:16px;fill:none;stroke:var(--navy);stroke-width:2.2;stroke-linecap:round}.nearest-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A resolved fix is the one state worth colouring: it is the only one that does something when
    tapped. "here" stays quiet because the board already says where you are. */
@@ -51,19 +57,19 @@
    live one, and the tint is the fastest way to say so. */
 /* The bottom row: which day is on screen, and how its times are printed. */
 .board-footer{flex:0 0 auto;display:flex;align-items:stretch;gap:.5vw;margin-top:.5vh}
-.clock-toggle{flex:0 0 auto;min-width:4.5em;min-height:34px;padding:.4vh .6vw;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);font:900 clamp(11px,1.6vh,15px)/1 Lato,sans-serif;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.clock-toggle:active{background:#e9f2f7}
+.clock-toggle{flex:0 0 auto;min-width:4.5em;min-height:34px;padding:.4vh .6vw;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--navy);font:900 clamp(11px,1.6vh,15px)/1 Lato,sans-serif;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.clock-toggle:active{background:var(--sunken)}
 .clock-toggle:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
 /* Pressed means "not the default", which is worth being able to see at a glance on a crew board
    whose schedule and radio traffic are both in 24-hour. */
 .clock-toggle[aria-pressed="true"]{border-color:var(--blue);background:#e8f5fc;color:#0b6c92}
-.date-bar{flex:1 1 auto;display:flex;align-items:stretch;justify-content:center;gap:0;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+.date-bar{flex:1 1 auto;display:flex;align-items:stretch;justify-content:center;gap:0;border:1px solid var(--line);border-radius:8px;background:var(--card);overflow:hidden}
 .date-step,.date-current{border:0;background:transparent;color:var(--navy);font:900 clamp(11px,1.6vh,15px)/1 Lato,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .date-step{flex:0 0 auto;width:15%;min-width:44px;min-height:34px;padding:0;font-size:clamp(16px,2.4vh,22px);line-height:1;color:var(--muted)}
-.date-step:active{background:#e9f2f7}
+.date-step:active{background:var(--sunken)}
 .date-step:disabled{opacity:.3;cursor:default}
 .date-current{flex:1 1 auto;min-height:34px;padding:.4vh .6vw;border-inline:1px solid var(--line);white-space:nowrap;letter-spacing:.02em}
-.date-current:active{background:#e9f2f7}
+.date-current:active{background:var(--sunken)}
 .date-step:focus-visible,.date-current:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
 .date-bar[data-state="browsing"]{border-color:#b58900;background:#fff8e1}
 .date-bar[data-state="browsing"] .date-current{border-inline-color:#e3c76a;color:#7a5c00}
@@ -79,8 +85,8 @@
 /* Filter button: bottom-left of the footer, beside the date stepper. It lights up only while
    something is actually being hidden, because a board that is not showing every boat has to say so
    without being asked. */
-.filter-button{position:relative;flex:0 0 auto;display:flex;align-items:center;justify-content:center;min-width:44px;min-height:34px;padding:.4vh .5vw;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);cursor:pointer;-webkit-tap-highlight-color:transparent}
-.filter-button:active{background:#e9f2f7}
+.filter-button{position:relative;flex:0 0 auto;display:flex;align-items:center;justify-content:center;min-width:44px;min-height:34px;padding:.4vh .5vw;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--navy);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.filter-button:active{background:var(--sunken)}
 .filter-button:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
 .filter-icon{width:clamp(15px,2.1vh,19px);height:clamp(15px,2.1vh,19px);fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
 .filter-button.is-filtering{border-color:var(--blue);background:#e8f5fc;color:#0b6c92}
@@ -95,16 +101,16 @@
 .filter-menu-head strong{color:var(--navy);font:650 20px/1 Oswald,sans-serif;text-transform:uppercase}
 .filter-menu-close{padding:8px 14px;color:#fff;background:var(--navy);border:0;border-radius:8px;font:900 13px/1 Lato,Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
 .filter-list{flex:1 1 auto;overflow-y:auto;margin:0;padding:0;list-style:none}
-.filter-option{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:48px;margin-bottom:8px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.filter-option{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:48px;margin-bottom:8px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--muted);text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .filter-option:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
 .filter-option-name{font:900 15px/1.2 Lato,Arial,sans-serif}
 .filter-option-state{flex:0 0 auto;font:900 11px/1 Lato,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase}
 .filter-option.is-shown{border-color:var(--blue);background:#e8f5fc;color:#0b6c92}
-.filter-reset{flex:0 0 auto;min-height:44px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);font:900 13px/1 Lato,Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.filter-reset{flex:0 0 auto;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--navy);font:900 13px/1 Lato,Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
 .filter-reset:disabled{opacity:.4;cursor:default}
 .landing-menu{position:fixed;inset:0;z-index:60;display:flex}.landing-menu-scrim{position:absolute;inset:0;background:rgba(0,15,37,.5)}
 .landing-menu-panel{position:relative;display:flex;flex-direction:column;width:min(360px,86vw);max-height:100%;margin-right:auto;background:var(--canvas);box-shadow:0 0 40px rgba(0,15,37,.4);animation:menu-in .18s ease both}
-.landing-menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 14px 12px;background:#fff;border-bottom:1px solid var(--line)}.landing-menu-head strong{color:var(--navy);font:650 20px/1 Oswald,sans-serif;text-transform:uppercase}
+.landing-menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 14px 12px;background:var(--card);border-bottom:1px solid var(--line)}.landing-menu-head strong{color:var(--navy);font:650 20px/1 Oswald,sans-serif;text-transform:uppercase}
 .landing-menu-close{padding:8px 14px;color:#fff;background:var(--navy);border:0;border-radius:8px;font:900 13px/1 Lato,Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
 /* Timeline view: one sailing per row, ordered by departure. Three lines — time and route, then
    destination, then operator/vessel and status — so a row stays compact enough that many fit on a
@@ -135,9 +141,9 @@
 .departure.timeline-row-oos{background:#eef3f6}
 .timeline-row-oos .tl-dest{color:#4a5b68}
 .tl-status{flex:0 0 auto;display:flex;align-items:center;gap:.35vw;margin-left:auto;white-space:nowrap}
-.sort-toggle{display:flex;gap:8px;padding:12px 14px;background:#fff;border-bottom:1px solid var(--line)}
+.sort-toggle{display:flex;gap:8px;padding:12px 14px;background:var(--card);border-bottom:1px solid var(--line)}
 .sort-option{flex:1 1 0;min-height:44px;padding:8px 10px;color:var(--muted);background:var(--canvas);border:1px solid var(--line);border-radius:8px;font:800 13px/1.15 Lato,Arial,sans-serif;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.sort-option:active{background:#e3eef4}
+.sort-option:active{background:var(--sunken)}
 .sort-option[aria-pressed="true"]{color:#fff;background:var(--navy);border-color:var(--navy)}
 .sort-option:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 .landing-list{flex:1;min-height:0;overflow-y:auto;margin:0;padding:8px 0 calc(8px + env(safe-area-inset-bottom));list-style:none;-webkit-overflow-scrolling:touch}
@@ -147,9 +153,9 @@
 .landing-star[aria-pressed="true"]{color:#f2b134}
 .landing-star:active{color:var(--muted)}.landing-star[aria-pressed="true"]:active{color:#d99a1c}
 .landing-star:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
-.landing-option{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0;min-height:48px;padding:9px 14px 9px 10px;color:var(--ink);background:transparent;border:0;font:inherit;text-align:left;cursor:pointer}.landing-option:active{background:#e3eef4}
+.landing-option{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0;min-height:48px;padding:9px 14px 9px 10px;color:var(--ink);background:transparent;border:0;font:inherit;text-align:left;cursor:pointer}.landing-option:active{background:var(--sunken)}
 .landing-option-name{min-width:0;font-size:15px;font-weight:800;line-height:1.15}
-.landing-row:has(.landing-option.is-current){background:#fff}.landing-option.is-current .landing-option-name{color:var(--navy)}
+.landing-row:has(.landing-option.is-current){background:var(--card)}.landing-option.is-current .landing-option-name{color:var(--navy)}
 body.menu-open{overflow:hidden}
 @keyframes menu-in{from{transform:translateX(-12px);opacity:.4}to{transform:none;opacity:1}}
 @keyframes slide-in{from{opacity:.25;transform:translateX(1.2vw)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.departure,.landing-menu-panel,.nearest-button[data-state="locating"] .nearest-icon{animation:none}}
@@ -389,6 +395,7 @@ body.sidebar-docked.menu-open{overflow:visible}
   --muted:#7a626c;
   --canvas:#fff5f8;
   --line:#ffc9db;
+  --sunken:#ffe3ec;
   font-family:"Trebuchet MS","Segoe UI",Verdana,sans-serif;
 }
 /* Oswald is the signage face and belongs to the ferry livery. Everywhere it is set above, the
@@ -434,15 +441,8 @@ body.sidebar-docked.menu-open{overflow:visible}
 :root[data-theme="hello-kitty"] .filter-menu-panel{border-radius:18px 18px 0 0}
 :root[data-theme="hello-kitty"] .filter-menu-scrim,
 :root[data-theme="hello-kitty"] .landing-menu-scrim{background:rgba(59,43,51,.45)}
-/* Pressed and selected states read pink rather than the ferry's cyan. */
-:root[data-theme="hello-kitty"] .menu-button:active,
-:root[data-theme="hello-kitty"] .nearest-button:active,
-:root[data-theme="hello-kitty"] .clock-toggle:active,
-:root[data-theme="hello-kitty"] .filter-button:active,
-:root[data-theme="hello-kitty"] .date-step:active,
-:root[data-theme="hello-kitty"] .date-current:active,
-:root[data-theme="hello-kitty"] .landing-option:active,
-:root[data-theme="hello-kitty"] .sort-option:active{background:var(--pink-200)}
+/* Pressed states come free from --sunken above. Selected ones read pink rather than the ferry's
+   cyan. */
 :root[data-theme="hello-kitty"] .clock-toggle[aria-pressed="true"],
 :root[data-theme="hello-kitty"] .filter-button.is-filtering,
 :root[data-theme="hello-kitty"] .filter-option.is-shown,
@@ -465,3 +465,87 @@ body.sidebar-docked.menu-open{overflow:visible}
 :root[data-theme="hello-kitty"] .landing-menu-head,
 :root[data-theme="hello-kitty"] .sort-toggle{background:var(--pink-100)}
 :root[data-theme="hello-kitty"] .landing-star[aria-pressed="true"]{color:var(--pink-500)}
+
+/* ============================================================
+   The simple themes. Palette only — no borrowed borders or drop shadows, because the outlined card
+   is Hello Kitty's own signature and repeating it would make four themes that all look like one.
+   Each is a --card, a --canvas and a heading colour; everything else falls out of the variables.
+   ============================================================ */
+
+/* Night. The one theme that needed --card to exist: a dark board with white departure cards is not
+   a night mode, it is a lightbulb in the wheelhouse. Blue-grey rather than black, because a pure
+   black panel in a dark wheelhouse haloes every white glyph on it. */
+:root[data-theme="night"]{
+  --navy:#7fd4ff;--blue:#4db8e8;--ink:#dbe7ef;--muted:#8ba3b4;
+  --canvas:#0d1b26;--card:#14242f;--line:#2a4050;--sunken:#1d3341;
+}
+/* The card's lift came from a shadow darker than the page. On a dark page nothing is darker, so the
+   edge does the work instead. */
+:root[data-theme="night"] .departure{box-shadow:none;border:1px solid var(--line);border-left:.45vw solid var(--route-color)}
+:root[data-theme="night"] .scheduled-badge{background:#22384a;border-color:var(--line)}
+:root[data-theme="night"] .slot-relative,
+:root[data-theme="night"] .tl-relative,
+:root[data-theme="night"] .boat-name,
+:root[data-theme="night"] .tl-boat{color:#6fc7ef}
+:root[data-theme="night"] .departure.timeline-row-oos{background:#101f2a}
+:root[data-theme="night"] .timeline-row-oos .tl-dest{color:var(--muted)}
+:root[data-theme="night"] .service-alert-bar{color:var(--ink);background:#152a33;border-top-color:#8a7320}
+:root[data-theme="night"] .service-alert-bar.active{color:#3a2c00;background:#e8cf7a}
+:root[data-theme="night"] .service-alert-bar.stale{background:#1e3038}
+:root[data-theme="night"] .service-alert-bar.unavailable{color:var(--muted);background:#16252e}
+:root[data-theme="night"] .manual-override{background:linear-gradient(135deg,#08131b 0%,#123047 100%)}
+/* The browsed-day amber has to stay obviously not-live, but the daylight tint is a lantern here. */
+:root[data-theme="night"] .date-bar[data-state="browsing"]{background:#3a2f10;border-color:#8a7320}
+:root[data-theme="night"] .date-bar[data-state="browsing"] .date-current{color:#ffd98a;border-inline-color:#6d5a1a}
+:root[data-theme="night"] .date-bar[data-state="browsing"] .date-step{color:#c9a94a}
+/* The rail and the sticky phone heading sit on --canvas, which is now darker than the cards. */
+:root[data-theme="night"] .landing-menu-head,
+:root[data-theme="night"] .sort-toggle{background:var(--card)}
+:root[data-theme="night"] .sort-option{background:var(--canvas)}
+:root[data-theme="night"] .filter-menu-scrim,
+:root[data-theme="night"] .landing-menu-scrim{background:rgba(0,0,0,.62)}
+:root[data-theme="night"] .empty{background:var(--card)}
+/* Route badges keep their livery colours, but the navy-text ones (SB yellow, RES/RWS cyan) were
+   drawn against a white card and their inset hairline now reads as a scratch. */
+:root[data-theme="night"] .route-badge{box-shadow:none}
+
+/* Cinnamoroll. The calmest of the four: white cards, sky over them. */
+:root[data-theme="cinnamoroll"]{
+  --navy:#2b5f8f;--blue:#7ec8f0;--ink:#2f4356;--muted:#6d8296;
+  --canvas:#f2f9ff;--line:#cfe8fa;--sunken:#e3f2fd;
+}
+:root[data-theme="cinnamoroll"] .clock-toggle[aria-pressed="true"],
+:root[data-theme="cinnamoroll"] .filter-button.is-filtering,
+:root[data-theme="cinnamoroll"] .filter-option.is-shown,
+:root[data-theme="cinnamoroll"] .nearest-button[data-state="ready"]{border-color:#7ec8f0;background:#e3f2fd;color:var(--navy)}
+:root[data-theme="cinnamoroll"] .landing-star[aria-pressed="true"]{color:#7ec8f0}
+
+/* Pompompurin. Butter yellow with the beret's brown carrying the type — the yellow itself is far
+   too pale to read against a white card. */
+:root[data-theme="pompompurin"]{
+  --navy:#7a4a12;--blue:#d99a1c;--ink:#4a3517;--muted:#8a7355;
+  --canvas:#fffaf0;--line:#ffe08a;--sunken:#fff2cc;
+}
+:root[data-theme="pompompurin"] .clock-toggle[aria-pressed="true"],
+:root[data-theme="pompompurin"] .filter-button.is-filtering,
+:root[data-theme="pompompurin"] .filter-option.is-shown,
+:root[data-theme="pompompurin"] .nearest-button[data-state="ready"]{border-color:#d99a1c;background:#fff2cc;color:var(--navy)}
+:root[data-theme="pompompurin"] .landing-star[aria-pressed="true"]{color:#e8b422}
+/* The LAST badge is the board's own yellow and disappears into this one. Its border is what keeps
+   it a badge rather than a smudge, so it gets a darker one here. */
+:root[data-theme="pompompurin"] .departure-last-badge{border-color:#8a5a12}
+
+/* Kuromi. Purple and a pink that is allowed to be loud, because it is only ever an accent. */
+:root[data-theme="kuromi"]{
+  --navy:#4a2d6b;--blue:#b06fd6;--ink:#2e2338;--muted:#736683;
+  --canvas:#f6f2fa;--line:#d9c9ec;--sunken:#ece0f7;
+}
+:root[data-theme="kuromi"] .clock-toggle[aria-pressed="true"],
+:root[data-theme="kuromi"] .filter-button.is-filtering,
+:root[data-theme="kuromi"] .filter-option.is-shown,
+:root[data-theme="kuromi"] .nearest-button[data-state="ready"]{border-color:#b06fd6;background:#ece0f7;color:var(--navy)}
+:root[data-theme="kuromi"] .slot-relative,
+:root[data-theme="kuromi"] .tl-relative,
+:root[data-theme="kuromi"] .boat-name,
+:root[data-theme="kuromi"] .tl-boat{color:#8e3fb0}
+:root[data-theme="kuromi"] .landing-star[aria-pressed="true"]{color:#ff6fae}
