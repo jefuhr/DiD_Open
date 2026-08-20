@@ -421,8 +421,11 @@ body.sidebar-docked.menu-open{overflow:visible}
 .alert-chips{display:flex;flex-wrap:wrap;gap:6px}
 .alert-chip{display:inline-flex;align-items:center;padding:2px 7px;color:var(--navy);background:var(--sunken);border:1px solid var(--line);border-radius:999px;font:900 11px/1.4 Lato,Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase}
 /* The one place on the board where a wall of feed text is the point, so it wraps and stays put
-   rather than being clamped to two lines the way the bar clamps it. */
-.alert-item-body{margin:0;color:var(--ink);font:800 14px/1.4 Lato,Arial,sans-serif;overflow-wrap:anywhere}
+   rather than being clamped to two lines the way the bar clamps it.
+   pre-wrap because the crew notice board arrives as sections with real line breaks in them, and
+   collapsing those runs three headings and eight notices into one paragraph. Every other alert is a
+   single run of text with no newlines in it, so nothing else renders differently for this. */
+.alert-item-body{margin:0;color:var(--ink);font:800 14px/1.4 Lato,Arial,sans-serif;overflow-wrap:anywhere;white-space:pre-wrap}
 .alert-link{align-self:flex-start;color:var(--blue);font:900 13px/1 Lato,Arial,sans-serif;text-decoration:underline}
 .alert-link:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 .alert-empty{padding:14px;color:var(--muted);font:800 14px/1.4 Lato,Arial,sans-serif;text-align:center}

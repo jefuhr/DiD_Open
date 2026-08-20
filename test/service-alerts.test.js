@@ -181,11 +181,20 @@ test("NYC Ferry alerts always come before the other services", async (t) => {
       if (target.includes("api-endpoint.mta.info")) {
         return { ok: true, status: 200, headers: { get: () => null }, json: async () => subwayFeed };
       }
+      if (target.includes("docs.google.com")) {
+        return { ok: true, status: 200, headers: { get: () => null },
+          text: async () => "Out of service ramps:\nCorlears Hook west ramp." };
+      }
       return target.includes("cloudfunctions.net") ? websiteResponse() : encodedFeedResponse();
     }
   });
   assert.deepEqual(snapshot.alerts.map((alert) => alert.agency),
-    ["NYC Ferry", "NYC Ferry", "MTA Subway"]);
+    ["NYC Ferry", "NYC Ferry", "Crew Notices", "MTA Subway"]);
+  // Below the ferry's own alerts and above everything else: a boat cancelled ten minutes ago
+  // outranks a standing notice, and a standing notice outranks a subway closure.
+  const crew = snapshot.alerts.findIndex((alert) => alert.source === "crew-notices");
+  assert.ok(snapshot.alerts.slice(0, crew).every((alert) => alert.agency === "NYC Ferry"));
+  assert.ok(snapshot.alerts.slice(crew + 1).every((alert) => alert.agency !== "NYC Ferry"));
   assert.equal(snapshot.sourceStatus["mta-subway"], "updated");
   // Dormant, not broken: nobody has issued a 511NY key, and the board must not report that as a
   // source being down.
@@ -197,12 +206,15 @@ test("a subway feed going down cannot take the ferry alerts with it", async () =
     now,
     fetchImpl: async (url) => {
       if (String(url).includes("api-endpoint.mta.info")) throw new Error("offline");
+      if (String(url).includes("docs.google.com")) throw new Error("offline");
       return String(url).includes("cloudfunctions.net") ? websiteResponse() : encodedFeedResponse();
     }
   });
   assert.equal(snapshot.available, true);
   assert.deepEqual(snapshot.alerts.map((alert) => alert.agency), ["NYC Ferry", "NYC Ferry"]);
   assert.equal(snapshot.sourceStatus["mta-subway"], "unavailable");
+  // The notice board going missing is likewise not the ferry's alerts failing.
+  assert.equal(snapshot.sourceStatus["crew-notices"], "unavailable");
 });
 
 test("service alerts fall back to the last disk snapshot", async (t) => {
