@@ -11,6 +11,11 @@ const elements = {
   serviceAlertSummary: document.querySelector("#serviceAlertSummary"),
   serviceAlertFreshness: document.querySelector("#serviceAlertFreshness"),
   serviceAlertCount: document.querySelector("#serviceAlertCount"),
+  serviceAlertChevron: document.querySelector("#serviceAlertChevron"),
+  alertMenu: document.querySelector("#alertMenu"),
+  alertMenuScrim: document.querySelector("#alertMenuScrim"),
+  alertMenuClose: document.querySelector("#alertMenuClose"),
+  alertList: document.querySelector("#alertList"),
   manualOverride: document.querySelector("#manualOverride"),
   manualOverrideBox: document.querySelector("#manualOverrideBox"),
   manualOverrideMessage: document.querySelector("#manualOverrideMessage"),
@@ -972,6 +977,50 @@ async function loadManualOverride() {
   }
 }
 
+// One alert, in full. The bar above can only ever carry the first one, clipped to two lines; this
+// is where the other nine live, and where the whole of any of them can actually be read.
+function alertRow(alert) {
+  const header = alert.header || "NYC Ferry service alert";
+  // The bar joins these two with an em dash to make one line. Here there is room to keep them
+  // apart, and a description that merely repeats the header is not worth a second paragraph.
+  const description = alert.description && alert.description !== alert.header ? alert.description : "";
+  // "Unknown effect" and "Unknown cause" are what GTFS says when the publisher left the field at its
+  // default, which is most of the time. They are the feed admitting it has nothing to add, and a
+  // chip saying so is worse than no chip: it takes the eye and pays nothing back.
+  const chips = [alert.effect, alert.cause]
+    .filter((chip) => chip && !/^unknown/i.test(chip))
+    .map((chip) => `<span class="alert-chip">${escapeHtml(chip)}</span>`)
+    .join("");
+  // Only http(s). An alert is third-party text, and a javascript: URL rendered as a link on a board
+  // an agent taps at is not a risk worth taking for a convenience.
+  const link = /^https?:\/\//i.test(alert.url || "")
+    ? `<a class="alert-link" href="${escapeHtml(alert.url)}" target="_blank" rel="noopener noreferrer">Read the full notice</a>`
+    : "";
+  return `<li class="alert-item">
+    <strong class="alert-item-header">${escapeHtml(header)}</strong>
+    ${chips ? `<span class="alert-chips">${chips}</span>` : ""}
+    ${description ? `<p class="alert-item-body">${escapeHtml(description)}</p>` : ""}
+    ${link}
+  </li>`;
+}
+
+function renderAlertMenu() {
+  const alerts = serviceAlerts?.alerts || [];
+  elements.alertList.innerHTML = alerts.length
+    ? alerts.map(alertRow).join("")
+    : `<li class="alert-empty">No active NYC Ferry service alerts.</li>`;
+}
+
+function setAlertMenuOpen(open) {
+  // Nothing to expand into. The bar is disabled in that state, so this only guards the keyboard.
+  if (open && !(serviceAlerts?.alerts || []).length) return;
+  if (open) renderAlertMenu();
+  elements.alertMenu.hidden = !open;
+  elements.serviceAlerts.setAttribute("aria-expanded", String(open));
+  if (open) elements.alertMenuClose?.focus();
+  else elements.serviceAlerts.focus();
+}
+
 function renderServiceAlerts() {
   const alerts = serviceAlerts?.alerts || [];
   const unavailable = Boolean(serviceAlerts && !serviceAlerts.available && alerts.length === 0);
@@ -980,6 +1029,21 @@ function renderServiceAlerts() {
   elements.serviceAlerts.classList.toggle("active", alerts.length > 0);
   elements.serviceAlerts.classList.toggle("stale", stale && !unavailable);
   elements.serviceAlerts.classList.toggle("unavailable", unavailable);
+
+  // Only a bar with something behind it is worth tapping, and it should look like it.
+  const expandable = alerts.length > 0;
+  elements.serviceAlerts.disabled = !expandable;
+  elements.serviceAlertChevron.hidden = !expandable;
+  if (!elements.alertMenu.hidden) {
+    // The feed reloads every minute underneath an open sheet. Keep it in step, and close it if the
+    // last alert cleared — but without touching focus, because nobody asked for it to move and this
+    // is a background refresh, not something they just did.
+    if (expandable) renderAlertMenu();
+    else {
+      elements.alertMenu.hidden = true;
+      elements.serviceAlerts.setAttribute("aria-expanded", "false");
+    }
+  }
 
   if (!serviceAlerts) return;
   if (unavailable) {
@@ -1374,6 +1438,9 @@ elements.filterList.addEventListener("click", (event) => {
   const option = event.target.closest("[data-operator]");
   if (option) setOperatorHidden(option.dataset.operator, option.getAttribute("aria-checked") === "true");
 });
+elements.serviceAlerts.addEventListener("click", () => setAlertMenuOpen(elements.alertMenu.hidden));
+elements.alertMenuClose.addEventListener("click", () => setAlertMenuOpen(false));
+elements.alertMenuScrim.addEventListener("click", () => setAlertMenuOpen(false));
 elements.themeButton.addEventListener("click", () => setThemeOpen(elements.themeMenu.hidden));
 elements.themeMenuClose.addEventListener("click", () => setThemeOpen(false));
 elements.themeMenuScrim.addEventListener("click", () => setThemeOpen(false));
@@ -1388,10 +1455,11 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.landingMenu.hidden && !railDocked()) return setMenuOpen(false);
   if (event.key === "Escape" && !elements.filterMenu.hidden) return setFilterOpen(false);
   if (event.key === "Escape" && !elements.themeMenu.hidden) return setThemeOpen(false);
+  if (event.key === "Escape" && !elements.alertMenu.hidden) return setAlertMenuOpen(false);
   // Arrow keys page through the schedule, which is how anyone reaches for a date stepper on a
   // desktop board. Only when the landing menu is closed and nothing is being typed into.
   // A docked rail does not swallow the arrow keys: it is part of the board, not a dialog over it.
-  if ((!elements.landingMenu.hidden && !railDocked()) || !elements.filterMenu.hidden || !elements.themeMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
+  if ((!elements.landingMenu.hidden && !railDocked()) || !elements.filterMenu.hidden || !elements.themeMenu.hidden || !elements.alertMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (event.key === "ArrowLeft") stepDate(-1);
   else if (event.key === "ArrowRight") stepDate(1);
@@ -1424,7 +1492,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=62&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=63&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

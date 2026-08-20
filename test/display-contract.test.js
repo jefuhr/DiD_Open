@@ -102,9 +102,12 @@ test("the route board keeps its rows one size and scrolls past the bottom", asyn
   assert.doesNotMatch(css, /--routes-shown/);
   assert.doesNotMatch(app, /--routes-shown/);
 
-  // The phone stacks cards and scrolls the page itself; a scroller inside it would trap the gesture.
+  // The phone stacks cards, and scrolls the list rather than the page, so the footer and the alert
+  // bar stay pinned to the bottom of the screen instead of drifting with the content.
   const phone = css.slice(css.indexOf("@media(max-width:820px)"));
-  assert.match(phone, /\.departures\{display:flex[^}]*overflow:visible/);
+  assert.match(phone, /\.departures\{flex:1;min-height:0;display:flex[^}]*overflow-y:auto/);
+  // Scroll chaining is what would otherwise let the gesture escape into a page that cannot move.
+  assert.match(css, /\.departures\{[^}]*overscroll-behavior:contain/);
 });
 
 // A home-port row's trip id is minted by the build, not taken from the feed, so no live vehicle can
@@ -189,12 +192,16 @@ test("phone layout stacks the board into scrolling route cards", async () => {
   const phone = css.match(/@media\(max-width:820px\)\{[\s\S]*?\n\}/);
   assert.ok(phone, "expected a max-width:820px phone block");
   const rules = phone[0];
-  // The kiosk's fixed-height, non-scrolling shell has to be released on a phone.
-  assert.match(rules, /html,body\{height:auto;overflow:visible\}/);
-  assert.match(rules, /\.screen\{[^}]*height:auto/);
+  // A phone keeps the viewport-sized shell the tablet and the kiosk use: the screen is the screen,
+  // and only the list inside it moves. It used to release that and scroll the whole page, which
+  // left the footer and the alert bar wherever the scroll had put them.
+  assert.doesNotMatch(rules, /html,body\{height:auto;overflow:visible\}/);
+  assert.doesNotMatch(rules, /\.screen\{[^}]*height:auto/);
+  // The footer is a fixed row at the foot of the board rather than something trailing the list.
+  assert.match(rules, /\.board-footer\{flex:0 0 auto/);
   // Departures stack vertically instead of sitting in columns.
   assert.match(rules, /\.departure-slots\{display:flex;flex-direction:column/);
-  assert.match(rules, /\.departures\{display:flex;flex-direction:column/);
+  assert.match(rules, /\.departures\{flex:1;min-height:0;display:flex;flex-direction:column/);
   // Padding slots and the desktop column header are noise on a phone.
   assert.match(rules, /\.departure-slot\.unavailable\{display:none\}/);
   assert.match(rules, /\.column-head\{display:none\}/);
@@ -204,6 +211,28 @@ test("phone layout stacks the board into scrolling route cards", async () => {
   // Landscape phones get two columns without inheriting the kiosk's fixed row count.
   assert.match(css, /@media\(max-width:820px\) and \(orientation:landscape\)/);
   assert.match(css, /grid-template-rows:none;grid-auto-rows:auto/);
+});
+
+// The bar has only ever had room for the first alert, clipped to two lines, and a count telling you
+// there were others you could not reach. Tapping it opens the rest.
+test("the alert bar expands into the full list of alerts", async () => {
+  const [app, css, index] = await Promise.all([
+    readFile(appPath, "utf8"), readFile(cssPath, "utf8"), readFile(indexPath, "utf8")
+  ]);
+  // A button, not a section, so it is reachable by keyboard and announces that it expands.
+  assert.match(index, /<button type="button" class="service-alert-bar loading" id="serviceAlerts"[^>]*aria-expanded="false" aria-controls="alertMenu" disabled>/);
+  assert.match(index, /<ul class="filter-list alert-list" id="alertList">/);
+  // Disabled when there is nothing behind it, so a bar that cannot open does not invite a tap.
+  assert.match(app, /elements\.serviceAlerts\.disabled = !expandable/);
+  assert.match(app, /elements\.serviceAlertChevron\.hidden = !expandable/);
+  // Every alert, not just the first.
+  assert.match(app, /alerts\.map\(alertRow\)\.join\(""\)/);
+  // Third-party text: only http(s) links are ever rendered as links.
+  assert.match(app, /\/\^https\?:\\\/\\\/\/i\.test\(alert\.url \|\| ""\)/);
+  assert.match(app, /rel="noopener noreferrer"/);
+  // The feed reloads every minute. An open sheet follows it without stealing focus mid-read.
+  assert.match(app, /if \(expandable\) renderAlertMenu\(\);/);
+  assert.match(css, /\.alert-item\{/);
 });
 
 test("phone layout leaves the kiosk board untouched", async () => {
@@ -776,28 +805,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 65 display assets", async () => {
+test("offline shell includes version 66 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=65/);
-  assert.match(index, /app\.js\?v=65/);
-  assert.match(worker, /nyc-ferry-did-shell-v65/);
-  assert.match(worker, /styles\.css\?v=65/);
-  assert.match(worker, /app\.js\?v=65/);
+  assert.match(index, /styles\.css\?v=66/);
+  assert.match(index, /app\.js\?v=66/);
+  assert.match(worker, /nyc-ferry-did-shell-v66/);
+  assert.match(worker, /styles\.css\?v=66/);
+  assert.match(worker, /app\.js\?v=66/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=65"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=65"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=65"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=66"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=66"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=66"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=65'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=66'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=65'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=66'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of

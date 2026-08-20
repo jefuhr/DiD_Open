@@ -9,16 +9,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
-    <link rel="icon" href="/assets/app-icon.png?v=65" type="image/png" />
+    <link rel="icon" href="/assets/app-icon.png?v=66" type="image/png" />
     <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=65" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=66" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
          come from the manifest, which is why the board installs as a bare shortcut without it.
          It lives under /assets/ because that is a path the deployment's proxy forwards to this
          server — a manifest at the site root is served by the landing page, not by the board. -->
-    <link rel="manifest" href="/assets/site.webmanifest?v=65" />
-    <link rel="stylesheet" href="/styles.css?v=65" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=66" />
+    <link rel="stylesheet" href="/styles.css?v=66" />
     <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
          after the board has already been drawn once, and a saved theme applied there arrives as a
          visible flash of the other one. -->
@@ -138,21 +138,39 @@
           <small id="manualOverrideUpdated"></small>
         </div>
       </section>
-      <section class="service-alert-bar loading" id="serviceAlerts" aria-live="polite" aria-atomic="true">
+      <!-- A button, because the bar can only ever show one alert and there are usually several. It
+           stays a live region: the summary still announces itself when the feed changes, and the
+           sheet behind it is where the rest of them live. -->
+      <button type="button" class="service-alert-bar loading" id="serviceAlerts" aria-live="polite" aria-atomic="true" aria-expanded="false" aria-controls="alertMenu" disabled>
         <svg class="service-alert-icon" width="48" height="48" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
           <path d="M16 3 30 28H2L16 3Z" />
           <path d="M16 11v8m0 4v1" />
         </svg>
-        <div class="service-alert-copy">
-          <div class="service-alert-heading">
+        <span class="service-alert-copy">
+          <span class="service-alert-heading">
             <strong>Service alerts</strong>
             <small id="serviceAlertFreshness">Realtime GTFS service updates</small>
-          </div>
-          <span id="serviceAlertSummary">Checking NYC Ferry service…</span>
-        </div>
+          </span>
+          <span class="service-alert-summary" id="serviceAlertSummary">Checking NYC Ferry service…</span>
+        </span>
         <span class="service-alert-count" id="serviceAlertCount" hidden></span>
-      </section>
+        <svg class="service-alert-chevron" id="serviceAlertChevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false" hidden>
+          <path d="M7 14.5 12 9.5l5 5" />
+        </svg>
+      </button>
+      <!-- The rest of the alerts. Same sheet as the operator filter and the theme picker, for the
+           same reason: it is opened from the thing it belongs to and the board stays visible. -->
+      <div class="filter-menu alert-menu" id="alertMenu" hidden>
+        <div class="filter-menu-scrim" id="alertMenuScrim"></div>
+        <div class="filter-menu-panel" role="dialog" aria-modal="true" aria-label="Service alerts">
+          <div class="filter-menu-head">
+            <strong>Service alerts</strong>
+            <button type="button" class="filter-menu-close" id="alertMenuClose">Done</button>
+          </div>
+          <ul class="filter-list alert-list" id="alertList"></ul>
+        </div>
+      </div>
     </main>
-    <script type="module" src="/app.js?v=65"></script>
+    <script type="module" src="/app.js?v=66"></script>
   </body>
 </html>
