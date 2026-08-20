@@ -1125,12 +1125,15 @@ async function loadRealtime() {
     if (!response.ok) throw new Error();
     realtime = await response.json();
     localStorage.setItem(`${cacheKey}-realtime`, JSON.stringify(realtime));
-    elements.status.innerHTML = `<i></i><span>${realtime.stale ? "Saved live estimates" : "Live estimates"}</span>`;
+    // "Live" and "Saved", not "Live estimates" and "Saved live estimates". The chip sits on the one
+    // line the landing name also has to fit on, and the word it was spending that width on is the
+    // one word a green dot beside the label already implies.
+    elements.status.innerHTML = `<i></i><span>${realtime.stale ? "Saved" : "Live"}</span>`;
   } catch {
     const saved = localStorage.getItem(`${cacheKey}-realtime`);
     if (saved) {
       realtime = { ...JSON.parse(saved), stale: true };
-      elements.status.innerHTML = "<i></i><span>Saved live estimates</span>";
+      elements.status.innerHTML = "<i></i><span>Saved</span>";
     } else {
       elements.status.innerHTML = "<i></i><span>Local schedule</span>";
     }
@@ -1515,7 +1518,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=66&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=67&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
