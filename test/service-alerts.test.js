@@ -159,6 +159,52 @@ test("GTFS and website alerts are returned together with GTFS first", async () =
   assert.equal(snapshot.sourceStatus.website, "updated");
 });
 
+// This is a ferry board. Whatever else ends up on it, the boat leads — the bar above the list can
+// only ever show whichever alert comes first, so the order is the feature, not a detail of it.
+test("NYC Ferry alerts always come before the other services", async (t) => {
+  const subwayFeed = {
+    entity: [{
+      id: "closure",
+      alert: {
+        active_period: [{ start: Math.floor(now / 1000) + 3600, end: Math.floor(now / 1000) + 7200 }],
+        informed_entity: [{ agency_id: "MTASBWY", route_id: "A" }],
+        header_text: { translation: [{ text: "No [A] overnight", language: "en" }] },
+        description_text: { translation: [{ text: "Weekend work.", language: "en" }] },
+        "transit_realtime.mercury_alert": { alert_type: "Planned - Suspended" }
+      }
+    }]
+  };
+  const snapshot = await fetchServiceAlerts({
+    now,
+    fetchImpl: async (url) => {
+      const target = String(url);
+      if (target.includes("api-endpoint.mta.info")) {
+        return { ok: true, status: 200, headers: { get: () => null }, json: async () => subwayFeed };
+      }
+      return target.includes("cloudfunctions.net") ? websiteResponse() : encodedFeedResponse();
+    }
+  });
+  assert.deepEqual(snapshot.alerts.map((alert) => alert.agency),
+    ["NYC Ferry", "NYC Ferry", "MTA Subway"]);
+  assert.equal(snapshot.sourceStatus["mta-subway"], "updated");
+  // Dormant, not broken: nobody has issued a 511NY key, and the board must not report that as a
+  // source being down.
+  assert.equal(snapshot.sourceStatus["si-ferry"], "disabled");
+});
+
+test("a subway feed going down cannot take the ferry alerts with it", async () => {
+  const snapshot = await fetchServiceAlerts({
+    now,
+    fetchImpl: async (url) => {
+      if (String(url).includes("api-endpoint.mta.info")) throw new Error("offline");
+      return String(url).includes("cloudfunctions.net") ? websiteResponse() : encodedFeedResponse();
+    }
+  });
+  assert.equal(snapshot.available, true);
+  assert.deepEqual(snapshot.alerts.map((alert) => alert.agency), ["NYC Ferry", "NYC Ferry"]);
+  assert.equal(snapshot.sourceStatus["mta-subway"], "unavailable");
+});
+
 test("service alerts fall back to the last disk snapshot", async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "nycf-alert-test-"));
   t.after(() => rm(directory, { recursive: true, force: true }));

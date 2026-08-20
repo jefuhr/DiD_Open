@@ -1004,11 +1004,27 @@ function alertRow(alert) {
   </li>`;
 }
 
+// Grouped by whose service it is, in the order the server sent them — which puts NYC Ferry first.
+// A rider needs to know at a glance whether they are reading about their boat or about the train
+// they were going to catch afterwards, and a heading says that faster than reading the alert does.
 function renderAlertMenu() {
   const alerts = serviceAlerts?.alerts || [];
-  elements.alertList.innerHTML = alerts.length
-    ? alerts.map(alertRow).join("")
-    : `<li class="alert-empty">No active NYC Ferry service alerts.</li>`;
+  if (!alerts.length) {
+    elements.alertList.innerHTML = `<li class="alert-empty">No active NYC Ferry service alerts.</li>`;
+    return;
+  }
+  const groups = [];
+  for (const alert of alerts) {
+    const agency = alert.agency || "NYC Ferry";
+    const group = groups.find((entry) => entry.agency === agency);
+    if (group) group.alerts.push(alert);
+    else groups.push({ agency, alerts: [alert] });
+  }
+  elements.alertList.innerHTML = groups.map((group) => `
+    <li class="alert-group">
+      <h2 class="alert-group-name">${escapeHtml(group.agency)}<span>${group.alerts.length}</span></h2>
+      <ul class="alert-group-list">${group.alerts.map(alertRow).join("")}</ul>
+    </li>`).join("");
 }
 
 function setAlertMenuOpen(open) {
@@ -1062,7 +1078,14 @@ function renderServiceAlerts() {
   const detail = first.description && first.description !== first.header
     ? `${first.header} — ${first.description}`
     : first.header || first.description || "NYC Ferry service alert";
-  elements.serviceAlertSummary.textContent = alerts.length > 1 ? `${detail} · ${alerts.length - 1} more active` : detail;
+  // The bar is a ferry bar, and the server puts ferry alerts first, so the only way something else
+  // leads is that the ferry has nothing wrong with it. Say whose service it is in that case: an
+  // unlabelled subway closure sitting under the words SERVICE ALERTS on a ferry board reads as a
+  // boat problem, which is exactly the wrong thing to tell someone waiting for one.
+  const agency = first.agency && first.agency !== "NYC Ferry" ? `${first.agency}: ` : "";
+  elements.serviceAlertSummary.textContent = alerts.length > 1
+    ? `${agency}${detail} · ${alerts.length - 1} more active`
+    : `${agency}${detail}`;
   elements.serviceAlertFreshness.textContent = `${stale ? "Saved alert" : "Updated"} ${ageLabel(serviceAlerts.feedTimestamp || serviceAlerts.fetchedAt)}`;
   elements.serviceAlertCount.textContent = String(alerts.length);
   elements.serviceAlertCount.hidden = false;
@@ -1492,7 +1515,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=63&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=64&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => registration.update())
     .catch(() => {});
 }

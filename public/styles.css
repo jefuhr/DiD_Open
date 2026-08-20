@@ -383,7 +383,13 @@ body.sidebar-docked.menu-open{overflow:visible}
 
 /* The full list of alerts. Rows are readable prose rather than switches, so unlike the filter and
    theme sheets these are not buttons and are allowed to be as tall as their text needs. */
-.alert-list{display:flex;flex-direction:column;gap:10px}
+.alert-list{display:flex;flex-direction:column;gap:14px}
+.alert-group{display:flex;flex-direction:column;gap:8px}
+/* Whose service this is. Sticky so it stays overhead while a long run of subway closures scrolls
+   under it — the one question this heading answers is the one you lose track of first. */
+.alert-group-name{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;margin:0;padding:4px 0;background:var(--canvas);color:var(--navy);font:900 12px/1 Lato,Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.alert-group-name span{display:grid;place-items:center;min-width:20px;height:20px;padding:0 6px;color:#fff;background:var(--navy);border-radius:999px;font-size:11px}
+.alert-group-list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
 .alert-item{display:flex;flex-direction:column;gap:6px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--warning);border-radius:8px}
 .alert-item-header{color:var(--navy);font:900 15px/1.25 Lato,Arial,sans-serif}
 .alert-chips{display:flex;flex-wrap:wrap;gap:6px}

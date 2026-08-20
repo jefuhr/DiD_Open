@@ -407,7 +407,9 @@ the web app manifest is served from `/assets/` precisely because of this: it is 
 - the schedule, landing map, fonts, and display code all live on the device.
 - the last good realtime response is written atomically to `state/realtime.json`.
 - live vehicle assignments are matched against the local vessel roster to get boat names.
-- the alert strip uses the live GTFS-Realtime alert feed and caches to `state/service-alerts.json`.
+- the alert strip uses the live GTFS-Realtime alert feed and caches to `state/service-alerts.json`. tapping it opens the full list, grouped by whose service each alert belongs to.
+- alongside NYC Ferry's own alerts the strip carries **major MTA subway closures** — suspensions and part-suspensions only, active now or starting within 24 hours, from MTA's public `camsys/subway-alerts` feed (no key). delays, reroutes, skipped stops and station notices are deliberately excluded. **NYC Ferry alerts always come first**, and a subway feed going down can never make the ferry's own alerts unavailable.
+- **Staten Island Ferry alerts are wired but dormant.** NYC DOT publishes no realtime feed and siferry.com renders its status in the browser, so 511NY is the only machine-readable source and it needs a free key. set `SIFERRY_ALERTS_KEY` in the environment and the source activates on the next poll; without it the source reports `disabled` rather than failing. the 511NY normaliser has never been run against a live response — see `lib/transit-alerts.js`.
 - the last valid SFTP notice is stored in `state/manual-overrides.json` and survives restarts.
 - the service worker caches the shell and API responses; the browser also keeps a last snapshot in local storage.
 - if realtime is unavailable, the board falls back to the saved snapshot, then to bundled scheduled times.
