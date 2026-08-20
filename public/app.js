@@ -7,6 +7,7 @@ const elements = {
   status: document.querySelector("#dataStatus"),
   routeCount: document.querySelector("#routeCount"),
   columnHead: document.querySelector("#columnHead"),
+  boardNote: document.querySelector("#boardNote"),
   serviceAlerts: document.querySelector("#serviceAlerts"),
   serviceAlertSummary: document.querySelector("#serviceAlertSummary"),
   serviceAlertFreshness: document.querySelector("#serviceAlertFreshness"),
@@ -814,10 +815,27 @@ function emptyBoard() {
     : `<div class="empty"><div><strong>NO SCHEDULED BOATS</strong><span>Nothing is scheduled here on ${escapeHtml(longDayLabel(frame.dateKey))}.</span></div></div>`;
 }
 
+// Pier C is the home port, and no row on it is a departure time. The operator does not publish when
+// a boat lets go of the pier — it varies with the captain — so every row carries the boat's first
+// pickup instead and is starred for it. The star has always had a tooltip, which is no use at all on
+// a phone, so the board now says what it means once, in a line of its own above the list.
+const HOME_PORT_NOTE =
+  "*actual departure times at discretion of the captain, listed time is the first pickup time";
+
+// The home port is the one landing with no real stop behind it; it is keyed off the stop id the
+// build already puts in the payload rather than off landing 27, so renumbering the landings cannot
+// silently take the note away.
+function renderBoardNote() {
+  const homePort = (data?.meta?.landing?.stopIds || []).includes("home-port");
+  elements.boardNote.hidden = !homePort;
+  if (homePort) elements.boardNote.textContent = HOME_PORT_NOTE;
+}
+
 function render() {
   if (!data) return;
   applyDisplayCounts();
   renderDateBar();
+  renderBoardNote();
   return sortedBy() === "route" ? renderRouteBoard() : renderTimeline();
 }
 
@@ -1518,7 +1536,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=67&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=68&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

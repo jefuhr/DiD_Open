@@ -9,16 +9,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
-    <link rel="icon" href="/assets/app-icon.png?v=70" type="image/png" />
+    <link rel="icon" href="/assets/app-icon.png?v=71" type="image/png" />
     <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=70" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=71" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
          come from the manifest, which is why the board installs as a bare shortcut without it.
          It lives under /assets/ because that is a path the deployment's proxy forwards to this
          server — a manifest at the site root is served by the landing page, not by the board. -->
-    <link rel="manifest" href="/assets/site.webmanifest?v=70" />
-    <link rel="stylesheet" href="/styles.css?v=70" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=71" />
+    <link rel="stylesheet" href="/styles.css?v=71" />
     <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
          after the board has already been drawn once, and a saved theme applied there arrives as a
          visible flash of the other one. -->
@@ -64,6 +64,10 @@
             </div>
           </div>
           <div class="column-head" id="columnHead" hidden><span>Route</span><span>Direction</span><span>Next departures</span></div>
+          <!-- Sits outside the departures list rather than as its first row: the list scrolls and
+               the kiosk view sizes its rows to a fixed height, and this belongs to the board rather
+               than to any sailing on it. -->
+          <p class="board-note" id="boardNote" hidden></p>
           <div class="departures" id="departures" aria-live="polite"></div>
           <!-- Below the list, not above it: the question "what about tomorrow?" is the one you have
                after you have read today's boats and run out of them. The clock format sits beside
@@ -171,6 +175,6 @@
         </div>
       </div>
     </main>
-    <script type="module" src="/app.js?v=70"></script>
+    <script type="module" src="/app.js?v=71"></script>
   </body>
 </html>

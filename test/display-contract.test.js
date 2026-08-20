@@ -809,28 +809,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 70 display assets", async () => {
+test("offline shell includes version 71 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=70/);
-  assert.match(index, /app\.js\?v=70/);
-  assert.match(worker, /nyc-ferry-did-shell-v70/);
-  assert.match(worker, /styles\.css\?v=70/);
-  assert.match(worker, /app\.js\?v=70/);
+  assert.match(index, /styles\.css\?v=71/);
+  assert.match(index, /app\.js\?v=71/);
+  assert.match(worker, /nyc-ferry-did-shell-v71/);
+  assert.match(worker, /styles\.css\?v=71/);
+  assert.match(worker, /app\.js\?v=71/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=70"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=70"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=70"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=71"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=71"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=71"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=70'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=71'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=70'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=71'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -962,6 +962,26 @@ test("the kiosk keeps its whole screen", async () => {
         `unscoped selector would leak the roomy layout onto the kiosk: ${one.trim()}`);
     }
   }
+});
+
+// No row on the home port's board is a departure time: the operator does not publish when a boat
+// lets go of Pier C, so every row carries the boat's first pickup and is starred for it. The star
+// has a tooltip, which is worth nothing on a phone, so the board states it once above the list.
+test("the home port board says what its stars mean", async () => {
+  const [app, css, index] = await Promise.all([
+    readFile(appPath, "utf8"), readFile(cssPath, "utf8"), readFile(indexPath, "utf8")
+  ]);
+  assert.match(app, /"\*actual departure times at discretion of the captain, listed time is the first pickup time"/);
+  // Keyed off the stop id the payload already carries, not off landing 27, so renumbering the
+  // landings cannot quietly take the note away.
+  assert.match(app, /\(data\?\.meta\?\.landing\?\.stopIds \|\| \[\]\)\.includes\("home-port"\)/);
+  assert.match(app, /elements\.boardNote\.hidden = !homePort/);
+  // Rendered on every pass, so switching landings puts it away again.
+  assert.match(app, /renderBoardNote\(\);/);
+  // Outside the departures list: that list scrolls, and the kiosk view sizes its rows to a fixed
+  // height that a one-line legend would be stretched to fill.
+  assert.match(index, /<p class="board-note" id="boardNote" hidden><\/p>\s*\n\s*<div class="departures"/);
+  assert.match(css, /\.board-note\{/);
 });
 
 // A board on a home screen is resumed rather than reloaded, so a check that only runs on load never
