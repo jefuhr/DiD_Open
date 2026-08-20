@@ -1,2 +1,2 @@
 agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone
-20226,Seastreak,http://seastreak.com,America/New_York,EN,1-800-262-8743
+20226,Seastreak,https://seastreak.com,America/New_York,en,1-800-262-8743

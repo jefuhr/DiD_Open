@@ -159,7 +159,7 @@ landings that share a dock with another ferry operator can show its departures n
 | operator | feed | id prefix | mark |
 |---|---|---|---|
 | NY Waterway | [`gtfs/waterway/`](./gtfs/waterway) | `wtr:` | [`public/assets/waterway.png`](./public/assets/waterway.png) |
-| Seastreak | [`gtfs/seastreak/`](./gtfs/seastreak) | `sea:` | [`public/assets/seastreak.png`](./public/assets/seastreak.png) |
+| Seastreak | [`gtfs/seastreak/`](./gtfs/seastreak) — transcribed, see below | `sea:` | [`public/assets/seastreak.png`](./public/assets/seastreak.png) |
 | NYU Langone Ferry | [`gtfs/nyu/`](./gtfs/nyu) — generated, see below | `nyu:` | [`public/assets/nyu.png`](./public/assets/nyu.png) |
 | Liberty Landing Ferry | [`gtfs/liberty/`](./gtfs/liberty) — transcribed, see below | `lib:` | [`public/assets/cityferry.png`](./public/assets/cityferry.png) |
 | IKEA Brooklyn Ferry | [`gtfs/ikea/`](./gtfs/ikea) — transcribed, see below | `ike:` | text badge, `IKEA` |
@@ -209,7 +209,14 @@ good to know:
 
 to add a partner at another landing, find its `stop_id` in that feed's `stops.txt` and add the matching `...StopIds` array to the landing in `config/landings.json`.
 
-the Seastreak feed comes from [transit.land `f-drk-seastreak`](https://www.transit.land/feeds/f-drk-seastreak), published at `https://seastreak.com/api/transit/google_transit.zip`.
+the Seastreak feed is **transcribed, not downloaded** — regenerate it with `node scripts/build-seastreak-gtfs.js`. it used to be the operator's own GTFS (via [transit.land `f-drk-seastreak`](https://www.transit.land/feeds/f-drk-seastreak), published at `https://seastreak.com/api/transit/google_transit.zip`), which carried a 2020 `feed_start_date`, times that no longer matched the printed schedule, and — because every sailing appears in both of Seastreak's printed tables — the same boat offered as two separate boardings at the same pier at the same minute, eighteen times over at the three piers this board watches.
+
+it is now read from the operator's weekday schedule PDF, currently *Effective August 10, 2026*. two things about that source are worth knowing before re-reading it:
+
+- **the tables are headed `Departures` on the boarding side and `Arrivals` on the far side, and that is taken literally.** on a New Jersey departure the Manhattan calls are drop-off only; on a New York departure the New Jersey calls are. this is what stops one boat being advertised as two. it is *not* true that the New York table reprints every Manhattan call the New Jersey table makes — the morning Belford boats run Battery Maritime, Brookfield, Paulus Hook and West 39th in sequence with no return working, and the timetable never offers a seat from one Manhattan pier to another on them.
+- **times printed in red do not run on Fridays.** colour does not survive a text extraction, so those rows are read out of the PDF's content stream and carried as a second calendar (`ss-mon-thu`). thirteen of the forty-three sailings are Monday-to-Thursday only.
+
+the feed is **weekday-only**, as the download it replaced also was — that feed had no Saturday or Sunday sailing on this route either. Seastreak's Massachusetts routes (New Bedford, Nantucket, Martha's Vineyard) were in the download and are deliberately not here: no landing on this board is within two hundred miles of them. the calendar runs `20260810`–`20271231` and then lapses, so a transcription cannot quietly outlive the timetable it came from.
 
 the Statue of Liberty ferry feed is the National Park Service's, published at `https://www.nps.gov/external-resources/gtfs/stli/statue-of-liberty-ferries.zip` and listed on [NPS developer resources](https://www.nps.gov/subjects/developer/gtfs.htm). the bundled copy is feed version `20260601`, and it is **seasonal**: its only calendar runs `20260523`–`20260907`, so its rows stop appearing after that until a fresh copy is dropped in. the badge shows the feed's route id (`NY`, `NJ`, `LIBP`, `EILILSP`) because NPS publishes no route short names and no operator mark ships with this repo — the route's full name sits beside it.
 
@@ -416,7 +423,7 @@ the web app manifest is served from `/assets/` precisely because of this: it is 
 
 ## updating the schedule
 
-replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/`, `gtfs/seastreak/` and `gtfs/siferry/` — when a new feed is published, then restart. four directories have no upstream file to drop in and are regenerated instead: `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js`, and `gtfs/gi/` with `node scripts/build-gi-gtfs.js` (re-read the operator's page first — those last three are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
+replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/` and `gtfs/siferry/` — when a new feed is published, then restart. five directories have no upstream file to drop in and are regenerated instead: `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js`, `gtfs/gi/` with `node scripts/build-gi-gtfs.js`, and `gtfs/seastreak/` with `node scripts/build-seastreak-gtfs.js` (re-read the operator's page or PDF first — those last four are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
 any edit to `public/index.html`, `public/sw.js`, `public/app.js` or `public/styles.css` must bump the shared cache-busting version (currently `57`) in `index.html` and `sw.js` — `test/display-contract.test.js` checks that they agree.
 

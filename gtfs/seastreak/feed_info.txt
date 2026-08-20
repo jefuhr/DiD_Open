@@ -1,2 +1,2 @@
-feed_start_date,feed_end_date,feed_publisher_name,feed_publisher_url,feed_lang
-20200920,20300321,Seastreak,https://seastreak.com,EN
+feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
+Seastreak,https://seastreak.com,en,20260810,20271231,transcribed-2026-08-20

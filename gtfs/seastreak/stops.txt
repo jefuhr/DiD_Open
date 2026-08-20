@@ -1,13 +1,10 @@
-stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,wheelchair_boarding
-9954,"Paulus Hook, NJ","Paulus Hook, NJ",40.713728,-74.032346,https://seastreak.com/what-to-know/port-locations-directions-parking/paulus-hook-nj/,0,1
-9825,"Brookfield Place, NY","Battery Park City Vessey Street on the West Side of Manhattan",40.715161,-74.017695,https://seastreak.com/what-to-know/port-locations-directions-parking/brookfield-place-ny/,0,0
-9819,"Belford, NJ","10 Harbor Way",40.433209,-74.078817,https://seastreak.com/what-to-know/port-locations-directions-parking/belford-nj/,0,1
-8306,"West 39th St., NYC","West 39th St.",40.760279,-74.003587,https://seastreak.com/what-to-know/port-locations-directions-parking/west-39th-st/,0,1
-7777,"Vineyard Haven, Martha’s Vineyard","Steamship Authority Terminal at 1 Water Street",41.455752,-70.600196,https://seastreak.com/what-to-know/port-locations-directions-parking/vineyard-haven-ma/,0,0
-186,"New Bedford, MA","49 State Pier",41.635526,-70.919669,https://seastreak.com/what-to-know/port-locations-directions-parking/new-bedford-ma/,0,1
-185,"Nantucket, MA","Steamship Authority Terminal",41.286111,-70.096322,https://seastreak.com/what-to-know/port-locations-directions-parking/nantucket-ma-steamship-authority-terminal/,0,1
-184,"Oak Bluffs, Martha’s Vineyard, MA","Steamship Authority Terminal at One Sea View Avenue",41.458596,-70.55447,https://seastreak.com/what-to-know/port-locations-directions-parking/marthas-vineyard-ma/,0,1
-176,"Highlands, NJ","326 Shore Drive",40.409395,-73.996238,https://seastreak.com/what-to-know/port-locations-directions-parking/highlands-nj/,0,1
-175,"Atlantic Highlands, NJ","Bottom of First Avenue at the Atlantic Highlands Municipal Marina",40.419668,-74.034889,https://seastreak.com/what-to-know/port-locations-directions-parking/atlantic-highlands-nj/,0,1
-170,"Battery Maritime Building Slip 5","10 South Street",40.700894,-74.011612,https://seastreak.com/what-to-know/port-locations-directions-parking/battery-maritime-building/,0,1
-168,"East 35th St., NYC","East 35th St. and the FDR on the East Side of Manhattan",40.743873,-73.97069,https://seastreak.com/what-to-know/port-locations-directions-parking/e-35th-st-nyc/,0,1
+stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,wheelchair_boarding
+9819,"Belford, NJ",10 Harbor Way,40.433209,-74.078817,0,1
+176,"Highlands, NJ",326 Shore Drive,40.409395,-73.996238,0,1
+175,"Atlantic Highlands, NJ",Bottom of First Avenue at the Atlantic Highlands Municipal Marina,40.419668,-74.034889,0,1
+sandy-hook-beach,"Sandy Hook Beach, NJ","35 Hartshorne Drive, Sandy Hook",40.46362,-74.00092,0,1
+170,Battery Maritime Building Slip 5,10 South Street,40.700894,-74.011612,0,1
+168,"East 35th St., NYC",East 35th St. and the FDR on the East Side of Manhattan,40.743873,-73.97069,0,1
+9825,"Brookfield Place, NY",Battery Park City Vessey Street on the West Side of Manhattan,40.715161,-74.017695,0,1
+9954,"Paulus Hook, NJ","Paulus Hook, NJ",40.713728,-74.032346,0,1
+8306,"West 39th St., NYC",West 39th St.,40.760279,-74.003587,0,1
