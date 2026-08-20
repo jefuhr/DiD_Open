@@ -1515,7 +1515,22 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=65&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
-    .then((registration) => registration.update())
+  navigator.serviceWorker.register(`/sw.js?v=66&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+    .then((registration) => {
+      registration.update();
+      // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
+      // so the check above — which only ever runs on a load — never runs again, and an installed
+      // board can sit on a shell several deploys old while a browser tab on the same phone is
+      // current. Checking when it comes back to the front is what makes a relaunch mean something.
+      // Throttled because resuming is something someone does dozens of times a shift, and the
+      // answer cannot change faster than a deploy.
+      let lastCheck = Date.now();
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState !== "visible") return;
+        if (Date.now() - lastCheck < 60_000) return;
+        lastCheck = Date.now();
+        registration.update().catch(() => {});
+      });
+    })
     .catch(() => {});
 }

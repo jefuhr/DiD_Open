@@ -809,28 +809,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 68 display assets", async () => {
+test("offline shell includes version 69 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=68/);
-  assert.match(index, /app\.js\?v=68/);
-  assert.match(worker, /nyc-ferry-did-shell-v68/);
-  assert.match(worker, /styles\.css\?v=68/);
-  assert.match(worker, /app\.js\?v=68/);
+  assert.match(index, /styles\.css\?v=69/);
+  assert.match(index, /app\.js\?v=69/);
+  assert.match(worker, /nyc-ferry-did-shell-v69/);
+  assert.match(worker, /styles\.css\?v=69/);
+  assert.match(worker, /app\.js\?v=69/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=68"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=68"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=68"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=69"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=69"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=69"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=68'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=69'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=68'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=69'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -962,6 +962,18 @@ test("the kiosk keeps its whole screen", async () => {
         `unscoped selector would leak the roomy layout onto the kiosk: ${one.trim()}`);
     }
   }
+});
+
+// A board on a home screen is resumed rather than reloaded, so a check that only runs on load never
+// runs again on the one install that most needs it — the phone in someone's pocket, days behind the
+// browser tab on the same handset.
+test("an installed board checks for a new shell when it comes back to the front", async () => {
+  const app = await readFile(appPath, "utf8");
+  assert.match(app, /document\.addEventListener\("visibilitychange"/);
+  assert.match(app, /document\.visibilityState !== "visible"/);
+  assert.match(app, /registration\.update\(\)\.catch/);
+  // Resuming happens dozens of times a shift; a deploy does not.
+  assert.match(app, /Date\.now\(\) - lastCheck < 60_000/);
 });
 
 // tests only look for patterns they expect, so text nobody asserts on rode all the way to a live
