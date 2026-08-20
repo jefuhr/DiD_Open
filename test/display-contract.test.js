@@ -196,7 +196,11 @@ test("phone layout stacks the board into scrolling route cards", async () => {
   // and only the list inside it moves. It used to release that and scroll the whole page, which
   // left the footer and the alert bar wherever the scroll had put them.
   assert.doesNotMatch(rules, /html,body\{height:auto;overflow:visible\}/);
-  assert.doesNotMatch(rules, /\.screen\{[^}]*height:auto/);
+  // Pinned to the viewport's edges rather than measured against it. 100dvh came up short of the
+  // screen on an installed iOS board and left a strip of page background under the bottom bars;
+  // anchoring both edges means there is no unit left to disagree with.
+  assert.match(rules, /\.screen\{position:fixed;inset:0/);
+  assert.doesNotMatch(rules, /\.screen\{[^}]*\bheight:100dvh/);
   // The footer is a fixed row at the foot of the board rather than something trailing the list.
   assert.match(rules, /\.board-footer\{flex:0 0 auto/);
   // Departures stack vertically instead of sitting in columns.
@@ -805,28 +809,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 67 display assets", async () => {
+test("offline shell includes version 68 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=67/);
-  assert.match(index, /app\.js\?v=67/);
-  assert.match(worker, /nyc-ferry-did-shell-v67/);
-  assert.match(worker, /styles\.css\?v=67/);
-  assert.match(worker, /app\.js\?v=67/);
+  assert.match(index, /styles\.css\?v=68/);
+  assert.match(index, /app\.js\?v=68/);
+  assert.match(worker, /nyc-ferry-did-shell-v68/);
+  assert.match(worker, /styles\.css\?v=68/);
+  assert.match(worker, /app\.js\?v=68/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=67"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=67"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=67"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=68"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=68"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=68"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=67'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=68'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=67'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=68'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of

@@ -171,6 +171,14 @@ body.menu-open{overflow:hidden}
    until you scrolled for them. Controls that are always in the same place are worth more than
    controls that follow the content. */
 @media(max-width:820px){
+  /* Pinned to the viewport's own edges rather than measured against it.
+     100dvh came up short of the screen on an installed iOS board — the bars sat where dvh said the
+     bottom was and a strip of page background showed underneath them. Anchoring top and bottom
+     removes the arithmetic: there is no unit to disagree with, the box is the viewport by
+     construction. It costs nothing here because this shell never scrolls; only the list inside it
+     does. (It also drops width:100vw, which is measured past a scrollbar on some browsers and is
+     the other half of the same class of bug.) */
+  .screen{position:fixed;inset:0;width:auto;height:auto}
   /* env() keeps the board clear of a notch and the home indicator. The bottom inset moves to
      whichever bar is genuinely last on screen — see the alert bar below. */
   .board{padding:0 max(10px,env(safe-area-inset-left)) 0 max(10px,env(safe-area-inset-right))}
