@@ -203,6 +203,11 @@ test("phone layout stacks the board into scrolling route cards", async () => {
   assert.doesNotMatch(rules, /\.screen\{[^}]*\bheight:100dvh/);
   // The footer is a fixed row at the foot of the board rather than something trailing the list.
   assert.match(rules, /\.board-footer\{flex:0 0 auto/);
+  // The landing name shares its line with the hamburger and the nearest-landing button. flex-basis
+  // must stay 0: a wrapping flex container breaks lines on hypothetical sizes, so a heading that
+  // asks for its full untruncated width pushes the button onto a row of its own. The auto margin
+  // has to go with it, or it eats the free space before flex-grow can.
+  assert.match(rules, /\.board-heading h1\{flex:1 1 0;min-width:0;margin-right:0/);
   // Departures stack vertically instead of sitting in columns.
   assert.match(rules, /\.departure-slots\{display:flex;flex-direction:column/);
   assert.match(rules, /\.departures\{flex:1;min-height:0;display:flex;flex-direction:column/);
@@ -809,28 +814,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 71 display assets", async () => {
+test("offline shell includes version 72 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=71/);
-  assert.match(index, /app\.js\?v=71/);
-  assert.match(worker, /nyc-ferry-did-shell-v71/);
-  assert.match(worker, /styles\.css\?v=71/);
-  assert.match(worker, /app\.js\?v=71/);
+  assert.match(index, /styles\.css\?v=72/);
+  assert.match(index, /app\.js\?v=72/);
+  assert.match(worker, /nyc-ferry-did-shell-v72/);
+  assert.match(worker, /styles\.css\?v=72/);
+  assert.match(worker, /app\.js\?v=72/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=71"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=71"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=71"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=72"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=72"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=72"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=71'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=72'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=71'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=72'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of

@@ -192,11 +192,16 @@ body.menu-open{overflow:hidden}
      onto the second. That wrap is what puts the button in the top right corner on a phone. */
   .menu-button{order:-1;width:40px;height:40px}
   .nearest-button{height:40px;max-width:36vw;gap:6px;padding:0 9px;font-size:12px}
-  /* One line, ellipsised, rather than wrapping. The hamburger and the nearest-landing button take
-     a fixed bite out of this line, and a name that wrapped under them pushed the chips and the
-     clock down a row and left the header taller than the first departure. The base rule already
-     clips and ellipsises; the phone layout only has to stop overriding it back to wrapping. */
-  .board-heading h1{flex:1 1 auto;min-width:0;font-size:20px;line-height:1.1}
+  /* One line, ellipsised, sharing that line with the hamburger and the nearest-landing button.
+     flex-basis is 0 rather than auto for a reason worth keeping: a wrapping flex container decides
+     its line breaks from each item's hypothetical size, which for basis:auto is the full untruncated
+     width of the text. "North Williamsburg / North 5th St" measures wider than the phone, so the
+     button was bumped onto a line of its own before any shrinking happened, and the header stood
+     three rows tall. At basis 0 the heading asks for nothing, never forces a break, and grows into
+     whatever the other two leave — which is what the ellipsis is for.
+     margin-right goes with it: an auto margin swallows free space before flex-grow ever sees it,
+     so leaving it would have grown the margin and left the heading itself zero wide. */
+  .board-heading h1{flex:1 1 0;min-width:0;margin-right:0;font-size:20px;line-height:1.1}
   .board-state{flex:1 1 100%;flex-wrap:wrap;justify-content:flex-start;gap:6px}
   .route-count,.status{padding:4px 7px;font-size:11px}
   /* Thumb-sized, and pinned to the foot of the screen rather than the foot of the list, so the
