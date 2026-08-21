@@ -90,7 +90,7 @@ const themeKey = "nyc-ferry-did-theme";
 const THEMES = [
   { id: "nyc-ferry", name: "NYC Ferry", note: "Terminal signage blue", color: "#001d41" },
   { id: "night", name: "Night", note: "Dark, for a wheelhouse after dark", color: "#0d1b26" },
-  { id: "hello-kitty", name: "Hello Kitty", note: "Pink, with the East River running through it", color: "#ff9dbb" },
+  { id: "hello-kitty", name: "Hello Kitty", note: "Juliet's favorite theme 😇", color: "#ff9dbb" },
   { id: "cinnamoroll", name: "Cinnamoroll", note: "Sky blue and quiet", color: "#7ec8f0" },
   { id: "pompompurin", name: "Pompompurin", note: "Butter yellow, brown beret", color: "#ffd94a" },
   { id: "kuromi", name: "Kuromi", note: "Purple, with a loud pink streak", color: "#4a2d6b" },

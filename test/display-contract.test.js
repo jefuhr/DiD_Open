@@ -819,23 +819,23 @@ test("offline shell includes version 75 display assets", async () => {
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=75/);
-  assert.match(index, /app\.js\?v=75/);
-  assert.match(worker, /nyc-ferry-did-shell-v75/);
-  assert.match(worker, /styles\.css\?v=75/);
-  assert.match(worker, /app\.js\?v=75/);
+  assert.match(index, /styles\.css\?v=76/);
+  assert.match(index, /app\.js\?v=76/);
+  assert.match(worker, /nyc-ferry-did-shell-v76/);
+  assert.match(worker, /styles\.css\?v=76/);
+  assert.match(worker, /app\.js\?v=76/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=75"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=75"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=75"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=76"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=76"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=76"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=75'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=76'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=75'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=76'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
