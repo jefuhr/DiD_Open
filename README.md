@@ -422,6 +422,18 @@ the web app manifest is served from `/assets/` precisely because of this: it is 
 - the service worker caches the shell and API responses; the browser also keeps a last snapshot in local storage.
 - if realtime is unavailable, the board falls back to the saved snapshot, then to bundled scheduled times.
 
+## the change log
+
+the kitty in the board footer opens a change log, written by hand in [`content/changelog.json`](./content/changelog.json). newest entry first — the board prints them in the order they appear in the file and treats the top one as the latest.
+
+```json
+{ "entries": [ { "version": "2026-08-21", "date": "21 August 2026", "title": "What's new", "notes": ["one line per note"] } ] }
+```
+
+the red `!` beside the kitty is not decoration: it appears when the newest entry is one this device has not been shown, and goes away when the sheet is opened. `version` is what a device remembers having read, so give each entry a distinct one — an entry that reuses the previous `version` will not raise the mark.
+
+it is served from `/api/changelog`, read off disk per request, so an edit needs a deploy and not a restart. `/api/` also means the service worker treats it as data — network first, cached for offline — rather than caching it for the life of a shell the way it caches everything under `/assets/`. a file that will not parse serves an empty log rather than an error: a board with no change log is still a board.
+
 ## updating the schedule
 
 replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/` and `gtfs/siferry/` — when a new feed is published, then restart. five directories have no upstream file to drop in and are regenerated instead: `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js`, `gtfs/gi/` with `node scripts/build-gi-gtfs.js`, and `gtfs/seastreak/` with `node scripts/build-seastreak-gtfs.js` (re-read the operator's page or PDF first — those last four are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.

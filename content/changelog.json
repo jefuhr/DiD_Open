@@ -1,0 +1,14 @@
+{
+  "_comment": "The board's change log. Newest entry first — the board shows them in the order they appear here and marks the top one as the latest. Add an entry by copying the shape below; 'date' is what the board prints, 'notes' is a list of lines. Nothing here is validated against the code, so it says whatever you write.",
+  "entries": [
+    {
+      "version": "2026-08-21",
+      "date": "21 August 2026",
+      "title": "What's new",
+      "notes": [
+        "Tap this kitty any time to see what changed.",
+        "Fill this log in by hand: content/changelog.json."
+      ]
+    }
+  ]
+}

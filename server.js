@@ -105,6 +105,20 @@ async function handle(request, response) {
   // SFTP poller's target host, its key fingerprints and its last error string — fine for an
   // operator hitting health directly, not something to put behind a page anyone can open.
   if (url.pathname === "/api/stats") return json(response, 200, buildStats());
+  // The change log, written by hand in content/changelog.json. Read off disk on every request
+  // rather than at boot so an edit needs a deploy and not a restart, and served from /api/ so the
+  // service worker treats it as data — network first, cached for offline — instead of caching it
+  // for the life of a shell the way it caches everything under /assets/.
+  if (url.pathname === "/api/changelog") {
+    try {
+      const parsed = JSON.parse(await readFile(path.join(ROOT, "content/changelog.json"), "utf8"));
+      const entries = Array.isArray(parsed?.entries) ? parsed.entries : [];
+      return json(response, 200, { entries });
+    } catch {
+      // A change log nobody can read is not worth a 500 on a board that is otherwise fine.
+      return json(response, 200, { entries: [] });
+    }
+  }
   if (url.pathname === "/api/landings") return json(response, 200, { landings: landingData.available, operators: OPERATORS, configured: displayConfig.landingNumber });
   if (url.pathname === "/api/display-data") {
     const requested = url.searchParams.get("landingId");

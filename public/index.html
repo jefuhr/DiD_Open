@@ -9,16 +9,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
-    <link rel="icon" href="/assets/app-icon.png?v=73" type="image/png" />
+    <link rel="icon" href="/assets/app-icon.png?v=74" type="image/png" />
     <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=73" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=74" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
          come from the manifest, which is why the board installs as a bare shortcut without it.
          It lives under /assets/ because that is a path the deployment's proxy forwards to this
          server — a manifest at the site root is served by the landing page, not by the board. -->
-    <link rel="manifest" href="/assets/site.webmanifest?v=73" />
-    <link rel="stylesheet" href="/styles.css?v=73" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=74" />
+    <link rel="stylesheet" href="/styles.css?v=74" />
     <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
          after the board has already been drawn once, and a saved theme applied there arrives as a
          visible flash of the other one. -->
@@ -87,6 +87,12 @@
                 <path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none" />
               </svg>
             </button>
+            <!-- The change log. Its own mark rather than a glyph, because it is the one control here
+                 that is not about the boats. -->
+            <button type="button" class="filter-button changelog-button" id="changelogButton" aria-expanded="false" aria-controls="changelogMenu" aria-label="What's new">
+              <img class="changelog-icon" src="/assets/kitty.png?v=74" alt="" width="128" height="128" />
+              <span class="changelog-bang" id="changelogBang" aria-hidden="true" hidden>!</span>
+            </button>
             <div class="date-bar" id="dateBar" data-state="today">
               <button type="button" class="date-step" id="datePrev" aria-label="Previous day">‹</button>
               <button type="button" class="date-current" id="dateCurrent" aria-label="Showing today's schedule">Today</button>
@@ -135,6 +141,18 @@
           <ul class="filter-list" id="themeList"></ul>
         </div>
       </div>
+      <!-- Same sheet as the filter, the theme picker and the alerts: opened from the thing it
+           belongs to, with the board still visible behind it. -->
+      <div class="filter-menu changelog-menu" id="changelogMenu" hidden>
+        <div class="filter-menu-scrim" id="changelogMenuScrim"></div>
+        <div class="filter-menu-panel" role="dialog" aria-modal="true" aria-label="What's new">
+          <div class="filter-menu-head">
+            <strong>What's new</strong>
+            <button type="button" class="filter-menu-close" id="changelogMenuClose">Done</button>
+          </div>
+          <ul class="filter-list changelog-list" id="changelogList"></ul>
+        </div>
+      </div>
       <section class="manual-override" id="manualOverride" hidden aria-live="assertive" aria-atomic="true">
         <div class="manual-override-box" id="manualOverrideBox" data-size="short">
           <span class="manual-override-label">Service notice</span>
@@ -175,6 +193,6 @@
         </div>
       </div>
     </main>
-    <script type="module" src="/app.js?v=73"></script>
+    <script type="module" src="/app.js?v=74"></script>
   </body>
 </html>

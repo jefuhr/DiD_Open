@@ -17,6 +17,12 @@ const elements = {
   alertMenuScrim: document.querySelector("#alertMenuScrim"),
   alertMenuClose: document.querySelector("#alertMenuClose"),
   alertList: document.querySelector("#alertList"),
+  changelogButton: document.querySelector("#changelogButton"),
+  changelogBang: document.querySelector("#changelogBang"),
+  changelogMenu: document.querySelector("#changelogMenu"),
+  changelogMenuScrim: document.querySelector("#changelogMenuScrim"),
+  changelogMenuClose: document.querySelector("#changelogMenuClose"),
+  changelogList: document.querySelector("#changelogList"),
   manualOverride: document.querySelector("#manualOverride"),
   manualOverrideBox: document.querySelector("#manualOverrideBox"),
   manualOverrideMessage: document.querySelector("#manualOverrideMessage"),
@@ -91,6 +97,9 @@ const THEMES = [
   { id: "windows-xp", name: "Windows XP", note: "Luna blue and Tahoma", color: "#0058ee" },
   { id: "hacker", name: "Hacker", note: "Green phosphor on black", color: "#000000" }
 ];
+// The newest change-log entry this device has already been shown. The mark beside the kitty is
+// meant to say "there is something you have not read", so it has to remember what was read.
+const changelogSeenKey = "nyc-ferry-did-changelog-seen";
 // The landing a location fix last resolved to, so the shortcut survives a reload.
 const nearestKey = "nyc-ferry-did-nearest";
 // A fix is only good for about the shift it was taken in. Crew move between landings, and a
@@ -226,6 +235,70 @@ function setFilterOpen(open) {
   elements.filterButton.setAttribute("aria-expanded", String(open));
   if (open) (elements.filterList.querySelector(".filter-option") || elements.filterMenuClose)?.focus();
   else elements.filterButton.focus();
+}
+
+// The change log, written by hand in content/changelog.json and served from /api/changelog. Never
+// fatal: a board with no change log is a board, and this is the least important thing on it.
+let changelog = [];
+
+function changelogVersion(entry) {
+  return String(entry?.version || entry?.date || entry?.title || "");
+}
+
+// The "!" is not decoration. It appears when the newest entry is one this device has not been shown
+// and goes away when the sheet is opened, which is the only thing that makes it worth a glance.
+function renderChangelogBang() {
+  const newest = changelogVersion(changelog[0]);
+  let seen = "";
+  try {
+    seen = localStorage.getItem(changelogSeenKey) || "";
+  } catch {
+    seen = "";
+  }
+  elements.changelogBang.hidden = !newest || newest === seen;
+}
+
+function renderChangelog() {
+  elements.changelogList.innerHTML = changelog.length
+    ? changelog.map((entry) => {
+        const notes = Array.isArray(entry.notes) ? entry.notes : [];
+        const heading = [entry.title, entry.date].filter(Boolean).map(escapeHtml).join(" · ");
+        return `<li class="changelog-entry">
+          <strong class="changelog-entry-head">${heading || escapeHtml(changelogVersion(entry))}</strong>
+          ${notes.length ? `<ul class="changelog-notes">${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>` : ""}
+        </li>`;
+      }).join("")
+    : `<li class="alert-empty">Nothing written down yet.</li>`;
+}
+
+function setChangelogOpen(open) {
+  if (open) renderChangelog();
+  elements.changelogMenu.hidden = !open;
+  elements.changelogButton.setAttribute("aria-expanded", String(open));
+  if (open) {
+    // Opening it is reading it.
+    try {
+      localStorage.setItem(changelogSeenKey, changelogVersion(changelog[0]));
+    } catch {
+      // A device that will not store the mark simply keeps showing it.
+    }
+    renderChangelogBang();
+    elements.changelogMenuClose?.focus();
+  } else {
+    elements.changelogButton.focus();
+  }
+}
+
+async function loadChangelog() {
+  try {
+    const response = await fetch("/api/changelog", { cache: "no-store" });
+    if (!response.ok) throw new Error();
+    const payload = await response.json();
+    changelog = Array.isArray(payload.entries) ? payload.entries : [];
+  } catch {
+    changelog = [];
+  }
+  renderChangelogBang();
 }
 
 function activeTheme() {
@@ -1485,6 +1558,9 @@ elements.filterList.addEventListener("click", (event) => {
 elements.serviceAlerts.addEventListener("click", () => setAlertMenuOpen(elements.alertMenu.hidden));
 elements.alertMenuClose.addEventListener("click", () => setAlertMenuOpen(false));
 elements.alertMenuScrim.addEventListener("click", () => setAlertMenuOpen(false));
+elements.changelogButton.addEventListener("click", () => setChangelogOpen(elements.changelogMenu.hidden));
+elements.changelogMenuClose.addEventListener("click", () => setChangelogOpen(false));
+elements.changelogMenuScrim.addEventListener("click", () => setChangelogOpen(false));
 elements.themeButton.addEventListener("click", () => setThemeOpen(elements.themeMenu.hidden));
 elements.themeMenuClose.addEventListener("click", () => setThemeOpen(false));
 elements.themeMenuScrim.addEventListener("click", () => setThemeOpen(false));
@@ -1500,10 +1576,11 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.filterMenu.hidden) return setFilterOpen(false);
   if (event.key === "Escape" && !elements.themeMenu.hidden) return setThemeOpen(false);
   if (event.key === "Escape" && !elements.alertMenu.hidden) return setAlertMenuOpen(false);
+  if (event.key === "Escape" && !elements.changelogMenu.hidden) return setChangelogOpen(false);
   // Arrow keys page through the schedule, which is how anyone reaches for a date stepper on a
   // desktop board. Only when the landing menu is closed and nothing is being typed into.
   // A docked rail does not swallow the arrow keys: it is part of the board, not a dialog over it.
-  if ((!elements.landingMenu.hidden && !railDocked()) || !elements.filterMenu.hidden || !elements.themeMenu.hidden || !elements.alertMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
+  if ((!elements.landingMenu.hidden && !railDocked()) || !elements.filterMenu.hidden || !elements.themeMenu.hidden || !elements.alertMenu.hidden || !elements.changelogMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (event.key === "ArrowLeft") stepDate(-1);
   else if (event.key === "ArrowRight") stepDate(1);
@@ -1516,6 +1593,7 @@ renderThemeMenu();
 renderSortToggle();
 renderClockToggle();
 renderNearest();
+loadChangelog();
 loadLandings();
 load().catch(() => {
   elements.departures.innerHTML = `<div class="empty"><div><strong>Schedule unavailable</strong><span>The local schedule needs attention.</span></div></div>`;
@@ -1536,7 +1614,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=70&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=71&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
