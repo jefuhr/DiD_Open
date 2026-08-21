@@ -52,6 +52,14 @@ test("the button carries the site's own kitty, and the shell caches it", async (
   const [index, worker, css] = await Promise.all(
     [indexPath, workerPath, cssPath].map((file) => readFile(file, "utf8")));
   assert.match(index, /<img class="changelog-icon" src="\/assets\/kitty\.png\?v=\d+"/);
+  // In the landing drawer's header, beside its title — not in the board footer with the controls
+  // that change what the board shows.
+  const head = index.match(/<div class="landing-menu-head">[\s\S]*?<\/div>/)[0];
+  assert.match(head, /<strong>Landing<\/strong>/);
+  assert.match(head, /id="changelogButton"/);
+  // The header is space-between; without an auto margin three children spread evenly and the kitty
+  // ends up stranded in the middle rather than next to the title.
+  assert.match(css, /\.changelog-button\{[^}]*margin-right:auto/);
   assert.match(index, /<span class="changelog-bang" id="changelogBang" aria-hidden="true" hidden>!<\/span>/);
   // An icon missing from the precache is a broken image the first time the board opens offline.
   assert.match(worker, /'\/assets\/kitty\.png\?v=\d+'/);

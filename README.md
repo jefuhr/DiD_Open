@@ -424,7 +424,7 @@ the web app manifest is served from `/assets/` precisely because of this: it is 
 
 ## the change log
 
-the kitty in the board footer opens a change log, written by hand in [`content/changelog.json`](./content/changelog.json). newest entry first — the board prints them in the order they appear in the file and treats the top one as the latest.
+the kitty in the landing drawer, beside its title, opens a change log, written by hand in [`content/changelog.json`](./content/changelog.json). newest entry first — the board prints them in the order they appear in the file and treats the top one as the latest.
 
 ```json
 { "entries": [ { "version": "2026-08-21", "date": "21 August 2026", "title": "What's new", "notes": ["one line per note"] } ] }

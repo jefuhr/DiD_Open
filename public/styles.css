@@ -206,11 +206,7 @@ body.menu-open{overflow:hidden}
   .route-count,.status{padding:4px 7px;font-size:11px}
   /* Thumb-sized, and pinned to the foot of the screen rather than the foot of the list, so the
      controls are under the same thumb wherever the day has been scrolled to. */
-  /* Four controls and a date stepper is more than a narrow phone's width. Rather than squeezing
-     the stepper until "Tomorrow" clips, the row is allowed to wrap: the buttons keep their line and
-     the stepper takes the next one when — and only when — it cannot fit beside them. */
-  .board-footer{flex:0 0 auto;flex-wrap:wrap;gap:8px;margin-top:10px}
-  .date-bar{flex:1 1 150px}
+  .board-footer{flex:0 0 auto;gap:8px;margin-top:10px}
   .clock-toggle{min-width:64px;min-height:48px;padding:6px 10px;font-size:14px}
   .filter-button{min-width:48px;min-height:48px;padding:6px 10px}
   .filter-icon{width:20px;height:20px}
@@ -440,10 +436,13 @@ body.sidebar-docked.menu-open{overflow:visible}
    switch does not. */
 .theme-button .filter-icon{fill:none}
 
-/* The change log button. The site's own kitty rather than a drawn glyph, so it is obviously not
-   another board control — everything else in this row changes what the board shows. */
-.changelog-button{overflow:visible}
-.changelog-icon{width:clamp(20px,2.8vh,26px);height:auto;display:block}
+/* The change log button, in the landing drawer's header beside its title. The site's own kitty
+   rather than a drawn glyph, because it is the one thing in that drawer that is not a landing.
+   The auto margin is what keeps it next to the title: the header is space-between, and without it
+   three children would spread evenly and leave the kitty stranded in the middle. */
+.changelog-button{flex:0 0 auto;position:relative;display:grid;place-items:center;margin-right:auto;padding:0;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.changelog-button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.changelog-icon{width:26px;height:26px;display:block}
 /* The mark that says there is something unread. Sits where the filter's count sits, in the same
    place and at the same size, because it means the same kind of thing. */
 .changelog-bang{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:#c8102e;color:#fff;font:900 11px/16px Lato,Arial,sans-serif;text-align:center}
