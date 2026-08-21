@@ -6,8 +6,8 @@
       "date": "21 August 2026",
       "title": "What's new",
       "notes": [
-        "Tap this kitty any time to see what changed.",
-        "Fill this log in by hand: content/changelog.json."
+        "-added dispatch alert, same google doc from the dispatch office, will always be updated",
+        "-added themes :0 give me a shout if you have a request"
       ]
     }
   ]

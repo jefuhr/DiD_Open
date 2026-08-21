@@ -449,7 +449,9 @@ body.sidebar-docked.menu-open{overflow:visible}
 .changelog-list{display:flex;flex-direction:column;gap:12px}
 .changelog-entry{display:flex;flex-direction:column;gap:6px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:8px}
 .changelog-entry-head{color:var(--navy);font:900 14px/1.25 Lato,Arial,sans-serif;letter-spacing:.02em}
-.changelog-notes{display:flex;flex-direction:column;gap:5px;margin:0;padding-left:18px}
+/* No bullets. This log is written by hand and printed as written: whoever writes it marks their own
+   lines, and a disc in front of a line that already starts with a dash reads as a mistake. */
+.changelog-notes{display:flex;flex-direction:column;gap:5px;margin:0;padding:0;list-style:none}
 .changelog-notes li{color:var(--ink);font:800 14px/1.4 Lato,Arial,sans-serif;overflow-wrap:anywhere}
 .theme-option .filter-option-name{display:flex;flex-direction:column;gap:3px}
 .theme-option-note{font:800 11px/1.2 Lato,Arial,sans-serif;color:var(--muted);letter-spacing:.02em}
