@@ -85,11 +85,42 @@ test("the Monday-to-Thursday sailings are a real, smaller subset of the week", a
   for (const day of ["monday", "tuesday", "wednesday", "thursday"]) {
     assert.equal(services["ss-mon-thu"][day], "1");
   }
-  for (const row of Object.values(services)) {
-    assert.equal(row.saturday, "0", "the published weekday timetable has no weekend service");
-    assert.equal(row.sunday, "0");
+  // The weekday services are the weekday page and nothing else; the weekend page has its own.
+  for (const id of ["ss-weekday", "ss-mon-thu"]) {
+    assert.equal(services[id].saturday, "0", `${id} is off the weekday page and cannot run Saturday`);
+    assert.equal(services[id].sunday, "0");
   }
   const monThu = trips.filter((trip) => trip.service_id === "ss-mon-thu");
   assert.ok(monThu.length > 0 && monThu.length < trips.length,
     "expected some but not all sailings to be Monday-to-Thursday");
+});
+
+// The weekend page was missed on the first transcription of this PDF: the board showed no Seastreak
+// boat at all on a Saturday. It is a different route rather than a thinner weekday — four stops,
+// none of the Belford or west side piers — so this checks both that it is there and that it is that
+// shape, since a weekend table accidentally filled in from the weekday one would still be non-empty.
+test("the weekend page is transcribed, and calls only where it says it calls", async () => {
+  const { calendar, trips, stopTimes } = await feed();
+  const weekend = calendar.find((row) => row.service_id === "ss-weekend");
+  assert.ok(weekend, "expected a weekend service");
+  assert.equal(weekend.saturday, "1");
+  assert.equal(weekend.sunday, "1");
+  for (const day of ["monday", "tuesday", "wednesday", "thursday", "friday"]) {
+    assert.equal(weekend[day], "0", "the weekend timetable cannot run midweek");
+  }
+
+  const weekendTrips = new Set(
+    trips.filter((trip) => trip.service_id === "ss-weekend").map((trip) => trip.trip_id));
+  assert.equal(weekendTrips.size, 12, "six sailings each way on the weekend page");
+
+  const calls = stopTimes.filter((row) => weekendTrips.has(row.trip_id));
+  const served = new Set(calls.map((row) => row.stop_id));
+  assert.deepEqual([...served].sort(),
+    ["168", "170", "176", "sandy-hook-beach"].sort(),
+    "the weekend boat runs Highlands, Sandy Hook, Battery Maritime and East 35th, and nowhere else");
+
+  // The reason this matters to the board: Battery/Whitehall reads Seastreak stop 170, and before
+  // the weekend page was read that landing had nothing to show on a Saturday.
+  const batteryBoardings = calls.filter((row) => row.stop_id === "170" && row.pickup_type === "0");
+  assert.ok(batteryBoardings.length > 0, "expected weekend boardings at Battery Maritime");
 });

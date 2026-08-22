@@ -1,4 +1,5 @@
-// Regenerates gtfs/seastreak/ from Seastreak's published weekday timetable PDF.
+// Regenerates gtfs/seastreak/ from Seastreak's published timetable PDF: the weekday schedule on
+// its first page and the weekend schedule on its second.
 //
 // Seastreak does publish a GTFS, and gtfs/seastreak/ used to be that download. It was wrong in a
 // way that showed: it carried a 2020 feed_start_date, times that no longer matched the printed
@@ -38,10 +39,21 @@
 //   are road transfers, not sailings, and are not in this feed. The footnote markers on some
 //   arrival times (*, **, ⁰) mark where one of those buses meets the boat.
 //
-// !! WEEKDAY ONLY. The PDF is the weekday timetable and this feed is weekday-only, which is what
-// !! the download it replaces also was — it had no Saturday or Sunday sailing on this route either.
-// !! Seastreak's Massachusetts routes (New Bedford, Nantucket, Martha's Vineyard) were in that
-// !! download and are not here: no landing on this board is within two hundred miles of them.
+//   The PDF's second page is a WEEKEND SCHEDULE, and it is a different route rather than the
+//   weekday one thinned out: Highlands, Sandy Hook Beach, Battery Maritime and East 35th only.
+//   Belford, Atlantic Highlands, Brookfield, Paulus Hook and West 39th get no weekend boat at all.
+//   It is read by the same Departures/Arrivals rule as the weekday tables, and carries no red: the
+//   Friday note is printed on the weekday page only, and the weekend page's content stream has no
+//   red fill operator in it.
+//
+//   Two weekend rows call at the piers in the opposite order to the printed column headings — the
+//   last New Jersey departure boards Sandy Hook at 19:15 before Highlands at 19:30, and the last
+//   New York departure boards Battery Maritime at 20:15 before East 35th at 20:45. The columns are
+//   read by clock rather than by heading order, so those two are transcribed as they sail.
+//
+// !! Seastreak's Massachusetts routes (New Bedford, Nantucket, Martha's Vineyard) were in the
+// !! download this replaces and are not here: no landing on this board is within two hundred
+// !! miles of them.
 
 import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -52,11 +64,14 @@ const OUTPUT_DIR = path.join(ROOT, "gtfs/seastreak");
 
 export const SOURCE_URL =
   "https://media.seastreak.com/wp-content/uploads/2026/08/07172537/Schedule-Effective-August-8-2026.pdf";
-export const SOURCE_CHECKED_ON = "2026-08-20";
+export const SOURCE_CHECKED_ON = "2026-08-22";
 
 // The file is named "August 8" and the schedule inside it says "Effective August 10, 2026". The
 // printed date wins: it is the one the operator put on the timetable itself.
 const SERVICE_START = "20260810";
+// The weekend page is headed "Effective August 8, 2026" — the Saturday before the weekday one
+// starts, and the date the file itself is named for.
+const WEEKEND_SERVICE_START = "20260808";
 // Seastreak publishes no end date — the PDF says only "SCHEDULE SUBJECT TO CHANGE WITHOUT NOTICE".
 // This is deliberately finite so a transcription cannot quietly outlive the timetable it came from,
 // and deliberately long enough that it will not lapse before somebody re-reads the source.
@@ -69,6 +84,9 @@ const ROUTE_ID = "211";
 // Monday to Friday, and the Monday-to-Thursday subset the PDF prints in red.
 const SERVICE_WEEKDAY = "ss-weekday";
 const SERVICE_MON_THU = "ss-mon-thu";
+// Saturday and Sunday, off the PDF's second page. The weekend timetable prints one set of times
+// with no Saturday/Sunday split, so both days get the same service.
+const SERVICE_WEEKEND = "ss-weekend";
 
 // Stop ids are Seastreak's own, carried over from the GTFS this feed replaces: config/landings.json
 // points at 170, 168 and 8306 by those ids, so changing them would take Seastreak off the board.
@@ -142,6 +160,30 @@ const NEW_YORK_DEPARTURES = [
   { monThuOnly: false, calls: [["east35", "22:30"], ["bmb", "22:45"], ["atlantic", "23:25"], ["highlands", "23:35"]] },
 ];
 
+// WEEKEND — NEW JERSEY DEPARTURES. Highlands and Sandy Hook Beach board; the two Manhattan piers
+// are arrivals. No weekend boat calls at Belford, Atlantic Highlands, Brookfield, Paulus Hook or
+// West 39th, so none of them appears below.
+const WEEKEND_NEW_JERSEY_DEPARTURES = [
+  { calls: [["highlands", "07:15"], ["bmb", "07:55"], ["east35", "08:10"]] },
+  { calls: [["highlands", "09:30"], ["east35", "10:15"], ["bmb", "10:45"]] },
+  { calls: [["highlands", "12:00"], ["east35", "12:45"], ["bmb", "13:05"]] },
+  { calls: [["highlands", "15:00"], ["sandyhook", "15:15"], ["east35", "15:55"], ["bmb", "16:10"]] },
+  { calls: [["highlands", "17:00"], ["sandyhook", "17:15"], ["east35", "18:10"], ["bmb", "18:25"]] },
+  // Sandy Hook first, then Highlands — the reverse of the printed column order.
+  { calls: [["sandyhook", "19:15"], ["highlands", "19:30"], ["bmb", "20:10"], ["east35", "20:30"]] },
+];
+
+// WEEKEND — NEW YORK DEPARTURES. The two Manhattan piers board; New Jersey arrives.
+const WEEKEND_NEW_YORK_DEPARTURES = [
+  { calls: [["east35", "08:20"], ["bmb", "08:35"], ["sandyhook", "09:10"], ["highlands", "09:20"]] },
+  { calls: [["east35", "10:30"], ["bmb", "11:00"], ["sandyhook", "11:35"], ["highlands", "12:05"]] },
+  { calls: [["east35", "12:55"], ["bmb", "13:10"], ["sandyhook", "13:45"], ["highlands", "13:50"]] },
+  { calls: [["east35", "16:00"], ["bmb", "16:15"], ["highlands", "16:55"]] },
+  { calls: [["east35", "18:15"], ["bmb", "18:30"], ["highlands", "19:25"]] },
+  // Battery Maritime first, then East 35th — the reverse of the printed column order.
+  { calls: [["bmb", "20:15"], ["east35", "20:45"], ["highlands", "21:30"]] },
+];
+
 function toCsv(headers, rows) {
   const escape = (value) => {
     const text = value == null ? "" : String(value);
@@ -152,7 +194,7 @@ function toCsv(headers, rows) {
 
 // One printed row is one trip. The boarding side is whichever side the table is headed for; the
 // other side's calls are arrivals, so they are drop-off only and never advertise a departure.
-function tripRows(table, { boardingSide, directionId, idPrefix }) {
+function tripRows(table, { boardingSide, directionId, idPrefix, service }) {
   const trips = [], stopTimes = [];
   table.forEach((row, index) => {
     const tripId = `${idPrefix}-${String(index + 1).padStart(2, "0")}`;
@@ -160,7 +202,7 @@ function tripRows(table, { boardingSide, directionId, idPrefix }) {
     const finalStop = calls.at(-1).stop;
     trips.push({
       route_id: ROUTE_ID,
-      service_id: row.monThuOnly ? SERVICE_MON_THU : SERVICE_WEEKDAY,
+      service_id: service ?? (row.monThuOnly ? SERVICE_MON_THU : SERVICE_WEEKDAY),
       trip_id: tripId,
       trip_headsign: finalStop.name,
       direction_id: directionId
@@ -215,8 +257,10 @@ function assertFeedIsSane(trips, stopTimes) {
 async function main() {
   const inbound = tripRows(NEW_JERSEY_DEPARTURES, { boardingSide: "nj", directionId: 0, idPrefix: "ss-nj" });
   const outbound = tripRows(NEW_YORK_DEPARTURES, { boardingSide: "ny", directionId: 1, idPrefix: "ss-ny" });
-  const trips = [...inbound.trips, ...outbound.trips];
-  const stopTimes = [...inbound.stopTimes, ...outbound.stopTimes];
+  const weekendInbound = tripRows(WEEKEND_NEW_JERSEY_DEPARTURES, { boardingSide: "nj", directionId: 0, idPrefix: "ss-we-nj", service: SERVICE_WEEKEND });
+  const weekendOutbound = tripRows(WEEKEND_NEW_YORK_DEPARTURES, { boardingSide: "ny", directionId: 1, idPrefix: "ss-we-ny", service: SERVICE_WEEKEND });
+  const trips = [...inbound.trips, ...outbound.trips, ...weekendInbound.trips, ...weekendOutbound.trips];
+  const stopTimes = [...inbound.stopTimes, ...outbound.stopTimes, ...weekendInbound.stopTimes, ...weekendOutbound.stopTimes];
   assertFeedIsSane(trips, stopTimes);
 
   const files = {
@@ -236,7 +280,10 @@ async function main() {
     "calendar.txt": toCsv(["service_id", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "start_date", "end_date"],
       [{ service_id: SERVICE_WEEKDAY, monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 1, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: SERVICE_END },
        // The red rows. Same week, minus the Friday.
-       { service_id: SERVICE_MON_THU, monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 0, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: SERVICE_END }]),
+       { service_id: SERVICE_MON_THU, monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 0, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: SERVICE_END },
+       // The weekend page carries the earlier effective date of the two, and it is the one the
+       // file is named for. Its own timetable starts when it says it starts.
+       { service_id: SERVICE_WEEKEND, monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 1, sunday: 1, start_date: WEEKEND_SERVICE_START, end_date: SERVICE_END }]),
     // No exception dates: the timetable is a plain weekday pattern with no published holiday
     // variations. The file is still written because the build expects every feed to have one, and
     // an absent file reads as a feed that was assembled wrong rather than one with nothing to say.
@@ -245,7 +292,7 @@ async function main() {
     "stop_times.txt": toCsv(["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "pickup_type", "drop_off_type"], stopTimes),
     "feed_info.txt": toCsv(["feed_publisher_name", "feed_publisher_url", "feed_lang", "feed_start_date", "feed_end_date", "feed_version"],
       [{ feed_publisher_name: AGENCY_NAME, feed_publisher_url: "https://seastreak.com", feed_lang: "en",
-         feed_start_date: SERVICE_START, feed_end_date: SERVICE_END, feed_version: `transcribed-${SOURCE_CHECKED_ON}` }])
+         feed_start_date: WEEKEND_SERVICE_START, feed_end_date: SERVICE_END, feed_version: `transcribed-${SOURCE_CHECKED_ON}` }])
   };
 
   await mkdir(OUTPUT_DIR, { recursive: true });
@@ -261,9 +308,12 @@ async function main() {
 
   const monThu = trips.filter((trip) => trip.service_id === SERVICE_MON_THU).length;
   console.log(`Wrote gtfs/seastreak/ from ${SOURCE_URL} as checked on ${SOURCE_CHECKED_ON}.`);
-  console.log(`  ${NEW_JERSEY_DEPARTURES.length} New Jersey departures, ${NEW_YORK_DEPARTURES.length} New York departures`);
+  const weekend = trips.filter((trip) => trip.service_id === SERVICE_WEEKEND).length;
+  console.log(`  weekday: ${NEW_JERSEY_DEPARTURES.length} New Jersey departures, ${NEW_YORK_DEPARTURES.length} New York departures`);
+  console.log(`  weekend: ${WEEKEND_NEW_JERSEY_DEPARTURES.length} New Jersey departures, ${WEEKEND_NEW_YORK_DEPARTURES.length} New York departures`);
   console.log(`  ${trips.length} trips, ${stopTimes.length} calls, ${monThu} of them Monday-Thursday only`);
-  console.log(`  weekdays ${SERVICE_START}-${SERVICE_END}; no Saturday or Sunday service is published on this route`);
+  console.log(`  weekdays from ${SERVICE_START}, weekends from ${WEEKEND_SERVICE_START}, both to ${SERVICE_END}`);
+  console.log(`  ${weekend} of the trips are Saturday/Sunday`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) await main();

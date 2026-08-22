@@ -42,3 +42,15 @@ route_id,service_id,trip_id,trip_headsign,direction_id
 211,ss-weekday,ss-ny-19,"Atlantic Highlands, NJ",1
 211,ss-weekday,ss-ny-20,"Highlands, NJ",1
 211,ss-weekday,ss-ny-21,"Highlands, NJ",1
+211,ss-weekend,ss-we-nj-01,"East 35th St., NYC",0
+211,ss-weekend,ss-we-nj-02,Battery Maritime Building Slip 5,0
+211,ss-weekend,ss-we-nj-03,Battery Maritime Building Slip 5,0
+211,ss-weekend,ss-we-nj-04,Battery Maritime Building Slip 5,0
+211,ss-weekend,ss-we-nj-05,Battery Maritime Building Slip 5,0
+211,ss-weekend,ss-we-nj-06,"East 35th St., NYC",0
+211,ss-weekend,ss-we-ny-01,"Highlands, NJ",1
+211,ss-weekend,ss-we-ny-02,"Highlands, NJ",1
+211,ss-weekend,ss-we-ny-03,"Highlands, NJ",1
+211,ss-weekend,ss-we-ny-04,"Highlands, NJ",1
+211,ss-weekend,ss-we-ny-05,"Highlands, NJ",1
+211,ss-weekend,ss-we-ny-06,"Highlands, NJ",1
