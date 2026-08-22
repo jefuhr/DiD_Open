@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, readFile, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { buildDisplayData, decodeEntities, parseCsv } from "../scripts/build-data.js";
+import { applyNonRevenueRuns, buildDisplayData, decodeEntities, parseCsv } from "../scripts/build-data.js";
 
 test("every configured landing builds departures", async () => {
   for (let landingNumber = 2; landingNumber <= 26; landingNumber += 1) {
@@ -1473,4 +1473,44 @@ test("an operator whose switch is missing from display.json is on, not off", asy
   const astoria = await buildDisplayData({ root, landingNumber: 2 });
   assert.equal(astoria.meta.statue.enabled, false);
   assert.equal(astoria.meta.seastreak.enabled, false);
+});
+
+// Rockaway Rocket run 9105 is printed as a revenue sailing and is not one: dispatch cancels it every
+// weekend and the boat deadheads Long Island City to Rockaway. Both printed departures — the 16:00
+// at Long Island City and the 16:11 at Greenpoint — are seats that cannot be bought.
+test("the weekend Rockaway Rocket deadhead is stripped of the calls it does not make", async () => {
+  const data = await buildDisplayData({ landingNumber: 14 });
+  const weekendRocket = data.departures.filter((row) => row.routeId === "RR" && row.serviceId === "2");
+  const sixteenHundred = weekendRocket.find((row) => row.departureTime === "16:00:00");
+  assert.ok(sixteenHundred, "expected the 16:00 to still be shown");
+  assert.equal(sixteenHundred.outOfService, true, "16:00 from Long Island City carries no passengers");
+  assert.equal(sixteenHundred.nextStop, "Rockaway", "the boat skips Greenpoint");
+  // The other two weekend Rockets are ordinary revenue sailings and must not be touched. The
+  // synthetic home-port runs are skipped: those are out of service for their own reasons.
+  for (const row of weekendRocket.filter((item) =>
+    item.departureTime !== "16:00:00" && !String(item.tripId).startsWith("oos:"))) {
+    assert.equal(row.outOfService, false, `${row.departureTime} is a real departure`);
+  }
+
+  const greenpoint = await buildDisplayData({ landingNumber: 12 });
+  assert.equal(
+    greenpoint.departures.some((row) => row.routeId === "RR" && row.departureTime === "16:11:00"),
+    false, "Greenpoint must not advertise a boat that does not call there");
+});
+
+test("a non-revenue correction that no longer matches warns instead of hitting the wrong boat", () => {
+  const trips = [{ route_id: "RR", trip_id: "t1", trip_short_name: "9105", service_id: "2" }];
+  const dayTypeOf = () => "weekend";
+  // The run is still there, but it boards at a different time — so the timetable moved and the
+  // correction can no longer be trusted to be about this boat.
+  const timesByTrip = new Map([["t1", [
+    { stop_id: "90", departure_time: "17:00:00", stop_sequence: "1" },
+    { stop_id: "18", departure_time: "17:11:00", stop_sequence: "2" },
+    { stop_id: "88", departure_time: "18:16:00", stop_sequence: "3" }
+  ]]]);
+  const warnings = [];
+  const marked = applyNonRevenueRuns({ trips, timesByTrip, dayTypeOf, warn: (line) => warnings.push(line) });
+  assert.equal(marked.size, 0, "a correction that does not match must not be applied");
+  assert.equal(timesByTrip.get("t1").length, 3, "and must not drop anybody's calls");
+  assert.match(warnings.join("\n"), /no longer correcting RR run 9105/);
 });

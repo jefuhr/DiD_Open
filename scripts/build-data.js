@@ -90,6 +90,70 @@ const WATERWAY_FERRIES_TYPED_AS_BUS = new Set([
   "76080"  // Hoboken / 14th St - Pier 11 / Wall St
 ]);
 
+// NYC Ferry trips that the feed publishes as revenue sailings but which never carry a passenger.
+//
+// The feed is the published timetable, and the published timetable is not always what dispatch
+// runs. Where the two disagree every weekend, in the same way, the board should show what the boat
+// actually does — an agent who reads a departure off this board and sends a passenger to the gate
+// is relying on it.
+//
+// Rockaway Rocket run 9105 is the case this exists for. The weekend timetable prints it as
+// Long Island City 16:00, Greenpoint 16:11, Rockaway 17:16. It is not run that way: dispatch
+// cancels it by hand every weekend and the boat deadheads from Long Island City straight to
+// Rockaway, skipping Greenpoint entirely. Both printed departures are sellable seats that do not
+// exist.
+//
+// The correction lives here rather than in gtfs/stop_times.txt for the same reason the NY Waterway
+// route-type fix does: gtfs/ is a download, and a fresh copy would quietly put the ghost sailings
+// back. It is matched strictly — route, day type, run number and the printed boarding time all
+// have to agree — because applying it to the wrong boat would tell an agent that a real departure
+// cannot be boarded, which is a worse failure than not applying it at all. A correction that stops
+// matching warns and is skipped rather than throwing: NYC Ferry fixing its own feed, or moving the
+// run, should send somebody back to this list, not take the board down.
+const NYC_FERRY_NON_REVENUE_RUNS = [
+  {
+    routeId: "RR",
+    dayType: "weekend",
+    run: "9105",
+    // The call that must match for the correction to apply at all.
+    boardsAt: { stopId: "90", time: "16:00:00" }, // Long Island City
+    // Calls the boat does not actually make, dropped from the trip.
+    skips: ["18"],                                // Greenpoint
+    note: "deadheads Long Island City to Rockaway; cancelled by dispatch every weekend"
+  }
+];
+
+// Applies the corrections above. Returns the trip ids that carry no passengers, so the departures
+// they still generate can be marked as such: the boat does move, and a row that says so with no
+// pickup on it is more use to an agent than a row that has vanished.
+export function applyNonRevenueRuns({ trips, timesByTrip, dayTypeOf, warn = console.warn }) {
+  const nonRevenue = new Set();
+  for (const correction of NYC_FERRY_NON_REVENUE_RUNS) {
+    const candidates = trips.filter((trip) =>
+      trip.route_id === correction.routeId &&
+      String(trip.trip_short_name || "").trim() === correction.run &&
+      dayTypeOf(trip.service_id) === correction.dayType);
+    const matched = candidates.filter((trip) => (timesByTrip.get(trip.trip_id) || []).some((call) =>
+      call.stop_id === correction.boardsAt.stopId &&
+      (call.departure_time || call.arrival_time) === correction.boardsAt.time));
+    const label = `${correction.routeId} run ${correction.run} (${correction.dayType})`;
+    if (matched.length !== 1) {
+      warn(`NOTE: no longer correcting ${label} — ${matched.length} trips match ${correction.boardsAt.time} at stop ${correction.boardsAt.stopId}. Re-read the timetable and update NYC_FERRY_NON_REVENUE_RUNS.`);
+      continue;
+    }
+    const tripId = matched[0].trip_id;
+    const calls = timesByTrip.get(tripId);
+    const kept = calls.filter((call) => !correction.skips.includes(call.stop_id));
+    if (kept.length < 2) {
+      warn(`NOTE: not correcting ${label} — skipping its calls would leave it with fewer than two.`);
+      continue;
+    }
+    timesByTrip.set(tripId, kept);
+    nonRevenue.add(tripId);
+  }
+  return nonRevenue;
+}
+
 // The three Manhattan terminals NY Waterway calls at, and the codes the crews use for them.
 //
 // One route links them: 77347, South Amboy - Pier 11/Wall St, which threads Pier 11, Brookfield
@@ -518,6 +582,10 @@ export async function buildDisplayData({
     const runsWeekend = row.saturday === "1" || row.sunday === "1";
     return runsWeekday && !runsWeekend ? "weekday" : (runsWeekend && !runsWeekday ? "weekend" : null);
   };
+  // Sailings the timetable prints but dispatch does not run. Applied before the departures are
+  // built so the calls the boat skips never become rows at all.
+  const nonRevenueTrips = applyNonRevenueRuns({ trips, timesByTrip, dayTypeOf });
+
   // Which boats have a crew brought out to them rather than going home to swap. Read twice: once to
   // stop a shuttled boat being called out of service, and once to stop its next shift being counted
   // as a fresh departure from Pier C.
@@ -557,7 +625,9 @@ export async function buildDisplayData({
         // Flagged on every leg of the trip, not just the last one: an agent at Pier 11 watching the
         // boat leave needs to know it is not coming back, not to be told once it has already gone.
         endsShift: breaks.certainty.get(tripId) || null,
-        outOfService: false, crewShuttle: false, crewBoats: null,
+        // A deadhead is out of service in the only sense the board means it: the boat is moving and
+        // nobody boards. It reads the same as a boat running home, which is what it is.
+        outOfService: nonRevenueTrips.has(tripId), crewShuttle: false, crewBoats: null,
         departureTimeEnd: null, secondsEnd: null, endsDay: false
       });
     }
