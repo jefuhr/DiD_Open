@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>splitflap — harbor board</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        gap: 1.5rem;
+        background: radial-gradient(120% 90% at 50% 0%, #1d2530 0%, #0a0c10 60%);
+        color: #cfd6e4;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        padding: 2rem 1rem;
+        box-sizing: border-box;
+      }
+      .case {
+        padding: 1.25rem;
+        border-radius: 14px;
+        background: #05070a;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+        display: grid;
+        gap: 0.9rem;
+        justify-items: center;
+        max-width: 100%;
+        overflow-x: auto;
+      }
+      .strip { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+      split-flap { font-size: clamp(13px, 3.1vw, 26px); }
+      split-flap[cols="6"] { --flap-fg: #ffd479; }
+      .legend { font-size: 0.75rem; letter-spacing: 0.14em; color: #6d7889; text-transform: uppercase; }
+      button {
+        font: inherit;
+        font-size: 0.8rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        background: #161b24;
+        color: #cfd6e4;
+        border: 1px solid #2a3240;
+        border-radius: 999px;
+        padding: 0.5rem 1.1rem;
+        cursor: pointer;
+      }
+      button:hover { border-color: #4a586e; }
+    </style>
+  </head>
+  <body>
+    <div class="case">
+      <div class="strip">
+        <split-flap id="header" rows="1" cols="17" stagger="1" fps="16"></split-flap>
+        <split-flap id="clock" rows="1" cols="6" stagger="1" fps="16"></split-flap>
+      </div>
+      <split-flap id="board" rows="6" cols="32" stagger="1" fps="18"></split-flap>
+      <div class="legend">time · route · destination · status</div>
+    </div>
+    <button id="sound" type="button">clack: off</button>
+
+    <script type="module">
+// ---- src/flap.js ----
+/**
+ * A single flap: one character position on a split-flap board.
+ *
+ * Real boards can only advance in one direction. A flap holds a drum of
+ * characters and clacks forward one step per tick until the character it is
+ * showing matches the one it was asked for, wrapping past the end of the drum.
+ * That constraint is the whole reason the boards look the way they do, so the
+ * engine keeps it rather than jumping straight to the target.
+ */
+
+/** The drum, in physical order. Position 0 is blank, as on a real unit. */
+const ALPHABET = [
+  ' ',
+  ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  ...'0123456789',
+  ...":.,'-!?/&$#*+()",
+];
+
+const INDEX = new Map(ALPHABET.map((ch, i) => [ch, i]));
+
+/** Fold a character onto the drum. Lowercase is raised; anything else is blank. */
+function normalize(ch) {
+  if (typeof ch !== 'string' || ch.length === 0) return ' ';
+  const upper = ch[0].toUpperCase();
+  return INDEX.has(upper) ? upper : ' ';
+}
+
+/** Drum position of a character, after normalizing it. */
+function indexOf(ch) {
+  return INDEX.get(normalize(ch));
+}
+
+/** Ticks needed to clack from one character to another, going forward only. */
+function distance(from, to) {
+  const delta = indexOf(to) - indexOf(from);
+  return delta < 0 ? delta + ALPHABET.length : delta;
+}
+
+class Flap {
+  /**
+   * @param {string} char  character showing at rest
+   * @param {number} delay ticks to wait before this flap starts moving
+   */
+  constructor(char = ' ', delay = 0) {
+    this.index = indexOf(char);
+    this.targetIndex = this.index;
+    this.delay = delay;
+    this.wait = 0;
+  }
+
+  get char() {
+    return ALPHABET[this.index];
+  }
+
+  get target() {
+    return ALPHABET[this.targetIndex];
+  }
+
+  get settled() {
+    return this.index === this.targetIndex;
+  }
+
+  /** Ticks left before this flap comes to rest, including its start delay. */
+  get remaining() {
+    return this.settled ? 0 : this.wait + distance(this.char, this.target);
+  }
+
+  /** Ask for a character. Restarts the start delay if the target actually moves. */
+  setTarget(char) {
+    const next = indexOf(char);
+    if (next === this.targetIndex) return this;
+    this.targetIndex = next;
+    this.wait = this.settled ? 0 : this.delay;
+    return this;
+  }
+
+  /** Advance one frame. Returns true if the visible character changed. */
+  tick() {
+    if (this.settled) return false;
+    if (this.wait > 0) {
+      this.wait -= 1;
+      return false;
+    }
+    this.index = (this.index + 1) % ALPHABET.length;
+    return true;
+  }
+
+  /** Snap to the target with no animation. */
+  settle() {
+    this.index = this.targetIndex;
+    this.wait = 0;
+    return this;
+  }
+}
+
+// ---- src/board.js ----
+/**
+ * A grid of flaps.
+ *
+ * The board owns layout — fixed rows and columns, text padded or clipped to
+ * fit — and the stagger that gives a board its wave: column n starts moving
+ * n * stagger ticks after the row is set, so the change sweeps left to right
+ * instead of every unit clacking in lockstep.
+ */
+
+
+/** Pad or clip a line to exactly `cols` normalized characters. */
+function fit(line, cols, align = 'left') {
+  const chars = [...String(line ?? '')].map(normalize).slice(0, cols);
+  const pad = cols - chars.length;
+  if (pad <= 0) return chars;
+  const blanks = Array(pad).fill(' ');
+  if (align === 'right') return [...blanks, ...chars];
+  if (align === 'center') {
+    const left = Math.floor(pad / 2);
+    return [...Array(left).fill(' '), ...chars, ...Array(pad - left).fill(' ')];
+  }
+  return [...chars, ...blanks];
+}
+
+class Board {
+  /**
+   * @param {object} opts
+   * @param {number} opts.rows
+   * @param {number} opts.cols
+   * @param {number} [opts.stagger] ticks of lag added per column
+   */
+  constructor({ rows, cols, stagger = 0 }) {
+    if (!Number.isInteger(rows) || rows < 1) throw new RangeError('rows must be a positive integer');
+    if (!Number.isInteger(cols) || cols < 1) throw new RangeError('cols must be a positive integer');
+    this.rows = rows;
+    this.cols = cols;
+    this.stagger = stagger;
+    this.flaps = Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, (_, c) => new Flap(' ', c * stagger)),
+    );
+  }
+
+  /** Every flap is showing what it was asked for. */
+  get settled() {
+    return this.flaps.every((row) => row.every((flap) => flap.settled));
+  }
+
+  /** Ticks until the last flap comes to rest. */
+  get remaining() {
+    let most = 0;
+    for (const row of this.flaps) {
+      for (const flap of row) most = Math.max(most, flap.remaining);
+    }
+    return most;
+  }
+
+  /**
+   * Ask the board for new text.
+   * @param {string[]} lines one string per row; missing rows go blank
+   * @param {'left'|'right'|'center'} [align]
+   */
+  setLines(lines, align = 'left') {
+    for (let r = 0; r < this.rows; r += 1) {
+      const chars = fit(lines?.[r] ?? '', this.cols, align);
+      for (let c = 0; c < this.cols; c += 1) this.flaps[r][c].setTarget(chars[c]);
+    }
+    return this;
+  }
+
+  /** Advance one frame. Returns true if anything visibly moved. */
+  tick() {
+    let moved = false;
+    for (const row of this.flaps) {
+      for (const flap of row) moved = flap.tick() || moved;
+    }
+    return moved;
+  }
+
+  /** What the board is showing right now. */
+  lines() {
+    return this.flaps.map((row) => row.map((flap) => flap.char).join(''));
+  }
+
+  /** Snap every flap to its target with no animation. */
+  settle() {
+    for (const row of this.flaps) {
+      for (const flap of row) flap.settle();
+    }
+    return this;
+  }
+
+  /**
+   * Run frames until the board rests.
+   * @param {number} [maxTicks] safety stop; throws if the board has not settled
+   * @returns {number} frames actually run
+   */
+  run(maxTicks = 10000) {
+    let ticks = 0;
+    while (!this.settled) {
+      if (ticks >= maxTicks) throw new Error(`board did not settle within ${maxTicks} ticks`);
+      this.tick();
+      ticks += 1;
+    }
+    return ticks;
+  }
+}
+
+// ---- src/element.js ----
+/**
+ * <split-flap> — the engine, wearing a board.
+ *
+ * Attributes: rows, cols, stagger, fps, sound.
+ * Property: `lines` (string[]) — assign to it and the board clacks over.
+ *
+ *   const board = document.querySelector('split-flap');
+ *   board.lines = ['PIER 11', '7:04 PM'];
+ */
+
+
+const STYLE = `
+  :host {
+    --flap-bg: #14161a;
+    --flap-fg: #f2f0e6;
+    --flap-hinge: rgba(0, 0, 0, 0.55);
+    --flap-radius: 0.12em;
+    --flap-gap: 0.06em;
+    display: inline-block;
+    font-family: ui-monospace, "SF Mono", "Roboto Mono", Menlo, monospace;
+    font-size: 32px;
+    line-height: 1;
+  }
+  .board { display: grid; gap: calc(var(--flap-gap) * 2); }
+  .row { display: flex; gap: var(--flap-gap); }
+  .cell {
+    position: relative;
+    width: 0.72em;
+    height: 1.1em;
+    border-radius: var(--flap-radius);
+    background: linear-gradient(180deg, #23262c 0%, var(--flap-bg) 49%, #0e1013 51%, #1a1d22 100%);
+    color: var(--flap-fg);
+    display: grid;
+    place-items: center;
+    font-weight: 600;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.5);
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+  .cell::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--flap-hinge);
+  }
+  .cell.flip { animation: flap 90ms ease-in; }
+  @keyframes flap {
+    0% { transform: perspective(200px) rotateX(0deg); }
+    55% { transform: perspective(200px) rotateX(-38deg); }
+    100% { transform: perspective(200px) rotateX(0deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cell.flip { animation: none; }
+  }
+`;
+
+class Clack {
+  constructor() {
+    this.ctx = null;
+  }
+
+  play() {
+    const Ctx = globalThis.AudioContext ?? globalThis.webkitAudioContext;
+    if (!Ctx) return;
+    this.ctx ??= new Ctx();
+    const ctx = this.ctx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    const frames = Math.floor(ctx.sampleRate * 0.03);
+    const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < frames; i += 1) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / frames) ** 6;
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.05;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1800;
+    source.connect(filter).connect(gain).connect(ctx.destination);
+    source.start(now);
+  }
+}
+
+class SplitFlapElement extends HTMLElement {
+  static observedAttributes = ['rows', 'cols', 'stagger', 'fps', 'sound'];
+
+  #board = null;
+  #cells = [];
+  #lines = [];
+  #align = 'left';
+  #timer = null;
+  #clack = new Clack();
+
+  connectedCallback() {
+    if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
+    this.#build();
+  }
+
+  disconnectedCallback() {
+    this.#stop();
+  }
+
+  attributeChangedCallback(name) {
+    if (!this.shadowRoot) return;
+    if (name === 'fps' || name === 'sound') return;
+    this.#build();
+  }
+
+  /** Text the board has been asked to show. */
+  get lines() {
+    return [...this.#lines];
+  }
+
+  set lines(value) {
+    this.#lines = Array.isArray(value) ? value.map(String) : [String(value ?? '')];
+    this.#board?.setLines(this.#lines, this.#align);
+    this.#start();
+  }
+
+  /** 'left' | 'right' | 'center' — applied on the next assignment to `lines`. */
+  get align() {
+    return this.#align;
+  }
+
+  set align(value) {
+    this.#align = value;
+    this.#board?.setLines(this.#lines, this.#align);
+    this.#start();
+  }
+
+  #number(name, fallback) {
+    const raw = Number(this.getAttribute(name));
+    return Number.isFinite(raw) && raw > 0 ? raw : fallback;
+  }
+
+  #build() {
+    const rows = Math.max(1, Math.round(this.#number('rows', this.#lines.length || 1)));
+    const cols = Math.max(1, Math.round(this.#number('cols', 12)));
+    const stagger = Math.round(Number(this.getAttribute('stagger')) || 0);
+
+    this.#stop();
+    this.#board = new Board({ rows, cols, stagger });
+
+    const style = document.createElement('style');
+    style.textContent = STYLE;
+    const board = document.createElement('div');
+    board.className = 'board';
+    board.setAttribute('role', 'img');
+
+    this.#cells = [];
+    for (let r = 0; r < rows; r += 1) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const cells = [];
+      for (let c = 0; c < cols; c += 1) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.textContent = ' ';
+        row.append(cell);
+        cells.push(cell);
+      }
+      this.#cells.push(cells);
+      board.append(row);
+    }
+
+    this.shadowRoot.replaceChildren(style, board);
+    if (this.#lines.length) {
+      this.#board.setLines(this.#lines, this.#align);
+      this.#start();
+    }
+  }
+
+  #paint(animate) {
+    const shown = this.#board.lines();
+    for (let r = 0; r < this.#cells.length; r += 1) {
+      const row = shown[r];
+      for (let c = 0; c < this.#cells[r].length; c += 1) {
+        const cell = this.#cells[r][c];
+        const next = row[c];
+        if (cell.textContent === next) continue;
+        cell.textContent = next;
+        if (!animate) continue;
+        cell.classList.remove('flip');
+        void cell.offsetWidth;
+        cell.classList.add('flip');
+      }
+    }
+    this.shadowRoot.querySelector('.board')?.setAttribute('aria-label', shown.join(' — ').trim());
+  }
+
+  #start() {
+    if (!this.#board || this.#timer !== null) return;
+    const interval = 1000 / this.#number('fps', 14);
+    const sound = this.hasAttribute('sound');
+    let last = 0;
+    const frame = (now) => {
+      if (now - last >= interval) {
+        last = now;
+        if (this.#board.tick()) {
+          this.#paint(true);
+          if (sound) this.#clack.play();
+        }
+      }
+      if (this.#board.settled) {
+        this.#timer = null;
+        this.#paint(false);
+        this.dispatchEvent(new CustomEvent('settled', { detail: { lines: this.#board.lines() } }));
+        return;
+      }
+      this.#timer = requestAnimationFrame(frame);
+    };
+    this.#timer = requestAnimationFrame(frame);
+  }
+
+  #stop() {
+    if (this.#timer !== null) cancelAnimationFrame(this.#timer);
+    this.#timer = null;
+  }
+}
+
+if (globalThis.customElements && !customElements.get('split-flap')) {
+  customElements.define('split-flap', SplitFlapElement);
+}
+
+// ---- demo/app.js ----
+/**
+ * Demo: a harbor departure board that stays live.
+ *
+ * Departures are generated relative to the moment the page loads, so the
+ * countdowns actually count down, boats leave, and new ones get added to the
+ * bottom of the board — which is the only honest way to show off a display
+ * whose whole job is changing text.
+ */
+
+const ROUTES = [
+  { code: 'ER', name: 'ST. GEORGE', pier: 'SLIP A' },
+  { code: 'SB', name: 'BAY RIDGE', pier: 'SLIP B' },
+  { code: 'RW', name: 'ROCKAWAY', pier: 'SLIP C' },
+  { code: 'AS', name: 'ASTORIA', pier: 'SLIP A' },
+  { code: 'SV', name: 'SOUNDVIEW', pier: 'SLIP D' },
+  { code: 'GI', name: 'GOVERNORS IS', pier: 'SLIP B' },
+];
+
+const COLS = 32;
+const ROWS = 6;
+
+/** Deal out the next `count` departures, first one a couple of minutes out. */
+function schedule(count, now = Date.now()) {
+  const departures = [];
+  let offset = 2 * 60_000;
+  for (let i = 0; i < count; i += 1) {
+    const route = ROUTES[i % ROUTES.length];
+    departures.push({
+      at: now + offset,
+      route,
+      delayed: i > 0 && i % 4 === 0,
+    });
+    offset += (4 + ((i * 7) % 9)) * 60_000;
+  }
+  return departures;
+}
+
+function clockTime(ms) {
+  const date = new Date(ms);
+  let hours = date.getHours() % 12;
+  if (hours === 0) hours = 12;
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}${date.getHours() < 12 ? 'A' : 'P'}`;
+}
+
+function status(departure, now) {
+  const minutes = Math.round((departure.at - now) / 60_000);
+  if (minutes <= 0) return 'DEPARTED';
+  if (minutes <= 1) return 'NOW';
+  if (minutes <= 5) return 'BOARDING';
+  if (departure.delayed) return 'DELAYED';
+  if (minutes >= 60) return `${Math.floor(minutes / 60)} HR`;
+  return `${minutes} MIN`;
+}
+
+function pad(text, width, align = 'left') {
+  const value = String(text).slice(0, width);
+  const fill = ' '.repeat(width - value.length);
+  return align === 'right' ? fill + value : value + fill;
+}
+
+function row(departure, now) {
+  return [
+    pad(clockTime(departure.at), 6),
+    pad(departure.route.code, 2),
+    pad(departure.route.name, 13),
+    pad(status(departure, now), 8, 'right'),
+  ].join(' ');
+}
+
+function start({ board, clock, header }) {
+  let departures = schedule(ROWS + 4);
+
+  if (header) header.lines = ['PIER 11 / WALL ST'];
+  if (clock) clock.align = 'right';
+
+  const render = () => {
+    const now = Date.now();
+    // Boats that have gone stay up for a beat, then fall off the top.
+    departures = departures.filter((departure) => departure.at > now - 45_000);
+    if (departures.length < ROWS + 2) {
+      const last = departures.at(-1)?.at ?? now;
+      departures.push(...schedule(4, last + 6 * 60_000));
+    }
+    board.lines = departures.slice(0, ROWS).map((departure) => row(departure, now));
+    if (clock) clock.lines = [clockTime(now)];
+  };
+
+  render();
+  return setInterval(render, 5000);
+}
+
+const layout = { COLS, ROWS };
+
+const board = document.querySelector('#board');
+start({
+  board,
+  clock: document.querySelector('#clock'),
+  header: document.querySelector('#header'),
+});
+
+const toggle = document.querySelector('#sound');
+toggle.addEventListener('click', () => {
+  const on = board.toggleAttribute('sound');
+  toggle.textContent = 'clack: ' + (on ? 'on' : 'off');
+});
+</script>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "splitflap",
+  "version": "0.1.0",
+  "description": "A split-flap departure board for the web. No dependencies, no build step.",
+  "type": "module",
+  "license": "MIT",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./element": "./src/element.js"
+  },
+  "files": ["src", "README.md", "LICENSE"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test",
+    "build": "node scripts/bundle.js",
+    "demo": "node scripts/serve.js"
+  },
+  "keywords": ["split-flap", "solari", "departure-board", "web-component", "animation"],
+  "sideEffects": ["./src/element.js"]
+}
