@@ -418,6 +418,9 @@ body.sidebar-docked.menu-open{overflow:visible}
 .alert-group-list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
 .alert-item{display:flex;flex-direction:column;gap:6px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--warning);border-radius:8px}
 .alert-item-header{color:var(--navy);font:900 15px/1.25 Lato,Arial,sans-serif}
+/* The dates a planned closure covers. Sits between the headline and the chips because it is read
+   as part of the headline: "no L trains" is only half a fact without "and when". */
+.alert-when{color:var(--muted);font:700 13px/1.3 Lato,Arial,sans-serif}
 .alert-chips{display:flex;flex-wrap:wrap;gap:6px}
 .alert-chip{display:inline-flex;align-items:center;padding:2px 7px;color:var(--navy);background:var(--sunken);border:1px solid var(--line);border-radius:999px;font:900 11px/1.4 Lato,Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase}
 /* The one place on the board where a wall of feed text is the point, so it wraps and stays put

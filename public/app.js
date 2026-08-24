@@ -1070,6 +1070,29 @@ async function loadManualOverride() {
 
 // One alert, in full. The bar above can only ever carry the first one, clipped to two lines; this
 // is where the other nine live, and where the whole of any of them can actually be read.
+// When a planned closure actually bites. Read off the window rather than the server's activeNow
+// flag: alerts are cached for a minute and can be served from the last disk snapshot after a
+// restart, so a stored "happening now" can outlive the closure it described. The times cannot.
+function alertWindowLabel(window) {
+  const start = window?.start ? new Date(window.start) : null;
+  const end = window?.end ? new Date(window.end) : null;
+  if ((start && Number.isNaN(start.getTime())) || (end && Number.isNaN(end.getTime()))) return "";
+  if (!start && !end) return "";
+  const timeZone = data?.meta?.timezone || "America/New_York";
+  const dayOf = (date) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+  const timeOf = (date) => new Intl.DateTimeFormat("en-US", { timeZone, ...hourOptions(), minute: "2-digit" }).format(date);
+  const dateOf = (date) => new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short", month: "short", day: "numeric" }).format(date);
+  // A time on another day needs its date said out loud; one later the same day does not.
+  const stamp = (date, reference) => dayOf(date) === dayOf(reference) ? timeOf(date) : `${dateOf(date)}, ${timeOf(date)}`;
+  const now = new Date();
+  if ((!start || start <= now) && (!end || end >= now)) {
+    return end ? `Now until ${stamp(end, now)}` : "Happening now";
+  }
+  if (!start) return "";
+  const opening = `${dateOf(start)}, ${timeOf(start)}`;
+  return end ? `${opening} – ${stamp(end, start)}` : `From ${opening}`;
+}
+
 function alertRow(alert) {
   const header = alert.header || "NYC Ferry service alert";
   // The bar joins these two with an em dash to make one line. Here there is room to keep them
@@ -1078,10 +1101,14 @@ function alertRow(alert) {
   // "Unknown effect" and "Unknown cause" are what GTFS says when the publisher left the field at its
   // default, which is most of the time. They are the feed admitting it has nothing to add, and a
   // chip saying so is worse than no chip: it takes the eye and pays nothing back.
-  const chips = [alert.effect, alert.cause]
+  // "Planned" leads the chips because it is the first thing a reader wants settled: scheduled work
+  // to plan around, or something that has just gone wrong. It is also what the ordering sorts on,
+  // and an order nobody can see the reason for reads as no order at all.
+  const chips = [alert.planned ? "Planned" : null, alert.effect, alert.cause]
     .filter((chip) => chip && !/^unknown/i.test(chip))
     .map((chip) => `<span class="alert-chip">${escapeHtml(chip)}</span>`)
     .join("");
+  const when = alertWindowLabel(alert.window);
   // Only http(s). An alert is third-party text, and a javascript: URL rendered as a link on a board
   // an agent taps at is not a risk worth taking for a convenience.
   const link = /^https?:\/\//i.test(alert.url || "")
@@ -1089,6 +1116,7 @@ function alertRow(alert) {
     : "";
   return `<li class="alert-item">
     <strong class="alert-item-header">${escapeHtml(header)}</strong>
+    ${when ? `<span class="alert-when">${escapeHtml(when)}</span>` : ""}
     ${chips ? `<span class="alert-chips">${chips}</span>` : ""}
     ${description ? `<p class="alert-item-body">${escapeHtml(description)}</p>` : ""}
     ${link}

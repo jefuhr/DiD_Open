@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   SUBWAY_LOOKAHEAD_MS,
+  currentWindow,
   fetchSiFerryAlerts,
   normalizeSiFerryAlerts,
   normalizeSubwayAlerts
@@ -12,11 +13,12 @@ const now = Date.parse("2026-08-19T20:00:00Z");
 const at = (offsetMs) => Math.floor((now + offsetMs) / 1000);
 
 function subwayEntity({ id = "1", type = "Planned - Part Suspended", header = "No [G] between two places",
-  description = "Use the [A] instead.", routes = ["G"], start = at(60 * 60_000), end = at(8 * 60 * 60_000) } = {}) {
+  description = "Use the [A] instead.", routes = ["G"], start = at(60 * 60_000), end = at(8 * 60 * 60_000),
+  periods = null } = {}) {
   return {
     id,
     alert: {
-      active_period: [{ start, end }],
+      active_period: periods || [{ start, end }],
       informed_entity: routes.map((route) => ({ agency_id: "MTASBWY", route_id: route })),
       header_text: { translation: [{ text: header, language: "en" }] },
       description_text: { translation: [{ text: description, language: "en" }] },
@@ -104,4 +106,46 @@ test("511NY events are cut down to Staten Island Ferry ones", () => {
   assert.equal(alerts.length, 1);
   assert.equal(alerts[0].agency, "Staten Island Ferry");
   assert.equal(alerts[0].id, "si-ferry-1");
+});
+
+// An MTA closure is almost never one window: a week of overnight work is published as five separate
+// periods on one alert. Printing all of them answers nothing, so one is chosen.
+test("the window shown is the one running now, or the next one due", () => {
+  const periods = [
+    { start: at(-6 * 60 * 60 * 1000), end: at(-5 * 60 * 60 * 1000) },  // over
+    { start: at(-30 * 60 * 1000), end: at(30 * 60 * 1000) },           // running
+    { start: at(4 * 60 * 60 * 1000), end: at(9 * 60 * 60 * 1000) }     // tonight
+  ];
+  const running = currentWindow(periods, now);
+  assert.equal(running.activeNow, true);
+  assert.equal(running.window.start, new Date(now - 30 * 60 * 1000).toISOString());
+
+  // The same alert read three hours earlier, when none of it has started: the answer is the
+  // soonest window still to come -- which is the one that will be running by 20:00, not the one
+  // after it -- and the window that has already finished is never offered.
+  const upcoming = currentWindow(periods, now - 3 * 60 * 60 * 1000);
+  assert.equal(upcoming.activeNow, false);
+  assert.equal(upcoming.window.start, new Date(now - 30 * 60 * 1000).toISOString());
+
+  // GTFS leaves the period off when something is simply in force, which is not the same as unknown.
+  assert.deepEqual(currentWindow([], now), { window: null, activeNow: false });
+  assert.equal(currentWindow([{ end: at(60 * 60 * 1000) }], now).activeNow, true);
+});
+
+// Trains stopped right now beat trains stopping later, whatever the clock says about the rest.
+test("closures in force come before closures still to come", () => {
+  const payload = { entity: [
+    subwayEntity({ id: "later", header: "No [7] tonight",
+      periods: [{ start: at(6 * 60 * 60 * 1000), end: at(10 * 60 * 60 * 1000) }] }),
+    subwayEntity({ id: "now", header: "No [A] at the moment",
+      periods: [{ start: at(-60 * 60 * 1000), end: at(60 * 60 * 1000) }] }),
+    subwayEntity({ id: "sooner", header: "No [C] later on",
+      periods: [{ start: at(2 * 60 * 60 * 1000), end: at(5 * 60 * 60 * 1000) }] })
+  ] };
+  const alerts = normalizeSubwayAlerts(payload, { now });
+  assert.deepEqual(alerts.map((alert) => alert.id),
+    ["mta-subway-now", "mta-subway-sooner", "mta-subway-later"]);
+  assert.deepEqual(alerts.map((alert) => alert.activeNow), [true, false, false]);
+  // The feed says which of these the MTA scheduled, and that is carried rather than guessed at.
+  assert.deepEqual(alerts.map((alert) => alert.planned), [true, true, true]);
 });
