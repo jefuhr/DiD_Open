@@ -820,23 +820,23 @@ test("offline shell includes version 75 display assets", async () => {
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=78/);
-  assert.match(index, /app\.js\?v=78/);
-  assert.match(worker, /nyc-ferry-did-shell-v78/);
-  assert.match(worker, /styles\.css\?v=78/);
-  assert.match(worker, /app\.js\?v=78/);
+  assert.match(index, /styles\.css\?v=79/);
+  assert.match(index, /app\.js\?v=79/);
+  assert.match(worker, /nyc-ferry-did-shell-v79/);
+  assert.match(worker, /styles\.css\?v=79/);
+  assert.match(worker, /app\.js\?v=79/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=78"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=78"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=78"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=79"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=79"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=79"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=78'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=79'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=78'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=79'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -1093,5 +1093,21 @@ test("the page only fetches absolute paths the deployment proxies", async () => 
   assert.ok(files.startsWith("BASE,"), "the document entry should come from the page, not a hardcoded path");
   for (const url of [...files.matchAll(/'(\/[^']*)'/g)].map((match) => match[1])) {
     assert.match(url, forwarded, `${url} is precached but not forwarded, so the install would fail`);
+  }
+});
+
+// The route colour on a card's left edge is the fastest read on the board, and every theme that
+// restyles the card has to leave it alone. The Hello Kitty theme did not: it set `border` wholesale
+// in ink and put back only the left border's *width*, so the colour was lost on every row -- most
+// visibly on the partner operators, whose badges are white logo chips and whose edge is therefore
+// the only colour they have. Its own comment said the route colour keeps the left edge.
+test("no theme takes the route colour off the card's left edge", async () => {
+  const css = await readFile(cssPath, "utf8");
+  const themed = [...css.matchAll(/:root\[data-theme="([a-z-]+)"\] \.departure\{([^}]*)\}/g)];
+  assert.ok(themed.length >= 4, "expected the themes that restyle the card to be found");
+  for (const [, theme, body] of themed) {
+    if (!/border/.test(body)) continue;
+    assert.match(body, /border-left:[^;]*var\(--route-color\)/,
+      `the ${theme} theme must keep the route colour on the left edge`);
   }
 });

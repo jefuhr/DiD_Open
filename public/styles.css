@@ -502,7 +502,7 @@ body.sidebar-docked.menu-open{overflow:visible}
 /* Cards get the site's outline-and-drop-shadow treatment. The route colour keeps the left edge:
    it is the fastest read on the card and nothing decorative is allowed to take it. */
 :root[data-theme="hello-kitty"] .departure{
-  border:2px solid var(--ink);border-left-width:.45vw;border-radius:14px;
+  border:2px solid var(--ink);border-left:.45vw solid var(--route-color);border-radius:14px;
   box-shadow:0 3px 0 var(--pink-300);
 }
 :root[data-theme="hello-kitty"] .empty{border-color:var(--ink);border-radius:14px;box-shadow:0 3px 0 var(--pink-300)}
