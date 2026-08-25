@@ -9,16 +9,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
-    <link rel="icon" href="/assets/app-icon.png?v=77" type="image/png" />
+    <link rel="icon" href="/assets/app-icon.png?v=78" type="image/png" />
     <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=77" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=78" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
          come from the manifest, which is why the board installs as a bare shortcut without it.
          It lives under /assets/ because that is a path the deployment's proxy forwards to this
          server — a manifest at the site root is served by the landing page, not by the board. -->
-    <link rel="manifest" href="/assets/site.webmanifest?v=77" />
-    <link rel="stylesheet" href="/styles.css?v=77" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=78" />
+    <link rel="stylesheet" href="/styles.css?v=78" />
     <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
          after the board has already been drawn once, and a saved theme applied there arrives as a
          visible flash of the other one. -->
@@ -104,7 +104,7 @@
             <!-- The change log, beside the drawer's own title. Its own mark rather than a glyph,
                  because it is the one thing in here that is not a landing. -->
             <button type="button" class="changelog-button" id="changelogButton" aria-expanded="false" aria-controls="changelogMenu" aria-label="What's new">
-              <img class="changelog-icon" src="/assets/kitty.png?v=77" alt="" width="128" height="128" />
+              <img class="changelog-icon" src="/assets/kitty.png?v=78" alt="" width="128" height="128" />
               <span class="changelog-bang" id="changelogBang" aria-hidden="true" hidden>!</span>
             </button>
             <button type="button" class="landing-menu-close" id="landingMenuClose">Done</button>
@@ -193,6 +193,6 @@
         </div>
       </div>
     </main>
-    <script type="module" src="/app.js?v=77"></script>
+    <script type="module" src="/app.js?v=78"></script>
   </body>
 </html>

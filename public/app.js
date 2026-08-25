@@ -515,9 +515,12 @@ function relativeTime(deltaSeconds, live = true) {
   return "Tomorrow";
 }
 
+// Uptown and downtown rather than the compass. The feed thinks in direction_id and the compass is
+// the literal reading of it, but nobody working the river says "northbound" — a boat going up the
+// East River is going uptown, and that is the word an agent and a passenger will both use.
 function directionLabel(directionId) {
-  if (String(directionId) === "1") return "Northbound";
-  if (String(directionId) === "0") return "Southbound";
+  if (String(directionId) === "1") return "Uptown";
+  if (String(directionId) === "0") return "Downtown";
   return "Direction unavailable";
 }
 
@@ -702,7 +705,7 @@ function viaLabel(group) {
   return `<small class="via">via ${escapeHtml(group.via.map(shortStop).join(", "))}</small>`;
 }
 
-// The line under the destination. "Northbound" says nothing useful about a boat going home empty,
+// The line under the destination. "Uptown" says nothing useful about a boat going home empty,
 // so these two say what the move actually is.
 function groupContext(group, isOtherOperator) {
   if (group.crewShuttle) return "Crew shuttle";
@@ -948,7 +951,7 @@ function renderTimeline() {
     // The route board has carried this class all along; the timeline needs it too, because the
     // width a badge needs depends on which variant it is naming.
     const variantClass = group.variant ? ` variant-${group.variant.toLowerCase()}` : "";
-    // "Northbound" says nothing about a boat going home empty, so the context line says what the
+    // "Uptown" says nothing about a boat going home empty, so the context line says what the
     // move is instead — the same words the route board puts under the destination.
     const context = group.crewShuttle || group.outOfService
       ? groupContext(group, visual.isOtherOperator)
