@@ -779,6 +779,34 @@ function departureStatus(item) {
     : "";
   return { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals };
 }
+// How far a colour stands off a white card, as the WCAG contrast ratio against it.
+function contrastOnWhite(hex) {
+  const channel = (pair) => {
+    const value = parseInt(pair, 16) / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = 0.2126 * channel(hex.slice(1, 3)) +
+    0.7152 * channel(hex.slice(3, 5)) +
+    0.0722 * channel(hex.slice(5, 7));
+  return 1.05 / (luminance + 0.05);
+}
+
+// The countdown takes the route's colour so an all-partner board is not a column of ferry blue.
+//
+// Not every livery survives being used as text on a white card: South Brooklyn's yellow comes out
+// at 1.5:1 and is effectively invisible, where the Staten Island Ferry's orange manages 2.4:1 and
+// reads. The floor sits between the two on purpose. It is well under the 4.5:1 that body text would
+// need — this is a bold, short, repeated label sitting beside its own time, not prose — but it is
+// enough to keep a colour that cannot be seen at all from being used. Anything below it keeps the
+// board's own accent blue, which is what every countdown used before.
+const ACCENT_MIN_CONTRAST = 2;
+
+function accentColor(color) {
+  return /^#[0-9A-Fa-f]{6}$/.test(color || "") && contrastOnWhite(color) >= ACCENT_MIN_CONTRAST
+    ? color
+    : null;
+}
+
 // The route's own colour, badge and operator labelling, shared by both views.
 function routeVisual(routeId, variant) {
   const route = data.routes[routeId] || {};
@@ -795,7 +823,7 @@ function routeVisual(routeId, variant) {
     routeClass: String(routeId || "default").replace(/[^A-Za-z0-9_-]/g, ""),
     isOtherOperator: Boolean(route.operator) && route.operator !== (data.meta.agencyName || "NYC Ferry"),
     style: /^#[0-9A-Fa-f]{6}$/.test(route.color || "")
-      ? ` style="--route-color:${route.color};--route-text:${/^#[0-9A-Fa-f]{6}$/.test(route.textColor || "") ? route.textColor : "#FFFFFF"}"`
+      ? ` style="--route-color:${route.color};--route-text:${/^#[0-9A-Fa-f]{6}$/.test(route.textColor || "") ? route.textColor : "#FFFFFF"}${accentColor(route.color) ? `;--route-accent:${route.color}` : ""}"`
       : ""
   };
 }

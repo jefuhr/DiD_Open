@@ -820,23 +820,23 @@ test("offline shell includes version 75 display assets", async () => {
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=79/);
-  assert.match(index, /app\.js\?v=79/);
-  assert.match(worker, /nyc-ferry-did-shell-v79/);
-  assert.match(worker, /styles\.css\?v=79/);
-  assert.match(worker, /app\.js\?v=79/);
+  assert.match(index, /styles\.css\?v=80/);
+  assert.match(index, /app\.js\?v=80/);
+  assert.match(worker, /nyc-ferry-did-shell-v80/);
+  assert.match(worker, /styles\.css\?v=80/);
+  assert.match(worker, /app\.js\?v=80/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=79"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=79"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=79"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=80"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=80"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=80"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=79'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=80'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=79'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=80'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -1110,4 +1110,36 @@ test("no theme takes the route colour off the card's left edge", async () => {
     assert.match(body, /border-left:[^;]*var\(--route-color\)/,
       `the ${theme} theme must keep the route colour on the left edge`);
   }
+});
+
+// The countdown takes the route's colour, which only works if a colour nobody can see is refused.
+// South Brooklyn's yellow is 1.5:1 against a white card and the Staten Island Ferry's orange is
+// 2.4:1; the floor has to sit between them, so it is checked against the real liveries rather than
+// against invented ones.
+test("the countdown accent keeps legible route colours and drops the invisible ones", async () => {
+  const app = await readFile(appPath, "utf8");
+  const from = app.indexOf("function contrastOnWhite");
+  const to = app.indexOf("// The route's own colour");
+  assert.ok(from > 0 && to > from, "expected the accent helpers to be found");
+  const { contrastOnWhite, accentColor } =
+    new Function(`${app.slice(from, to)}\nreturn { contrastOnWhite, accentColor };`)();
+
+  // Known ratios, so a change to the maths shows up here rather than on the board.
+  assert.ok(Math.abs(contrastOnWhite("#FF8330") - 2.46) < 0.02, "Staten Island Ferry orange");
+  assert.ok(Math.abs(contrastOnWhite("#ffd100") - 1.46) < 0.02, "South Brooklyn yellow");
+
+  // Carried: the partner liveries this was asked for, and the darker ferry routes.
+  for (const color of ["#FF8330", "#013067", "#00BBE3", "#E6550D", "#00839c", "#4e008e"]) {
+    assert.equal(accentColor(color), color, `${color} is legible enough to use`);
+  }
+  // Refused: the yellows, which vanish on a white card.
+  for (const color of ["#ffd100", "#F7D87D", "#FFE628"]) {
+    assert.equal(accentColor(color), null, `${color} must fall back to the board accent`);
+  }
+  // A missing or malformed colour is not a crash and not a colour.
+  for (const color of [undefined, "", "red", "#fff"]) assert.equal(accentColor(color), null);
+
+  // The stylesheet has to actually read the property, with the old blue as its fallback.
+  const css = await readFile(cssPath, "utf8");
+  assert.match(css, /\.tl-relative\{[^}]*color:var\(--route-accent,#00749e\)/);
 });
