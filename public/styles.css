@@ -1,4 +1,7 @@
 @font-face{font-family:Lato;src:url('/assets/fonts/lato-regular-latin.woff2')}@font-face{font-family:Lato;src:url('/assets/fonts/lato-bold-latin.woff2');font-weight:700}@font-face{font-family:Lato;src:url('/assets/fonts/lato-black-latin.woff2');font-weight:900}@font-face{font-family:Oswald;src:url('/assets/fonts/oswald-variable-latin.woff2');font-weight:500 700}
+/* Flame, the typeface Colophon Foundry drew for Burger King. Loaded for one theme, so it is only
+   fetched when that theme asks for it -- the precache carries it, but nothing else references it. */
+@font-face{font-family:Flame;src:url('/assets/fonts/bk-flame-latin.woff2');font-weight:400 700;font-display:swap}
 /* --card is every raised surface: a departure card, a control, a panel. --sunken is the tint those
    take while pressed. Both exist so a dark theme is a change of palette rather than seventeen
    overrides of a hardcoded white, and both default to exactly what was written literally before, so
@@ -662,6 +665,59 @@ body.sidebar-docked.menu-open{overflow:visible}
 :root[data-theme="kuromi"] .boat-name,
 :root[data-theme="kuromi"] .tl-boat{color:#8e3fb0}
 :root[data-theme="kuromi"] .landing-star[aria-pressed="true"]{color:#ff6fae}
+
+/* Burger King. The 2021 rebrand's own palette -- flame red, flaming orange, BBQ brown on a mayo
+   cream board -- with Flame set on everything the ferry livery sets in Oswald. The brown carries
+   the headings rather than the red: red at 11px on cream is a shout, and this board is read in
+   daylight by somebody with a boat to catch. */
+:root[data-theme="burger-king"]{
+  --navy:#502314;
+  --blue:#D62300;
+  --ink:#3B1B0F;
+  --muted:#8A6A4F;
+  --canvas:#F5EBDC;
+  --card:#FFFDF8;
+  --line:#E7D3B8;
+  --sunken:#F7E4CC;
+  --warning:#FFAA00;
+  font-family:Flame,"Trebuchet MS",Verdana,sans-serif;
+}
+/* Flame everywhere the board would otherwise set Oswald, plus the headings it sets in Lato Black.
+   Same list the pink board overrides, for the same reason: those are the signage faces. */
+:root[data-theme="burger-king"] .board-heading h1,
+:root[data-theme="burger-king"] .clock time,
+:root[data-theme="burger-king"] .route-badge b,
+:root[data-theme="burger-king"] .slot-time-row time,
+:root[data-theme="burger-king"] .tl-head time,
+:root[data-theme="burger-king"] .tl-dest,
+:root[data-theme="burger-king"] .trip-conn-time,
+:root[data-theme="burger-king"] .trip-stop-time,
+:root[data-theme="burger-king"] .filter-menu-head strong,
+:root[data-theme="burger-king"] .landing-menu-head strong,
+:root[data-theme="burger-king"] .boat-assignment{font-family:Flame,"Trebuchet MS",Verdana,sans-serif}
+/* The flame-grill gradient off the top of the board, the way the bag and the cups carry it. Fixed
+   so a scrolling list slides over it rather than dragging it along. */
+:root[data-theme="burger-king"] body{
+  background:linear-gradient(180deg,#FF8732 0,#F5EBDC 38%) fixed;
+}
+/* Rounder than the default board and softer at the edge -- the rebrand's whole shape language is
+   the bun. */
+:root[data-theme="burger-king"] .departure{border-radius:14px;box-shadow:0 2px 0 #E7D3B8}
+:root[data-theme="burger-king"] .empty{border-radius:14px}
+:root[data-theme="burger-king"] .menu-button,
+:root[data-theme="burger-king"] .nearest-button,
+:root[data-theme="burger-king"] .clock-toggle,
+:root[data-theme="burger-king"] .date-bar,
+:root[data-theme="burger-king"] .filter-button,
+:root[data-theme="burger-king"] .sort-toggle,
+:root[data-theme="burger-king"] .filter-menu-panel,
+:root[data-theme="burger-king"] .landing-menu-panel{border-radius:14px}
+:root[data-theme="burger-king"] .scheduled-badge{background:#F7E4CC;border-color:#E7D3B8}
+/* Countdowns and vessel names in the flame red, the way the other themes take their own accent. */
+:root[data-theme="burger-king"] .slot-relative,
+:root[data-theme="burger-king"] .tl-relative,
+:root[data-theme="burger-king"] .boat-name,
+:root[data-theme="burger-king"] .tl-boat{color:#D62300}
 
 /* ============================================================
    Windows XP. Luna: the beige-grey control face, the blue title bar, the 3px rounded buttons with

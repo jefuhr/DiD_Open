@@ -101,7 +101,8 @@ const THEMES = [
   { id: "pompompurin", name: "Pompompurin", note: "Butter yellow, brown beret", color: "#ffd94a" },
   { id: "kuromi", name: "Kuromi", note: "Purple, with a loud pink streak", color: "#4a2d6b" },
   { id: "windows-xp", name: "Windows XP", note: "Luna blue and Tahoma", color: "#0058ee" },
-  { id: "hacker", name: "Hacker", note: "Green phosphor on black", color: "#000000" }
+  { id: "hacker", name: "Hacker", note: "Green phosphor on black", color: "#000000" },
+  { id: "burger-king", name: "Burger King", note: "Flame-grilled, in Flame", color: "#D62300" }
 ];
 // The newest change-log entry this device has already been shown. The mark beside the kitty is
 // meant to say "there is something you have not read", so it has to remember what was read.
@@ -1899,7 +1900,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=84&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=85&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

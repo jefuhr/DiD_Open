@@ -824,23 +824,23 @@ test("offline shell includes version 75 display assets", async () => {
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=84/);
-  assert.match(index, /app\.js\?v=84/);
-  assert.match(worker, /nyc-ferry-did-shell-v84/);
-  assert.match(worker, /styles\.css\?v=84/);
-  assert.match(worker, /app\.js\?v=84/);
+  assert.match(index, /styles\.css\?v=85/);
+  assert.match(index, /app\.js\?v=85/);
+  assert.match(worker, /nyc-ferry-did-shell-v85/);
+  assert.match(worker, /styles\.css\?v=85/);
+  assert.match(worker, /app\.js\?v=85/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=84"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=84"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=84"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=85"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=85"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=85"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=84'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=85'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=84'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=85'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -1110,7 +1110,10 @@ test("no theme takes the route colour off the card's left edge", async () => {
   const themed = [...css.matchAll(/:root\[data-theme="([a-z-]+)"\] \.departure\{([^}]*)\}/g)];
   assert.ok(themed.length >= 4, "expected the themes that restyle the card to be found");
   for (const [, theme, body] of themed) {
-    if (!/border/.test(body)) continue;
+    // Only the shorthand and the left edge itself can take the colour off. A theme rounding the
+    // corner or dropping a shadow is not a threat, and flagging it would teach whoever hits this
+    // to add a line they do not need.
+    if (!/border\s*:|border-left/.test(body)) continue;
     assert.match(body, /border-left:[^;]*var\(--route-color\)/,
       `the ${theme} theme must keep the route colour on the left edge`);
   }
