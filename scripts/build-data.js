@@ -238,10 +238,13 @@ export function stopLandingIndex(landings) {
   const index = new Map();
   for (const [key, landing] of Object.entries(landings || {})) {
     if (!landing || landing.unused) continue;
-    const landingId = Number(key);
-    for (const stopId of landing.stopIds || []) index.set(String(stopId), landingId);
+    // A hub is a pier where several routes meet, so somebody getting off has a real choice to read
+    // rather than one onward boat. Named in config/landings.json because which piers those are is a
+    // fact about the harbour, not about the code.
+    const entry = { landingId: Number(key), hub: landing.hub === true };
+    for (const stopId of landing.stopIds || []) index.set(String(stopId), entry);
     for (const feed of Object.values(PARTNER_FEEDS)) {
-      for (const stopId of landing[feed.stopIdsKey] || []) index.set(`${feed.prefix}${stopId}`, landingId);
+      for (const stopId of landing[feed.stopIdsKey] || []) index.set(`${feed.prefix}${stopId}`, entry);
     }
   }
   return index;
@@ -257,7 +260,8 @@ function stopDirectory({ tripSchedules, nameOf, landingIndex }) {
       if (stops[call.stopId]) continue;
       const name = nameOf(call.stopId);
       if (!name) continue;
-      stops[call.stopId] = { name, landingId: landingIndex.get(call.stopId) ?? null };
+      const landing = landingIndex.get(call.stopId);
+      stops[call.stopId] = { name, landingId: landing?.landingId ?? null, ...(landing?.hub ? { hub: true } : {}) };
     }
   }
   return stops;

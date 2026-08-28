@@ -26,7 +26,7 @@ function index(departures, extra = {}) {
       { serviceId: "wk", date: "2026-09-07", added: false }
     ],
     routes: { ER: { shortName: "ER", color: "#00839C", textColor: "#FFFFFF", operator: "NYC Ferry" } },
-    stops: { 87: { name: "Wall St/Pier 11", landingId: 16 }, 18: { name: "Greenpoint", landingId: 12 }, bus1: { name: "Beach 108 St", landingId: null } },
+    stops: { 87: { name: "Wall St/Pier 11", landingId: 16, hub: true }, 18: { name: "Greenpoint", landingId: 12 }, bus1: { name: "Beach 108 St", landingId: null } },
     tripSchedules: {
       t1: { stops: [
         { stopId: "87", sequence: 1, departureSeconds: 43200, arrivalSeconds: 43200 },
@@ -249,4 +249,27 @@ test("the freshest report wins when a boat is working two trips at once", () => 
     { tripId: "b", boat: "ER3", boatName: "New Report", updatedAtEpochSeconds: 200 }
   ]);
   assert.equal(vessels.get("ER3").boatName, "New Report");
+});
+
+// Pier 11 and East 34th are where the routes meet, so stepping off at one of them is a real choice
+// between boats rather than a wait for the only onward sailing. They get two more rows than a pier
+// where everything goes the same way.
+test("a hub pier offers more onward boats than an ordinary one", () => {
+  const many = [];
+  for (let index = 0; index < 8; index += 1) {
+    // Eight boats out of each pier, ten minutes apart, all after this trip calls.
+    many.push(departure({ tripId: `hub${index}`, stopId: "87", seconds: 46800 + index * 600, departureTime: "13:00:00" }));
+    many.push(departure({ tripId: `local${index}`, stopId: "18", seconds: 46800 + index * 600, departureTime: "13:00:00" }));
+  }
+  const view = index([departure({ tripId: "t1" }), ...many]);
+  const result = tripConnections({ index: view, tripId: "t1", now: new Date("2026-08-27T15:00:00Z") });
+  const hub = result.stops.find((stop) => stop.stopId === "87");
+  const ordinary = result.stops.find((stop) => stop.stopId === "18");
+  assert.equal(hub.hub, true);
+  assert.equal(hub.limit, 5, "Pier 11 and East 34th show five");
+  assert.equal(ordinary.hub, false);
+  assert.equal(ordinary.limit, 3, "everywhere else shows three");
+  // Spares ride along so that hiding an operator costs a row of that operator, not a row of the
+  // list. The client filters and then cuts to `limit`.
+  assert.ok(hub.connections.length > hub.limit, "the server sends headroom above what is shown");
 });

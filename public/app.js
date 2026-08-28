@@ -1260,7 +1260,9 @@ function connectionsFor(stop) {
   if (!tripView?.connections) return `<li class="trip-conn-note">${escapeHtml(tripView?.note || "Checking…")}</li>`;
   const all = tripView.connections.get(stop.stopId) || [];
   const visible = all.filter((connection) => !connection.operator || !hiddenOperators().has(connection.operator));
-  if (visible.length) return visible.slice(0, 3).map(connectionRow).join("");
+  // The server says how many this pier is worth showing — more at a hub, where several routes meet
+  // and there is an actual choice to read.
+  if (visible.length) return visible.slice(0, tripView.limits?.get(stop.stopId) || 3).map(connectionRow).join("");
   if (all.length) return `<li class="trip-conn-note">Hidden by the operator filter</li>`;
   if (tripStopLanding(stop.stopId) === null) return `<li class="trip-conn-note">Not served by this board</li>`;
   return `<li class="trip-conn-note">Nothing else leaves after this boat gets in</li>`;
@@ -1304,6 +1306,7 @@ async function loadTripConnections(tripId) {
       return;
     }
     tripView.connections = new Map((payload.stops || []).map((stop) => [stop.stopId, stop.connections || []]));
+    tripView.limits = new Map((payload.stops || []).map((stop) => [stop.stopId, stop.limit || 3]));
     // Names and landings for a device whose cached payload predates data.stops.
     for (const stop of payload.stops || []) {
       if (stop.name) tripView.names.set(stop.stopId, stop.name);
@@ -1896,7 +1899,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=83&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=84&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
