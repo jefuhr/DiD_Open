@@ -64,7 +64,7 @@ test("display data includes the configured slideshow interval and all directions
   assert.equal(data.meta.departureWindowMinutes, display.departureWindowMinutes);
   assert.equal(data.meta.departuresShown, display.departuresShown);
   assert.equal(data.meta.routesShown, display.routesShown);
-  assert.equal(data.meta.schemaVersion, 9);
+  assert.equal(data.meta.schemaVersion, 10);
   assert.ok(data.tripSchedules[data.departures[0].tripId]?.stops.length > 1);
   const directions = new Set(data.departures.map((item) => `${item.routeId}|${item.directionId}|${item.destination}`));
   assert.ok(directions.size > 4, "Pier 11 should require more than one four-route slide");
@@ -147,7 +147,7 @@ test("NY Waterway departures are omitted when waterwayEnabled is false", async (
   assert.equal(data.meta.waterway.enabled, false);
   assert.equal(data.meta.waterway.agencyName, null);
   assert.equal(data.departures.some((item) => item.routeId.startsWith("wtr:")), false);
-  assert.equal(data.meta.schemaVersion, 9);
+  assert.equal(data.meta.schemaVersion, 10);
 });
 
 test("NY Waterway departures are omitted for landings without a waterwayStopIds mapping", async () => {

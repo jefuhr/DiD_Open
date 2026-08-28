@@ -521,6 +521,10 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = 
     console, Promise, Intl, Math, JSON, Number, String, Object, Array, Boolean, Error, Set, Map, RegExp,
     isNaN, parseInt, parseFloat, URL, encodeURIComponent, decodeURIComponent, Date: Frozen,
     HTMLInputElement: class {}, HTMLTextAreaElement: class {},
+    // Standard in every browser this ships to, and used by the filter, theme and trip panels to
+    // find the control that opened them. Without it here the harness is a browser the client does
+    // not actually support.
+    CSS: { escape: (value) => String(value).replace(/["\\\]]/g, "\\$&") },
     document: {
       documentElement: { dataset: {}, style: { setProperty() {}, removeProperty() {} } },
       body: { classList: { toggle() {}, add() {}, remove() {} } },
@@ -820,23 +824,23 @@ test("offline shell includes version 75 display assets", async () => {
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=80/);
-  assert.match(index, /app\.js\?v=80/);
-  assert.match(worker, /nyc-ferry-did-shell-v80/);
-  assert.match(worker, /styles\.css\?v=80/);
-  assert.match(worker, /app\.js\?v=80/);
+  assert.match(index, /styles\.css\?v=81/);
+  assert.match(index, /app\.js\?v=81/);
+  assert.match(worker, /nyc-ferry-did-shell-v81/);
+  assert.match(worker, /styles\.css\?v=81/);
+  assert.match(worker, /app\.js\?v=81/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=80"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=80"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=80"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=81"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=81"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=81"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=80'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=81'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=80'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=81'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -1142,4 +1146,93 @@ test("the countdown accent keeps legible route colours and drops the invisible o
   // The stylesheet has to actually read the property, with the old blue as its fallback.
   const css = await readFile(cssPath, "utf8");
   assert.match(css, /\.tl-relative\{[^}]*color:var\(--route-accent,#00749e\)/);
+});
+
+// ---------------------------------------------------------------------------------------------
+// The trip view.
+// ---------------------------------------------------------------------------------------------
+
+// lib/connections.js is a hand port of the scheduling rules in public/app.js, because the client is
+// run here through vm.runInContext as a classic script and so cannot import a shared module. Two
+// copies of a rule drift, and this one drifts silently: the failure is a boat offered on a day it
+// does not run. So the two are made to answer the same question at the same instant and compared.
+test("the server picks the same connections the client would", async () => {
+  const { buildDisplayData } = await import("../scripts/build-data.js");
+  const { createConnectionIndex, nextDepartures } = await import("../lib/connections.js");
+  // Pier 11: the busiest landing on the board, fourteen routes and 450-odd departures.
+  const payload = await buildDisplayData({ landingNumber: 16 });
+  const index = createConnectionIndex(new Map([[16, payload]]));
+
+  const instants = [
+    "2026-08-27T16:00:00Z", // a Thursday lunchtime
+    "2026-08-29T16:00:00Z", // a Saturday
+    "2026-09-07T16:00:00Z", // Labor Day, a Monday running Sunday service
+    "2026-08-28T04:30:00Z"  // 00:30, where yesterday's service day is still sailing
+  ];
+  for (const now of instants) {
+    const view = await board({ now, payload });
+    // The client's own answer for this stop, minus the rows nobody can board -- which is the same
+    // cut lib/connections.js makes when it builds its index.
+    const client = JSON.parse(view.run(`JSON.stringify(
+      timelineDepartures(new Date()).filter((row) =>
+        row.departure.stopId === "87" &&
+        !row.departure.outOfService && !row.departure.crewShuttle && !row.departure.arrival)
+        .slice(0, 2).map((row) => String(row.departure.tripId) + "@" + row.departure.departureTime))`));
+    const server = nextDepartures({ index, stopId: "87", now: new Date(now), limit: 2, stale: true })
+      .map((item) => `${item.tripId}@${item.departureTime}`);
+    assert.deepEqual(server, client, `client and server disagree at ${now}`);
+  }
+});
+
+test("a departure row opens its trip, and a stop in it switches landing", async () => {
+  const { buildDisplayData } = await import("../scripts/build-data.js");
+  const payload = await buildDisplayData({ landingNumber: 16 });
+  const view = await board({ now: "2026-08-27T16:00:00Z", payload });
+
+  // Every openable row carries the trip it belongs to, in whichever view is rendered.
+  const rendered = view.node("departures").innerHTML;
+  assert.match(rendered, /data-trip-id="/);
+  assert.match(rendered, /role="button"/);
+  const tripId = rendered.match(/data-trip-id="([^"]+)"/)[1];
+  const stopId = rendered.match(/data-stop-id="([^"]+)"/)[1];
+
+  view.run(`openTripView(${JSON.stringify(tripId)}, ${JSON.stringify(stopId)}, 0)`);
+  assert.equal(view.node("tripMenu").hidden, false, "the trip view opens");
+  const stops = view.node("tripStops").innerHTML;
+  assert.match(stops, /class="trip-stop/);
+  assert.match(stops, /Wall St\/Pier 11/, "the stop list names its piers from the payload, with no network");
+  assert.match(stops, /data-landing-id="/, "a served pier is tappable");
+
+  // Closing puts the view away and forgets the trip.
+  view.run("setTripOpen(false)");
+  assert.equal(view.node("tripMenu").hidden, true);
+});
+
+// A synthetic row -- a home-port run, a crew shuttle -- has no published trip behind it, so there is
+// nothing to open. They are excluded by having no tripSchedules entry rather than by being named,
+// which is what keeps the rule from rotting as new kinds of synthetic row are added.
+test("only rows with a published trip behind them are openable", async () => {
+  const app = await readFile(appPath, "utf8");
+  const helper = app.slice(app.indexOf("function tripAttrs"), app.indexOf("function departureCell"));
+  assert.match(helper, /data\?\.tripSchedules\?\.\[item\.tripId\]\?\.stops/);
+  assert.match(helper, /stops\.length < 2/);
+  // Both views go through the one helper, so they cannot disagree about which rows open.
+  assert.equal((app.match(/\$\{tripAttrs\(/g) || []).length, 2);
+});
+
+test("the trip view is wired into the surfaces that can bury it", async () => {
+  const [app, index, css] = await Promise.all([
+    readFile(appPath, "utf8"), readFile(indexPath, "utf8"), readFile(cssPath, "utf8")
+  ]);
+  // Escape closes it, and it is tested first because it is the topmost surface.
+  const escapes = [...app.matchAll(/event\.key === "Escape" && !elements\.(\w+)\.hidden/g)].map((match) => match[1]);
+  assert.equal(escapes[0], "tripMenu");
+  // The arrow keys must not step the date underneath an open sheet.
+  assert.match(app, /if \(!elements\.tripMenu\.hidden \|\|/);
+  // Switching landing invalidates the trip: a new payload has different trip schedules.
+  assert.match(app, /setTripOpen\(false\);\n\s*elements\.landing\.textContent/);
+  // It reuses the sheet's own classes, which is what gets it themed on all eight boards for free.
+  assert.match(index, /class="filter-menu trip-menu" id="tripMenu" hidden/);
+  assert.match(index, /class="filter-menu-panel trip-panel"/);
+  assert.match(css, /\.trip-menu \.filter-menu-panel\{height:100%/);
 });

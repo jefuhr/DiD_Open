@@ -16,6 +16,12 @@ const elements = {
   alertMenu: document.querySelector("#alertMenu"),
   alertMenuScrim: document.querySelector("#alertMenuScrim"),
   alertMenuClose: document.querySelector("#alertMenuClose"),
+  tripMenu: document.querySelector("#tripMenu"),
+  tripMenuScrim: document.querySelector("#tripMenuScrim"),
+  tripMenuClose: document.querySelector("#tripMenuClose"),
+  tripMenuTitle: document.querySelector("#tripMenuTitle"),
+  tripSummary: document.querySelector("#tripSummary"),
+  tripStops: document.querySelector("#tripStops"),
   alertList: document.querySelector("#alertList"),
   changelogButton: document.querySelector("#changelogButton"),
   changelogBang: document.querySelector("#changelogBang"),
@@ -112,6 +118,10 @@ let nearestTimer = null;
 // showing tomorrow and then picked up cold the next morning would be confidently wrong about the
 // one thing it exists to state, so every start and every landing switch returns to today.
 let viewDate = null;
+// The trip the fullscreen view is showing, and a token that lets a slow response for a trip the
+// user has already navigated away from be dropped rather than painted over the new one.
+let tripView = null;
+let tripRequest = 0;
 let data;
 let realtime = { updates: [], vehicles: [], available: false, stale: true };
 let serviceAlerts = null;
@@ -828,9 +838,29 @@ function routeVisual(routeId, variant) {
   };
 }
 
+// What makes a row openable, shared by both views so they cannot disagree about which rows are.
+//
+// A row is tappable only if the payload carries the trip's stop list, which is the same thing as
+// asking whether there is anything to show. That single condition also settles every synthetic row
+// without naming one: the home-port runs and crew shuttles are minted after tripSchedules is built
+// (scripts/build-data.js), so their ids are not in it and they stay inert. Deadheads and Seastreak
+// arrivals keep their real feed trip id and do open — "where is this empty boat going" and "where
+// did this arrival come from" are questions with published answers.
+function tripAttrs(item) {
+  const stops = data?.tripSchedules?.[item.tripId]?.stops;
+  if (!Array.isArray(stops) || stops.length < 2) return "";
+  const label = `${departureLabel(item)} to ${item.destination || "destination unavailable"} — show this trip's stops`;
+  // role/tabindex rather than a real <button>: these sit inside a CSS grid and a flex column with
+  // overflow and route-colour custom properties on them, and a button's own layout rules are not
+  // worth the regression for an affordance the delegated listener provides either way.
+  return ` data-trip-id="${escapeHtml(String(item.tripId))}" data-stop-id="${escapeHtml(String(item.stopId))}"` +
+    ` data-departure-seconds="${Number(item.seconds) || 0}"` +
+    ` role="button" tabindex="0" aria-haspopup="dialog" aria-label="${escapeHtml(label)}"`;
+}
+
 function departureCell(item) {
   const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } = departureStatus(item);
-  return `<div class="departure-slot">
+  return `<div class="departure-slot"${tripAttrs(item)}>
     <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta, item.live !== false))}</span></div>
     <span class="departure-last-slot">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
   </div>`;
@@ -1004,7 +1034,7 @@ function renderTimeline() {
     // The destination gets a line of its own because it is the longest thing on the row and the
     // one that reads worst truncated.
     const notInService = group.outOfService || group.crewShuttle ? " timeline-row-oos" : "";
-    return `<article class="departure timeline-row route-${visual.routeClass}${variantClass}${notInService}"${visual.style}>
+    return `<article class="departure timeline-row route-${visual.routeClass}${variantClass}${notInService}"${visual.style}${tripAttrs(departure)}>
       <div class="tl-head">
         <time>${departureLabel(departure)}</time>
         <span class="route-badge${visual.partnerLogo ? " route-badge-image" : ""}">${visual.badgeContent}${variantBadge}</span>
@@ -1177,6 +1207,164 @@ function renderAlertMenu() {
     </li>`).join("");
 }
 
+// Connections are cached by the service worker with no expiry, so a response fetched hours ago
+// comes back offline looking exactly like a fresh one. Times that old are worse than no times.
+const TRIP_CONNECTIONS_MAX_AGE_MS = 5 * 60 * 1000;
+
+// A call's own clock time. tripSchedules carries seconds; adjustedTime speaks GTFS "HH:MM:SS", and
+// going through it keeps the 12/24-hour toggle working here too.
+function stopClock(seconds) {
+  const whole = Math.max(0, Math.floor(seconds));
+  return adjustedTime(`${Math.floor(whole / 3600)}:${String(Math.floor((whole % 3600) / 60)).padStart(2, "0")}:00`, 0);
+}
+
+function tripStopName(stopId) {
+  return data?.stops?.[stopId]?.name || tripView?.names?.get(stopId) || stopId;
+}
+
+function tripStopLanding(stopId) {
+  const local = data?.stops?.[stopId];
+  if (local) return local.landingId ?? null;
+  return tripView?.landings?.get(stopId) ?? null;
+}
+
+function connectionRow(connection) {
+  const style = /^#[0-9A-Fa-f]{6}$/.test(connection.color || "")
+    ? ` style="--route-color:${connection.color};--route-text:${/^#[0-9A-Fa-f]{6}$/.test(connection.textColor || "") ? connection.textColor : "#FFFFFF"}"`
+    : "";
+  const delay = Number(connection.delaySeconds);
+  const delayLabel = connection.hasLiveTiming && Number.isFinite(delay) && delay >= 60
+    ? `<span class="trip-conn-delay">+${Math.max(1, Math.round(delay / 60))} min</span>`
+    : "";
+  // Direction is rendered through the board's own vocabulary rather than the server's, so
+  // "Uptown" is decided in exactly one place.
+  const where = [directionLabel(connection.directionId), connection.destination]
+    .filter((part) => part && part !== "Direction unavailable").join(" · ");
+  return `<li class="trip-conn"${style}>
+    <span class="trip-conn-badge">${escapeHtml(connection.shortName || connection.routeId)}</span>
+    <span class="trip-conn-time">${escapeHtml(adjustedTime(connection.departureTime, 0))}</span>
+    <span class="trip-conn-where">${escapeHtml(where)}</span>
+    ${delayLabel}
+    <span class="trip-conn-boat">${connection.boatName ? escapeHtml(connection.boatName) : ""}</span>
+  </li>`;
+}
+
+// One stop's connections, or the reason there are none. The distinction matters: a stop emptied by
+// the operator filter must never read as a stop with no boats left, which is the same principle the
+// board's own empty state follows.
+function connectionsFor(stop) {
+  if (!tripView?.connections) return `<li class="trip-conn-note">${escapeHtml(tripView?.note || "Checking…")}</li>`;
+  const all = tripView.connections.get(stop.stopId) || [];
+  const visible = all.filter((connection) => !connection.operator || !hiddenOperators().has(connection.operator));
+  if (visible.length) return visible.slice(0, 2).map(connectionRow).join("");
+  if (all.length) return `<li class="trip-conn-note">Hidden by the operator filter</li>`;
+  if (tripStopLanding(stop.stopId) === null) return `<li class="trip-conn-note">Not served by this board</li>`;
+  return `<li class="trip-conn-note">No more departures today</li>`;
+}
+
+function renderTripView() {
+  if (!tripView) return;
+  const stops = tripView.stops;
+  elements.tripSummary.textContent = tripView.summary;
+  elements.tripStops.innerHTML = stops.map((stop) => {
+    // Keyed on sequence, not stop id: a loop trip calls at the same pier twice and dimming by id
+    // would grey out the wrong half of it.
+    const past = stop.sequence < tripView.sequence;
+    const current = stop.sequence === tripView.sequence;
+    const landingId = tripStopLanding(stop.stopId);
+    const time = stop.departureSeconds ?? stop.arrivalSeconds;
+    const head = `<span>${escapeHtml(tripStopName(stop.stopId))}</span>` +
+      `${current ? `<span class="trip-stop-you">You are here</span>` : ""}` +
+      `<span class="trip-stop-time">${time == null ? "" : escapeHtml(stopClock(time))}</span>`;
+    const headTag = landingId === null
+      ? `<div class="trip-stop-head trip-stop-static">${head}</div>`
+      : `<button type="button" class="trip-stop-head" data-landing-id="${landingId}">${head}</button>`;
+    return `<li class="trip-stop${past ? " is-past" : ""}${current ? " is-current" : ""}">
+      ${headTag}
+      <ul class="trip-conns">${connectionsFor(stop)}</ul>
+    </li>`;
+  }).join("");
+}
+
+async function loadTripConnections(tripId) {
+  const token = tripRequest;
+  try {
+    const response = await fetch(`/api/connections?tripId=${encodeURIComponent(tripId)}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Connections responded ${response.status}`);
+    const payload = await response.json();
+    if (token !== tripRequest || !tripView) return;
+    const age = Date.now() - Date.parse(payload.generatedAt || "");
+    if (Number.isFinite(age) && age > TRIP_CONNECTIONS_MAX_AGE_MS) {
+      tripView.note = "Saved connections were too old to show. These are the trip's stops.";
+      renderTripView();
+      return;
+    }
+    tripView.connections = new Map((payload.stops || []).map((stop) => [stop.stopId, stop.connections || []]));
+    // Names and landings for a device whose cached payload predates data.stops.
+    for (const stop of payload.stops || []) {
+      if (stop.name) tripView.names.set(stop.stopId, stop.name);
+      tripView.landings.set(stop.stopId, stop.landingId ?? null);
+    }
+    if (payload.stale) tripView.summary = `${tripView.summary} · Saved`;
+    renderTripView();
+  } catch {
+    if (token !== tripRequest || !tripView) return;
+    tripView.note = navigator.onLine === false
+      ? "No connection. Showing this trip's stops only."
+      : "Connections could not be loaded. These are the trip's stops.";
+    renderTripView();
+  }
+}
+
+function openTripView(tripId, stopId, seconds) {
+  const schedule = data?.tripSchedules?.[tripId];
+  if (!schedule?.stops?.length || schedule.stops.length < 2) return;
+  const stops = [...schedule.stops].sort((left, right) => left.sequence - right.sequence);
+  // Which call was tapped. Time as well as id, because a loop trip calls at the same pier twice.
+  const tapped = stops.find((stop) => stop.stopId === stopId &&
+    (stop.departureSeconds === seconds || stop.arrivalSeconds === seconds)) ||
+    stops.find((stop) => stop.stopId === stopId);
+  const route = data?.routes?.[data?.departures?.find((item) => item.tripId === tripId)?.routeId] || {};
+  const destination = tripStopName(stops.at(-1).stopId);
+  tripRequest += 1;
+  tripView = {
+    tripId, stopId, sequence: tapped?.sequence ?? stops[0].sequence, stops,
+    connections: null, note: "Checking…",
+    names: new Map(), landings: new Map(),
+    summary: `${route.shortName || ""} ${destination ? `to ${destination}` : ""} · ${stops.length} stops`.trim()
+  };
+  renderTripView();
+  setTripOpen(true);
+  // The endpoint answers for now. On a browsed day that answer would be about the wrong date, and a
+  // confidently wrong connection is worse than none, so the stop list stands on its own.
+  if (!viewFrame(new Date()).live) {
+    tripView.note = "Connections are shown for today only.";
+    renderTripView();
+    return;
+  }
+  loadTripConnections(tripId);
+}
+
+function refreshTripConnections() {
+  if (!tripView || elements.tripMenu.hidden || !viewFrame(new Date()).live) return;
+  loadTripConnections(tripView.tripId);
+}
+
+function setTripOpen(open) {
+  elements.tripMenu.hidden = !open;
+  if (open) {
+    elements.tripMenuClose.focus();
+    return;
+  }
+  // Unlike every other sheet the opener is not a fixed button — render() replaces the row that
+  // opened this within fifteen seconds — so focus goes back to the row only if it is still there.
+  const row = tripView && elements.departures.querySelector(
+    `[data-trip-id="${CSS.escape(String(tripView.tripId))}"][data-stop-id="${CSS.escape(String(tripView.stopId))}"]`);
+  tripView = null;
+  tripRequest += 1;
+  row?.focus();
+}
+
 function setAlertMenuOpen(open) {
   // Nothing to expand into. The bar is disabled in that state, so this only guards the keyboard.
   if (open && !(serviceAlerts?.alerts || []).length) return;
@@ -1289,6 +1477,9 @@ async function loadRealtime() {
     }
   }
   render();
+  // The open trip view ages at the same rate the board does, and rides the same timer rather than
+  // starting one of its own.
+  refreshTripConnections();
 }
 
 function selectedLanding() {
@@ -1320,6 +1511,8 @@ async function load() {
   // switching docks means "and keep showing me next Tuesday".
   resetSchedule();
   viewDate = null;
+  // A different landing is a different payload, and the open trip belonged to the old one.
+  setTripOpen(false);
   elements.landing.textContent = data.meta.landing.displayName;
   renderLandingList();
   // The operator rows come from the payload, so a new landing means a new list — and a filter that
@@ -1617,6 +1810,29 @@ elements.filterList.addEventListener("click", (event) => {
 elements.serviceAlerts.addEventListener("click", () => setAlertMenuOpen(elements.alertMenu.hidden));
 elements.alertMenuClose.addEventListener("click", () => setAlertMenuOpen(false));
 elements.alertMenuScrim.addEventListener("click", () => setAlertMenuOpen(false));
+elements.tripMenuClose.addEventListener("click", () => setTripOpen(false));
+elements.tripMenuScrim.addEventListener("click", () => setTripOpen(false));
+// A row opens the trip it belongs to. Delegated because the board is rewritten every fifteen
+// seconds and per-row listeners would be re-bound with it.
+elements.departures.addEventListener("click", (event) => {
+  const row = event.target.closest?.("[data-trip-id]");
+  if (row) openTripView(row.dataset.tripId, row.dataset.stopId, Number(row.dataset.departureSeconds));
+});
+elements.departures.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const row = event.target.closest?.("[data-trip-id]");
+  if (!row) return;
+  // Space scrolls the departures list otherwise.
+  event.preventDefault();
+  openTripView(row.dataset.tripId, row.dataset.stopId, Number(row.dataset.departureSeconds));
+});
+// Tapping a pier is the same act as picking it from the drawer, so it is the same code path.
+elements.tripStops.addEventListener("click", (event) => {
+  const head = event.target.closest?.("[data-landing-id]");
+  if (!head) return;
+  setTripOpen(false);
+  selectLanding(Number(head.dataset.landingId));
+});
 elements.changelogButton.addEventListener("click", () => setChangelogOpen(elements.changelogMenu.hidden));
 elements.changelogMenuClose.addEventListener("click", () => setChangelogOpen(false));
 elements.changelogMenuScrim.addEventListener("click", () => setChangelogOpen(false));
@@ -1631,6 +1847,7 @@ elements.datePrev.addEventListener("click", () => stepDate(-1));
 elements.dateNext.addEventListener("click", () => stepDate(1));
 elements.dateCurrent.addEventListener("click", showToday);
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.tripMenu.hidden) return setTripOpen(false);
   if (event.key === "Escape" && !elements.landingMenu.hidden && !railDocked()) return setMenuOpen(false);
   if (event.key === "Escape" && !elements.filterMenu.hidden) return setFilterOpen(false);
   if (event.key === "Escape" && !elements.themeMenu.hidden) return setThemeOpen(false);
@@ -1639,7 +1856,7 @@ document.addEventListener("keydown", (event) => {
   // Arrow keys page through the schedule, which is how anyone reaches for a date stepper on a
   // desktop board. Only when the landing menu is closed and nothing is being typed into.
   // A docked rail does not swallow the arrow keys: it is part of the board, not a dialog over it.
-  if ((!elements.landingMenu.hidden && !railDocked()) || !elements.filterMenu.hidden || !elements.themeMenu.hidden || !elements.alertMenu.hidden || !elements.changelogMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (!elements.tripMenu.hidden || (!elements.landingMenu.hidden && !railDocked()) || !elements.filterMenu.hidden || !elements.themeMenu.hidden || !elements.alertMenu.hidden || !elements.changelogMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (event.key === "ArrowLeft") stepDate(-1);
   else if (event.key === "ArrowRight") stepDate(1);
@@ -1673,7 +1890,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=72&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=81&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

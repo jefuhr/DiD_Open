@@ -4,6 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { landingChoices, loadAllLandingData, operatorRoster, stopIdsForLanding } from "./lib/landing-data.js";
+import { clampLimit, createConnectionIndex, tripConnections } from "./lib/connections.js";
 import { createCounterService } from "./lib/counters.js";
 import { openStatsStore } from "./lib/stats-store.js";
 import { createManualOverrideService } from "./lib/manual-overrides.js";
@@ -37,6 +38,10 @@ console.log(`Loaded ${landingData.byLanding.size} of ${LANDING_CHOICES.length} l
 const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json") });
 const nyuRealtimeService = createNyuRealtimeService({ loadDisplay: async () => landingData.merged, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
 const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROOT, "state/service-alerts.json") });
+// Every stop on the board, indexed by the pier it belongs to, so the trip view can be told what
+// leaves from the far end of a sailing. Built once from the landings already in memory and holding
+// their departures by reference — see lib/connections.js.
+const connectionIndex = createConnectionIndex(landingData.byLanding);
 // The landings this server actually built, which is what a notice can meaningfully be posted for.
 const LANDING_IDS = new Set(landingData.available.map((landing) => landing.id));
 const manualOverrideService = createManualOverrideService({ statePath: path.join(ROOT, "state/manual-overrides.json"), landingIds: LANDING_IDS });
@@ -161,6 +166,33 @@ async function handle(request, response) {
     else if (result.stale) counters.event("realtime-stale");
     else counters.event("realtime-ok");
     return json(response, result.available ? 200 : 503, result);
+  }
+  // What else leaves from the stops one trip calls at. The client cannot answer this from its own
+  // payload — that is scoped to a single landing — so it asks here, naming only the trip.
+  //
+  // Deliberately no time parameter. The service worker caches every /api/ URL network-first and
+  // nothing prunes that cache until a version bump, so a timestamp in the query string would grow
+  // it without bound; one entry per trip ever tapped is finite and worth re-serving offline.
+  if (url.pathname === "/api/connections") {
+    const tripId = (url.searchParams.get("tripId") || "").trim();
+    if (!tripId) return json(response, 400, { error: "tripId is required." });
+    // Realtime is an enrichment here, never a precondition: a feed that is down should cost the
+    // trip view its delays and vessel names, not the stop list it exists to show.
+    let updates = new Map(), vehicles = new Map(), stale = true;
+    try {
+      const [ferry, nyu] = await Promise.all([realtimeService.getCurrent(), nyuRealtimeService.getCurrent()]);
+      // System-wide, before /api/realtime narrows them to one landing — which is exactly the data
+      // this endpoint needs and the only place it exists.
+      updates = new Map([...(ferry.updates || []), ...(nyu.updates || [])].map((item) => [`${item.tripId}|${item.stopId}`, item]));
+      vehicles = new Map((ferry.vehicles || []).map((item) => [String(item.tripId), item]));
+      stale = Boolean(ferry.stale || nyu.stale) || !(ferry.available || nyu.available);
+    } catch { /* schedule-only, and the payload says so */ }
+    const result = tripConnections({
+      index: connectionIndex, tripId, limit: clampLimit(url.searchParams.get("limit")),
+      updates, vehicles, stale
+    });
+    if (!result) return json(response, 404, { error: "Unknown trip." });
+    return json(response, 200, result);
   }
   if (url.pathname === "/api/alerts") { const result = await serviceAlertService.getCurrent(); return json(response, result.available ? 200 : 503, result); }
   if (url.pathname === "/api/override") {

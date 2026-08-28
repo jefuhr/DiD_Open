@@ -218,6 +218,51 @@ export const PARTNER_FEEDS = {
     headsignFixes: { "Libery State Park": "Liberty State Park" } }
 };
 
+// Which landing a stop belongs to, for every operator at once.
+//
+// The board has always answered the other direction — a landing knows its stops — and that was
+// enough while every row on screen was one of this landing's own departures. The trip view asks the
+// reverse: given a stop somewhere along a trip, whose pier is that, and can the board show it?
+//
+// The two halves of config/landings.json disagree about spelling, which is the only subtlety here.
+// A landing's own `stopIds` are NYC Ferry ids written bare ("87"), and so are the partner keys
+// ("13138" under nyuStopIds) — but the moment a partner departure exists it carries the feed's
+// prefix ("nyu:13138"), because that is what buildPartnerFeed's prefixed() does to every id it
+// emits. So the index has to namespace the partner keys on the way in or it will never match
+// anything it is asked about. That pairing of prefix to stopIdsKey lives in PARTNER_FEEDS above,
+// which is why this sits here rather than anywhere else.
+//
+// Not every stop belongs to a landing, and the map says so with null rather than by omission: the
+// Rockaway shuttle's two dozen kerbside bus stops are real calls on real trips that no pier serves.
+export function stopLandingIndex(landings) {
+  const index = new Map();
+  for (const [key, landing] of Object.entries(landings || {})) {
+    if (!landing || landing.unused) continue;
+    const landingId = Number(key);
+    for (const stopId of landing.stopIds || []) index.set(String(stopId), landingId);
+    for (const feed of Object.values(PARTNER_FEEDS)) {
+      for (const stopId of landing[feed.stopIdsKey] || []) index.set(`${feed.prefix}${stopId}`, landingId);
+    }
+  }
+  return index;
+}
+
+// The name and pier for every stop a trip on this board calls at, keyed the way the departures and
+// trip schedules key them. Built from the trips actually on the board rather than from stops.txt:
+// gtfs/waterway/stops.txt alone has 313 rows and a landing touches a handful of them.
+function stopDirectory({ tripSchedules, nameOf, landingIndex }) {
+  const stops = {};
+  for (const schedule of Object.values(tripSchedules || {})) {
+    for (const call of schedule.stops || []) {
+      if (stops[call.stopId]) continue;
+      const name = nameOf(call.stopId);
+      if (!name) continue;
+      stops[call.stopId] = { name, landingId: landingIndex.get(call.stopId) ?? null };
+    }
+  }
+  return stops;
+}
+
 // NY Waterway publishes one trip per origin-destination pair, so a boat that calls at two terminals
 // arrives in the feed as two trips leaving the same berth at the same minute. Left alone the board
 // shows one sailing as two boats: the 6:15 from Pier 11 appears once for Paulus Hook and again for
@@ -279,7 +324,7 @@ function mergeSplitSailings(departures, lineOf) {
 
 // Reads one partner feed and returns its departures already namespaced and shaped exactly like
 // the NYC Ferry entries, so the caller only has to concatenate.
-async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabled }) {
+async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabled, landingIndex = new Map() }) {
   const [routesRaw, stopsRaw, tripsRaw, timesRaw, calendarRaw, datesRaw, agencyRaw] = await Promise.all([
     readFile(path.join(root, feed.directory, "routes.txt"), "utf8"), readFile(path.join(root, feed.directory, "stops.txt"), "utf8"),
     readFile(path.join(root, feed.directory, "trips.txt"), "utf8"), readFile(path.join(root, feed.directory, "stop_times.txt"), "utf8"),
@@ -458,7 +503,14 @@ async function buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabl
     console.warn(`WARNING: the ${feed.label} feed in ${feed.directory} expired on ${latestEnd}; no departures will be shown until it is replaced.`);
   }
 
-  return { agencyName, departures, tripSchedules, routes: routeData, calendars, exceptions };
+  const stops_ = stopDirectory({
+    tripSchedules,
+    // The schedules carry prefixed ids; this feed's own stops.txt does not.
+    nameOf: (stopId) => decodeEntities(stopsById.get(stopId.slice(feed.prefix.length))?.stop_name || ""),
+    landingIndex
+  });
+
+  return { agencyName, departures, tripSchedules, stops: stops_, routes: routeData, calendars, exceptions };
 }
 
 export async function buildDisplayData({
@@ -642,6 +694,12 @@ export async function buildDisplayData({
       departureSeconds: stopTime.departure_time ? timeToSeconds(stopTime.departure_time) : null
     }))
   }]));
+  const landingIndex = stopLandingIndex(landings);
+  const stopsDirectory = stopDirectory({
+    tripSchedules,
+    nameOf: (stopId) => decodeEntities(stopsById.get(stopId)?.stop_name || ""),
+    landingIndex
+  });
   const usedRouteIds = new Set(departures.map((item) => item.routeId));
   const routeData = Object.fromEntries(routes.filter((item) => usedRouteIds.has(item.route_id)).map((item) => [item.route_id, {
     id: item.route_id, shortName: item.route_short_name || item.route_id, name: item.route_long_name,
@@ -728,9 +786,10 @@ export async function buildDisplayData({
     const enabled = (partnerOverrides[name] ?? display[feed.enabledKey] ?? true) === true && stopIds.length > 0;
     partners[name] = { enabled, agencyName: null, stopIds };
     if (!enabled) continue;
-    const merged = await buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabled });
+    const merged = await buildPartnerFeed({ root, feed, stopIds, landingNumber, busesEnabled, landingIndex });
     partners[name].agencyName = merged.agencyName;
     Object.assign(tripSchedules, merged.tripSchedules);
+    Object.assign(stopsDirectory, merged.stops);
     Object.assign(routeData, merged.routes);
     calendars = calendars.concat(merged.calendars);
     exceptions = exceptions.concat(merged.exceptions);
@@ -762,7 +821,7 @@ export async function buildDisplayData({
 
   return {
     meta: {
-      schemaVersion: 9, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
+      schemaVersion: 10, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
       departuresShown, routesShown, busesEnabled,
       landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },
@@ -772,7 +831,12 @@ export async function buildDisplayData({
       waterway: partners.waterway, seastreak: partners.seastreak, nyu: partners.nyu, liberty: partners.liberty, ikea: partners.ikea, gi: partners.gi, siferry: partners.siferry, statue: partners.statue
     },
     calendars, exceptions,
-    routes: routeData, departures, tripSchedules
+    // Every stop the board's own trips call at, named and tied to a landing where one serves it.
+    // Small — the trips on one board touch a few dozen stops between them — and in the payload
+    // rather than behind a request because the trip view has to be able to name its stops with no
+    // network at all, and because whether a stop is tappable is a build-time fact that must not
+    // arrive late and change under someone's thumb.
+    routes: routeData, departures, tripSchedules, stops: stopsDirectory
   };
 }
 
