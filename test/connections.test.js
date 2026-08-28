@@ -75,7 +75,8 @@ test("a sailing published past midnight belongs to the day it actually sails", (
   const found = nextDepartures({ index: view, stopId: "87", now: new Date("2026-08-28T04:30:00Z"), limit: 4 });
   assert.deepEqual(found.map((item) => item.tripId), ["lateBoat"]);
   assert.equal(found[0].deltaSeconds, 40 * 60);
-  // And it is not also offered as a boat later the same evening.
+  // Asked about now, the board's own rule applies: today's sailings only, so the same boat is not
+  // also offered twenty-five hours out.
   const evening = nextDepartures({ index: view, stopId: "87", now: new Date("2026-08-28T22:00:00Z"), limit: 4 });
   assert.deepEqual(evening.map((item) => item.tripId), []);
 });
@@ -149,15 +150,15 @@ test("the vessel is carried when the feed knows it, and left null when it does n
   assert.equal(blind[0].boatName, null, "a partner with no vehicle feed reports nothing, not a guess");
 });
 
-test("limit defaults to two and cannot be driven out of range", () => {
+test("limit defaults to three and cannot be driven out of range", () => {
   // Absent is the case that matters: Number(null) is 0, which is an integer, and clamping rather
   // than defaulting there would quietly halve every request that omitted the parameter.
-  assert.equal(clampLimit(null), 2);
-  assert.equal(clampLimit(undefined), 2);
-  assert.equal(clampLimit(""), 2);
-  assert.equal(clampLimit("nonsense"), 2);
+  assert.equal(clampLimit(null), 3);
+  assert.equal(clampLimit(undefined), 3);
+  assert.equal(clampLimit(""), 3);
+  assert.equal(clampLimit("nonsense"), 3);
   assert.equal(clampLimit("1"), 1);
-  assert.equal(clampLimit("99"), 4);
+  assert.equal(clampLimit("99"), 5);
   assert.equal(clampLimit("-5"), 1);
 });
 
@@ -177,4 +178,43 @@ test("an unknown trip, and a trip with a single call, have no view worth showing
   const view = index([]);
   assert.equal(tripConnections({ index: view, tripId: "nope" }), null);
   assert.equal(tripConnections({ index: view, tripId: "solo" }), null);
+});
+
+// The point of the whole view. A boat leaving Pier 11 at noon reaches Greenpoint at 12:15, and what
+// somebody stepping off it can catch is what leaves Greenpoint after 12:15 -- not what is leaving
+// Greenpoint at the moment the screen is being read.
+test("connections are counted from when the boat gets there, not from now", () => {
+  const view = index([
+    departure({ tripId: "t1", stopId: "87", seconds: 43200, departureTime: "12:00:00" }),
+    // At Greenpoint: one boat before this trip docks at 12:15, two after.
+    departure({ tripId: "tooEarly", stopId: "18", seconds: 43800, departureTime: "12:10:00" }),
+    departure({ tripId: "first", stopId: "18", seconds: 44400, departureTime: "12:20:00" }),
+    departure({ tripId: "second", stopId: "18", seconds: 45000, departureTime: "12:30:00" })
+  ]);
+  // Read at 11:00, an hour before the boat even leaves.
+  const result = tripConnections({ index: view, tripId: "t1", now: new Date("2026-08-27T15:00:00Z") });
+  const greenpoint = result.stops.find((stop) => stop.stopId === "18");
+  assert.deepEqual(greenpoint.connections.map((item) => item.tripId), ["first", "second"],
+    "the 12:10 had gone before this boat arrived at 12:15");
+  assert.equal(greenpoint.afterSeconds, 44100, "measured from the 12:15 arrival");
+  // And the boat somebody is already on is not offered as a way off it.
+  const pier11 = result.stops.find((stop) => stop.stopId === "87");
+  assert.equal(pier11.connections.some((item) => item.tripId === "t1"), false);
+});
+
+test("a late boat carries its delay into what it can connect to", () => {
+  const view = index([
+    departure({ tripId: "t1", stopId: "87", seconds: 43200, departureTime: "12:00:00" }),
+    departure({ tripId: "tight", stopId: "18", seconds: 44400, departureTime: "12:20:00" }),
+    departure({ tripId: "later", stopId: "18", seconds: 46200, departureTime: "12:50:00" })
+  ]);
+  const now = new Date("2026-08-27T15:00:00Z");
+  // Ten minutes down: the 12:20 out of Greenpoint is no longer catchable off a 12:25 arrival.
+  const late = tripConnections({
+    index: view, tripId: "t1", now,
+    updates: new Map([["t1|18", { delaySeconds: 600 }]])
+  });
+  const greenpoint = late.stops.find((stop) => stop.stopId === "18");
+  assert.deepEqual(greenpoint.connections.map((item) => item.tripId), ["later"]);
+  assert.equal(greenpoint.afterSeconds, 44700, "the arrival moved with the boat");
 });

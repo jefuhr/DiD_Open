@@ -1256,10 +1256,10 @@ function connectionsFor(stop) {
   if (!tripView?.connections) return `<li class="trip-conn-note">${escapeHtml(tripView?.note || "Checking…")}</li>`;
   const all = tripView.connections.get(stop.stopId) || [];
   const visible = all.filter((connection) => !connection.operator || !hiddenOperators().has(connection.operator));
-  if (visible.length) return visible.slice(0, 2).map(connectionRow).join("");
+  if (visible.length) return visible.slice(0, 3).map(connectionRow).join("");
   if (all.length) return `<li class="trip-conn-note">Hidden by the operator filter</li>`;
   if (tripStopLanding(stop.stopId) === null) return `<li class="trip-conn-note">Not served by this board</li>`;
-  return `<li class="trip-conn-note">No more departures today</li>`;
+  return `<li class="trip-conn-note">Nothing else leaves after this boat gets in</li>`;
 }
 
 function renderTripView() {
@@ -1272,7 +1272,7 @@ function renderTripView() {
     const past = stop.sequence < tripView.sequence;
     const current = stop.sequence === tripView.sequence;
     const landingId = tripStopLanding(stop.stopId);
-    const time = stop.departureSeconds ?? stop.arrivalSeconds;
+    const time = stop.arrivalSeconds ?? stop.departureSeconds;
     const head = `<span>${escapeHtml(tripStopName(stop.stopId))}</span>` +
       `${current ? `<span class="trip-stop-you">You are here</span>` : ""}` +
       `<span class="trip-stop-time">${time == null ? "" : escapeHtml(stopClock(time))}</span>`;
@@ -1331,7 +1331,9 @@ function openTripView(tripId, stopId, seconds) {
     tripId, stopId, sequence: tapped?.sequence ?? stops[0].sequence, stops,
     connections: null, note: "Checking…",
     names: new Map(), landings: new Map(),
-    summary: `${route.shortName || ""} ${destination ? `to ${destination}` : ""} · ${stops.length} stops`.trim()
+    // Says out loud what the times underneath are measured from. Read as "what is leaving now"
+    // they would be wrong at every stop the boat has not reached yet.
+    summary: `${route.shortName || ""} ${destination ? `to ${destination}` : ""} · ${stops.length} stops · next boats after each call`.trim()
   };
   renderTripView();
   setTripOpen(true);
@@ -1890,7 +1892,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=81&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=82&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
