@@ -2,6 +2,14 @@
   "_comment": "The board's change log. Newest entry first — the board shows them in the order they appear here and marks the top one as the latest. Add an entry by copying the shape below; 'date' is what the board prints, 'notes' is a list of lines. Nothing here is validated against the code, so it says whatever you write.",
   "entries": [
     {
+      "version": "2026-08-27",
+      "date": "27 August 2026",
+      "title": "What's new",
+      "notes": [
+        "now you can tap the depatures and see the stops :3"
+      ]
+    },
+    {
       "version": "2026-08-21",
       "date": "21 August 2026",
       "title": "What's new",
