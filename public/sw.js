@@ -6,9 +6,9 @@
 // somebody else's landing page in the shell on one host and failed the install outright when it
 // 404ed. app.js passes its own directory in the registration URL, so the one entry that moves is
 // the one entry that is asked for.
-const SHELL='nyc-ferry-did-shell-v82',DATA='nyc-ferry-did-data-v82';
+const SHELL='nyc-ferry-did-shell-v83',DATA='nyc-ferry-did-data-v83';
 const BASE=new URL(self.location.href).searchParams.get('base')||'/';
-const FILES=[BASE,'/styles.css?v=82','/app.js?v=82','/assets/app-icon.png?v=82','/assets/app-icon-180.png?v=82','/assets/app-icon-192.png?v=82','/assets/app-icon-512.png?v=82','/assets/app-icon-maskable-512.png?v=82','/assets/site.webmanifest?v=82','/assets/kitty.png?v=82','/assets/waterway.png','/assets/seastreak.png','/assets/nyu.png','/assets/cityferry.png','/assets/gi.png','/assets/fonts/lato-regular-latin.woff2','/assets/fonts/lato-bold-latin.woff2','/assets/fonts/lato-black-latin.woff2','/assets/fonts/oswald-variable-latin.woff2'];
+const FILES=[BASE,'/styles.css?v=83','/app.js?v=83','/assets/app-icon.png?v=83','/assets/app-icon-180.png?v=83','/assets/app-icon-192.png?v=83','/assets/app-icon-512.png?v=83','/assets/app-icon-maskable-512.png?v=83','/assets/site.webmanifest?v=83','/assets/kitty.png?v=83','/assets/waterway.png','/assets/seastreak.png','/assets/nyu.png','/assets/cityferry.png','/assets/gi.png','/assets/fonts/lato-regular-latin.woff2','/assets/fonts/lato-bold-latin.woff2','/assets/fonts/lato-black-latin.woff2','/assets/fonts/oswald-variable-latin.woff2'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(SHELL).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('nyc-ferry-did-')&&![SHELL,DATA].includes(key)).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 async function networkFirst(request,cacheName){const cache=await caches.open(cacheName);try{const response=await fetch(request);if(response.ok)await cache.put(request,response.clone());return response}catch{const saved=await cache.match(request);if(saved)return saved;throw new Error('offline')}}

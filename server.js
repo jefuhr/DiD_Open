@@ -4,7 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { landingChoices, loadAllLandingData, operatorRoster, stopIdsForLanding } from "./lib/landing-data.js";
-import { clampLimit, createConnectionIndex, tripConnections } from "./lib/connections.js";
+import { clampLimit, createConnectionIndex, tripConnections, vesselsByBoat } from "./lib/connections.js";
 import { createCounterService } from "./lib/counters.js";
 import { openStatsStore } from "./lib/stats-store.js";
 import { createManualOverrideService } from "./lib/manual-overrides.js";
@@ -178,18 +178,19 @@ async function handle(request, response) {
     if (!tripId) return json(response, 400, { error: "tripId is required." });
     // Realtime is an enrichment here, never a precondition: a feed that is down should cost the
     // trip view its delays and vessel names, not the stop list it exists to show.
-    let updates = new Map(), vehicles = new Map(), stale = true;
+    let updates = new Map(), vehicles = new Map(), vessels = new Map(), stale = true;
     try {
       const [ferry, nyu] = await Promise.all([realtimeService.getCurrent(), nyuRealtimeService.getCurrent()]);
       // System-wide, before /api/realtime narrows them to one landing — which is exactly the data
       // this endpoint needs and the only place it exists.
       updates = new Map([...(ferry.updates || []), ...(nyu.updates || [])].map((item) => [`${item.tripId}|${item.stopId}`, item]));
       vehicles = new Map((ferry.vehicles || []).map((item) => [String(item.tripId), item]));
+      vessels = vesselsByBoat(ferry.vehicles || []);
       stale = Boolean(ferry.stale || nyu.stale) || !(ferry.available || nyu.available);
     } catch { /* schedule-only, and the payload says so */ }
     const result = tripConnections({
       index: connectionIndex, tripId, limit: clampLimit(url.searchParams.get("limit")),
-      updates, vehicles, stale
+      updates, vehicles, vessels, stale
     });
     if (!result) return json(response, 404, { error: "Unknown trip." });
     return json(response, 200, result);

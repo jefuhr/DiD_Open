@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { activeServices, clampLimit, createConnectionIndex, nextDepartures, tripConnections } from "../lib/connections.js";
+import { activeServices, clampLimit, createConnectionIndex, nextDepartures, tripConnections, vesselsByBoat } from "../lib/connections.js";
 
 // lib/connections.js is a port of scheduling rules that already exist in public/app.js, so these
 // tests are about the rules themselves rather than about the endpoint. Everything else in the trip
@@ -217,4 +217,36 @@ test("a late boat carries its delay into what it can connect to", () => {
   const greenpoint = late.stops.find((stop) => stop.stopId === "18");
   assert.deepEqual(greenpoint.connections.map((item) => item.tripId), ["later"]);
   assert.equal(greenpoint.afterSeconds, 44700, "the arrival moved with the boat");
+});
+
+// The feed only names a vessel for a trip it has already reached, so a boat leaving later has none
+// of its own. The board fills that in from the working the schedule gives it and marks the answer
+// with a question mark; the trip view now does the same rather than showing a blank.
+test("a boat with no vessel of its own is guessed from the working it is on", () => {
+  const view = index([departure({ tripId: "later", routeId: "ER", boatAssignment: 3 })]);
+  const vehicles = [{ tripId: "earlier", boatName: "Lunchbox", boat: "ER3", updatedAtEpochSeconds: 100 }];
+  const found = nextDepartures({
+    index: view, stopId: "87", now: new Date("2026-08-27T15:50:00Z"), limit: 4,
+    vehicles: new Map(vehicles.map((item) => [String(item.tripId), item])),
+    vessels: vesselsByBoat(vehicles)
+  });
+  assert.equal(found[0].boatName, null, "the feed has not named this trip's vessel");
+  assert.equal(found[0].predictedBoatName, "Lunchbox", "so the working it is on answers for it");
+
+  // Once the feed does name it, the guess gives way to the fact.
+  const confirmed = nextDepartures({
+    index: view, stopId: "87", now: new Date("2026-08-27T15:50:00Z"), limit: 4,
+    vehicles: new Map([["later", { boatName: "Dream Boat" }]]),
+    vessels: vesselsByBoat(vehicles)
+  });
+  assert.equal(confirmed[0].boatName, "Dream Boat");
+  assert.equal(confirmed[0].predictedBoatName, null, "never both at once");
+});
+
+test("the freshest report wins when a boat is working two trips at once", () => {
+  const vessels = vesselsByBoat([
+    { tripId: "a", boat: "ER3", boatName: "Old Report", updatedAtEpochSeconds: 100 },
+    { tripId: "b", boat: "ER3", boatName: "New Report", updatedAtEpochSeconds: 200 }
+  ]);
+  assert.equal(vessels.get("ER3").boatName, "New Report");
 });

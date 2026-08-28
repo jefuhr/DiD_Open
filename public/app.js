@@ -1245,7 +1245,11 @@ function connectionRow(connection) {
     <span class="trip-conn-time">${escapeHtml(adjustedTime(connection.departureTime, 0))}</span>
     <span class="trip-conn-where">${escapeHtml(where)}</span>
     ${delayLabel}
-    <span class="trip-conn-boat">${connection.boatName ? escapeHtml(connection.boatName) : ""}</span>
+    <span class="trip-conn-boat">${connection.boatName
+      ? escapeHtml(connection.boatName)
+      : connection.predictedBoatName
+        ? `<em class="boat-name-predicted" title="Currently on this working; boats change at short notice">${escapeHtml(connection.predictedBoatName)}?</em>`
+        : ""}</span>
   </li>`;
 }
 
@@ -1892,7 +1896,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=82&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=83&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
