@@ -90,6 +90,40 @@ html, body { height: auto; overflow: auto; }
 .map-tools button:active { background: var(--sunken); }
 .map-tools button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 
+/* ---------------- the chart underneath ---------------- */
+
+/* OpenStreetMap with OpenSeaMap's seamarks over it. Held back from full strength so the routes and
+   the boats — the things this board is actually for — stay the loudest thing on the page, and so a
+   busy city map does not read as more important than the water. */
+.tiles { opacity: .82; }
+/* The seamark layer is thin and transparent by design; at full strength its buoys read as clearly
+   as a route line, which they are not. */
+.tiles-seamark { opacity: .75; }
+
+/* The tiles are the one thing on this page that cannot be recoloured by a variable, so the dark
+   themes invert them instead. The double hue-rotate is the standard trick: invert flips the
+   lightness and turns the blues orange, rotating twice by half the wheel puts the hues back where
+   they started. Without it a night board opens onto a white city. */
+:root[data-theme="night"] .tiles,
+:root[data-theme="hacker"] .tiles,
+:root[data-theme="kuromi"] .tiles {
+  filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9);
+}
+:root[data-theme="hacker"] .tiles { opacity: .5; }
+
+.map-credit {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 2px 6px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border-radius: 6px 0 0 0;
+  font: 700 9px/1.2 Lato, Arial, sans-serif;
+  pointer-events: none;
+}
+
 /* Route lines keep the operator's own colours: those say which line this is, and no theme has an
    opinion worth more than that. The white casing under them is what keeps two routes sharing the
    same stretch of river legible as two. */

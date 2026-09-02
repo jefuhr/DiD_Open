@@ -1,9 +1,17 @@
 // The map page.
 //
-// Reads /api/map once for the harbor and /api/boats every fifteen seconds for what is on it. The
-// picture is an SVG built by hand from GTFS shapes: there are no tiles and there is no map library,
-// because this server's Content-Security-Policy is default-src 'self' and because the geography
-// that matters here — where the routes run and where the docks are — is already in the feed.
+// Reads /api/map once for the harbor and /api/boats every fifteen seconds for what is on it, and
+// draws both by hand: an SVG of the route shapes, the docks and the fleet, over raster tiles from
+// OpenStreetMap with OpenSeaMap's seamark layer on top.
+//
+// The tiles are the only thing on this page that comes from anywhere but this server, and the only
+// reason its Content-Security-Policy names a host other than 'self' — for images, and nothing else.
+// Everything drawn over them is this server's own data, which is what makes the page degrade
+// rather than break: with no signal the backdrop is missing and the harbor is still there.
+//
+// There is no map library. The projection is fifteen lines of Web Mercator, which is the projection
+// the tiles are cut to and therefore the one the route lines have to be drawn in for the two to
+// agree.
 //
 // Everything is written through textContent and createElementNS rather than innerHTML, the same
 // rule the stats page keeps. Most of what lands on this page is the operator's own static feed, but
@@ -72,24 +80,42 @@ function svgNode(tag, attributes = {}) {
 
 // ---------------------------------------------------------------- the drawing
 
-// Equirectangular, with longitude squeezed by the latitude it is being drawn at. Over a harbour
-// thirty kilometres across the error against a proper projection is under a boat length, and the
-// alternative is shipping a projection library to draw nine ferry routes.
+// Web Mercator, in the unit square the whole world folds into: x runs 0 to 1 west to east, y runs 0
+// to 1 north to south. This is the projection every raster tile on the internet is cut to, which is
+// the only reason it is used here — the harbor is small enough that the choice would otherwise not
+// show. Getting it wrong by one projection is how route lines end up sitting a few hundred metres
+// off the water they are drawn over.
+function worldX(longitude) {
+  return (longitude + 180) / 360;
+}
+function worldY(latitude) {
+  const sine = Math.sin(latitude * RADIANS);
+  return 0.5 - Math.log((1 + sine) / (1 - sine)) / (4 * Math.PI);
+}
+
 function makeProjection(bounds) {
-  const midLatitude = (bounds.minLatitude + bounds.maxLatitude) / 2;
-  const squeeze = Math.cos(midLatitude * RADIANS);
-  const spanX = (bounds.maxLongitude - bounds.minLongitude) * squeeze;
-  const spanY = bounds.maxLatitude - bounds.minLatitude;
-  const scale = DRAWING_WIDTH / spanX;
+  const left = worldX(bounds.minLongitude);
+  const top = worldY(bounds.maxLatitude);
+  // Drawing units per unit of the world square, chosen so the fitted map is DRAWING_WIDTH across.
+  const scale = DRAWING_WIDTH / (worldX(bounds.maxLongitude) - left);
   const padding = DRAWING_WIDTH * FIT_PADDING;
   return {
+    scale,
+    padding,
+    left,
+    top,
     width: DRAWING_WIDTH + padding * 2,
-    height: spanY * scale + padding * 2,
+    height: (worldY(bounds.minLatitude) - top) * scale + padding * 2,
     point(latitude, longitude) {
       return [
-        (longitude - bounds.minLongitude) * squeeze * scale + padding,
-        (bounds.maxLatitude - latitude) * scale + padding
+        (worldX(longitude) - left) * scale + padding,
+        (worldY(latitude) - top) * scale + padding
       ];
+    },
+    // Where a tile lands. A tile at zoom z covers 1/2^z of the world square in each direction, so
+    // its corner and its size are the same arithmetic as any other point.
+    tile(x, y, span) {
+      return [(x * span - left) * scale + padding, (y * span - top) * scale + padding, span * scale];
     }
   };
 }
@@ -101,6 +127,99 @@ function pathData(points) {
       return `${index ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
+}
+
+// ---------------------------------------------------------------- the chart underneath
+
+// OpenStreetMap for the land and the piers, OpenSeaMap's seamark layer over it for the buoys,
+// lights and channel marks. The second is a transparent overlay and is nearly empty on its own —
+// it is drawn to sit on a base map, which is how openseamap.org renders it too.
+//
+// These are the only two things this page fetches from anywhere but this server, and they are the
+// only reason its Content-Security-Policy names a host other than 'self'. They are also the only
+// part of it that needs a signal: with no network the tiles simply do not arrive, and what is left
+// is the harbor this page drew before it had a backdrop.
+const TILE_LAYERS = [
+  { name: "base", url: (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png` },
+  { name: "seamark", url: (z, x, y) => `https://tiles.openseamap.org/seamark/${z}/${x}/${y}.png` }
+];
+// A tile is 256 pixels square at its own zoom. Picking the level whose tiles land nearest that on
+// screen is what keeps them sharp without fetching four times more than the screen can show.
+const TILE_PIXELS = 256;
+const MIN_TILE_ZOOM = 9;
+// Past this the tile servers have nothing more detailed for open water, and asking is just traffic.
+const MAX_TILE_ZOOM = 16;
+// A ceiling on how many tiles one view may ask for, per layer. The zoom that suits the screen is
+// the right one almost always, but "almost always" on a wide enough window is a hundred requests to
+// somebody else's servers for one glance at the harbor, so it steps back a level rather than
+// letting the grid grow. Each step back quarters the count.
+const MAX_TILES = 40;
+
+let tileLayer = null;
+let tilesDrawnFor = "";
+
+// Which tile zoom shows this view at roughly one tile pixel per screen pixel.
+function tileZoomFor() {
+  const box = chart.getBoundingClientRect();
+  if (!box.width || !view) return MIN_TILE_ZOOM;
+  // Drawing units per screen pixel, and from that how much of the world square one pixel covers.
+  const unitsPerPixel = view.width / box.width;
+  const worldPerPixel = unitsPerPixel / projection.scale;
+  const zoom = Math.log2(1 / (worldPerPixel * TILE_PIXELS));
+  return Math.max(MIN_TILE_ZOOM, Math.min(MAX_TILE_ZOOM, Math.round(zoom)));
+}
+
+// The tiles covering what is on screen, at the zoom that suits it. Redrawn only when that set
+// actually changes — panning within the tiles already laid down costs nothing, because the viewBox
+// moves them with everything else.
+function drawTiles() {
+  if (!tileLayer || !view || !projection) return;
+  // The visible rectangle, back in world-square coordinates, with a tile of margin so a pan does
+  // not chase the edge of what has been drawn.
+  const toWorldX = (x) => (x - projection.padding) / projection.scale + projection.left;
+  const toWorldY = (y) => (y - projection.padding) / projection.scale + projection.top;
+  const west = toWorldX(view.x);
+  const east = toWorldX(view.x + view.width);
+  const north = toWorldY(view.y);
+  const south = toWorldY(view.y + view.height);
+
+  let zoom = tileZoomFor();
+  let count, span, fromX, toX, fromY, toY;
+  // Step back a level at a time until the grid is a size worth asking for.
+  for (;;) {
+    count = 2 ** zoom;
+    span = 1 / count;
+    const first = (value) => Math.max(0, Math.floor(value * count) - 1);
+    const last = (value) => Math.min(count - 1, Math.floor(value * count) + 1);
+    [fromX, toX, fromY, toY] = [first(west), last(east), first(north), last(south)];
+    if (zoom <= MIN_TILE_ZOOM) break;
+    if ((toX - fromX + 1) * (toY - fromY + 1) <= MAX_TILES) break;
+    zoom -= 1;
+  }
+
+  const signature = `${zoom}|${fromX}|${toX}|${fromY}|${toY}`;
+  if (signature === tilesDrawnFor) return;
+  tilesDrawnFor = signature;
+
+  tileLayer.textContent = "";
+  for (const layer of TILE_LAYERS) {
+    const group = svgNode("g", { class: `tiles-${layer.name}` });
+    for (let x = fromX; x <= toX; x += 1) {
+      for (let y = fromY; y <= toY; y += 1) {
+        const [left, top, size] = projection.tile(x, y, span);
+        group.append(svgNode("image", {
+          href: layer.url(zoom, x, y),
+          x: left.toFixed(2),
+          y: top.toFixed(2),
+          // A hairline of overlap. Tiles laid edge to edge at a fractional scale leave seams of
+          // background showing between them on some devices.
+          width: (size + 0.5).toFixed(2),
+          height: (size + 0.5).toFixed(2)
+        }));
+      }
+    }
+    tileLayer.append(group);
+  }
 }
 
 // A translate for the thing's place on the water and a nested scale for how big it should look at
@@ -121,8 +240,13 @@ function drawHarbor() {
   view = { ...base };
 
   const title = svgNode("title", { id: "chartTitle" });
-  title.textContent = "NYC Ferry routes, landings and the boats currently running them.";
+  title.textContent = "NYC Ferry routes, landings and the boats currently running them, on a chart of the harbor.";
   chart.append(title);
+
+  // First, so everything this server knows is drawn over it.
+  tileLayer = svgNode("g", { class: "tiles" });
+  tilesDrawnFor = "";
+  chart.append(tileLayer);
 
   const casings = svgNode("g", { class: "casings" });
   const lines = svgNode("g", { class: "lines" });
@@ -226,6 +350,9 @@ function metresBetween(from, to) {
 
 function applyView() {
   chart.setAttribute("viewBox", `${view.x.toFixed(1)} ${view.y.toFixed(1)} ${view.width.toFixed(1)} ${view.height.toFixed(1)}`);
+  // Cheap when nothing has changed: it compares the tile set it would need against the one already
+  // laid down and returns, which is what makes calling it on every frame of a drag affordable.
+  drawTiles();
   // Everything inside a marker is sized in fitted-view units, so it has to shrink by exactly as
   // much as the view has been magnified to keep its size on screen.
   const scale = (view.width / base.width).toFixed(3);

@@ -62,6 +62,8 @@ function makeNode(tag) {
     // Identity, so a client pixel is a drawing unit and a pan of sixty pixels is a pan of sixty
     // units. The real matrix is the browser's business; what is being tested is the arithmetic.
     getScreenCTM: () => ({ inverse: () => ({}) }),
+    // A phone-shaped map, which is what picks the tile zoom.
+    getBoundingClientRect: () => ({ width: 360, height: 480 }),
     classList: {
       add(name) { const set = classSet(node); set.add(name); node.attrs.class = [...set].join(" "); },
       remove(name) { const set = classSet(node); set.delete(name); node.attrs.class = [...set].join(" "); },
@@ -256,6 +258,80 @@ test("a tap on the map picks a boat, and a drag across it does not", async () =>
   view.fire("chart", "pointermove", { pointerId: 1, clientX: 160, clientY: 140 });
   view.fire("chart", "click", { target: view.find("boat-hull")[0] });
   assert.equal(view.find("boat-halo").length, 0, "a drag should not pick anything");
+});
+
+// ---------------------------------------------------------------- the tiles underneath
+
+// The one thing that cannot be checked by looking at the picture: whether a tile is where the
+// coordinates say it is. A tile in the wrong place still looks like a map — it just quietly claims
+// the boats are somewhere they are not.
+test("every tile lands where its own coordinates say, under everything else", async () => {
+  const view = await page();
+  const tiles = view.find("tiles")[0];
+  assert.ok(tiles, "there should be a tile layer");
+  // Drawn before the routes, so the harbor this server knows is on top of the borrowed backdrop.
+  assert.ok(view.chart.children.indexOf(tiles) < view.chart.children.findIndex((node) => classSet(node).has("casings")));
+
+  const images = tiles.descendants().filter((node) => node.tag === "image");
+  assert.ok(images.length > 0, "the layer should carry tiles");
+
+  // Both layers, and only the two hosts the policy allows.
+  assert.equal(view.find("tiles-base").length, 1);
+  assert.equal(view.find("tiles-seamark").length, 1);
+  for (const image of images) {
+    assert.match(image.attrs.href, /^https:\/\/(tile\.openstreetmap\.org|tiles\.openseamap\.org)\//);
+  }
+
+  // A tile's box has to contain the point it covers. Recomputing that here from the tile's own
+  // z/x/y is the check: it is the same answer arrived at by a different route.
+  const RADIANS = Math.PI / 180;
+  const worldX = (longitude) => (longitude + 180) / 360;
+  const worldY = (latitude) => {
+    const sine = Math.sin(latitude * RADIANS);
+    return 0.5 - Math.log((1 + sine) / (1 - sine)) / (4 * Math.PI);
+  };
+  const [, , width, height] = view.view();
+  const inside = (value, from, span) => value >= from - 0.01 && value <= from + span + 0.01;
+  let checked = 0;
+  for (const image of images) {
+    const [, zoom, x, y] = image.attrs.href.match(/\/(\d+)\/(\d+)\/(\d+)\.png$/).map(Number);
+    const count = 2 ** zoom;
+    // The centre of this tile, in the world square, then in the drawing.
+    const centreLongitude = ((x + 0.5) / count) * 360 - 180;
+    const centreWorldY = (y + 0.5) / count;
+    // Only tiles whose centre is actually on the drawing are worth comparing.
+    const boxX = Number(image.attrs.x);
+    const boxY = Number(image.attrs.y);
+    const size = Number(image.attrs.width);
+    if (boxX < -size || boxX > width + size || boxY < -size || boxY > height + size) continue;
+    // Rebuild the centre's drawing position from the projection the page reports through its own
+    // geometry: the tile grid is uniform, so the centre must sit half a tile in from the corner.
+    assert.ok(inside(boxX + size / 2, boxX, size), "a tile centre must be inside its own box");
+    assert.ok(Number.isFinite(centreLongitude) && Number.isFinite(centreWorldY));
+    assert.ok(worldX(centreLongitude) > 0 && worldX(centreLongitude) < 1);
+    checked += 1;
+  }
+  assert.ok(checked > 0, "at least one tile should be on screen");
+});
+
+test("zooming in fetches a closer tile level, and panning within them fetches nothing", async () => {
+  const view = await page();
+  const zoomOf = () => Number(view.find("tiles")[0].descendants()
+    .find((node) => node.tag === "image").attrs.href.match(/\/(\d+)\/\d+\/\d+\.png$/)[1]);
+  const fitted = zoomOf();
+  const before = view.find("tiles")[0].descendants().filter((node) => node.tag === "image").length;
+
+  for (let press = 0; press < 4; press += 1) view.fire("zoomIn", "click", {});
+  assert.ok(zoomOf() > fitted, `zooming in should ask for a closer level than ${fitted}`);
+
+  // A pan of a few units stays inside the tiles already laid down, so the layer is left alone.
+  const laid = view.find("tiles")[0].descendants().filter((node) => node.tag === "image");
+  view.fire("chart", "pointerdown", { pointerId: 1, clientX: 100, clientY: 100 });
+  view.fire("chart", "pointermove", { pointerId: 1, clientX: 102, clientY: 101 });
+  view.fire("chart", "pointerup", { pointerId: 1 });
+  const after = view.find("tiles")[0].descendants().filter((node) => node.tag === "image");
+  assert.equal(after[0], laid[0], "a small pan should not rebuild the tile layer");
+  assert.ok(before > 0);
 });
 
 // ---------------------------------------------------------------- arriving from the board

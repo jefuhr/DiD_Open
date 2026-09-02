@@ -117,7 +117,13 @@ const TYPES = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=ut
 function headers(response) {
   response.setHeader("X-Content-Type-Options", "nosniff");
   response.setHeader("X-Frame-Options", "SAMEORIGIN");
-  response.setHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
+  // The two tile hosts are the only exception to 'self' anywhere in this policy, and they are
+  // allowed for images and nothing else: the map page draws OpenStreetMap under OpenSeaMap's
+  // seamark overlay, which cannot be done from this origin. Everything that could execute —
+  // script, style, fetch, fonts — stays where it was. A tile host that goes down, or a board with
+  // no signal, costs the map its backdrop and nothing else: the routes, the docks and the boats
+  // are all still drawn from this server's own data.
+  response.setHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https://tile.openstreetmap.org https://tiles.openseamap.org; style-src 'self'; script-src 'self'; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
 }
 function json(response, status, body) { headers(response); response.writeHead(status, { "Content-Type": TYPES[".json"], "Cache-Control":"no-cache" }); response.end(`${JSON.stringify(body)}\n`); }
 async function serve(response, file) {

@@ -973,9 +973,17 @@ test("the map page draws itself from this origin alone", async () => {
   for (const url of [...page.matchAll(/(?:href|src)="(\/[^"]*)"/g)].map((match) => match[1])) {
     assert.match(url, forwarded, `${url} is not a path the proxy forwards to the board`);
   }
+
+  // The tile hosts are the one deliberate exception, so this pins them rather than forbidding them:
+  // exactly two, both over TLS, and nothing else off this origin anywhere on the page. Adding a
+  // third — an analytics beacon, a font, a CDN — has to be a decision somebody makes here.
+  const OFF_ORIGIN = /https?:\/\/(?!www\.w3\.org\/|www\.openseamap\.org\b)[^\s"'`)]+/g;
+  const hosts = new Set();
   for (const source of [page, script, styles]) {
-    assert.doesNotMatch(source, /https?:\/\/(?!www\.w3\.org)/, "the map page may not fetch from another origin");
+    for (const url of source.match(OFF_ORIGIN) || []) hosts.add(new URL(url).host);
   }
+  assert.deepEqual([...hosts].sort(), ["tile.openstreetmap.org", "tiles.openseamap.org"]);
+  for (const url of script.match(OFF_ORIGIN) || []) assert.match(url, /^https:/, `${url} is not over TLS`);
 
   // Both spellings of the path, the same way the stats page is reached.
   assert.match(server, /\["\/stats", "stats\.html"\], \["\/map", "map\.html"\]/);
@@ -988,6 +996,38 @@ test("the map page draws itself from this origin alone", async () => {
 
   // The board's own payload must not grow a coordinate per vessel to feed this page.
   assert.match(server, /const \{ positions, \.\.\.departureData \} = ferry/);
+
+  // The policy has to actually let the tiles through, and has to let nothing else through with
+  // them. A tile host in script-src or connect-src would be a different and much larger decision.
+  const policy = server.match(/"Content-Security-Policy", "([^"]+)"/)[1];
+  const directives = Object.fromEntries(policy.split(";").map((part) => {
+    const [name, ...values] = part.trim().split(/\s+/);
+    return [name, values];
+  }));
+  assert.deepEqual(directives["img-src"], ["'self'", "data:", "https://tile.openstreetmap.org", "https://tiles.openseamap.org"]);
+  for (const directive of ["default-src", "script-src", "style-src", "connect-src", "font-src"]) {
+    assert.deepEqual(directives[directive], ["'self'"], `${directive} should still be 'self' alone`);
+  }
+});
+
+// The tile layer. Two things here are easy to get wrong and hard to see: tiles drawn in the wrong
+// projection sit plausibly but a few hundred metres off the water, and a tile set recomputed on
+// every frame of a drag turns a pan into a stutter of network requests.
+test("the tile layer is Web Mercator, and is only rebuilt when it has to be", async () => {
+  const script = await readFile(new URL("../public/assets/map.js", import.meta.url), "utf8");
+
+  // Mercator, not the equirectangular approximation that came before it: the tiles are cut to it.
+  assert.match(script, /function worldY\(latitude\)/);
+  assert.match(script, /Math\.log\(\(1 \+ sine\) \/ \(1 - sine\)\)/);
+  // A tile's box is the same arithmetic as any other point, which is what keeps them in register.
+  assert.match(script, /tile\(x, y, span\)/);
+
+  // Rebuilt on a signature of the tile set rather than on every view change.
+  assert.match(script, /if \(signature === tilesDrawnFor\) return;/);
+  assert.match(script, /const signature = `\$\{zoom\}\|\$\{fromX\}\|\$\{toX\}\|\$\{fromY\}\|\$\{toY\}`/);
+
+  // Drawn first, so everything this server knows about is drawn over the top of it.
+  assert.ok(script.indexOf('svgNode("g", { class: "tiles" })') < script.indexOf('svgNode("g", { class: "casings" })'));
 });
 
 // A merge once shipped conflict markers in index.html and sw.js. Nothing caught it: the contract

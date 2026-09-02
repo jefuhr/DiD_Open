@@ -72,14 +72,24 @@ is deliberate: it is a second screen of the same app, not a second site, and the
 would give that away is a page that stays blue while the board has gone pink. the only fixed
 colours on it are the operators' own route colours, which are facts about the routes.
 
-there are no map tiles. this server's Content-Security-Policy is `default-src 'self'`, so an
-outside basemap could not load even if the board wanted one, and it turns out not to need one: the
-route lines come straight out of `gtfs/shapes.txt` and the docks out of
-[`config/landings.json`](./config/landings.json), and on a system whose lines are two rivers and a
-bay, drawing the routes draws the harbor. [`lib/fleet-map.js`](./lib/fleet-map.js) builds that
-picture once at startup and serves it from `/api/map`; the drawing itself is hand-built SVG in
-[`public/assets/map.js`](./public/assets/map.js), with pan, pinch-zoom, and `ctrl`/`⌘` + scroll to
-zoom on a desktop. plain scrolling is left alone so the page can still be scrolled past.
+the backdrop is **OpenStreetMap with [OpenSeaMap](https://www.openseamap.org)'s seamark layer over
+it** — the buoys, lights and channel marks. openseamap's own tiles are a transparent overlay and are
+nearly empty on their own, so they are drawn on the OSM base the same way openseamap.org draws them.
+
+everything on top of that is this server's own: the route lines come out of `gtfs/shapes.txt` and
+the docks out of [`config/landings.json`](./config/landings.json), built once at startup by
+[`lib/fleet-map.js`](./lib/fleet-map.js) and served from `/api/map`. the drawing is hand-built SVG
+in [`public/assets/map.js`](./public/assets/map.js) — no map library — with pan, pinch-zoom, and
+`ctrl`/`⌘` + scroll to zoom on a desktop. plain scrolling is left alone so the page can still be
+scrolled past.
+
+three things follow from having a tile layer at all, and they are the price of it:
+
+- **the two tile hosts are the only exception in the Content-Security-Policy**, which is otherwise `default-src 'self'`. they are allowed for `img-src` and nothing else, so nothing off this origin can execute, fetch or style anything.
+- **the tiles are the only part of the page that needs a signal.** they are cross-origin, so the service worker does not cache them. with no network the backdrop is simply missing and the routes, docks and boats are drawn exactly as they were before there was one.
+- **the projection is Web Mercator**, because that is what raster tiles are cut to. drawn in anything else the route lines sit a few hundred metres off the water they are meant to be on.
+
+attribution is required by the licences and is printed in the corner of the map.
 
 `/api/boats` is the live half. it reads the same cached snapshot `/api/realtime` does, so opening
 the map costs nothing extra upstream, and each boat carries:
