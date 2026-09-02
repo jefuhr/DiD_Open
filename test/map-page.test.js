@@ -260,6 +260,66 @@ test("a tap on the map picks a boat, and a drag across it does not", async () =>
   assert.equal(view.find("boat-halo").length, 0, "a drag should not pick anything");
 });
 
+// ---------------------------------------------------------------- hull numbers on the discs
+
+// Wide out, twenty-one boats put thirteen pairs of discs on top of each other — the hub piers stack
+// them within a pixel of one another — so a number at that zoom would be a pile whatever size it
+// was drawn. They wait for the same threshold the dock names wait for.
+test("boats are numbered once they are drawn big enough to hold a number", async () => {
+  const yellow = { ...BOAT, id: "40", name: "Curiosity", number: "H-118", route: "SB", color: "#FFD100" };
+  const view = await page({ boats: [BOAT, yellow] });
+
+  assert.equal(view.find("boat-number").length, 0, "wide out, a boat is a plain dot");
+  const wideHull = Number(view.find("boat-hull")[0].attrs.r);
+
+  for (let press = 0; press < 4; press += 1) view.fire("zoomIn", "click", {});
+
+  const numbers = view.find("boat-number");
+  assert.equal(numbers.length, 2, "close in, every boat carries its number");
+  // The digits alone: every hull in this fleet is H-1xx or H-2xx, so the prefix says nothing.
+  assert.deepEqual(numbers.map((node) => node.textContent).sort(), ["118", "204"]);
+  for (const node of numbers) assert.doesNotMatch(node.textContent, /H/i);
+
+  // The disc grew to hold it, and the halo and the bow moved out with it rather than being left
+  // inside the hull.
+  assert.ok(Number(view.find("boat-hull")[0].attrs.r) > wideHull, "the disc grows to fit the number");
+
+  // Zooming back out returns the plain dot.
+  for (let press = 0; press < 8; press += 1) view.fire("zoomOut", "click", {});
+  assert.equal(view.find("boat-number").length, 0);
+  assert.equal(Number(view.find("boat-hull")[0].attrs.r), wideHull);
+});
+
+test("a number is written in whichever of black or white can be read on its route's colour", async () => {
+  const yellow = { ...BOAT, id: "40", number: "H-118", route: "SB", color: "#FFD100" };
+  const view = await page({ boats: [BOAT, yellow] });
+  for (let press = 0; press < 4; press += 1) view.fire("zoomIn", "click", {});
+
+  const fills = Object.fromEntries(view.find("boat-number").map((node) => [node.textContent, node.attrs.fill]));
+  // South Brooklyn's yellow takes dark type; East River's teal takes white.
+  assert.equal(fills["118"], "#3b2b33");
+  assert.equal(fills["204"], "#fff");
+});
+
+// lib/realtime.js falls the vessel number back to the vendor's own vehicle id when the fleet list
+// does not recognise a boat. That id is not a hull number and must not be painted on a disc as if
+// it were one.
+test("a vendor vehicle id is not mistaken for a hull number", async () => {
+  const unknown = { ...BOAT, id: "77", name: "H119", number: "19" };
+  const view = await page({ boats: [unknown] });
+  for (let press = 0; press < 4; press += 1) view.fire("zoomIn", "click", {});
+
+  assert.equal(view.find("boat-hull").length, 1, "it is still a boat, and still drawn");
+  assert.equal(view.find("boat-number").length, 0, "but it carries no number it cannot vouch for");
+});
+
+// A boat working no route the board knows has no colour to fill with, and the stylesheet gives it
+// the theme's grey — which only works if the script leaves the attribute off entirely.
+test("a boat with no route is left for the stylesheet to colour", async () => {
+  const view = await page({ boats: [{ ...BOAT, color: null, route: null }] });
+  assert.equal(view.find("boat-hull")[0].attrs.fill, undefined);
+});
+
 // ---------------------------------------------------------------- the tiles underneath
 
 // The one thing that cannot be checked by looking at the picture: whether a tile is where the

@@ -55,6 +55,10 @@ let view = null;
 // document to find them again is a round trip to answer a question this file already knows.
 let dockLayer = null;
 let fleetLayer = null;
+// Whether the fleet is drawn close enough to carry hull numbers. Held rather than read off the
+// view each time because crossing it is what triggers the redraw, and a redraw needs to know which
+// side of the line it is being drawn for.
+let fleetIsClose = false;
 // Where each boat was the last time this page looked. The feed publishes speed but never a heading,
 // so the only honest way to point a boat is to point it the way it has actually just travelled.
 const previousFix = new Map();
@@ -289,31 +293,63 @@ function legend() {
   }
 }
 
+// The digits off a hull number: "H-215" becomes "215". Every vessel in content/vessels.json carries
+// the same H- prefix and exactly three digits after it — the 0, 1, 2, 3, 4 and 5 series are all in
+// the fleet — so the prefix distinguishes nothing and what is left always fits a circle.
+//
+// Guarded rather than trusted, because lib/realtime.js falls the vessel number back to the
+// vendor's own vehicle id when the fleet list does not recognise a boat — and a "19" painted on a
+// disc is not a hull number, it is a lie about one.
+function hullDigits(number) {
+  return /^H-?\d+$/i.test(String(number || "")) ? String(number).replace(/^H-?/i, "") : null;
+}
+
 // The one place the boats are drawn. Rebuilt on every refresh rather than diffed: there are never
 // more than about twenty of them, and a fleet that is rebuilt cannot drift out of step with a feed
 // that has dropped one.
+//
+// Also rebuilt when the zoom crosses LABEL_ZOOM, because that changes the shape of a marker rather
+// than just what is written on it: the hull grows to hold its number, and the halo and the bow
+// chevron have to move out with it. Every one of those is decided here, which is the reason this
+// is a redraw and not a class on the layer.
 function drawFleet() {
   if (!fleetLayer) return;
   fleetLayer.textContent = "";
+  const hull = fleetIsClose ? 10.5 : 6;
+  const halo = fleetIsClose ? 16 : 11;
+  const bow = fleetIsClose ? "M0,-17 L4.4,-9.8 L-4.4,-9.8 Z" : "M0,-12 L3.6,-5.6 L-3.6,-5.6 Z";
   for (const boat of boats) {
     const { outer, inner } = marker("boat", boat.latitude, boat.longitude);
     outer.dataset.boat = boat.id;
     if ((boat.ageSeconds ?? 0) > STALE_FIX_SECONDS) outer.classList.add("is-stale");
 
     if (boat.status !== "stopped") {
-      inner.append(svgNode("circle", { class: "boat-wake", r: 6, fill: boat.color || "#8fd3f4" }));
+      inner.append(svgNode("circle", { class: "boat-wake", r: hull, fill: boat.color || "#8fd3f4" }));
     }
-    if (boat.id === selectedId) inner.append(svgNode("circle", { class: "boat-halo", r: 11 }));
-    inner.append(svgNode("circle", { class: "boat-hull", r: 6, fill: boat.color || "#715c66" }));
+    if (boat.id === selectedId) inner.append(svgNode("circle", { class: "boat-halo", r: halo }));
+    const disc = svgNode("circle", { class: "boat-hull", r: hull });
+    // Only when there is a route colour to use. Left unset, the stylesheet gives it the theme's
+    // own muted grey rather than a hardcoded one.
+    if (boat.color) disc.setAttribute("fill", boat.color);
+    inner.append(disc);
 
     const bearing = boat.bearing ?? heading.get(boat.id);
     if (bearing != null) {
       // A chevron on the bow, pointing the way the boat is going. Rotated inside the marker so it
       // turns with the heading and not with the map.
-      inner.append(svgNode("path", { class: "boat-heading", d: "M0,-12 L3.6,-5.6 L-3.6,-5.6 Z", transform: `rotate(${bearing})` }));
+      inner.append(svgNode("path", { class: "boat-heading", d: bow, transform: `rotate(${bearing})` }));
+    }
+    // The number rides on the disc once the disc is big enough to hold it, in whichever of black or
+    // white can be read on the operator's own colour.
+    const digits = fleetIsClose ? hullDigits(boat.number) : null;
+    if (digits) {
+      const number = svgNode("text", { class: "boat-number", "text-anchor": "middle", y: 3.2 });
+      if (boat.color) number.setAttribute("fill", readableOn(boat.color));
+      number.textContent = digits;
+      inner.append(number);
     }
     if (boat.id === selectedId) {
-      const label = svgNode("text", { class: "boat-label", x: 13, y: 4 });
+      const label = svgNode("text", { class: "boat-label", x: halo + 2, y: 4 });
       label.textContent = boat.name || boat.number || "Boat";
       inner.append(label);
     }
@@ -357,7 +393,15 @@ function applyView() {
   // much as the view has been magnified to keep its size on screen.
   const scale = (view.width / base.width).toFixed(3);
   for (const scaler of chart.querySelectorAll(".scaler")) scaler.setAttribute("transform", `scale(${scale})`);
-  if (dockLayer) dockLayer.classList.toggle("is-close", base.width / view.width >= LABEL_ZOOM);
+  const close = base.width / view.width >= LABEL_ZOOM;
+  if (dockLayer) dockLayer.classList.toggle("is-close", close);
+  // One threshold for both: zoom in far enough to read a dock's name and the boats are numbered
+  // too. The flag is set before the redraw, not after, so drawFleet's own call back into here
+  // finds nothing left to change and stops.
+  if (fleetLayer && close !== fleetIsClose) {
+    fleetIsClose = close;
+    drawFleet();
+  }
 }
 
 // The view never leaves the map. Zoom is clamped between the whole harbor and MAX_ZOOM of it, the

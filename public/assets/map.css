@@ -150,6 +150,12 @@ html, body { height: auto; overflow: auto; }
 .dock.is-target .dock-mark { fill: var(--warning); }
 
 .boat-hull { stroke: var(--navy); stroke-width: 1.6; }
+/* A boat working no route the board knows. The fill is left off the element rather than hardcoded
+   in the script, so the theme's own grey applies. */
+.boat-hull:not([fill]) { fill: var(--muted); }
+/* The hull number, once the disc is big enough to hold it. No halo behind it: it sits on its own
+   disc, in whichever of black or white can be read on that colour. */
+.boat-number { font: 900 9px/1 Lato, Arial, sans-serif; pointer-events: none; }
 .boat-heading { fill: var(--navy); }
 .boat-halo { fill: none; stroke: var(--navy); stroke-width: 2.4; }
 .boat-label {
@@ -235,7 +241,11 @@ html, body { height: auto; overflow: auto; }
    also easing the whole fleet after every pinch. */
 @media (prefers-reduced-motion: no-preference) {
   .boat { transition: transform .8s ease-out; }
-  .boat-wake { transform-origin: center; animation: wake 2.6s ease-out infinite; }
+  /* transform-box is the whole reason this works. Its initial value is view-box, which makes
+     transform-origin: center mean the centre of the entire SVG viewBox — so every wake in the
+     fleet scaled about the middle of the harbor and flew off its own boat. An SVG shape needs
+     fill-box for a transform-origin that refers to the shape itself. */
+  .boat-wake { transform-box: fill-box; transform-origin: center; animation: wake 2.6s ease-out infinite; }
   @keyframes wake {
     from { transform: scale(.5); opacity: .55; }
     to   { transform: scale(2.2); opacity: 0; }

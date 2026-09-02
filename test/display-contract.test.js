@@ -1030,6 +1030,22 @@ test("the tile layer is Web Mercator, and is only rebuilt when it has to be", as
   assert.ok(script.indexOf('svgNode("g", { class: "tiles" })') < script.indexOf('svgNode("g", { class: "casings" })'));
 });
 
+// The pulse under a moving boat, which shipped animating about the middle of the harbor instead of
+// about its own boat: transform-box starts out as view-box on SVG, so transform-origin: center was
+// resolving against the whole viewBox.
+//
+// This is a source assertion and not a behavioural one, and the difference is worth stating: the
+// fake DOM the map page is otherwise tested against has no layout and no animation, so it cannot
+// tell a wake in the right place from one flung across the harbor. Nothing here proves the pulse
+// looks right — only that the property it needs has not been dropped again.
+test("anything given a transform-origin in the map's SVG also gets a transform-box", async () => {
+  const styles = await readFile(new URL("../public/assets/map.css", import.meta.url), "utf8");
+  for (const rule of styles.match(/[^{}]*\{[^}]*transform-origin[^}]*\}/g) || []) {
+    assert.match(rule, /transform-box:\s*fill-box/, `a transform-origin without a transform-box:\n${rule}`);
+  }
+  assert.match(styles, /\.boat-wake\s*\{[^}]*transform-box:\s*fill-box/);
+});
+
 // A merge once shipped conflict markers in index.html and sw.js. Nothing caught it: the contract
 test("the LOCAL badge is allowed the width its own word needs", async () => {
   const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
