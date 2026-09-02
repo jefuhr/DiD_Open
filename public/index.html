@@ -9,16 +9,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
-    <link rel="icon" href="/assets/app-icon.png?v=85" type="image/png" />
+    <link rel="icon" href="/assets/app-icon.png?v=86" type="image/png" />
     <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=85" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=86" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
          come from the manifest, which is why the board installs as a bare shortcut without it.
          It lives under /assets/ because that is a path the deployment's proxy forwards to this
          server — a manifest at the site root is served by the landing page, not by the board. -->
-    <link rel="manifest" href="/assets/site.webmanifest?v=85" />
-    <link rel="stylesheet" href="/styles.css?v=85" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=86" />
+    <link rel="stylesheet" href="/styles.css?v=86" />
     <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
          after the board has already been drawn once, and a saved theme applied there arrives as a
          visible flash of the other one. -->
@@ -50,12 +50,23 @@
               <span class="visually-hidden">Choose landing</span>
             </button>
             <h1 id="landingName">NYC Ferry</h1>
+            <!-- A link rather than a button, and relative rather than rooted: the board is the site
+                 root on a kiosk and lives under /ferryTimesMobile/ on juliet.nyc, and "map" resolves
+                 against whichever of the two this document was served from. -->
+            <a class="map-button" id="mapButton" href="map" aria-label="Map of the boats on the water" title="Map of the boats on the water">
+              <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4Z" />
+                <path d="M9 4v13m6-6.5v13" />
+              </svg>
+            </a>
+            <!-- Icon only. The button's state is carried by its colour and its title, and the row it
+                 sits in has three controls on a phone where it used to have two. -->
             <button type="button" class="nearest-button" id="nearestButton" data-state="idle">
               <svg class="nearest-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <circle cx="12" cy="12" r="4" />
                 <path d="M12 1v3m0 16v3M1 12h3m16 0h3" />
               </svg>
-              <span class="nearest-label" id="nearestLabel">Nearest</span>
+              <span class="nearest-label visually-hidden" id="nearestLabel">Nearest</span>
             </button>
             <div class="board-state">
               <div class="route-count" id="routeCount">Loading routes…</div>
@@ -104,7 +115,7 @@
             <!-- The change log, beside the drawer's own title. Its own mark rather than a glyph,
                  because it is the one thing in here that is not a landing. -->
             <button type="button" class="changelog-button" id="changelogButton" aria-expanded="false" aria-controls="changelogMenu" aria-label="What's new">
-              <img class="changelog-icon" src="/assets/kitty.png?v=85" alt="" width="128" height="128" />
+              <img class="changelog-icon" src="/assets/kitty.png?v=86" alt="" width="128" height="128" />
               <span class="changelog-bang" id="changelogBang" aria-hidden="true" hidden>!</span>
             </button>
             <button type="button" class="landing-menu-close" id="landingMenuClose">Done</button>
@@ -167,6 +178,15 @@
             <button type="button" class="filter-menu-close" id="tripMenuClose">Done</button>
           </div>
           <p class="trip-summary" id="tripSummary"></p>
+          <!-- Only shown once a vessel is known for this sailing, which is most of them and never
+               all of them. Relative like the heading's map button, for the same two roots. -->
+          <a class="trip-map-link" id="tripMapLink" href="map" hidden>
+            <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4Z" />
+              <path d="M9 4v13m6-6.5v13" />
+            </svg>
+            <span id="tripMapLabel">See this boat on the map</span>
+          </a>
           <ol class="filter-list trip-stops" id="tripStops"></ol>
         </div>
       </div>
@@ -210,6 +230,6 @@
         </div>
       </div>
     </main>
-    <script type="module" src="/app.js?v=85"></script>
+    <script type="module" src="/app.js?v=86"></script>
   </body>
 </html>

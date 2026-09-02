@@ -1,0 +1,278 @@
+/* ============================================================
+   ferry board · map
+   juliet.nyc's hello harbor palette, with actual water in it
+   ============================================================
+
+   The variables, the masthead, the card, the bow bullet and the pill are the same ones
+   public/assets/stats.css carries, and for the same reason it gives: they come from
+   juliet.nyc/css/style.css, which is served by the landing page at the site root and is not a
+   path the proxy forwards to this server. Copied a second time rather than factored out
+   between the two pages — each is one small standalone file, and neither should be able to
+   restyle the other by accident. */
+
+:root {
+  --pink-100: #fff5f8;
+  --pink-200: #ffe3ec;
+  --pink-300: #ffc9db;
+  --pink-400: #ff9dbb;
+  --pink-500: #ff6f9c;
+  --red:      #e8455f;
+  --ink:      #3b2b33;
+  --ink-soft: #715c66;
+
+  /* nyc ferry */
+  --navy: #0b3d91;
+  --cyan: #00a9e0;
+  --foam: #bfe8fb;
+  --deep: #8fd3f4;
+
+  --radius: 18px;
+  --shadow: 0 4px 0 var(--pink-300), 0 14px 30px rgba(232, 69, 95, .12);
+  --font: "Trebuchet MS", "Segoe UI", Verdana, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  line-height: 1.6;
+  background:
+    radial-gradient(circle at 12% 8%,  #fff 0 6px, transparent 7px) 0 0/64px 64px,
+    radial-gradient(circle at 62% 42%, #fff 0 5px, transparent 6px) 0 0/64px 64px,
+    linear-gradient(180deg, var(--pink-200), var(--pink-100) 420px);
+  background-attachment: fixed;
+}
+
+/* ---------------- masthead ---------------- */
+
+.masthead {
+  background: linear-gradient(180deg, var(--pink-400), var(--pink-300));
+  padding-top: 26px;
+  position: relative;
+}
+.masthead-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.brand h1 {
+  margin: 0;
+  font-size: clamp(1.9rem, 5vw, 2.6rem);
+  letter-spacing: -1px;
+}
+.tagline { margin: 0; color: #6d4150; }
+.pill {
+  background: var(--navy);
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 10px;
+  font-size: .82rem;
+  letter-spacing: .5px;
+}
+.since { margin: 0; color: #6d4150; font-size: .9rem; }
+
+/* the wave line the ferry rides on the landing page */
+.harbor { height: 18px; overflow: hidden; }
+.wave {
+  height: 18px;
+  background:
+    radial-gradient(circle at 10px -6px, transparent 12px, var(--foam) 13px 15px, transparent 16px) 0 0/24px 18px repeat-x;
+  opacity: .9;
+}
+
+/* ---------------- layout ---------------- */
+
+main { max-width: 900px; margin: 0 auto; padding: 26px 24px 60px; }
+
+.card {
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.card-title {
+  margin: 0;
+  font-size: 1.35rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.count { color: var(--ink-soft); font-size: .9rem; font-variant-numeric: tabular-nums; }
+
+/* the little bow bullet */
+.bowdot {
+  width: 20px; height: 14px;
+  flex: none;
+  background:
+    radial-gradient(circle at 50% 50%, var(--pink-300) 0 3px, transparent 4px),
+    linear-gradient(var(--red), var(--red));
+  clip-path: polygon(0 0, 42% 32%, 58% 32%, 100% 0, 100% 100%, 58% 68%, 42% 68%, 0 100%);
+  border-radius: 3px;
+}
+
+/* ---------------- the map ---------------- */
+
+.map-card { padding-bottom: 16px; }
+
+.map-tools { display: flex; gap: 6px; }
+.map-tools button {
+  font: inherit;
+  font-size: .9rem;
+  line-height: 1;
+  min-width: 38px;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: var(--pink-100);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 0 2px 0 var(--pink-300);
+  cursor: pointer;
+}
+.map-tools button:hover { background: var(--pink-200); }
+.map-tools button:active { transform: translateY(2px); box-shadow: none; }
+
+.map-frame {
+  position: relative;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #d9f1fc, var(--foam) 55%, var(--deep));
+}
+#chart {
+  display: block;
+  width: 100%;
+  /* Tall enough to be a map on a phone without pushing the boat list off the bottom of it. */
+  height: min(62vh, 520px);
+  /* The map takes the gesture; without this a drag scrolls the page underneath it instead. */
+  touch-action: none;
+  cursor: grab;
+}
+#chart.is-dragging { cursor: grabbing; }
+#chart:focus-visible { outline: 3px solid var(--pink-500); outline-offset: -3px; }
+
+/* Route lines get a white casing under the colour so that where two routes share the same water
+   — which on the East River is most of it — the top one still reads as a separate line. */
+.route-casing { fill: none; stroke: #fff; stroke-width: 7; stroke-opacity: .55; stroke-linecap: round; stroke-linejoin: round; }
+.route-line { fill: none; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Sizes on markers are in drawing units, and the fitted map is drawn about as many units wide as it
+   gets CSS pixels — so these numbers are roughly pixels, and they stay that size at every zoom
+   because the group they sit in is counter-scaled. The route lines are the exception: they are not
+   in that group, so their width is held in real pixels by vector-effect instead. */
+.dock-mark { fill: #fff; stroke: var(--ink); stroke-width: 1.6; }
+.dock-label {
+  fill: var(--ink);
+  font-size: 10px;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, .95);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+/* Thirty dock names at the fitted zoom is a wall of text over the water, so they wait until
+   there is room for them — or until one of them is where the selected boat is going. */
+.docks.is-close .dock-label, .dock.is-target .dock-label { opacity: 1; }
+.dock.is-target .dock-mark { fill: var(--pink-400); }
+
+.boat-hull { stroke: var(--ink); stroke-width: 1.6; }
+.boat-heading { fill: var(--ink); }
+.boat-halo { fill: none; stroke: var(--pink-500); stroke-width: 2.4; }
+.boat-label {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, .95);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+}
+.boat.is-stale .boat-hull { fill-opacity: .45; }
+
+.map-message {
+  position: absolute;
+  inset: auto 12px 12px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--ink);
+  background: rgba(255, 255, 255, .94);
+  font-size: .88rem;
+  text-align: center;
+}
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 12px 0 0; font-size: .84rem; color: var(--ink-soft); }
+.legend .key { display: inline-flex; align-items: center; gap: 6px; }
+.legend .swatch { width: 14px; height: 4px; border-radius: 2px; background: var(--ink); }
+
+/* ---------------- the boat list ---------------- */
+
+.boats { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.boats .boat-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 4px 12px;
+  align-items: center;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  padding: 10px 12px;
+  background: var(--pink-100);
+  border: 2px solid var(--pink-300);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.boats .boat-row:hover { border-color: var(--pink-400); }
+.boats .boat-row[aria-pressed="true"] { border-color: var(--ink); background: #fff; box-shadow: 0 3px 0 var(--pink-400); }
+
+.route-chip {
+  grid-row: span 2;
+  min-width: 42px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-align: center;
+  background: var(--ink-soft);
+  color: #fff;
+}
+.boat-name { font-weight: 700; }
+.boat-number { color: var(--ink-soft); font-weight: 400; font-size: .85rem; margin-left: 6px; }
+.boat-doing { grid-column: 2; color: var(--ink-soft); font-size: .88rem; }
+.boat-figures { grid-row: span 2; text-align: right; color: var(--ink-soft); font-size: .82rem; font-variant-numeric: tabular-nums; }
+.boat-figures b { display: block; color: var(--ink); font-size: 1rem; }
+
+.note { margin: 12px 0 0; color: var(--ink-soft); font-size: .85rem; }
+.footnote { color: var(--ink-soft); font-size: .85rem; text-align: center; margin: 30px 0 0; }
+.empty { color: var(--ink-soft); margin: 0; }
+
+/* The boat's position and the zoom's counter-scale are deliberately on two nested groups: only the
+   outer one moves when the feed says a boat has moved, so this eases a boat along the water without
+   also easing the whole fleet after every pinch. */
+@media (prefers-reduced-motion: no-preference) {
+  .boat { transition: transform .8s ease-out; }
+  .boat-wake { transform-origin: center; animation: wake 2.6s ease-out infinite; }
+  @keyframes wake {
+    from { transform: scale(.5); opacity: .55; }
+    to   { transform: scale(2.2); opacity: 0; }
+  }
+}

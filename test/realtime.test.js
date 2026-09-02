@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { boatByTrip, mergeVehicleAssignments, normalizeTripUpdates, normalizeVehicleAssignments, withBoatAssignments } from "../lib/realtime.js";
+import { boatByTrip, mergeVehicleAssignments, normalizeTripUpdates, normalizeVehicleAssignments, normalizeVehiclePositions, withBoatAssignments } from "../lib/realtime.js";
 
 test("normalizes only updates for the configured landing", () => {
   const feed = { entity: [{ tripUpdate: { trip: { tripId: "trip-1" }, delay: 120, stopTimeUpdate: [
@@ -138,6 +138,60 @@ test("reads vessel assignments embedded in trip updates", () => {
   assert.deepEqual(normalizeVehicleAssignments(feed, fleet), [{
     tripId: "terminal-trip", boatName: "Dream Boat", vesselNumber: "H-119", updatedAtEpochSeconds: 5678
   }]);
+});
+
+test("reads where each boat is, and which vessel it is", () => {
+  const feed = { entity: [{
+    id: "19",
+    vehicle: {
+      trip: { tripId: "863" },
+      position: { latitude: 40.636817, longitude: -74.060089, speed: 13 },
+      currentStopSequence: 4,
+      currentStatus: 2,
+      timestamp: 1_788_313_309,
+      vehicle: { id: "19", label: "H204" }
+    }
+  }] };
+  const fleet = [{ id: "opportunity", name: "Opportunity", number: "H-204" }];
+  assert.deepEqual(normalizeVehiclePositions(feed, fleet), [{
+    id: "19",
+    tripId: "863",
+    latitude: 40.636817,
+    longitude: -74.060089,
+    bearing: null,
+    speed: 13,
+    status: "in-transit",
+    stopSequence: 4,
+    boatName: "Opportunity",
+    vesselNumber: "H-204",
+    updatedAtEpochSeconds: 1_788_313_309
+  }]);
+});
+
+// Protobuf serves an unset optional field from the prototype as its zero, and this vendor never
+// sets bearing. Read at face value that is not "heading unknown", it is the entire fleet steaming
+// due north, which is the kind of wrong that looks deliberate on a map.
+test("an unset bearing is no heading rather than north", () => {
+  const position = Object.assign(Object.create({ bearing: 0, odometer: 0 }), { latitude: 40.7, longitude: -74.01, speed: 4 });
+  const vehicle = Object.assign(Object.create({ currentStopSequence: 0 }), {
+    trip: { tripId: "1" }, position, currentStatus: "STOPPED_AT", timestamp: 10, vehicle: { id: "7", label: "H119" }
+  });
+  const [boat] = normalizeVehiclePositions({ entity: [{ id: "7", vehicle }] }, []);
+  assert.equal(boat.bearing, null);
+  assert.equal(boat.stopSequence, null, "an unset sequence points at no stop rather than at stop zero");
+  assert.equal(boat.speed, 4);
+  // The enum arrives as a number from protobuf and as its name from anything hand-written.
+  assert.equal(boat.status, "stopped");
+  // No fleet match, so the feed's own label stands in rather than the boat going unnamed.
+  assert.equal(boat.boatName, "H119");
+});
+
+test("a vehicle the feed cannot place is not on the map", () => {
+  const feed = { entity: [
+    { id: "1", vehicle: { trip: { tripId: "a" }, timestamp: 1, vehicle: { id: "1", label: "H101" } } },
+    { id: "2", vehicle: { trip: { tripId: "b" }, position: { latitude: 40.7, longitude: -74 }, timestamp: 2, vehicle: { id: "2", label: "H102" } } }
+  ] };
+  assert.deepEqual(normalizeVehiclePositions(feed, []).map((boat) => boat.id), ["2"]);
 });
 
 test("merges trip-update and vehicle-position assignments", () => {

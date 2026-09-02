@@ -60,6 +60,60 @@ what changes on a phone, and nothing else does:
 - sizes switch from `vh`/`vw` to `px`, so text stays legible regardless of handset height. nothing renders below `11px`.
 - notch and home-indicator clearance via `env(safe-area-inset-*)`, and `apple-mobile-web-app-capable` so "Add to Home Screen" opens it without browser chrome.
 
+## the map
+
+the folded-map button in the heading, next to the location button, opens `/map` — every NYC Ferry
+vessel that is currently reporting a position, drawn on the network it is running.
+
+there are no map tiles. this server's Content-Security-Policy is `default-src 'self'`, so an
+outside basemap could not load even if the board wanted one, and it turns out not to need one: the
+route lines come straight out of `gtfs/shapes.txt` and the docks out of
+[`config/landings.json`](./config/landings.json), and on a system whose lines are two rivers and a
+bay, drawing the routes draws the harbor. [`lib/fleet-map.js`](./lib/fleet-map.js) builds that
+picture once at startup and serves it from `/api/map`; the drawing itself is hand-built SVG in
+[`public/assets/map.js`](./public/assets/map.js), with pan, pinch-zoom, and `ctrl`/`⌘` + scroll to
+zoom on a desktop. plain scrolling is left alone so the page can still be scrolled past.
+
+`/api/boats` is the live half. it reads the same cached snapshot `/api/realtime` does, so opening
+the map costs nothing extra upstream, and each boat carries:
+
+| field | from |
+|---|---|
+| position, speed | the NYC Ferry vehicle-position feed. speed is metres per second in the feed and knots on the page. |
+| vessel name | matched against [`content/vessels.json`](./content/vessels.json), falling back to the feed's own label (`H204`) when the fleet list does not know it. |
+| route, destination, next stop | the trip the feed says it is working, looked up in the static feed. |
+
+things worth knowing about what it can and cannot show:
+
+- **NYC Ferry only.** every partner operator the board carries — NY Waterway, Seastreak, the Staten Island Ferry, NYU Langone, Liberty Landing, the Trust's Governors Island boats — publishes no vessel positions at all. their boats are on the water and not on this map.
+- **no heading in the feed.** the vendor sets speed but never `bearing`, so a boat is pointed by comparing where it is now with where it was on the previous poll, and points nowhere until it has actually moved.
+- **a fix much older than the feed's own snapshot is dropped**, so a vessel tied up overnight does not sit on the map claiming to be out. ages are measured against the snapshot rather than the clock, so a cache served through an upstream outage keeps showing the harbor as it stood.
+- outside service hours the honest answer is an empty harbor, and that is what it draws.
+
+reachable as `/map` on a kiosk and `/ferryTimesMobile/map` on juliet.nyc, the same two spellings
+the stats page answers to.
+
+### from a departure to its boat
+
+tapping a departure already opens its trip — every stop it calls at and what connects from each.
+that sheet now carries one more line, above the stops: **see this boat on the map**. the stops
+answer where the boat is going; this answers where it is.
+
+the handover is by **vessel name**, `map?boat=Tooth%20Ferry`, and that is deliberate. a sailing an
+hour out has no vehicle of its own, so the board predicts its vessel from the boat the workbook
+assigns it — and that vessel is out on the water right now working some *other* trip entirely. its
+trip id would find nothing; its name finds it. the map accepts the hull number (`H-122`) too.
+
+the link names which of the two it is offering, in the same hand the row uses: a confirmed vessel
+plainly, a predicted one with the question mark. a sailing the feed has not named a boat for shows
+no link at all rather than an empty promise — the heading's own map button is a tap away for anyone
+who wants the whole harbor. on a browsed day it never appears, because there are no boats on the
+water to point at.
+
+on the map, a boat named in the query string is selected and zoomed to. if it is not reporting yet
+the page says *"McShane is not reporting a position right now"* and keeps looking on every refresh —
+until somebody picks a different boat themselves, at which point it stops chasing.
+
 ## run it
 
 needs Node.js 22 or newer.

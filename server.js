@@ -7,6 +7,7 @@ import { landingChoices, loadAllLandingData, operatorRoster, stopIdsForLanding }
 import { clampLimit, createConnectionIndex, tripConnections, vesselsByBoat } from "./lib/connections.js";
 import { createCounterService } from "./lib/counters.js";
 import { openStatsStore } from "./lib/stats-store.js";
+import { describeBoats, loadHarborMap } from "./lib/fleet-map.js";
 import { createManualOverrideService } from "./lib/manual-overrides.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
@@ -35,6 +36,13 @@ const OPERATORS = operatorRoster(landingData.byLanding);
 const realtimeStopsByLanding = new Map([...landingData.byLanding].map(([id, data]) => [id, stopIdsForLanding(data)]));
 console.log(`Loaded ${landingData.byLanding.size} of ${LANDING_CHOICES.length} landings; realtime covers ${landingData.merged.meta.landing.stopIds.length} stops.`);
 
+// The map page's static half: the route lines, the docks and the bounds that hold them, plus the
+// trip index that turns "in transit to stop 4 of trip 863" into the name of a landing. Built once
+// from the bundled feed, which is the same contract the landing data above has.
+const harbor = await loadHarborMap({ root: ROOT, landings: landingData.available });
+const harborMapJson = `${JSON.stringify(harbor.map)}\n`;
+console.log(`Charted ${harbor.map.routes.length} routes and ${harbor.map.landings.length} docks for the map.`);
+
 const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json") });
 const nyuRealtimeService = createNyuRealtimeService({ loadDisplay: async () => landingData.merged, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
 const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROOT, "state/service-alerts.json") });
@@ -58,7 +66,20 @@ const counters = createCounterService({ store: statsStore });
 // The counters key landings by number, which is what an agent dials and not what anyone reading a
 // stats page knows a dock by.
 const LANDING_NAMES = Object.fromEntries(landingData.available.map((landing) => [landing.id, landing.displayName || landing.name]));
-const STATS_PATHS = new Set(["/stats", "/ferryTimesMobile/stats"]);
+// The extensionless pages this server answers for, and the file each one is.
+//
+// Reachable as /stats on a kiosk and as /ferryTimesMobile/stats on juliet.nyc. Whether the proxy
+// hands the prefix on or strips it is the proxy's business and not visible from here, so both
+// arrivals are answered rather than guessed between — and both are counted as the one page they
+// are, since counting them apart would file the proxied spelling in with the served files.
+const PAGES = new Map([["/stats", "stats.html"], ["/map", "map.html"]]);
+const PROXY_PREFIX = "/ferryTimesMobile";
+function pageFor(pathname) {
+  // With or without the trailing slash a browser may add.
+  const trimmed = pathname.replace(/\/+$/, "") || "/";
+  const canonical = trimmed.startsWith(`${PROXY_PREFIX}/`) ? trimmed.slice(PROXY_PREFIX.length) : trimmed;
+  return PAGES.has(canonical) ? { canonical, file: PAGES.get(canonical) } : null;
+}
 // Everything counted so far, including the current minute.
 //
 // The rollup runs on a timer, so anything counted since the last one is still only in memory. It is
@@ -151,8 +172,13 @@ async function handle(request, response) {
     // does not send it still works.
     const stops = realtimeStopsByLanding.get(Number(url.searchParams.get("landingId")));
     const updates = [...(ferry.updates || []), ...(nyu.updates || [])];
+    // Where the boats are rides along in the same cached snapshot and is deliberately not forwarded
+    // here. No board draws a map, and a coordinate pair per vessel on a payload every board polls
+    // every fifteen seconds is weight for nobody. The map reads them from /api/boats, off this same
+    // cache and without a second fetch upstream.
+    const { positions, ...departureData } = ferry;
     const result = {
-      ...ferry,
+      ...departureData,
       available: ferry.available || nyu.available,
       stale: Boolean(ferry.stale || nyu.stale),
       updates: stops ? updates.filter((update) => stops.has(String(update.stopId))) : updates,
@@ -166,6 +192,32 @@ async function handle(request, response) {
     else if (result.stale) counters.event("realtime-stale");
     else counters.event("realtime-ok");
     return json(response, result.available ? 200 : 503, result);
+  }
+  // The map's static half. It is derived from the bundled feed and so changes only on redeploy,
+  // which is worth an hour of browser cache: it is by far the largest thing the map page fetches
+  // and by far the least likely to have changed since the last time it was asked for.
+  if (url.pathname === "/api/map") {
+    headers(response);
+    response.writeHead(200, { "Content-Type": TYPES[".json"], "Cache-Control": "public, max-age=3600" });
+    return response.end(harborMapJson);
+  }
+  // The map's live half, read off the same cached snapshot /api/realtime uses. Ages are measured
+  // against the snapshot rather than against now, so a cache being served during an upstream outage
+  // shows the harbor as it stood when it was last read instead of emptying out boat by boat.
+  if (url.pathname === "/api/boats") {
+    const current = await realtimeService.getCurrent();
+    const asOf = current.fetchedAt ? Date.parse(current.fetchedAt) : Date.now();
+    const boats = describeBoats(current.positions, { trips: harbor.trips, routes: harbor.routes, asOf });
+    return json(response, current.available ? 200 : 503, {
+      available: current.available,
+      // The vessel-position feed is fetched alongside the trip updates and can fail on its own, so
+      // a payload can be current for departures and stale for positions. This page only cares
+      // about the second.
+      stale: Boolean(current.stale || current.vehiclesStale),
+      fetchedAt: current.fetchedAt,
+      error: current.error,
+      boats
+    });
   }
   // What else leaves from the stops one trip calls at. The client cannot answer this from its own
   // payload — that is scoped to a single landing — so it asks here, naming only the trip.
@@ -209,11 +261,8 @@ async function handle(request, response) {
       return json(response, status, { error: status === 500 ? "Manual override unavailable." : error.message });
     }
   }
-  // Reachable as /stats on a kiosk and as /ferryTimesMobile/stats on juliet.nyc. Whether the
-  // proxy hands the prefix on or strips it is the proxy's business and not visible from here, so
-  // both arrivals are answered rather than guessed between. Extensionless, with or without the
-  // trailing slash a browser may add.
-  if (STATS_PATHS.has(url.pathname.replace(/\/+$/, "") || "/")) return serve(response, path.join(PUBLIC, "stats.html"));
+  const page = pageFor(url.pathname);
+  if (page) return serve(response, path.join(PUBLIC, page.file));
   let relative; try { relative = decodeURIComponent(url.pathname === "/" ? "index.html" : url.pathname.replace(/^\/+/, "")); } catch { return json(response, 400, { error:"Invalid path" }); }
   const file = path.resolve(PUBLIC, relative); if (!file.startsWith(`${PUBLIC}${path.sep}`)) return json(response, 403, { error:"Forbidden" });
   return serve(response, file);
@@ -232,9 +281,7 @@ function count(request, response) {
     const requested = url.searchParams.get("landingId");
     const landingId = requested === null ? Number(displayConfig.landingNumber) : Number(requested);
     counters.record({
-      // Both spellings of the stats page are the same page, and counting them apart would put the
-      // proxied one in with the served files.
-      route: STATS_PATHS.has(url.pathname.replace(/\/+$/, "") || "/") ? "/stats" : url.pathname,
+      route: pageFor(url.pathname)?.canonical || url.pathname,
       landingId: url.pathname === "/api/display-data" && displayDataJson.has(landingId) ? landingId : undefined,
       status: response.statusCode,
       durationMs: Number(process.hrtime.bigint() - startedAt) / 1e6

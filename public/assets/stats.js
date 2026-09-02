@@ -15,6 +15,9 @@ const SVG = "http://www.w3.org/2000/svg";
 const ROUTE_LABELS = {
   "/api/display-data": "Board data",
   "/api/realtime": "Live arrivals",
+  "/api/boats": "Boat positions",
+  "/api/map": "Map outline",
+  "/map": "Map page",
   "/api/alerts": "Service alerts",
   "/api/override": "Posted notices",
   "/api/landings": "Landing list",

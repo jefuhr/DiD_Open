@@ -819,28 +819,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 75 display assets", async () => {
+test("offline shell includes version 86 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=85/);
-  assert.match(index, /app\.js\?v=85/);
-  assert.match(worker, /nyc-ferry-did-shell-v85/);
-  assert.match(worker, /styles\.css\?v=85/);
-  assert.match(worker, /app\.js\?v=85/);
+  assert.match(index, /styles\.css\?v=86/);
+  assert.match(index, /app\.js\?v=86/);
+  assert.match(worker, /nyc-ferry-did-shell-v86/);
+  assert.match(worker, /styles\.css\?v=86/);
+  assert.match(worker, /app\.js\?v=86/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=85"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=85"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=85"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=86"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=86"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=86"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=85'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=86'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=85'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=86'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -895,8 +895,99 @@ test("the nearest-landing button locates on tap and then shortcuts", async () =>
   assert.match(css, /\.nearest-button\{[^}]*flex:0 0 auto/);
   // The label is a landing name and some are long, so it truncates rather than widening the header.
   assert.match(css, /\.nearest-label\{[^}]*text-overflow:ellipsis/);
+  // Icon only, since the map button now shares that row. The name stays in the markup and stays
+  // announced — a button whose whole content is an SVG is one a screen reader cannot describe.
+  assert.match(index, /class="nearest-label visually-hidden"/);
+  assert.match(app, /elements\.nearestButton\.setAttribute\("aria-label", description\)/);
   const phoneStyles = css.slice(css.indexOf("@media(max-width:820px)"));
   assert.match(phoneStyles, /\.nearest-button\{height:40px/);
+});
+
+// The map lives at its own path on a server that answers from two different roots, so the one thing
+// that can silently break here is the link: rooted at /map it works on a kiosk and 404s on
+// juliet.nyc, where this board is proxied under /ferryTimesMobile/ and the site root belongs to
+// somebody else. Relative is the only spelling that is right in both places.
+test("the board links to the map from the heading, by a path that works under either root", async () => {
+  const [index, css] = await Promise.all([readFile(indexPath, "utf8"), readFile(cssPath, "utf8")]);
+
+  assert.match(index, /<a class="map-button" id="mapButton" href="map"/);
+  assert.doesNotMatch(index, /href="\/map"/, "a rooted link is served by the landing page on juliet.nyc");
+  assert.match(index, /id="mapButton"[^>]*aria-label="[^"]+"/);
+
+  // Beside the location button, and both before the chips that wrap onto the second line — which is
+  // what keeps the pair in the top right corner of a phone.
+  assert.ok(index.indexOf('id="mapButton"') > index.indexOf('id="landingName"'));
+  assert.ok(index.indexOf('id="mapButton"') < index.indexOf('id="nearestButton"'));
+  assert.ok(index.indexOf('id="nearestButton"') < index.indexOf('class="board-state"'));
+
+  // The same square as the button beside it, on both sizes — and themed, since eight themes recolour
+  // every surface on this board and a hardcoded white would be the one control that ignored them.
+  assert.match(css, /\.map-button\{[^}]*width:38px;height:38px/);
+  assert.match(css, /\.map-button\{[^}]*background:var\(--card\)/);
+  const phoneStyles = css.slice(css.indexOf("@media(max-width:820px)"));
+  assert.match(phoneStyles, /\.map-button\{height:40px;width:40px\}/);
+});
+
+// The trip sheet already answers "where does this boat go". This is the other half — "and where is
+// it now" — and it is a link rather than a second sheet, because the board only has one gesture for
+// a departure and it was already spoken for.
+test("the trip sheet offers its vessel on the map, by name", async () => {
+  const [index, app, css] = await Promise.all([
+    readFile(indexPath, "utf8"), readFile(appPath, "utf8"), readFile(cssPath, "utf8")
+  ]);
+
+  // Inside the trip panel, between the summary and the stops, and relative like the heading's.
+  assert.match(index, /<a class="trip-map-link" id="tripMapLink" href="map" hidden>/);
+  assert.ok(index.indexOf('id="tripMapLink"') > index.indexOf('id="tripSummary"'));
+  assert.ok(index.indexOf('id="tripMapLink"') < index.indexOf('id="tripStops"'));
+
+  // By vessel name, never by trip id: the predicted case is a vessel working a different trip
+  // entirely, and this trip's id would find nothing on the map.
+  assert.match(app, /map\?boat=\$\{encodeURIComponent\(vessel\.name\)\}/);
+  assert.doesNotMatch(app, /map\?trip=/);
+  assert.match(app, /function vesselForTrip\(tripId\)/);
+  // Hidden rather than shown empty when the feed has not named a boat for this sailing.
+  assert.match(app, /elements\.tripMapLink\.hidden = !vessel/);
+  // Redrawn with the sheet, so a boat named while it is open turns the link on.
+  assert.match(app, /renderTripMapLink\(\);/);
+  // A browsed day has no boats on the water at all, so it has nothing to point at.
+  assert.match(app, /viewFrame\(new Date\(\)\)\.live \? vesselForTrip/);
+
+  assert.match(css, /\.trip-map-link\{[^}]*background:var\(--card\)/);
+});
+
+// The map page is a second document on the same server, with the same two roots and the same
+// Content-Security-Policy. Its assets have to be under /assets/ for the proxy to forward them, and
+// nothing on it may reach off this origin: default-src 'self' would block a tile server outright,
+// and an offline-first board should not be asking one for permission to draw a map anyway.
+test("the map page draws itself from this origin alone", async () => {
+  const root = new URL("../", import.meta.url);
+  const [page, script, styles, server] = await Promise.all([
+    readFile(new URL("public/map.html", root), "utf8"),
+    readFile(new URL("public/assets/map.js", root), "utf8"),
+    readFile(new URL("public/assets/map.css", root), "utf8"),
+    readFile(serverPath, "utf8")
+  ]);
+
+  const forwarded = /^\/(?:app\.js|styles\.css|sw\.js|assets\/|api\/|ferryTimesMobile\/)/;
+  for (const url of [...page.matchAll(/(?:href|src)="(\/[^"]*)"/g)].map((match) => match[1])) {
+    assert.match(url, forwarded, `${url} is not a path the proxy forwards to the board`);
+  }
+  for (const source of [page, script, styles]) {
+    assert.doesNotMatch(source, /https?:\/\/(?!www\.w3\.org)/, "the map page may not fetch from another origin");
+  }
+
+  // Both spellings of the path, the same way the stats page is reached.
+  assert.match(server, /\["\/stats", "stats\.html"\], \["\/map", "map\.html"\]/);
+  assert.match(server, /url\.pathname === "\/api\/boats"/);
+  assert.match(server, /url\.pathname === "\/api\/map"/);
+
+  // Rendered through textContent, never innerHTML: a vessel name falls back to whatever string the
+  // realtime feed put in vehicle.label, and that is third-party text going onto a page.
+  assert.doesNotMatch(script, /\.innerHTML\b/);
+
+  // The board's own payload must not grow a coordinate per vessel to feed this page.
+  assert.match(server, /const \{ positions, \.\.\.departureData \} = ferry/);
 });
 
 // A merge once shipped conflict markers in index.html and sw.js. Nothing caught it: the contract

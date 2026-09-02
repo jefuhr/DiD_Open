@@ -21,6 +21,8 @@ const elements = {
   tripMenuClose: document.querySelector("#tripMenuClose"),
   tripMenuTitle: document.querySelector("#tripMenuTitle"),
   tripSummary: document.querySelector("#tripSummary"),
+  tripMapLink: document.querySelector("#tripMapLink"),
+  tripMapLabel: document.querySelector("#tripMapLabel"),
   tripStops: document.querySelector("#tripStops"),
   alertList: document.querySelector("#alertList"),
   changelogButton: document.querySelector("#changelogButton"),
@@ -1269,10 +1271,47 @@ function connectionsFor(stop) {
   return `<li class="trip-conn-note">Nothing else leaves after this boat gets in</li>`;
 }
 
+// Which vessel is working a trip, for the link out to the map.
+//
+// The same two answers the row itself gives, in the same order. A vehicle matched to this very trip
+// names it outright. Failing that, the boat the workbook puts on this sailing is out on the water
+// now under some vessel the feed has named — freshest report wins, which is how a boat handing over
+// between two trips resolves to the one that reported last.
+function vesselForTrip(tripId) {
+  const vehicles = realtime.vehicles || [];
+  const working = vehicles.find((item) => String(item.tripId) === String(tripId) && item.boatName);
+  if (working) return { name: working.boatName, predicted: false };
+  const departure = (data?.departures || []).find((item) => String(item.tripId) === String(tripId));
+  if (!Number.isInteger(departure?.boatAssignment)) return null;
+  const boat = `${departure.routeId}${departure.boatAssignment}`;
+  const onTheBoat = vehicles
+    .filter((item) => item.boat === boat && item.boatName)
+    .sort((left, right) => (right.updatedAtEpochSeconds || 0) - (left.updatedAtEpochSeconds || 0))[0];
+  return onTheBoat ? { name: onTheBoat.boatName, predicted: true } : null;
+}
+
+// The link out to the map, when there is a boat to point it at.
+//
+// By vessel name rather than trip id, because the predicted case is a vessel working a different
+// trip entirely and this trip's id would find nothing on the map. Hidden rather than disabled when
+// no vessel is known: a sailing the feed has not reached has nothing to show, and the heading's own
+// map button is a tap away for anyone who wants the whole harbor.
+function renderTripMapLink() {
+  const vessel = tripView && viewFrame(new Date()).live ? vesselForTrip(tripView.tripId) : null;
+  elements.tripMapLink.hidden = !vessel;
+  if (!vessel) return;
+  elements.tripMapLink.href = `map?boat=${encodeURIComponent(vessel.name)}`;
+  elements.tripMapLabel.textContent = `See ${vessel.name}${vessel.predicted ? "?" : ""} on the map`;
+  elements.tripMapLink.setAttribute("aria-label", vessel.predicted
+    ? `See ${vessel.name} on the map — currently on this working, boats change at short notice`
+    : `See ${vessel.name} on the map`);
+}
+
 function renderTripView() {
   if (!tripView) return;
   const stops = tripView.stops;
   elements.tripSummary.textContent = tripView.summary;
+  renderTripMapLink();
   elements.tripStops.innerHTML = stops.map((stop) => {
     // Keyed on sequence, not stop id: a loop trip calls at the same pier twice and dimming by id
     // would grey out the wrong half of it.
@@ -1900,7 +1939,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=85&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=86&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
