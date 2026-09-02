@@ -33,6 +33,9 @@ const timeLabel = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2
 
 const chart = document.getElementById("chart");
 const mapMessage = document.getElementById("mapMessage");
+// The board's own freshness chip, saying the same three things it says: Live, Saved, or nothing to
+// serve. Reused rather than reinvented so the two pages report the feed in one vocabulary.
+const statusText = document.getElementById("mapStatusText");
 
 let harbor = null;
 let boats = [];
@@ -403,11 +406,13 @@ function renderList() {
   const list = document.getElementById("boats");
   list.textContent = "";
   document.getElementById("boatCount").textContent = boats.length
-    ? `${number.format(boats.length)} ${boats.length === 1 ? "boat" : "boats"} reporting`
-    : "";
+    ? `${number.format(boats.length)} ${boats.length === 1 ? "boat" : "boats"}`
+    : "None out";
 
   if (!boats.length) {
-    list.append(element("li", "empty", "No boats are reporting a position right now. Outside service hours that is what an empty harbor looks like."));
+    // The one place the page still spells out what it can and cannot see, because this is the only
+    // state where the absence of boats could be mistaken for the map being broken.
+    list.append(element("li", "empty", "No NYC Ferry vessel is reporting a position right now. Outside service hours that is what an empty harbor looks like — and the partner operators never report one."));
     return;
   }
 
@@ -511,7 +516,6 @@ function followWanted() {
 }
 
 async function load() {
-  const since = document.getElementById("since");
   try {
     if (!harbor) {
       // Relative, so the page works at /map on a kiosk and under /ferryTimesMobile/ on juliet.nyc
@@ -535,18 +539,16 @@ async function load() {
     renderList();
 
     const at = payload.fetchedAt ? new Date(payload.fetchedAt) : null;
-    since.textContent = payload.available
-      ? `${boats.length ? `${number.format(boats.length)} out there` : "quiet out there"}${at ? ` · ${timeLabel.format(at)}` : ""}`
-      : "the vessel feed is not answering";
+    // The board's three words, in the board's chip.
+    statusText.textContent = !payload.available ? "No feed" : payload.stale ? "Saved" : "Live";
     // A boat that was asked for and cannot be found is the most specific thing this page can say, so
     // it outranks the general note about the feed being stale. A feed that is not answering at all
     // outranks both, because it explains them.
     message(!payload.available
       ? "The vessel feed is not answering. Nothing here is current."
-      : following || (payload.stale ? `Showing the last positions the feed gave${at ? `, at ${timeLabel.format(at)}` : ""}.` : ""));
-    document.getElementById("refreshed").textContent = at ? `Positions as of ${timeLabel.format(at)}.` : "";
+      : following || (payload.stale ? `Last positions the feed gave${at ? `, at ${timeLabel.format(at)}` : ""}.` : ""));
   } catch {
-    since.textContent = "the map is unavailable right now";
+    statusText.textContent = "Offline";
     message("Could not reach the server.");
   }
 }

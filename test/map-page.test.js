@@ -186,8 +186,9 @@ test("the list says what each boat is doing", async () => {
   const terminating = await page({ boats: [{ ...BOAT, stop: { ...BOAT.stop, name: "Wall St/Pier 11" }, destination: "Wall St./Pier 11" }] });
   assert.match(terminating.listText(), /Next stop Wall St\/Pier 11/);
   assert.doesNotMatch(terminating.listText(), / · to /);
-  assert.equal(view.node("boatCount").textContent, "1 boat reporting");
-  assert.match(view.node("since").textContent, /1 out there/);
+  assert.equal(view.node("boatCount").textContent, "1 boat");
+  // The board's own freshness chip, saying the board's own word for it.
+  assert.equal(view.node("mapStatusText").textContent, "Live");
 });
 
 // Outside service hours there is nothing on the water, and saying so is the honest answer rather
@@ -195,8 +196,10 @@ test("the list says what each boat is doing", async () => {
 test("an empty harbor says so instead of looking broken", async () => {
   const view = await page({ boats: [] });
   assert.equal(view.find("boat").length, 0);
-  assert.match(view.listText(), /No boats are reporting/);
-  assert.match(view.node("since").textContent, /quiet out there/);
+  assert.match(view.listText(), /No NYC Ferry vessel is reporting/);
+  // The one place left that says the partners are never on here.
+  assert.match(view.listText(), /partner operators never report one/);
+  assert.equal(view.node("boatCount").textContent, "None out");
   // The routes are still drawn: the harbor did not go anywhere.
   assert.equal(view.find("route-line").length, 2);
 });
@@ -209,7 +212,8 @@ test("a feed that is not answering is not passed off as an empty harbor", async 
 
 test("a cached snapshot says when it was taken", async () => {
   const view = await page({ stale: true });
-  assert.match(view.node("mapMessage").textContent, /last positions the feed gave/);
+  assert.match(view.node("mapMessage").textContent, /Last positions the feed gave/);
+  assert.equal(view.node("mapStatusText").textContent, "Saved");
 });
 
 // ---------------------------------------------------------------- picking a boat

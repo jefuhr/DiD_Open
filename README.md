@@ -65,6 +65,13 @@ what changes on a phone, and nothing else does:
 the folded-map button in the heading, next to the location button, opens `/map` — every NYC Ferry
 vessel that is currently reporting a position, drawn on the network it is running.
 
+the page loads [`public/styles.css`](./public/styles.css) itself rather than carrying a palette of
+its own, so it inherits the board's fonts, its colour variables and all eight themes, and its
+header is the board's `.board-heading` with the board's own count and freshness chips in it. that
+is deliberate: it is a second screen of the same app, not a second site, and the one thing that
+would give that away is a page that stays blue while the board has gone pink. the only fixed
+colours on it are the operators' own route colours, which are facts about the routes.
+
 there are no map tiles. this server's Content-Security-Policy is `default-src 'self'`, so an
 outside basemap could not load even if the board wanted one, and it turns out not to need one: the
 route lines come straight out of `gtfs/shapes.txt` and the docks out of
