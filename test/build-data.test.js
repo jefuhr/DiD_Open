@@ -589,6 +589,10 @@ test("a boat going out of service is spotted from the gap in its own day", async
     assert.equal(item.crewShuttle, false);
     // A home-port run belongs to the boat that makes it, so the badge still identifies the boat.
     assert.ok(Number.isInteger(item.boatAssignment));
+    // And it names the revenue trip it comes off. Its own id is minted here and matches nothing in
+    // any feed, so without this the boat could not tie up as late as it actually ran.
+    assert.match(item.tripId, /^oos:/);
+    assert.equal(item.liveTripId, item.tripId.slice("oos:".length));
   }
   // The weekday split shifts: these three boats work the morning peak, tie up at Pier 11 mid-morning
   // for more than five hours, and come back for the evening. Nothing in the feed says so — it is a
@@ -752,6 +756,35 @@ test("a crew shuttle waits for its boats, so it shows a window rather than a min
   for (const item of data.departures.filter((entry) => entry.outOfService)) {
     assert.equal(item.departureTimeEnd, null);
   }
+});
+
+// Live timing reaches a no-pickup row by way of the revenue trip named on it, so which rows carry
+// that name decides which rows can run late. Only the home-port runs may: a crew shuttle is in no
+// feed at all, and a partner's own no-pickup call already has a real trip id of its own.
+test("only a home-port run names a live trip; shuttles and partner calls do not", async () => {
+  const [pier11, redHook, pierC] = await Promise.all([
+    buildDisplayData({ landingNumber: 16 }),
+    buildDisplayData({ landingNumber: 17 }),
+    buildDisplayData({ landingNumber: 27 })
+  ]);
+
+  const shuttles = [...pier11.departures, ...pierC.departures].filter((item) => item.crewShuttle);
+  assert.ok(shuttles.length > 0, "both the collecting landing and Pier C list shuttles");
+  for (const item of shuttles) {
+    assert.equal(item.liveTripId, undefined, `${item.tripId} has no boat behind it to be late`);
+  }
+
+  // Pier C's own board: the boats leaving it to start a shift. They already predict their vessel
+  // through predictTripId, but the trip has not begun, so there is no lateness to inherit.
+  const outbound = pierC.departures.filter((item) => !item.crewShuttle);
+  assert.ok(outbound.length > 0);
+  for (const item of outbound) assert.equal(item.liveTripId, undefined);
+
+  // The Trust's Red Hook run-overs are the one partner no-pickup rows the board shows. They keep
+  // their published trip id, so nothing needs redirecting and nothing is added.
+  const partner = redHook.departures.filter((item) => item.outOfService && !String(item.tripId).startsWith("oos:"));
+  assert.ok(partner.length > 0, "expected the Trust's Red Hook run-overs");
+  for (const item of partner) assert.equal(item.liveTripId, undefined);
 });
 
 test("a crew swap does not read as a boat going out of service", async () => {

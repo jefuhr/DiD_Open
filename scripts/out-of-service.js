@@ -167,6 +167,11 @@ export function homePortRows({ tieUps, selectedStops, homePort, dwellMinutes = 0
     const seconds = entry.endSeconds + Math.max(0, dwellMinutes) * 60;
     rows.push({
       tripId: `oos:${entry.tripId}`, routeId: entry.routeId, serviceId: entry.serviceId,
+      // The revenue trip this run follows out of. The id above is minted here and matches nothing
+      // in the feed, so a boat running late could never move its own home-port row: the live timing
+      // has to be asked for under the trip that is actually on the water — the one whose arrival
+      // this row *is*. A crew shuttle has no such trip and gets no such field.
+      liveTripId: entry.tripId,
       // Direction is meaningless for a boat going home and would only split one route's home-port
       // runs into two cards on the board, so they all share a direction and group together.
       directionId: "0", stopId: entry.endStopId,

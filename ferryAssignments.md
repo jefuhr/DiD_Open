@@ -115,8 +115,8 @@ The board also shows what a boat does when it stops carrying passengers. Three t
 |---|---|
 | `DROP OFF ONLY` on a departure | The trip a boat works **before it stops** — finishing for the day, or coming off a shift mid-day. It will drop off and then go out of service; it is not turning round. It may sit on a route that is still running for hours, so this is not the same as `LAST`. |
 | `DROP OFF?` on a departure | The same thing, less certain. The gap is long enough that nobody should board, short enough that the boat has probably just tied up where it is rather than gone anywhere. |
-| A `Pier C` card, `Out of service` | The home-port run itself, shown at the landing where the boat finishes. `NO PICKUP` — nobody boards. |
-| A `Pier C` card, `Crew shuttle` | A mid-day crew change, shown as a **window** (`2:35 – 3:05 PM`) because the shuttle waits for the boats it is collecting from to sail. One departure carries the relieved crews off every boat it names. Those boats **keep running**; being named here does not mean a boat is finishing. |
+| A `Pier C` card, `Out of service` | The home-port run itself, shown at the landing where the boat finishes. `NO PICKUP` — nobody boards. The time is **live**: the card follows the revenue trip the boat comes off, so a boat running late ties up late and the card reads `NO PICKUP  +N min`. Never `ON TIME` or `SCHEDULED` — a boat going home empty has no schedule status to keep. |
+| A `Pier C` card, `Crew shuttle` | A mid-day crew change, shown as a **window** (`2:35 – 3:05 PM`) because the shuttle waits for the boats it is collecting from to sail. One departure carries the relieved crews off every boat it names. Those boats **keep running**; being named here does not mean a boat is finishing. No live timing: a shuttle is in no feed, so the window is the published one. |
 
 **Where each part comes from matters, because only one of them is derived.**
 

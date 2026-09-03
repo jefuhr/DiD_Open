@@ -115,6 +115,74 @@ test("clamps an early delay inherited from another stop", () => {
   }]);
 });
 
+// A home-port run's own trip id is minted by the build, so no feed entity ever carries it and the
+// row could not inherit its own boat's lateness. It names the revenue trip it comes off instead,
+// and that is what puts the trip's terminating stop — one it arrives at and never departs from, so
+// nothing else asks for it — into the stops worth reporting.
+test("a home-port run inherits the live timing of the trip it comes off", () => {
+  const feed = { entity: [{ tripUpdate: {
+    trip: { tripId: "final-trip" },
+    stopTimeUpdate: [{ stopId: "11", arrival: { delay: 720 } }]
+  } }] };
+  assert.deepEqual(normalizeTripUpdates(feed, ["11"], {
+    departures: [{
+      tripId: "oos:final-trip", liveTripId: "final-trip", stopId: "11",
+      seconds: 18 * 3600 + 24 * 60
+    }],
+    tripSchedules: {
+      "final-trip": { stops: [
+        { stopId: "17", sequence: 1, departureSeconds: 18 * 3600, arrivalSeconds: 18 * 3600 },
+        { stopId: "11", sequence: 4, departureSeconds: null, arrivalSeconds: 18 * 3600 + 24 * 60 }
+      ] }
+    }
+  }), [{
+    tripId: "final-trip",
+    stopId: "11",
+    delaySeconds: 720,
+    predictedEpochSeconds: null,
+    canceled: false
+  }]);
+});
+
+// The terminus is the one call a feed is likeliest to stop short of, and it is the only call a
+// home-port run has. So the trip-level delay has to carry it, exactly as it already carries any
+// other stop the feed has not reached.
+test("a home-port run falls back to the trip's delay when the feed stops short of the terminus", () => {
+  const feed = { entity: [{ tripUpdate: {
+    trip: { tripId: "short-feed-trip" }, delay: 480,
+    stopTimeUpdate: [{ stopId: "17", departure: { delay: 480 } }]
+  } }] };
+  assert.deepEqual(normalizeTripUpdates(feed, ["11"], {
+    departures: [{
+      tripId: "oos:short-feed-trip", liveTripId: "short-feed-trip", stopId: "11",
+      seconds: 18 * 3600 + 24 * 60
+    }]
+  }), [{
+    tripId: "short-feed-trip",
+    stopId: "11",
+    delaySeconds: 480,
+    predictedEpochSeconds: null,
+    canceled: false
+  }]);
+});
+
+// A crew shuttle is in no feed and has no boat behind it whose lateness would mean anything, so it
+// names no live trip and picks up nothing — not even from a boat tying up at the same pier.
+test("a crew shuttle at the same pier is not given the passing trip's delay", () => {
+  const feed = { entity: [{ tripUpdate: {
+    trip: { tripId: "final-trip" }, delay: 600,
+    stopTimeUpdate: [{ stopId: "11", arrival: { delay: 600 } }]
+  } }] };
+  const updates = normalizeTripUpdates(feed, ["11"], {
+    departures: [
+      { tripId: "crew:weekday:16:14:35", stopId: "11", seconds: 14 * 3600 + 35 * 60 },
+      { tripId: "oos:final-trip", liveTripId: "final-trip", stopId: "11", seconds: 18 * 3600 + 24 * 60 }
+    ]
+  });
+  assert.deepEqual(updates.map((item) => item.tripId), ["final-trip"]);
+  assert.equal(updates[0].delaySeconds, 600);
+});
+
 test("matches a live vehicle assignment to its boat name", () => {
   const feed = { entity: [{ vehicle: {
     trip: { tripId: "trip-1" },

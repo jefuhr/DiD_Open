@@ -572,7 +572,11 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
       if (!active.has(departure.serviceId)) continue;
       const calendarDate = addDays(serviceDate, Math.floor(departure.seconds / 86400));
       if (calendarDate !== current.dateKey) continue;
-      const update = updates.get(`${departure.tripId}|${departure.stopId}`);
+      // Usually the row's own trip. A home-port run's id is minted by the build and matches nothing
+      // live, so it names the revenue trip it follows out instead — the boat going to Pier C is the
+      // boat that just got in, and it ties up as late as that trip ran. Crew shuttles carry no such
+      // trip and keep their published times.
+      const update = updates.get(`${departure.liveTripId || departure.tripId}|${departure.stopId}`);
       if (update?.canceled) continue;
       const liveDelay = Number(update?.delaySeconds);
       const hasLiveTiming = !realtime.stale && update?.delaySeconds != null && Number.isFinite(liveDelay);
@@ -731,10 +735,15 @@ function groupContext(group, isOtherOperator) {
 function departureStatus(item) {
   const delaySeconds = Number(item.delay);
   const hasFreshTiming = !realtime.stale && item.hasLiveTiming && Number.isFinite(delaySeconds);
+  // A boat with no passengers aboard is never on time and never merely scheduled — it is not in
+  // service — so NO PICKUP takes that slot instead. It can still be late, though, and on a
+  // home-port run that is the one thing worth saying: an agent watching a boat come in to tie up
+  // wants the minute it will actually get here, not the minute it was meant to.
+  const noPickup = item.outOfService || item.crewShuttle;
   const delayLabel = hasFreshTiming && delaySeconds >= 60
     ? `<span class="vessel-delay-badge departure-delay-badge" dir="ltr" aria-label="Status: +${Math.max(1, Math.round(delaySeconds / 60))} min">+${Math.max(1, Math.round(delaySeconds / 60))} min</span>`
     : "";
-  const onTimeLabel = hasFreshTiming && delaySeconds < 60
+  const onTimeLabel = hasFreshTiming && delaySeconds < 60 && !noPickup
     ? `<span class="on-time-badge" aria-label="Status: On time">ON TIME</span>`
     : "";
   const isLast = item.isLastOfDay || item.isLastGovernorsIsland;
@@ -742,9 +751,6 @@ function departureStatus(item) {
     ? "Last South Brooklyn departure serving Governors Island"
     : "Last departure of the day";
   const lastLabel = isLast ? `<strong class="departure-last-badge" aria-label="${lastAria}">LAST</strong>` : "";
-  // A boat with no passengers aboard has no schedule status worth showing — it is not late or on
-  // time, it is simply not in service — so NO PICKUP takes that slot instead.
-  const noPickup = item.outOfService || item.crewShuttle;
   // A boat ending its run here. It is in service and full of passengers — it simply cannot be
   // boarded — so it gets its own pair of badges rather than borrowing NO PICKUP, which says the
   // opposite about the boat, or SCHEDULED, which invites someone to wait for it.

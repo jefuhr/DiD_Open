@@ -49,6 +49,26 @@ test("shows fresh late and on-time status in the reserved badge row", async () =
   assert.match(css, /\.scheduled-badge\{color:var\(--navy\);background:#e6eef2/);
 });
 
+// A home-port run used to sit at its published minute however late the boat was, because its trip id
+// is minted by the build and matches nothing in the feed. It now inherits the timing of the revenue
+// trip it comes off — so the printed time, the countdown and how long the row survives all follow
+// the boat. Crew shuttles name no such trip and are untouched.
+test("a boat going to Pier C ties up as late as it ran", async () => {
+  const app = await readFile(appPath, "utf8");
+
+  // One lookup for every row: the row's own trip normally, the trip behind it for a synthetic one.
+  assert.match(app, /updates\.get\(`\$\{departure\.liveTripId \|\| departure\.tripId\}\|\$\{departure\.stopId\}`\)/);
+
+  // The delay badge is not gated on being in service — that is the whole point — but ON TIME is.
+  // A boat going home empty is never on time or merely scheduled; it can only be late.
+  const status = app.slice(app.indexOf("function departureStatus"), app.indexOf("function contrastOnWhite"));
+  assert.match(status, /const noPickup = item\.outOfService \|\| item\.crewShuttle;/);
+  assert.match(status, /hasFreshTiming && delaySeconds >= 60\n/);
+  assert.match(status, /hasFreshTiming && delaySeconds < 60 && !noPickup\n/);
+  // noPickup has to be settled before the badges that read it.
+  assert.ok(status.indexOf("const noPickup") < status.indexOf("const onTimeLabel"));
+});
+
 // The badge on a boat's last working trip reads FINAL. Nothing about it is published: it is inferred
 // from the shape of the boat's day against the crew sheet, so a shorter gap that could be a break
 // rather than a finish keeps the question mark instead of claiming certainty.
