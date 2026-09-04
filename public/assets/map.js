@@ -40,6 +40,8 @@ const boatSearchInput = document.getElementById("boatSearch");
 const routeFilterBar = document.getElementById("routeFilterBar");
 const vesselCard = document.getElementById("vesselCard");
 const dockCard = document.getElementById("dockCard");
+const bridgeCard = document.getElementById("bridgeCard");
+const seamarkCard = document.getElementById("seamarkCard");
 const bottomSheet = document.getElementById("bottomSheet");
 const sheetHandle = document.getElementById("sheetHandle");
 
@@ -57,6 +59,7 @@ let view = null;
 let dockLayer = null;
 let fleetLayer = null;
 let tileLayer = null;
+let chartBackdrop = null;
 let tilesDrawnFor = "";
 let fleetIsClose = false;
 
@@ -197,6 +200,155 @@ function marker(className, latitude, longitude) {
   return { outer, inner };
 }
 
+function drawChartBackdrop(chartData) {
+  if (!chartData || !projection) return null;
+  const backdrop = svgNode("g", { class: "chart-backdrop" });
+
+  // 1. Water body
+  const waterGroup = svgNode("g", { class: "chart-water" });
+  const pad = projection.padding * 15;
+  const waterRect = svgNode("rect", {
+    class: "map-water",
+    x: (-pad).toFixed(1),
+    y: (-pad).toFixed(1),
+    width: (projection.width + pad * 2).toFixed(1),
+    height: (projection.height + pad * 2).toFixed(1)
+  });
+  waterGroup.append(waterRect);
+  backdrop.append(waterGroup);
+
+  // 2. Landmass polygons
+  if (chartData.landmass) {
+    const landGroup = svgNode("g", { class: "chart-land" });
+    for (const land of chartData.landmass) {
+      if (!land.points || land.points.length < 3) continue;
+      const d = pathData(land.points) + " Z";
+      const path = svgNode("path", {
+        class: `map-landmass land-${land.id}`,
+        d,
+        "vector-effect": "non-scaling-stroke"
+      });
+      path.dataset.landId = land.id;
+      landGroup.append(path);
+    }
+    backdrop.append(landGroup);
+  }
+
+  // 3. Navigation Channels / Fairways
+  if (chartData.channels) {
+    const channelGroup = svgNode("g", { class: "chart-channels" });
+    for (const channel of chartData.channels) {
+      if (!channel.points || channel.points.length < 2) continue;
+      const d = pathData(channel.points);
+      const path = svgNode("path", {
+        class: "map-channel",
+        d,
+        "vector-effect": "non-scaling-stroke"
+      });
+      channelGroup.append(path);
+    }
+    backdrop.append(channelGroup);
+  }
+
+  // 4. Major Streets (arterials and expressways only, no side streets)
+  if (chartData.streets) {
+    const streetGroup = svgNode("g", { class: "chart-streets" });
+    for (const street of chartData.streets) {
+      if (!street.points || street.points.length < 2) continue;
+      const d = pathData(street.points);
+      const casing = svgNode("path", {
+        class: `map-street-casing street-${street.type}`,
+        d,
+        "vector-effect": "non-scaling-stroke"
+      });
+      const line = svgNode("path", {
+        class: `map-street street-${street.type}`,
+        d,
+        "vector-effect": "non-scaling-stroke"
+      });
+      streetGroup.append(casing, line);
+    }
+    backdrop.append(streetGroup);
+  }
+
+  // 5. Bridges across waterways (with clearances)
+  if (chartData.bridges) {
+    const bridgeGroup = svgNode("g", { class: "chart-bridges" });
+    for (const bridge of chartData.bridges) {
+      if (!bridge.points || bridge.points.length < 2) continue;
+      const [p1, p2] = bridge.points;
+      const [x1, y1] = projection.point(p1[0], p1[1]);
+      const [x2, y2] = projection.point(p2[0], p2[1]);
+      const mx = ((x1 + x2) / 2).toFixed(1);
+      const my = ((y1 + y2) / 2).toFixed(1);
+
+      const group = svgNode("g", { class: "bridge-group" });
+      group.dataset.bridgeId = bridge.id;
+      group.dataset.clearanceFeet = bridge.clearanceFeet;
+      group.dataset.name = bridge.name;
+
+      const casing = svgNode("line", {
+        class: "bridge-casing",
+        x1: x1.toFixed(1),
+        y1: y1.toFixed(1),
+        x2: x2.toFixed(1),
+        y2: y2.toFixed(1),
+        "vector-effect": "non-scaling-stroke"
+      });
+      const deck = svgNode("line", {
+        class: "bridge-deck",
+        x1: x1.toFixed(1),
+        y1: y1.toFixed(1),
+        x2: x2.toFixed(1),
+        y2: y2.toFixed(1),
+        "vector-effect": "non-scaling-stroke"
+      });
+      const inner = svgNode("g", { class: "scaler", transform: `translate(${mx},${my})` });
+      const badge = svgNode("text", { class: "bridge-clearance-badge", x: 0, y: -3 });
+      badge.textContent = `${bridge.clearanceFeet}'`;
+      inner.append(badge);
+
+      group.append(casing, deck, inner);
+      bridgeGroup.append(group);
+    }
+    backdrop.append(bridgeGroup);
+  }
+
+  // 6. Naval Markings (Seamarks: Lights & Buoys)
+  if (chartData.seamarks) {
+    const seamarkGroup = svgNode("g", { class: "chart-seamarks" });
+    for (const seamark of chartData.seamarks) {
+      const { outer, inner } = marker(
+        `seamark seamark-${seamark.type} seamark-${seamark.color}`,
+        seamark.latitude,
+        seamark.longitude
+      );
+      outer.dataset.seamarkId = seamark.id;
+      outer.dataset.name = seamark.name;
+
+      if (seamark.type === "light") {
+        const halo = svgNode("circle", { class: "seamark-halo", r: 6 });
+        const core = svgNode("circle", { class: "seamark-light-core", r: 2.6 });
+        const label = svgNode("text", { class: "seamark-label", x: 6, y: 0.5 });
+        label.textContent = seamark.name.split(" ")[0];
+        inner.append(halo, core, label);
+      } else {
+        const buoy = svgNode("polygon", {
+          class: `seamark-buoy-icon seamark-buoy-${seamark.color}`,
+          points: seamark.shape === "nun" ? "-2,2.5 0,-2.8 2,2.5" : "-2.2,2 2.2,2 2.2,-2 -2.2,-2"
+        });
+        const label = svgNode("text", { class: "seamark-label", x: 5, y: 0.5 });
+        label.textContent = seamark.name.replace(/^.*\bBuoy\s+/, "");
+        inner.append(buoy, label);
+      }
+      seamarkGroup.append(outer);
+    }
+    backdrop.append(seamarkGroup);
+  }
+
+  return backdrop;
+}
+
 function drawHarbor() {
   chart.textContent = "";
   projection = makeProjection(harbor.bounds);
@@ -210,6 +362,13 @@ function drawHarbor() {
   tileLayer = svgNode("g", { class: "tiles" });
   tilesDrawnFor = "";
   chart.append(tileLayer);
+
+  if (harbor.chart) {
+    chartBackdrop = drawChartBackdrop(harbor.chart);
+    if (chartBackdrop) chart.append(chartBackdrop);
+  } else {
+    chartBackdrop = null;
+  }
 
   const casings = svgNode("g", { class: "casings" });
   const lines = svgNode("g", { class: "lines" });
@@ -372,6 +531,7 @@ function applyView() {
   for (const scaler of chart.querySelectorAll(".scaler")) scaler.setAttribute("transform", `scale(${scale})`);
   const close = base.width / view.width >= LABEL_ZOOM;
   if (dockLayer) dockLayer.classList.toggle("is-close", close);
+  if (chartBackdrop) chartBackdrop.classList.toggle("is-close", close);
   if (fleetLayer && close !== fleetIsClose) {
     fleetIsClose = close;
     drawFleet();
@@ -569,15 +729,41 @@ chart.addEventListener("click", (event) => {
   const pickedBoat = event.target.closest?.(".boat");
   if (pickedBoat) {
     hideDockCard();
+    hideBridgeCard();
+    hideSeamarkCard();
     select(pickedBoat.dataset.boat, { recentre: false });
     return;
   }
   const pickedDock = event.target.closest?.(".dock");
   if (pickedDock) {
+    hideBridgeCard();
+    hideSeamarkCard();
     const dockId = Number(pickedDock.dataset.dockId);
     const dock = harbor?.landings?.find((l) => l.id === dockId);
     if (dock) showDockCard(dock);
+    return;
   }
+  const pickedBridge = event.target.closest?.(".bridge-group");
+  if (pickedBridge) {
+    hideDockCard();
+    hideSeamarkCard();
+    const bridgeId = pickedBridge.dataset.bridgeId;
+    const bridge = harbor?.chart?.bridges?.find((b) => b.id === bridgeId);
+    if (bridge) showBridgeCard(bridge);
+    return;
+  }
+  const pickedSeamark = event.target.closest?.(".seamark");
+  if (pickedSeamark) {
+    hideDockCard();
+    hideBridgeCard();
+    const seamarkId = pickedSeamark.dataset.seamarkId;
+    const seamark = harbor?.chart?.seamarks?.find((s) => s.id === seamarkId);
+    if (seamark) showSeamarkCard(seamark);
+    return;
+  }
+  hideDockCard();
+  hideBridgeCard();
+  hideSeamarkCard();
 });
 
 document.getElementById("zoomIn").addEventListener("click", () => zoomBy(1 / 1.4, null, null, { animate: true }));
@@ -639,6 +825,8 @@ function showDockCard(dock) {
   dockCard.textContent = "";
   dockCard.hidden = false;
   if (vesselCard) vesselCard.hidden = true;
+  if (bridgeCard) bridgeCard.hidden = true;
+  if (seamarkCard) seamarkCard.hidden = true;
 
   const closeBtn = element("button", "card-close", "×");
   closeBtn.type = "button";
@@ -666,6 +854,76 @@ function hideDockCard() {
   if (!dockCard) return;
   dockCard.hidden = true;
   dockCard.textContent = "";
+}
+
+function showBridgeCard(bridge) {
+  if (!bridgeCard) return;
+  bridgeCard.textContent = "";
+  bridgeCard.hidden = false;
+  if (vesselCard) vesselCard.hidden = true;
+  if (dockCard) dockCard.hidden = true;
+  if (seamarkCard) seamarkCard.hidden = true;
+
+  const closeBtn = element("button", "card-close", "×");
+  closeBtn.type = "button";
+  closeBtn.setAttribute("aria-label", "Close bridge card");
+  closeBtn.addEventListener("click", hideBridgeCard);
+
+  const titleRow = element("div", "card-title-row");
+  const name = element("span", "card-vessel-name", bridge.name);
+  titleRow.append(name);
+
+  const typeLine = element("div", "card-status-line", `${bridge.type} · ${bridge.waterway}`);
+
+  const clearanceBox = element("div", "card-clearance-box");
+  const heading = element("div", "card-clearance-label", "Vertical Navigational Clearance");
+  const value = element("div", "card-clearance-val", `${bridge.clearanceFeet} ft (${bridge.clearanceMeters} m)`);
+  const statusBadge = element("span", "card-clearance-badge", "✓ CLEAR FOR ALL FERRIES");
+  const margin = Math.max(0, bridge.clearanceFeet - 32);
+  const note = element("div", "card-clearance-note",
+    `NYC Ferry vessels have an air draft of 26–32 ft (safe margin: ${margin} ft). ${bridge.clearanceNote}`);
+  clearanceBox.append(heading, value, statusBadge, note);
+
+  bridgeCard.append(closeBtn, titleRow, typeLine, clearanceBox);
+}
+
+function hideBridgeCard() {
+  if (!bridgeCard) return;
+  bridgeCard.hidden = true;
+  bridgeCard.textContent = "";
+}
+
+function showSeamarkCard(seamark) {
+  if (!seamarkCard) return;
+  seamarkCard.textContent = "";
+  seamarkCard.hidden = false;
+  if (vesselCard) vesselCard.hidden = true;
+  if (dockCard) dockCard.hidden = true;
+  if (bridgeCard) bridgeCard.hidden = true;
+
+  const closeBtn = element("button", "card-close", "×");
+  closeBtn.type = "button";
+  closeBtn.setAttribute("aria-label", "Close seamark card");
+  closeBtn.addEventListener("click", hideSeamarkCard);
+
+  const titleRow = element("div", "card-title-row");
+  const name = element("span", "card-vessel-name", seamark.name);
+  titleRow.append(name);
+
+  const status = element("div", "card-status-line",
+    seamark.type === "light"
+      ? `Light: ${seamark.characteristic || "Fixed"} · Nominal Range: ${seamark.rangeNm || "—"} NM`
+      : `Buoy: ${seamark.subtype || seamark.shape || "Marker"} (${seamark.color})`);
+
+  const desc = element("div", "card-seamark-desc", seamark.description || "Harbor navigational mark.");
+
+  seamarkCard.append(closeBtn, titleRow, status, desc);
+}
+
+function hideSeamarkCard() {
+  if (!seamarkCard) return;
+  seamarkCard.hidden = true;
+  seamarkCard.textContent = "";
 }
 
 // ---------------------------------------------------------------- bottom sheet & search
@@ -720,6 +978,8 @@ function select(id, { recentre = true } = {}) {
   wanted = null;
   selectedId = selectedId === id ? null : id;
   hideDockCard();
+  hideBridgeCard();
+  hideSeamarkCard();
   drawFleet();
   renderList();
   if (recentre) {

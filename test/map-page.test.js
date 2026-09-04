@@ -92,7 +92,7 @@ function makeNode(tag) {
   return node;
 }
 
-async function page({ boats = [BOAT], available = true, stale = false, query = "" } = {}) {
+async function page({ boats = [BOAT], available = true, stale = false, query = "", harbor = HARBOR } = {}) {
   const [source, markup] = await Promise.all([readFile(scriptPath, "utf8"), readFile(pagePath, "utf8")]);
   const ids = [...markup.matchAll(/id="([^"]+)"/g)].map((match) => match[1]);
   const registry = new Map();
@@ -118,7 +118,7 @@ async function page({ boats = [BOAT], available = true, stale = false, query = "
     setInterval: (handler) => { poll = handler; return 0; },
     async fetch(url) {
       asked.push(String(url));
-      const body = String(url).startsWith("/api/map") ? HARBOR : { available, stale, fetchedAt: "2026-09-01T21:00:12Z", boats: live.boats };
+      const body = String(url).startsWith("/api/map") ? harbor : { available, stale, fetchedAt: "2026-09-01T21:00:12Z", boats: live.boats };
       return { ok: true, json: async () => body };
     }
   };
@@ -542,4 +542,72 @@ test("all themes have dedicated cartographic rules in map.css", async () => {
     assert.match(css, new RegExp(`:root\\[data-theme="${theme}"\\] \\.tiles`));
   }
 });
+
+test("renders modern vector cartography backdrop with landmass, streets, bridges and seamarks when chart is present", async () => {
+  const { buildHarborChartData } = await import("../scripts/build-harbor-chart.js");
+  const chartData = buildHarborChartData();
+  const view = await page({ harbor: { ...HARBOR, chart: chartData } });
+
+  assert.ok(view.layer("chart-backdrop"), "backdrop layer should be drawn");
+  assert.ok(view.find("map-landmass").length >= 10, "should render landmass polygons");
+  assert.ok(view.find("map-street").length >= 15, "should render major streets");
+  assert.ok(view.find("bridge-group").length >= 20, "should render bridges");
+  assert.ok(view.find("seamark").length >= 25, "should render naval seamarks");
+});
+
+test("tapping a bridge opens the bridge detail card showing clearance and safety margin", async () => {
+  const { buildHarborChartData } = await import("../scripts/build-harbor-chart.js");
+  const chartData = buildHarborChartData();
+  const view = await page({ harbor: { ...HARBOR, chart: chartData } });
+
+  const bridge = view.find("bridge-group")[0];
+  view.fire("chart", "click", { target: bridge });
+
+  assert.equal(view.node("bridgeCard").hidden, false);
+  assert.match(view.node("bridgeCard").textContent, /Brooklyn Bridge/);
+  assert.match(view.node("bridgeCard").textContent, /127 ft/);
+  assert.match(view.node("bridgeCard").textContent, /✓ CLEAR FOR ALL FERRIES/);
+  assert.match(view.node("bridgeCard").textContent, /safe margin: 95 ft/);
+
+  // Clicking chart background dismisses the card
+  view.fire("chart", "click", { target: view.chart });
+  assert.equal(view.node("bridgeCard").hidden, true);
+});
+
+test("tapping a seamark opens the seamark card showing light and buoy navigational info", async () => {
+  const { buildHarborChartData } = await import("../scripts/build-harbor-chart.js");
+  const chartData = buildHarborChartData();
+  const view = await page({ harbor: { ...HARBOR, chart: chartData } });
+
+  const seamark = view.find("seamark")[0];
+  view.fire("chart", "click", { target: seamark });
+
+  assert.equal(view.node("seamarkCard").hidden, false);
+  assert.match(view.node("seamarkCard").textContent, /Robbins Reef/);
+  assert.match(view.node("seamarkCard").textContent, /Light:/);
+
+  // Clicking chart background dismisses the card
+  view.fire("chart", "click", { target: view.chart });
+  assert.equal(view.node("seamarkCard").hidden, true);
+});
+
+test("all themes define cartographic CSS variables for modern vector cartography", async () => {
+  const css = await readFile(new URL("../public/assets/map.css", import.meta.url), "utf8");
+  const themes = ["night", "hacker", "kuromi", "windows-xp", "hello-kitty", "cinnamoroll", "pompompurin", "burger-king"];
+
+  // Root default theme variables
+  assert.match(css, /--map-water:\s*#e3f0f7/);
+  assert.match(css, /--map-land:\s*#ffffff/);
+  assert.match(css, /--map-bridge:\s*#004e72/);
+
+  for (const theme of themes) {
+    const themeBlock = css.match(new RegExp(`:root\\[data-theme="${theme}"\\]\\s*\\{([^}]+)\\}`));
+    assert.ok(themeBlock, `Theme ${theme} should have a CSS variable block`);
+    assert.match(themeBlock[1], /--map-water:/, `Theme ${theme} must define --map-water`);
+    assert.match(themeBlock[1], /--map-land:/, `Theme ${theme} must define --map-land`);
+    assert.match(themeBlock[1], /--map-street:/, `Theme ${theme} must define --map-street`);
+    assert.match(themeBlock[1], /--map-bridge:/, `Theme ${theme} must define --map-bridge`);
+  }
+});
+
 

@@ -174,3 +174,47 @@ test("the bundled feed builds a harbor with routes, docks and bounds over New Yo
   assert.ok(map.bounds.minLatitude > 40.5 && map.bounds.maxLatitude < 41);
   assert.ok(map.bounds.minLongitude > -74.5 && map.bounds.maxLongitude < -73.5);
 });
+
+test("harbor chart generates vector landmass, major streets, bridges with clearance, and naval markings without route lines", async () => {
+  const { buildHarborChartData } = await import("../scripts/build-harbor-chart.js");
+  const chart = buildHarborChartData();
+
+  // 1. Structure
+  assert.equal(chart.version, 1);
+  assert.ok(chart.landmass.length >= 10, "should have at least 10 key landmasses");
+  assert.ok(chart.streets.length >= 15, "should have major expressways/arterials");
+  assert.ok(chart.bridges.length >= 20, "should have all bridges across waterways");
+  assert.ok(chart.seamarks.length >= 25, "should have naval seamarks and buoys");
+  assert.ok(chart.channels.length >= 4, "should have main navigational channels");
+
+  // 2. Base chart carries zero route lines
+  assert.equal(chart.routes, undefined, "base chart must not contain route lines");
+
+  // 3. Every bridge clears NYC Ferry vessels (max air draft ~26-32 ft)
+  for (const bridge of chart.bridges) {
+    assert.ok(bridge.id, "bridge must have id");
+    assert.ok(bridge.name, "bridge must have name");
+    assert.ok(bridge.waterway, "bridge must specify waterway");
+    assert.ok(bridge.clearanceFeet > 32, `${bridge.name} clearance ${bridge.clearanceFeet}ft must clear NYC Ferry max air draft (32ft)`);
+    assert.ok(bridge.clearanceMeters > 0, `${bridge.name} must have metric clearance`);
+    assert.match(bridge.clearanceNote, /\b(ft|MHW|closed)\b/i, `${bridge.name} must have informative clearance note`);
+    assert.equal(bridge.points.length, 2, `${bridge.name} must have span coordinates [p1, p2]`);
+  }
+
+  // 4. Seamarks are valid naval navigational aids
+  for (const seamark of chart.seamarks) {
+    assert.ok(seamark.id, "seamark must have id");
+    assert.ok(seamark.name, "seamark must have name");
+    assert.ok(["light", "buoy"].includes(seamark.type), `${seamark.name} must be a light or buoy`);
+    assert.ok(Number.isFinite(seamark.latitude) && Number.isFinite(seamark.longitude));
+  }
+});
+
+test("loadHarborMap attaches chart data to the harbor map", async () => {
+  const root = new URL("..", import.meta.url).pathname;
+  const { map } = await import("../lib/fleet-map.js").then((m) => m.loadHarborMap({ root, landings: LANDINGS }));
+  assert.ok(map.chart, "map must include chart data from content/harbor-chart.json");
+  assert.ok(map.chart.landmass.length >= 10);
+  assert.ok(map.chart.bridges.length >= 20);
+});
+

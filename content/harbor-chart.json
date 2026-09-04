@@ -1,0 +1,2453 @@
+{
+  "version": 1,
+  "name": "New York Harbor Navigational Chart",
+  "generatedAt": "2026-09-04T23:04:29.869Z",
+  "description": "Modern vector cartography for New York Harbor with landmass, major streets, bridges with clearances, and naval seamarks. Base chart carries zero route lines.",
+  "landmass": [
+    {
+      "id": "manhattan",
+      "name": "Manhattan",
+      "points": [
+        [
+          40.701,
+          -74.015
+        ],
+        [
+          40.7013,
+          -74.0125
+        ],
+        [
+          40.7032,
+          -74.006
+        ],
+        [
+          40.7065,
+          -73.9995
+        ],
+        [
+          40.7088,
+          -73.993
+        ],
+        [
+          40.7108,
+          -73.984
+        ],
+        [
+          40.7125,
+          -73.9775
+        ],
+        [
+          40.715,
+          -73.9745
+        ],
+        [
+          40.7225,
+          -73.972
+        ],
+        [
+          40.7315,
+          -73.9725
+        ],
+        [
+          40.738,
+          -73.9715
+        ],
+        [
+          40.7445,
+          -73.9705
+        ],
+        [
+          40.7525,
+          -73.9655
+        ],
+        [
+          40.7585,
+          -73.9595
+        ],
+        [
+          40.7665,
+          -73.9515
+        ],
+        [
+          40.7745,
+          -73.9435
+        ],
+        [
+          40.778,
+          -73.9415
+        ],
+        [
+          40.785,
+          -73.9375
+        ],
+        [
+          40.793,
+          -73.9325
+        ],
+        [
+          40.803,
+          -73.93
+        ],
+        [
+          40.8115,
+          -73.9325
+        ],
+        [
+          40.819,
+          -73.9355
+        ],
+        [
+          40.828,
+          -73.934
+        ],
+        [
+          40.8355,
+          -73.934
+        ],
+        [
+          40.843,
+          -73.933
+        ],
+        [
+          40.851,
+          -73.9265
+        ],
+        [
+          40.863,
+          -73.9215
+        ],
+        [
+          40.871,
+          -73.9175
+        ],
+        [
+          40.8745,
+          -73.916
+        ],
+        [
+          40.8785,
+          -73.924
+        ],
+        [
+          40.874,
+          -73.93
+        ],
+        [
+          40.8655,
+          -73.934
+        ],
+        [
+          40.8565,
+          -73.942
+        ],
+        [
+          40.851,
+          -73.9455
+        ],
+        [
+          40.842,
+          -73.949
+        ],
+        [
+          40.831,
+          -73.954
+        ],
+        [
+          40.819,
+          -73.961
+        ],
+        [
+          40.807,
+          -73.969
+        ],
+        [
+          40.795,
+          -73.978
+        ],
+        [
+          40.784,
+          -73.987
+        ],
+        [
+          40.772,
+          -73.995
+        ],
+        [
+          40.76,
+          -74.0035
+        ],
+        [
+          40.7485,
+          -74.009
+        ],
+        [
+          40.738,
+          -74.0115
+        ],
+        [
+          40.728,
+          -74.0135
+        ],
+        [
+          40.716,
+          -74.0175
+        ],
+        [
+          40.707,
+          -74.0185
+        ],
+        [
+          40.7025,
+          -74.017
+        ],
+        [
+          40.701,
+          -74.015
+        ]
+      ]
+    },
+    {
+      "id": "brooklyn-queens",
+      "name": "Brooklyn & Queens",
+      "points": [
+        [
+          40.738,
+          -73.958
+        ],
+        [
+          40.742,
+          -73.9605
+        ],
+        [
+          40.746,
+          -73.958
+        ],
+        [
+          40.751,
+          -73.954
+        ],
+        [
+          40.755,
+          -73.946
+        ],
+        [
+          40.764,
+          -73.943
+        ],
+        [
+          40.7715,
+          -73.936
+        ],
+        [
+          40.778,
+          -73.922
+        ],
+        [
+          40.781,
+          -73.91
+        ],
+        [
+          40.778,
+          -73.896
+        ],
+        [
+          40.783,
+          -73.886
+        ],
+        [
+          40.774,
+          -73.87
+        ],
+        [
+          40.785,
+          -73.848
+        ],
+        [
+          40.792,
+          -73.826
+        ],
+        [
+          40.791,
+          -73.785
+        ],
+        [
+          40.782,
+          -73.765
+        ],
+        [
+          40.75,
+          -73.76
+        ],
+        [
+          40.7,
+          -73.76
+        ],
+        [
+          40.66,
+          -73.8
+        ],
+        [
+          40.64,
+          -73.84
+        ],
+        [
+          40.625,
+          -73.87
+        ],
+        [
+          40.595,
+          -73.92
+        ],
+        [
+          40.582,
+          -73.95
+        ],
+        [
+          40.575,
+          -73.985
+        ],
+        [
+          40.574,
+          -74.002
+        ],
+        [
+          40.588,
+          -74.015
+        ],
+        [
+          40.605,
+          -74.036
+        ],
+        [
+          40.622,
+          -74.038
+        ],
+        [
+          40.64,
+          -74.0385
+        ],
+        [
+          40.647,
+          -74.026
+        ],
+        [
+          40.658,
+          -74.018
+        ],
+        [
+          40.672,
+          -74.014
+        ],
+        [
+          40.681,
+          -74.0135
+        ],
+        [
+          40.686,
+          -74.0075
+        ],
+        [
+          40.693,
+          -74.002
+        ],
+        [
+          40.703,
+          -73.996
+        ],
+        [
+          40.704,
+          -73.988
+        ],
+        [
+          40.7015,
+          -73.974
+        ],
+        [
+          40.709,
+          -73.97
+        ],
+        [
+          40.712,
+          -73.966
+        ],
+        [
+          40.722,
+          -73.963
+        ],
+        [
+          40.732,
+          -73.962
+        ],
+        [
+          40.738,
+          -73.958
+        ]
+      ]
+    },
+    {
+      "id": "the-bronx",
+      "name": "The Bronx",
+      "points": [
+        [
+          40.88,
+          -73.92
+        ],
+        [
+          40.882,
+          -73.91
+        ],
+        [
+          40.865,
+          -73.905
+        ],
+        [
+          40.85,
+          -73.915
+        ],
+        [
+          40.84,
+          -73.928
+        ],
+        [
+          40.828,
+          -73.932
+        ],
+        [
+          40.812,
+          -73.932
+        ],
+        [
+          40.803,
+          -73.926
+        ],
+        [
+          40.798,
+          -73.918
+        ],
+        [
+          40.801,
+          -73.898
+        ],
+        [
+          40.806,
+          -73.875
+        ],
+        [
+          40.804,
+          -73.848
+        ],
+        [
+          40.808,
+          -73.834
+        ],
+        [
+          40.812,
+          -73.792
+        ],
+        [
+          40.835,
+          -73.78
+        ],
+        [
+          40.875,
+          -73.78
+        ],
+        [
+          40.895,
+          -73.84
+        ],
+        [
+          40.895,
+          -73.9
+        ],
+        [
+          40.88,
+          -73.92
+        ]
+      ]
+    },
+    {
+      "id": "staten-island",
+      "name": "Staten Island",
+      "points": [
+        [
+          40.6465,
+          -74.074
+        ],
+        [
+          40.648,
+          -74.1
+        ],
+        [
+          40.644,
+          -74.135
+        ],
+        [
+          40.635,
+          -74.17
+        ],
+        [
+          40.635,
+          -74.2
+        ],
+        [
+          40.615,
+          -74.205
+        ],
+        [
+          40.58,
+          -74.215
+        ],
+        [
+          40.55,
+          -74.225
+        ],
+        [
+          40.523,
+          -74.248
+        ],
+        [
+          40.5,
+          -74.25
+        ],
+        [
+          40.51,
+          -74.22
+        ],
+        [
+          40.525,
+          -74.18
+        ],
+        [
+          40.54,
+          -74.13
+        ],
+        [
+          40.575,
+          -74.08
+        ],
+        [
+          40.605,
+          -74.053
+        ],
+        [
+          40.625,
+          -74.068
+        ],
+        [
+          40.6465,
+          -74.074
+        ]
+      ]
+    },
+    {
+      "id": "new-jersey",
+      "name": "New Jersey Shoreline",
+      "points": [
+        [
+          40.852,
+          -73.962
+        ],
+        [
+          40.83,
+          -73.975
+        ],
+        [
+          40.8,
+          -73.995
+        ],
+        [
+          40.77,
+          -74.015
+        ],
+        [
+          40.753,
+          -74.024
+        ],
+        [
+          40.735,
+          -74.028
+        ],
+        [
+          40.725,
+          -74.032
+        ],
+        [
+          40.714,
+          -74.034
+        ],
+        [
+          40.708,
+          -74.04
+        ],
+        [
+          40.685,
+          -74.065
+        ],
+        [
+          40.665,
+          -74.075
+        ],
+        [
+          40.655,
+          -74.095
+        ],
+        [
+          40.645,
+          -74.135
+        ],
+        [
+          40.65,
+          -74.18
+        ],
+        [
+          40.63,
+          -74.21
+        ],
+        [
+          40.52,
+          -74.26
+        ],
+        [
+          40.44,
+          -74.25
+        ],
+        [
+          40.435,
+          -74.085
+        ],
+        [
+          40.445,
+          -74.06
+        ],
+        [
+          40.465,
+          -74
+        ],
+        [
+          40.43,
+          -73.98
+        ],
+        [
+          40.4,
+          -74.28
+        ],
+        [
+          40.86,
+          -74.28
+        ],
+        [
+          40.852,
+          -73.962
+        ]
+      ]
+    },
+    {
+      "id": "rockaway-peninsula",
+      "name": "Rockaway Peninsula",
+      "points": [
+        [
+          40.55,
+          -73.925
+        ],
+        [
+          40.556,
+          -73.91
+        ],
+        [
+          40.568,
+          -73.875
+        ],
+        [
+          40.578,
+          -73.836
+        ],
+        [
+          40.584,
+          -73.831
+        ],
+        [
+          40.587,
+          -73.815
+        ],
+        [
+          40.592,
+          -73.795
+        ],
+        [
+          40.6,
+          -73.74
+        ],
+        [
+          40.588,
+          -73.74
+        ],
+        [
+          40.58,
+          -73.8
+        ],
+        [
+          40.57,
+          -73.85
+        ],
+        [
+          40.555,
+          -73.9
+        ],
+        [
+          40.55,
+          -73.925
+        ]
+      ]
+    },
+    {
+      "id": "governors-island",
+      "name": "Governors Island",
+      "points": [
+        [
+          40.693,
+          -74.016
+        ],
+        [
+          40.691,
+          -74.0115
+        ],
+        [
+          40.6865,
+          -74.0135
+        ],
+        [
+          40.684,
+          -74.0185
+        ],
+        [
+          40.688,
+          -74.0225
+        ],
+        [
+          40.693,
+          -74.016
+        ]
+      ]
+    },
+    {
+      "id": "roosevelt-island",
+      "name": "Roosevelt Island",
+      "points": [
+        [
+          40.7725,
+          -73.9395
+        ],
+        [
+          40.768,
+          -73.945
+        ],
+        [
+          40.757,
+          -73.9535
+        ],
+        [
+          40.7485,
+          -73.962
+        ],
+        [
+          40.751,
+          -73.9635
+        ],
+        [
+          40.761,
+          -73.9535
+        ],
+        [
+          40.7725,
+          -73.9395
+        ]
+      ]
+    },
+    {
+      "id": "randalls-wards",
+      "name": "Randalls & Wards Island",
+      "points": [
+        [
+          40.8,
+          -73.923
+        ],
+        [
+          40.796,
+          -73.914
+        ],
+        [
+          40.785,
+          -73.92
+        ],
+        [
+          40.782,
+          -73.928
+        ],
+        [
+          40.788,
+          -73.935
+        ],
+        [
+          40.797,
+          -73.93
+        ],
+        [
+          40.8,
+          -73.923
+        ]
+      ]
+    },
+    {
+      "id": "rikers-island",
+      "name": "Rikers Island",
+      "points": [
+        [
+          40.794,
+          -73.888
+        ],
+        [
+          40.791,
+          -73.879
+        ],
+        [
+          40.783,
+          -73.882
+        ],
+        [
+          40.785,
+          -73.896
+        ],
+        [
+          40.794,
+          -73.888
+        ]
+      ]
+    },
+    {
+      "id": "liberty-island",
+      "name": "Liberty Island",
+      "points": [
+        [
+          40.691,
+          -74.045
+        ],
+        [
+          40.6885,
+          -74.0435
+        ],
+        [
+          40.6875,
+          -74.0465
+        ],
+        [
+          40.69,
+          -74.0475
+        ],
+        [
+          40.691,
+          -74.045
+        ]
+      ]
+    },
+    {
+      "id": "ellis-island",
+      "name": "Ellis Island",
+      "points": [
+        [
+          40.7005,
+          -74.041
+        ],
+        [
+          40.6975,
+          -74.038
+        ],
+        [
+          40.6965,
+          -74.0425
+        ],
+        [
+          40.6995,
+          -74.044
+        ],
+        [
+          40.7005,
+          -74.041
+        ]
+      ]
+    }
+  ],
+  "streets": [
+    {
+      "id": "fdr-drive",
+      "name": "FDR Drive",
+      "type": "highway",
+      "points": [
+        [
+          40.7015,
+          -74.013
+        ],
+        [
+          40.704,
+          -74.004
+        ],
+        [
+          40.709,
+          -73.987
+        ],
+        [
+          40.7125,
+          -73.976
+        ],
+        [
+          40.725,
+          -73.971
+        ],
+        [
+          40.742,
+          -73.9695
+        ],
+        [
+          40.758,
+          -73.9575
+        ],
+        [
+          40.774,
+          -73.942
+        ],
+        [
+          40.788,
+          -73.934
+        ],
+        [
+          40.803,
+          -73.9285
+        ]
+      ]
+    },
+    {
+      "id": "west-side-highway",
+      "name": "West Side Highway (Route 9A)",
+      "type": "highway",
+      "points": [
+        [
+          40.702,
+          -74.0165
+        ],
+        [
+          40.714,
+          -74.015
+        ],
+        [
+          40.73,
+          -74.0105
+        ],
+        [
+          40.75,
+          -74.006
+        ],
+        [
+          40.765,
+          -73.9985
+        ],
+        [
+          40.784,
+          -73.9835
+        ],
+        [
+          40.808,
+          -73.965
+        ],
+        [
+          40.835,
+          -73.949
+        ],
+        [
+          40.852,
+          -73.9415
+        ],
+        [
+          40.875,
+          -73.918
+        ]
+      ]
+    },
+    {
+      "id": "bqe",
+      "name": "Brooklyn-Queens Expressway (I-278)",
+      "type": "interstate",
+      "points": [
+        [
+          40.612,
+          -74.032
+        ],
+        [
+          40.64,
+          -74.018
+        ],
+        [
+          40.665,
+          -74.004
+        ],
+        [
+          40.692,
+          -73.994
+        ],
+        [
+          40.703,
+          -73.975
+        ],
+        [
+          40.715,
+          -73.948
+        ],
+        [
+          40.727,
+          -73.93
+        ],
+        [
+          40.745,
+          -73.912
+        ],
+        [
+          40.768,
+          -73.904
+        ],
+        [
+          40.776,
+          -73.918
+        ]
+      ]
+    },
+    {
+      "id": "belt-parkway",
+      "name": "Belt Parkway",
+      "type": "highway",
+      "points": [
+        [
+          40.612,
+          -74.032
+        ],
+        [
+          40.598,
+          -74.015
+        ],
+        [
+          40.584,
+          -73.985
+        ],
+        [
+          40.583,
+          -73.935
+        ],
+        [
+          40.605,
+          -73.885
+        ],
+        [
+          40.635,
+          -73.835
+        ],
+        [
+          40.66,
+          -73.785
+        ]
+      ]
+    },
+    {
+      "id": "lie",
+      "name": "Long Island Expressway (I-495)",
+      "type": "interstate",
+      "points": [
+        [
+          40.742,
+          -73.955
+        ],
+        [
+          40.738,
+          -73.925
+        ],
+        [
+          40.735,
+          -73.885
+        ],
+        [
+          40.74,
+          -73.835
+        ],
+        [
+          40.755,
+          -73.765
+        ]
+      ]
+    },
+    {
+      "id": "grand-central-pkwy",
+      "name": "Grand Central Parkway",
+      "type": "highway",
+      "points": [
+        [
+          40.775,
+          -73.92
+        ],
+        [
+          40.77,
+          -73.89
+        ],
+        [
+          40.762,
+          -73.85
+        ],
+        [
+          40.75,
+          -73.82
+        ]
+      ]
+    },
+    {
+      "id": "cross-bronx-expwy",
+      "name": "Cross Bronx Expressway (I-95)",
+      "type": "interstate",
+      "points": [
+        [
+          40.851,
+          -73.942
+        ],
+        [
+          40.846,
+          -73.925
+        ],
+        [
+          40.842,
+          -73.89
+        ],
+        [
+          40.835,
+          -73.85
+        ],
+        [
+          40.83,
+          -73.815
+        ]
+      ]
+    },
+    {
+      "id": "major-deegan",
+      "name": "Major Deegan Expressway (I-87)",
+      "type": "interstate",
+      "points": [
+        [
+          40.803,
+          -73.928
+        ],
+        [
+          40.825,
+          -73.93
+        ],
+        [
+          40.85,
+          -73.915
+        ],
+        [
+          40.875,
+          -73.905
+        ],
+        [
+          40.895,
+          -73.895
+        ]
+      ]
+    },
+    {
+      "id": "bruckner-expwy",
+      "name": "Bruckner Expressway (I-278)",
+      "type": "interstate",
+      "points": [
+        [
+          40.8,
+          -73.918
+        ],
+        [
+          40.81,
+          -73.885
+        ],
+        [
+          40.82,
+          -73.855
+        ],
+        [
+          40.83,
+          -73.825
+        ]
+      ]
+    },
+    {
+      "id": "staten-island-expwy",
+      "name": "Staten Island Expressway (I-278)",
+      "type": "interstate",
+      "points": [
+        [
+          40.606,
+          -74.053
+        ],
+        [
+          40.608,
+          -74.09
+        ],
+        [
+          40.612,
+          -74.135
+        ],
+        [
+          40.62,
+          -74.175
+        ],
+        [
+          40.635,
+          -74.195
+        ]
+      ]
+    },
+    {
+      "id": "flatbush-ave",
+      "name": "Flatbush Avenue",
+      "type": "arterial",
+      "points": [
+        [
+          40.695,
+          -73.985
+        ],
+        [
+          40.675,
+          -73.97
+        ],
+        [
+          40.64,
+          -73.955
+        ],
+        [
+          40.61,
+          -73.935
+        ],
+        [
+          40.585,
+          -73.895
+        ],
+        [
+          40.579,
+          -73.888
+        ]
+      ]
+    },
+    {
+      "id": "atlantic-ave",
+      "name": "Atlantic Avenue",
+      "type": "arterial",
+      "points": [
+        [
+          40.6915,
+          -74.001
+        ],
+        [
+          40.687,
+          -73.975
+        ],
+        [
+          40.68,
+          -73.935
+        ],
+        [
+          40.675,
+          -73.885
+        ]
+      ]
+    },
+    {
+      "id": "cross-bay-blvd",
+      "name": "Cross Bay Boulevard",
+      "type": "arterial",
+      "points": [
+        [
+          40.665,
+          -73.84
+        ],
+        [
+          40.635,
+          -73.835
+        ],
+        [
+          40.605,
+          -73.82
+        ],
+        [
+          40.588,
+          -73.818
+        ]
+      ]
+    },
+    {
+      "id": "rockaway-beach-blvd",
+      "name": "Rockaway Beach Boulevard",
+      "type": "arterial",
+      "points": [
+        [
+          40.568,
+          -73.875
+        ],
+        [
+          40.578,
+          -73.836
+        ],
+        [
+          40.585,
+          -73.818
+        ],
+        [
+          40.59,
+          -73.785
+        ]
+      ]
+    },
+    {
+      "id": "42nd-street",
+      "name": "42nd Street",
+      "type": "arterial",
+      "points": [
+        [
+          40.762,
+          -74.002
+        ],
+        [
+          40.755,
+          -73.985
+        ],
+        [
+          40.749,
+          -73.968
+        ]
+      ]
+    },
+    {
+      "id": "34th-street",
+      "name": "34th Street",
+      "type": "arterial",
+      "points": [
+        [
+          40.7565,
+          -74.004
+        ],
+        [
+          40.749,
+          -73.986
+        ],
+        [
+          40.744,
+          -73.971
+        ]
+      ]
+    },
+    {
+      "id": "14th-street",
+      "name": "14th Street",
+      "type": "arterial",
+      "points": [
+        [
+          40.743,
+          -74.008
+        ],
+        [
+          40.736,
+          -73.99
+        ],
+        [
+          40.729,
+          -73.973
+        ]
+      ]
+    },
+    {
+      "id": "canal-street",
+      "name": "Canal Street",
+      "type": "arterial",
+      "points": [
+        [
+          40.7225,
+          -74.011
+        ],
+        [
+          40.718,
+          -74
+        ],
+        [
+          40.714,
+          -73.994
+        ]
+      ]
+    },
+    {
+      "id": "broadway-manhattan",
+      "name": "Broadway",
+      "type": "arterial",
+      "points": [
+        [
+          40.704,
+          -74.013
+        ],
+        [
+          40.715,
+          -74.005
+        ],
+        [
+          40.735,
+          -73.991
+        ],
+        [
+          40.755,
+          -73.986
+        ],
+        [
+          40.785,
+          -73.978
+        ],
+        [
+          40.825,
+          -73.952
+        ],
+        [
+          40.865,
+          -73.925
+        ]
+      ]
+    },
+    {
+      "id": "nj-turnpike",
+      "name": "NJ Turnpike (I-95)",
+      "type": "interstate",
+      "points": [
+        [
+          40.64,
+          -74.17
+        ],
+        [
+          40.67,
+          -74.12
+        ],
+        [
+          40.71,
+          -74.08
+        ],
+        [
+          40.76,
+          -74.05
+        ],
+        [
+          40.82,
+          -74.01
+        ],
+        [
+          40.852,
+          -73.965
+        ]
+      ]
+    }
+  ],
+  "bridges": [
+    {
+      "id": "brooklyn-bridge",
+      "name": "Brooklyn Bridge",
+      "waterway": "East River",
+      "type": "Suspension Bridge",
+      "clearanceFeet": 127,
+      "clearanceMeters": 38.7,
+      "clearanceNote": "127 ft MHW (Mean High Water)",
+      "cleared": true,
+      "points": [
+        [
+          40.7107,
+          -74.0001
+        ],
+        [
+          40.7005,
+          -73.9897
+        ]
+      ]
+    },
+    {
+      "id": "manhattan-bridge",
+      "name": "Manhattan Bridge",
+      "waterway": "East River",
+      "type": "Suspension Bridge",
+      "clearanceFeet": 135,
+      "clearanceMeters": 41.1,
+      "clearanceNote": "135 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.7136,
+          -73.9947
+        ],
+        [
+          40.7025,
+          -73.9856
+        ]
+      ]
+    },
+    {
+      "id": "williamsburg-bridge",
+      "name": "Williamsburg Bridge",
+      "waterway": "East River",
+      "type": "Suspension Bridge",
+      "clearanceFeet": 135,
+      "clearanceMeters": 41.1,
+      "clearanceNote": "135 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.7166,
+          -73.9818
+        ],
+        [
+          40.7106,
+          -73.9634
+        ]
+      ]
+    },
+    {
+      "id": "queensboro-bridge",
+      "name": "Queensboro (59th St) Bridge",
+      "waterway": "East River",
+      "type": "Cantilever Bridge",
+      "clearanceFeet": 131,
+      "clearanceMeters": 39.9,
+      "clearanceNote": "131 ft West Channel / 130 ft East Channel",
+      "cleared": true,
+      "points": [
+        [
+          40.7604,
+          -73.9631
+        ],
+        [
+          40.7533,
+          -73.9452
+        ]
+      ]
+    },
+    {
+      "id": "roosevelt-island-bridge",
+      "name": "Roosevelt Island Bridge",
+      "waterway": "East River (East Channel)",
+      "type": "Vertical Lift Bridge",
+      "clearanceFeet": 40,
+      "clearanceMeters": 12.2,
+      "clearanceOpenFeet": 100,
+      "clearanceNote": "40 ft closed / 100 ft open",
+      "cleared": true,
+      "points": [
+        [
+          40.7634,
+          -73.9515
+        ],
+        [
+          40.7623,
+          -73.9482
+        ]
+      ]
+    },
+    {
+      "id": "rfk-east-river-bridge",
+      "name": "RFK / Triborough Bridge (East River Span)",
+      "waterway": "East River / Hell Gate",
+      "type": "Suspension Bridge",
+      "clearanceFeet": 143,
+      "clearanceMeters": 43.6,
+      "clearanceNote": "143 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.7851,
+          -73.9272
+        ],
+        [
+          40.7744,
+          -73.9221
+        ]
+      ]
+    },
+    {
+      "id": "hell-gate-bridge",
+      "name": "Hell Gate Bridge",
+      "waterway": "East River / Hell Gate",
+      "type": "Steel Arch Bridge",
+      "clearanceFeet": 135,
+      "clearanceMeters": 41.1,
+      "clearanceNote": "135 ft MHW (Amtrak Northeast Corridor)",
+      "cleared": true,
+      "points": [
+        [
+          40.7871,
+          -73.9255
+        ],
+        [
+          40.7766,
+          -73.9202
+        ]
+      ]
+    },
+    {
+      "id": "rfk-harlem-river-bridge",
+      "name": "RFK / Triborough Bridge (Harlem River Span)",
+      "waterway": "Harlem River",
+      "type": "Vertical Lift Bridge",
+      "clearanceFeet": 55,
+      "clearanceMeters": 16.8,
+      "clearanceOpenFeet": 135,
+      "clearanceNote": "55 ft closed / 135 ft open",
+      "cleared": true,
+      "points": [
+        [
+          40.8016,
+          -73.9317
+        ],
+        [
+          40.8016,
+          -73.9257
+        ]
+      ]
+    },
+    {
+      "id": "rfk-bronx-kills-bridge",
+      "name": "RFK / Triborough Bridge (Bronx Kills Span)",
+      "waterway": "Bronx Kills",
+      "type": "Truss Bridge",
+      "clearanceFeet": 50,
+      "clearanceMeters": 15.2,
+      "clearanceNote": "50 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.7997,
+          -73.9189
+        ],
+        [
+          40.7979,
+          -73.9179
+        ]
+      ]
+    },
+    {
+      "id": "rikers-island-bridge",
+      "name": "Rikers Island Bridge",
+      "waterway": "Rikers Island Channel",
+      "type": "Girder Bridge",
+      "clearanceFeet": 52,
+      "clearanceMeters": 15.8,
+      "clearanceNote": "52 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.7758,
+          -73.8967
+        ],
+        [
+          40.7868,
+          -73.8819
+        ]
+      ]
+    },
+    {
+      "id": "bronx-whitestone-bridge",
+      "name": "Bronx-Whitestone Bridge",
+      "waterway": "East River / Long Island Sound",
+      "type": "Suspension Bridge",
+      "clearanceFeet": 135,
+      "clearanceMeters": 41.1,
+      "clearanceNote": "135–150 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.8122,
+          -73.8344
+        ],
+        [
+          40.7884,
+          -73.826
+        ]
+      ]
+    },
+    {
+      "id": "throgs-neck-bridge",
+      "name": "Throgs Neck Bridge",
+      "waterway": "Long Island Sound",
+      "type": "Suspension Bridge",
+      "clearanceFeet": 142,
+      "clearanceMeters": 43.3,
+      "clearanceNote": "142 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.8089,
+          -73.7942
+        ],
+        [
+          40.7905,
+          -73.7892
+        ]
+      ]
+    },
+    {
+      "id": "george-washington-bridge",
+      "name": "George Washington Bridge",
+      "waterway": "Hudson River",
+      "type": "Suspension Bridge",
+      "clearanceFeet": 212,
+      "clearanceMeters": 64.6,
+      "clearanceNote": "212 ft MHW (World-Class Clearance)",
+      "cleared": true,
+      "points": [
+        [
+          40.8522,
+          -73.9622
+        ],
+        [
+          40.8512,
+          -73.9432
+        ]
+      ]
+    },
+    {
+      "id": "verrazzano-narrows-bridge",
+      "name": "Verrazzano-Narrows Bridge",
+      "waterway": "The Narrows",
+      "type": "Suspension Bridge",
+      "clearanceFeet": 228,
+      "clearanceMeters": 69.5,
+      "clearanceNote": "228 ft MHW (Major Harbor Gateway Clearance)",
+      "cleared": true,
+      "points": [
+        [
+          40.6033,
+          -74.0538
+        ],
+        [
+          40.6099,
+          -74.0356
+        ]
+      ]
+    },
+    {
+      "id": "bayonne-bridge",
+      "name": "Bayonne Bridge",
+      "waterway": "Kill Van Kull",
+      "type": "Steel Arch Bridge",
+      "clearanceFeet": 215,
+      "clearanceMeters": 65.5,
+      "clearanceNote": "215 ft MHW (Post-Panamax Navigational Clearance)",
+      "cleared": true,
+      "points": [
+        [
+          40.648,
+          -74.143
+        ],
+        [
+          40.6354,
+          -74.1404
+        ]
+      ]
+    },
+    {
+      "id": "goethals-bridge",
+      "name": "Goethals Bridge",
+      "waterway": "Arthur Kill",
+      "type": "Cable-Stayed Bridge",
+      "clearanceFeet": 139,
+      "clearanceMeters": 42.4,
+      "clearanceNote": "139 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.6369,
+          -74.2045
+        ],
+        [
+          40.6347,
+          -74.1921
+        ]
+      ]
+    },
+    {
+      "id": "outerbridge-crossing",
+      "name": "Outerbridge Crossing",
+      "waterway": "Arthur Kill",
+      "type": "Cantilever Truss Bridge",
+      "clearanceFeet": 143,
+      "clearanceMeters": 43.6,
+      "clearanceNote": "143 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.5283,
+          -74.2541
+        ],
+        [
+          40.5217,
+          -74.2425
+        ]
+      ]
+    },
+    {
+      "id": "marine-parkway-bridge",
+      "name": "Marine Parkway–Gil Hodges Bridge",
+      "waterway": "Rockaway Inlet",
+      "type": "Vertical Lift Bridge",
+      "clearanceFeet": 55,
+      "clearanceMeters": 16.8,
+      "clearanceOpenFeet": 152,
+      "clearanceNote": "55 ft closed / 152 ft open",
+      "cleared": true,
+      "points": [
+        [
+          40.5794,
+          -73.8883
+        ],
+        [
+          40.5668,
+          -73.8811
+        ]
+      ]
+    },
+    {
+      "id": "cross-bay-bridge",
+      "name": "Cross Bay Veterans Memorial Bridge",
+      "waterway": "Jamaica Bay / Beach Channel",
+      "type": "Bascule / Girder Bridge",
+      "clearanceFeet": 52,
+      "clearanceMeters": 15.8,
+      "clearanceNote": "52 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.6012,
+          -73.8202
+        ],
+        [
+          40.5838,
+          -73.8176
+        ]
+      ]
+    },
+    {
+      "id": "pulaski-bridge",
+      "name": "Pulaski Bridge",
+      "waterway": "Newtown Creek",
+      "type": "Bascule Bridge",
+      "clearanceFeet": 39,
+      "clearanceMeters": 11.9,
+      "clearanceNote": "39 ft closed (Connects Brooklyn & Queens)",
+      "cleared": true,
+      "points": [
+        [
+          40.7412,
+          -73.9554
+        ],
+        [
+          40.7364,
+          -73.9522
+        ]
+      ]
+    },
+    {
+      "id": "kosciuszko-bridge",
+      "name": "Kosciuszko Bridge",
+      "waterway": "Newtown Creek",
+      "type": "Cable-Stayed Bridge",
+      "clearanceFeet": 115,
+      "clearanceMeters": 35.1,
+      "clearanceNote": "115 ft MHW (BQE / I-278)",
+      "cleared": true,
+      "points": [
+        [
+          40.7297,
+          -73.9348
+        ],
+        [
+          40.7253,
+          -73.9268
+        ]
+      ]
+    },
+    {
+      "id": "high-bridge",
+      "name": "The High Bridge",
+      "waterway": "Harlem River",
+      "type": "Historic Arch Bridge",
+      "clearanceFeet": 100,
+      "clearanceMeters": 30.5,
+      "clearanceNote": "100 ft MHW (Oldest Bridge in NYC)",
+      "cleared": true,
+      "points": [
+        [
+          40.8433,
+          -73.9338
+        ],
+        [
+          40.8433,
+          -73.9298
+        ]
+      ]
+    },
+    {
+      "id": "alexander-hamilton-bridge",
+      "name": "Alexander Hamilton Bridge",
+      "waterway": "Harlem River",
+      "type": "Steel Arch Bridge",
+      "clearanceFeet": 103,
+      "clearanceMeters": 31.4,
+      "clearanceNote": "103 ft MHW (Cross Bronx / I-95)",
+      "cleared": true,
+      "points": [
+        [
+          40.8462,
+          -73.9302
+        ],
+        [
+          40.8454,
+          -73.9254
+        ]
+      ]
+    },
+    {
+      "id": "henry-hudson-bridge",
+      "name": "Henry Hudson Bridge",
+      "waterway": "Spuyten Duyvil Creek",
+      "type": "Steel Arch Bridge",
+      "clearanceFeet": 143,
+      "clearanceMeters": 43.6,
+      "clearanceNote": "143 ft MHW",
+      "cleared": true,
+      "points": [
+        [
+          40.8805,
+          -73.9222
+        ],
+        [
+          40.8751,
+          -73.9222
+        ]
+      ]
+    }
+  ],
+  "seamarks": [
+    {
+      "id": "robbins-reef-light",
+      "name": "Robbins Reef Light",
+      "type": "light",
+      "subtype": "lighthouse",
+      "latitude": 40.6551,
+      "longitude": -74.0656,
+      "characteristic": "Fl G 6s",
+      "rangeNm": 7,
+      "color": "green",
+      "description": "Upper New York Bay off Bayonne / St. George. Conical spark tower."
+    },
+    {
+      "id": "west-bank-light",
+      "name": "West Bank Light",
+      "type": "light",
+      "subtype": "lighthouse",
+      "latitude": 40.5375,
+      "longitude": -74.0436,
+      "characteristic": "Iso W 6s",
+      "rangeNm": 10,
+      "color": "white",
+      "description": "Lower New York Bay, Ambrose Channel range front beacon."
+    },
+    {
+      "id": "coney-island-light",
+      "name": "Coney Island Light (Nortons Point)",
+      "type": "light",
+      "subtype": "lighthouse",
+      "latitude": 40.5739,
+      "longitude": -74.0017,
+      "characteristic": "Fl R 5s",
+      "rangeNm": 10,
+      "color": "red",
+      "description": "Nortons Point, Brooklyn. Triangular skeletal tower."
+    },
+    {
+      "id": "fort-wadsworth-light",
+      "name": "Fort Wadsworth Light",
+      "type": "light",
+      "subtype": "lighthouse",
+      "latitude": 40.6053,
+      "longitude": -74.0531,
+      "characteristic": "F R",
+      "rangeNm": 8,
+      "color": "red",
+      "description": "The Narrows, Staten Island shore atop historic Fort Wadsworth."
+    },
+    {
+      "id": "statue-of-liberty-beacon",
+      "name": "Statue of Liberty Beacon",
+      "type": "light",
+      "subtype": "monument-beacon",
+      "latitude": 40.6892,
+      "longitude": -74.0445,
+      "characteristic": "F G",
+      "rangeNm": 12,
+      "color": "gold",
+      "description": "Liberty Island Torch, historic harbor beacon."
+    },
+    {
+      "id": "blackwell-island-light",
+      "name": "Blackwell Island Light",
+      "type": "light",
+      "subtype": "lighthouse",
+      "latitude": 40.7725,
+      "longitude": -73.9397,
+      "characteristic": "F W",
+      "rangeNm": 6,
+      "color": "white",
+      "description": "North tip of Roosevelt Island, East River. Historic 1872 stone tower."
+    },
+    {
+      "id": "little-red-lighthouse",
+      "name": "Jeffrey's Hook Light (Little Red Lighthouse)",
+      "type": "light",
+      "subtype": "lighthouse",
+      "latitude": 40.8508,
+      "longitude": -73.9472,
+      "characteristic": "Fl R",
+      "rangeNm": 5,
+      "color": "red",
+      "description": "Hudson River beneath the George Washington Bridge."
+    },
+    {
+      "id": "execution-rocks-light",
+      "name": "Execution Rocks Light",
+      "type": "light",
+      "subtype": "offshore-light",
+      "latitude": 40.8808,
+      "longitude": -73.7381,
+      "characteristic": "Fl W 10s",
+      "rangeNm": 15,
+      "color": "white",
+      "description": "Long Island Sound Western Entrance Light."
+    },
+    {
+      "id": "stepping-stones-light",
+      "name": "Stepping Stones Light",
+      "type": "light",
+      "subtype": "lighthouse",
+      "latitude": 40.7917,
+      "longitude": -73.7825,
+      "characteristic": "Fl G 4s",
+      "rangeNm": 8,
+      "color": "green",
+      "description": "Long Island Sound / Throggs Neck approach."
+    },
+    {
+      "id": "sandy-hook-light",
+      "name": "Sandy Hook Light",
+      "type": "light",
+      "subtype": "historic-lighthouse",
+      "latitude": 40.4619,
+      "longitude": -74.0017,
+      "characteristic": "F W",
+      "rangeNm": 19,
+      "color": "white",
+      "description": "Sandy Hook, NJ. Built 1764, oldest working lighthouse in the United States."
+    },
+    {
+      "id": "governors-island-light",
+      "name": "Governors Island Light & Horn",
+      "type": "light",
+      "subtype": "beacon",
+      "latitude": 40.6842,
+      "longitude": -74.0189,
+      "characteristic": "Fl R 4s",
+      "rangeNm": 6,
+      "color": "red",
+      "description": "Southern tip of Governors Island, Buttermilk Channel / Upper Bay entrance."
+    },
+    {
+      "id": "ambrose-ac-buoy",
+      "name": "Ambrose Lighted Buoy AC",
+      "type": "buoy",
+      "subtype": "safe-water",
+      "latitude": 40.468,
+      "longitude": -73.834,
+      "color": "red-white",
+      "shape": "sphere",
+      "description": "Ambrose Channel Entrance Sea Mark (Mo A)"
+    },
+    {
+      "id": "ambrose-1-buoy",
+      "name": "Ambrose Buoy 1",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.498,
+      "longitude": -73.921,
+      "color": "green",
+      "shape": "can",
+      "description": "Ambrose Channel Port Mark (Fl G 2.5s)"
+    },
+    {
+      "id": "ambrose-2-buoy",
+      "name": "Ambrose Buoy 2",
+      "type": "buoy",
+      "subtype": "starboard-nun",
+      "latitude": 40.495,
+      "longitude": -73.918,
+      "color": "red",
+      "shape": "nun",
+      "description": "Ambrose Channel Starboard Mark (Fl R 2.5s)"
+    },
+    {
+      "id": "narrows-19-buoy",
+      "name": "The Narrows Buoy 19",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.598,
+      "longitude": -74.047,
+      "color": "green",
+      "shape": "can",
+      "description": "The Narrows West Channel Gate"
+    },
+    {
+      "id": "narrows-20-buoy",
+      "name": "The Narrows Buoy 20",
+      "type": "buoy",
+      "subtype": "starboard-nun",
+      "latitude": 40.596,
+      "longitude": -74.041,
+      "color": "red",
+      "shape": "nun",
+      "description": "The Narrows East Channel Gate"
+    },
+    {
+      "id": "narrows-24-buoy",
+      "name": "The Narrows Buoy 24",
+      "type": "buoy",
+      "subtype": "starboard-nun",
+      "latitude": 40.622,
+      "longitude": -74.039,
+      "color": "red",
+      "shape": "nun",
+      "description": "Verrazzano North Approach Channel"
+    },
+    {
+      "id": "upper-bay-25-buoy",
+      "name": "Upper Bay Buoy 25",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.648,
+      "longitude": -74.058,
+      "color": "green",
+      "shape": "can",
+      "description": "Upper Bay / Kill Van Kull junction"
+    },
+    {
+      "id": "upper-bay-28-buoy",
+      "name": "Upper Bay Buoy 28",
+      "type": "buoy",
+      "subtype": "starboard-nun",
+      "latitude": 40.671,
+      "longitude": -74.032,
+      "color": "red",
+      "shape": "nun",
+      "description": "Main Ship Channel Starboard Mark"
+    },
+    {
+      "id": "hudson-1-buoy",
+      "name": "Hudson River Buoy 1",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.702,
+      "longitude": -74.019,
+      "color": "green",
+      "shape": "can",
+      "description": "Battery Park Approach Gate (Fl G 4s)"
+    },
+    {
+      "id": "hudson-3-buoy",
+      "name": "Hudson River Buoy 3",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.763,
+      "longitude": -74.009,
+      "color": "green",
+      "shape": "can",
+      "description": "Midtown / Pier 79 Navigation Approach"
+    },
+    {
+      "id": "east-river-er-buoy",
+      "name": "East River Buoy ER",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.699,
+      "longitude": -74.011,
+      "color": "green",
+      "shape": "can",
+      "description": "Governors Island / East River Channel Entrance"
+    },
+    {
+      "id": "buttermilk-1-buoy",
+      "name": "Buttermilk Channel Buoy 1",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.686,
+      "longitude": -74.014,
+      "color": "green",
+      "shape": "can",
+      "description": "Governors Island East Passage"
+    },
+    {
+      "id": "buttermilk-2-buoy",
+      "name": "Buttermilk Channel Buoy 2",
+      "type": "buoy",
+      "subtype": "starboard-nun",
+      "latitude": 40.688,
+      "longitude": -74.008,
+      "color": "red",
+      "shape": "nun",
+      "description": "Brooklyn Atlantic Basin Passage"
+    },
+    {
+      "id": "hell-gate-1-buoy",
+      "name": "Hell Gate Buoy HG-1",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.778,
+      "longitude": -73.931,
+      "color": "green",
+      "shape": "can",
+      "description": "Hell Gate Deepwater Channel (Fl G 2.5s)"
+    },
+    {
+      "id": "hell-gate-2-buoy",
+      "name": "Hell Gate Buoy HG-2",
+      "type": "buoy",
+      "subtype": "starboard-nun",
+      "latitude": 40.783,
+      "longitude": -73.925,
+      "color": "red",
+      "shape": "nun",
+      "description": "Hell Gate Starboard Mark (Fl R 2.5s)"
+    },
+    {
+      "id": "rockaway-inlet-rw-buoy",
+      "name": "Rockaway Inlet Buoy RW RI",
+      "type": "buoy",
+      "subtype": "safe-water",
+      "latitude": 40.541,
+      "longitude": -73.935,
+      "color": "red-white",
+      "shape": "sphere",
+      "description": "Rockaway Inlet Sea Fairway Mark (Mo A)"
+    },
+    {
+      "id": "rockaway-inlet-1-buoy",
+      "name": "Rockaway Inlet Buoy 1",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.562,
+      "longitude": -73.905,
+      "color": "green",
+      "shape": "can",
+      "description": "Rockaway Inlet Channel North"
+    },
+    {
+      "id": "rockaway-inlet-2-buoy",
+      "name": "Rockaway Inlet Buoy 2",
+      "type": "buoy",
+      "subtype": "starboard-nun",
+      "latitude": 40.558,
+      "longitude": -73.912,
+      "color": "red",
+      "shape": "nun",
+      "description": "Breezy Point Starboard Mark"
+    },
+    {
+      "id": "sandy-hook-1-buoy",
+      "name": "Sandy Hook Channel Buoy 1",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.485,
+      "longitude": -74.012,
+      "color": "green",
+      "shape": "can",
+      "description": "Sandy Hook Bay Channel Gate"
+    },
+    {
+      "id": "compton-creek-1-buoy",
+      "name": "Compton Creek Buoy 1 (Belford)",
+      "type": "buoy",
+      "subtype": "port-can",
+      "latitude": 40.443,
+      "longitude": -74.081,
+      "color": "green",
+      "shape": "can",
+      "description": "Belford Ferry Terminal Approach Channel"
+    }
+  ],
+  "channels": [
+    {
+      "id": "ambrose-channel",
+      "name": "Ambrose Channel Fairway",
+      "points": [
+        [
+          40.468,
+          -73.834
+        ],
+        [
+          40.486,
+          -73.882
+        ],
+        [
+          40.505,
+          -73.94
+        ],
+        [
+          40.528,
+          -73.995
+        ],
+        [
+          40.565,
+          -74.032
+        ],
+        [
+          40.598,
+          -74.044
+        ]
+      ]
+    },
+    {
+      "id": "the-narrows-channel",
+      "name": "The Narrows Deepwater Route",
+      "points": [
+        [
+          40.598,
+          -74.044
+        ],
+        [
+          40.612,
+          -74.042
+        ],
+        [
+          40.635,
+          -74.04
+        ],
+        [
+          40.655,
+          -74.038
+        ],
+        [
+          40.675,
+          -74.03
+        ]
+      ]
+    },
+    {
+      "id": "hudson-river-channel",
+      "name": "Hudson River Navigational Channel",
+      "points": [
+        [
+          40.699,
+          -74.02
+        ],
+        [
+          40.718,
+          -74.018
+        ],
+        [
+          40.742,
+          -74.016
+        ],
+        [
+          40.768,
+          -74.01
+        ],
+        [
+          40.805,
+          -73.985
+        ],
+        [
+          40.852,
+          -73.955
+        ]
+      ]
+    },
+    {
+      "id": "east-river-channel",
+      "name": "East River Navigational Fairway",
+      "points": [
+        [
+          40.699,
+          -74.011
+        ],
+        [
+          40.706,
+          -73.996
+        ],
+        [
+          40.713,
+          -73.978
+        ],
+        [
+          40.725,
+          -73.963
+        ],
+        [
+          40.745,
+          -73.962
+        ],
+        [
+          40.768,
+          -73.945
+        ],
+        [
+          40.78,
+          -73.928
+        ],
+        [
+          40.795,
+          -73.905
+        ],
+        [
+          40.808,
+          -73.84
+        ]
+      ]
+    },
+    {
+      "id": "rockaway-inlet-channel",
+      "name": "Rockaway Inlet Fairway",
+      "points": [
+        [
+          40.541,
+          -73.935
+        ],
+        [
+          40.555,
+          -73.918
+        ],
+        [
+          40.565,
+          -73.898
+        ],
+        [
+          40.574,
+          -73.875
+        ],
+        [
+          40.582,
+          -73.845
+        ],
+        [
+          40.585,
+          -73.82
+        ]
+      ]
+    }
+  ]
+}

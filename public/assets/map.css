@@ -173,43 +173,379 @@ html, body {
 .map-tools button:active { transform: scale(0.92); background: var(--sunken); }
 .map-tools button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 
-/* ---------------- the chart tiles & themes ---------------- */
+/* ---------------- theme variables for vector cartography ---------------- */
 
-.tiles { opacity: .85; filter: saturate(.82) contrast(1.04); }
-.tiles-seamark { opacity: .65; }
+:root {
+  --map-water: #e3f0f7;
+  --map-land: #ffffff;
+  --map-land-stroke: #bfd8e4;
+  --map-street: #cfe0eb;
+  --map-street-casing: #eef5f9;
+  --map-bridge: #004e72;
+  --map-bridge-casing: #ffffff;
+  --map-bridge-label: #001d41;
+  --map-seamark-buoy-green: #0fa958;
+  --map-seamark-buoy-red: #e03131;
+  --map-seamark-light: #f59f00;
+  --map-seamark-channel: rgba(0, 78, 114, 0.22);
+}
 
-/* Dedicated cartographic treatment for dark and accent themes */
+:root[data-theme="night"] {
+  --map-water: #0b1522;
+  --map-land: #152232;
+  --map-land-stroke: #25394f;
+  --map-street: #283e57;
+  --map-street-casing: #101c2b;
+  --map-bridge: #4da3ff;
+  --map-bridge-casing: #101c2b;
+  --map-bridge-label: #8ec3ff;
+  --map-seamark-buoy-green: #00e676;
+  --map-seamark-buoy-red: #ff3366;
+  --map-seamark-light: #ffd54f;
+  --map-seamark-channel: rgba(77, 163, 255, 0.25);
+}
 :root[data-theme="night"] .tiles {
   filter: invert(1) hue-rotate(195deg) brightness(.72) contrast(1.18) saturate(.8);
   opacity: .75;
+}
+
+:root[data-theme="hacker"] {
+  --map-water: #010a04;
+  --map-land: #041a09;
+  --map-land-stroke: #00ff66;
+  --map-street: #0a3d16;
+  --map-street-casing: #020b04;
+  --map-bridge: #00ff66;
+  --map-bridge-casing: #000000;
+  --map-bridge-label: #00ff66;
+  --map-seamark-buoy-green: #00ff66;
+  --map-seamark-buoy-red: #ff1144;
+  --map-seamark-light: #00ff66;
+  --map-seamark-channel: rgba(0, 255, 102, 0.3);
 }
 :root[data-theme="hacker"] .tiles {
   filter: invert(1) hue-rotate(85deg) brightness(.65) contrast(1.4) saturate(3);
   opacity: .55;
 }
+
+:root[data-theme="kuromi"] {
+  --map-water: #130f1c;
+  --map-land: #201a2d;
+  --map-land-stroke: #45375e;
+  --map-street: #2f2543;
+  --map-street-casing: #161122;
+  --map-bridge: #d946ef;
+  --map-bridge-casing: #161122;
+  --map-bridge-label: #f0abfc;
+  --map-seamark-buoy-green: #2dd4bf;
+  --map-seamark-buoy-red: #f43f5e;
+  --map-seamark-light: #ec4899;
+  --map-seamark-channel: rgba(217, 70, 239, 0.25);
+}
 :root[data-theme="kuromi"] .tiles {
   filter: invert(1) hue-rotate(240deg) brightness(.68) contrast(1.25) saturate(1.2);
   opacity: .7;
+}
+
+:root[data-theme="windows-xp"] {
+  --map-water: #bfe1f8;
+  --map-land: #f4f7ea;
+  --map-land-stroke: #8fb678;
+  --map-street: #d6e2cb;
+  --map-street-casing: #f8faf2;
+  --map-bridge: #275294;
+  --map-bridge-casing: #ffffff;
+  --map-bridge-label: #275294;
+  --map-seamark-buoy-green: #2e7d32;
+  --map-seamark-buoy-red: #c62828;
+  --map-seamark-light: #ffb300;
+  --map-seamark-channel: rgba(39, 82, 148, 0.25);
 }
 :root[data-theme="windows-xp"] .tiles {
   filter: saturate(1.15) contrast(1.08);
   opacity: .9;
 }
+
+:root[data-theme="hello-kitty"] {
+  --map-water: #eef3ff;
+  --map-land: #fff3f6;
+  --map-land-stroke: #ffccd8;
+  --map-street: #fddde5;
+  --map-street-casing: #ffffff;
+  --map-bridge: #d6336c;
+  --map-bridge-casing: #ffffff;
+  --map-bridge-label: #a61e4d;
+  --map-seamark-buoy-green: #20c997;
+  --map-seamark-buoy-red: #ff6b8b;
+  --map-seamark-light: #ffd43b;
+  --map-seamark-channel: rgba(214, 51, 108, 0.22);
+}
 :root[data-theme="hello-kitty"] .tiles {
   filter: hue-rotate(-15deg) saturate(.95) brightness(1.02);
   opacity: .88;
+}
+
+:root[data-theme="cinnamoroll"] {
+  --map-water: #e3f5fc;
+  --map-land: #ffffff;
+  --map-land-stroke: #bde4f7;
+  --map-street: #e0f2fb;
+  --map-street-casing: #ffffff;
+  --map-bridge: #339af0;
+  --map-bridge-casing: #ffffff;
+  --map-bridge-label: #1c7ed6;
+  --map-seamark-buoy-green: #38d9a9;
+  --map-seamark-buoy-red: #ff8787;
+  --map-seamark-light: #ffe066;
+  --map-seamark-channel: rgba(51, 154, 240, 0.25);
 }
 :root[data-theme="cinnamoroll"] .tiles {
   filter: hue-rotate(10deg) saturate(1.05) brightness(1.02);
   opacity: .88;
 }
+
+:root[data-theme="pompompurin"] {
+  --map-water: #e2f6f8;
+  --map-land: #fffbee;
+  --map-land-stroke: #fae498;
+  --map-street: #fcf1cb;
+  --map-street-casing: #ffffff;
+  --map-bridge: #b45309;
+  --map-bridge-casing: #ffffff;
+  --map-bridge-label: #78350f;
+  --map-seamark-buoy-green: #10b981;
+  --map-seamark-buoy-red: #ef4444;
+  --map-seamark-light: #f59e0b;
+  --map-seamark-channel: rgba(180, 83, 9, 0.25);
+}
 :root[data-theme="pompompurin"] .tiles {
   filter: sepia(.2) saturate(.95);
   opacity: .88;
 }
+
+:root[data-theme="burger-king"] {
+  --map-water: #f3ede2;
+  --map-land: #fff8ee;
+  --map-land-stroke: #e5d4be;
+  --map-street: #ecd7bf;
+  --map-street-casing: #ffffff;
+  --map-bridge: #502314;
+  --map-bridge-casing: #ffffff;
+  --map-bridge-label: #502314;
+  --map-seamark-buoy-green: #2b6e3f;
+  --map-seamark-buoy-red: #d62300;
+  --map-seamark-light: #fca311;
+  --map-seamark-channel: rgba(80, 35, 20, 0.25);
+}
 :root[data-theme="burger-king"] .tiles {
   filter: sepia(.15) saturate(1.1);
   opacity: .88;
+}
+
+/* ---------------- the chart tiles & backdrop ---------------- */
+
+.tiles { opacity: .85; filter: saturate(.82) contrast(1.04); }
+.tiles-seamark { opacity: .65; }
+
+/* ---------------- modern vector cartography backdrop ---------------- */
+
+.chart-backdrop {
+  pointer-events: auto;
+}
+.map-water {
+  fill: var(--map-water, var(--canvas));
+  transition: fill .3s ease;
+}
+.map-landmass {
+  fill: var(--map-land, var(--card));
+  stroke: var(--map-land-stroke, var(--line));
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: fill .3s ease, stroke .3s ease;
+}
+.map-channel {
+  fill: none;
+  stroke: var(--map-seamark-channel, rgba(0, 78, 114, 0.22));
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+.map-street-casing {
+  fill: none;
+  stroke: var(--map-street-casing, rgba(0, 29, 65, 0.08));
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.map-street {
+  fill: none;
+  stroke: var(--map-street, var(--line));
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke .3s ease;
+}
+.map-street.street-interstate {
+  stroke-width: 1.8;
+}
+.map-street-casing.street-interstate {
+  stroke-width: 3.2;
+}
+
+/* ---------------- bridges across waterways ---------------- */
+
+.chart-bridges {
+  pointer-events: auto;
+}
+.bridge-group {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.bridge-casing {
+  stroke: var(--map-bridge-casing, var(--card));
+  stroke-width: 3.8;
+  stroke-linecap: square;
+  transition: stroke .3s ease;
+}
+.bridge-deck {
+  stroke: var(--map-bridge, var(--navy));
+  stroke-width: 2.4;
+  stroke-linecap: square;
+  transition: stroke .3s ease, stroke-width .2s ease;
+}
+.bridge-group:hover .bridge-deck,
+.bridge-group:focus-visible .bridge-deck {
+  stroke: var(--blue);
+  stroke-width: 3.4;
+}
+.bridge-clearance-badge {
+  font: 900 6.5px/1 Lato, Arial, sans-serif;
+  fill: var(--map-bridge-label, var(--navy));
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.chart-backdrop.is-close .bridge-clearance-badge {
+  opacity: 0.95;
+}
+
+/* ---------------- naval markings (seamarks) ---------------- */
+
+.chart-seamarks {
+  pointer-events: auto;
+}
+.seamark {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.seamark-halo {
+  fill: var(--map-seamark-light, #ffd54f);
+  opacity: .28;
+  animation: seamark-glow 3s infinite ease-in-out;
+}
+.seamark-light-core {
+  fill: var(--map-seamark-light, #ffd54f);
+  stroke: #ffffff;
+  stroke-width: .8;
+}
+.seamark-buoy-icon.seamark-buoy-green {
+  fill: var(--map-seamark-buoy-green, #10b981);
+  stroke: #ffffff;
+  stroke-width: .8;
+}
+.seamark-buoy-icon.seamark-buoy-red {
+  fill: var(--map-seamark-buoy-red, #ef4444);
+  stroke: #ffffff;
+  stroke-width: .8;
+}
+.seamark-buoy-icon.seamark-buoy-red-white {
+  fill: #ffffff;
+  stroke: #ef4444;
+  stroke-width: 1;
+}
+.seamark-label {
+  font: 800 6px/1 Lato, Arial, sans-serif;
+  fill: var(--map-bridge-label, var(--navy));
+  dominant-baseline: central;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.chart-backdrop.is-close .seamark-label {
+  opacity: 0.85;
+}
+
+@keyframes seamark-glow {
+  0%, 100% { r: 5; opacity: .2; }
+  50% { r: 8; opacity: .45; }
+}
+
+/* ---------------- bridge & seamark floating cards ---------------- */
+
+.bridge-card, .seamark-card {
+  position: absolute;
+  top: calc(108px + env(safe-area-inset-top));
+  left: 14px;
+  right: 14px;
+  z-index: 28;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: card-pop .24s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+.card-clearance-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+}
+.card-clearance-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+}
+.card-clearance-val {
+  font: 900 18px/1.1 Oswald, Lato, sans-serif;
+  color: var(--navy);
+}
+.card-clearance-badge {
+  align-self: flex-start;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+.card-clearance-note {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.card-seamark-desc {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  line-height: 1.4;
 }
 
 .map-credit {
@@ -623,7 +959,7 @@ html, body {
     max-height: none;
   }
   .sheet-handle-zone { display: none; }
-  .vessel-card, .dock-card {
+  .vessel-card, .dock-card, .bridge-card, .seamark-card {
     left: 422px;
     right: auto;
     width: 360px;
