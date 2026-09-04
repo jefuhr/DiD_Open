@@ -1227,6 +1227,30 @@ function stopClock(seconds) {
   return adjustedTime(`${Math.floor(whole / 3600)}:${String(Math.floor((whole % 3600) / 60)).padStart(2, "0")}:00`, 0);
 }
 
+function layoverMinutes(seconds) {
+  return Math.round(Number(seconds) / 60);
+}
+
+// The final-stop pause before this same working leaves again. Scheduled metadata is bundled with
+// the trip so it works offline and on browsed days; today's connection response may enrich it with
+// the live time left after delays on either side of the turn.
+function turnaroundLabel(stop) {
+  const isFinal = stop.sequence === tripView?.stops?.at(-1)?.sequence;
+  const local = isFinal && tripView?.scheduleTurnaround?.stopId === stop.stopId
+    ? { scheduledSeconds: tripView.scheduleTurnaround.scheduledLayoverSeconds, hasLiveTiming: false }
+    : null;
+  const turnaround = tripView?.timings?.get(stop.sequence)?.turnaround || local;
+  const scheduled = Number(turnaround?.scheduledSeconds);
+  if (!Number.isFinite(scheduled)) return "";
+  const scheduledMinutes = layoverMinutes(scheduled);
+  const estimated = Number(turnaround?.estimatedSeconds);
+  if (turnaround.hasLiveTiming && Number.isFinite(estimated)) {
+    const estimatedMinutes = layoverMinutes(estimated);
+    return `<small class="trip-stop-layover" aria-label="Scheduled layover ${scheduledMinutes} minutes, currently ${estimatedMinutes} minutes">${scheduledMinutes} → ${estimatedMinutes} min</small>`;
+  }
+  return `<small class="trip-stop-layover" aria-label="Scheduled layover ${scheduledMinutes} minutes">scheduled ${scheduledMinutes} min</small>`;
+}
+
 function tripStopName(stopId) {
   return data?.stops?.[stopId]?.name || tripView?.names?.get(stopId) || stopId;
 }
@@ -1324,10 +1348,15 @@ function renderTripView() {
     const past = stop.sequence < tripView.sequence;
     const current = stop.sequence === tripView.sequence;
     const landingId = tripStopLanding(stop.stopId);
-    const time = stop.arrivalSeconds ?? stop.departureSeconds;
+    const timing = tripView.timings?.get(stop.sequence);
+    const scheduledTime = stop.arrivalSeconds ?? stop.departureSeconds;
+    const time = timing?.estimatedArrivalSeconds != null && Number.isFinite(Number(timing.estimatedArrivalSeconds))
+      ? Number(timing.estimatedArrivalSeconds)
+      : scheduledTime;
+    const layover = turnaroundLabel(stop);
     const head = `<span>${escapeHtml(tripStopName(stop.stopId))}</span>` +
       `${current ? `<span class="trip-stop-you">You are here</span>` : ""}` +
-      `<span class="trip-stop-time">${time == null ? "" : escapeHtml(stopClock(time))}</span>`;
+      `<span class="trip-stop-timing"><span class="trip-stop-time">${time == null ? "" : escapeHtml(stopClock(time))}</span>${layover}</span>`;
     const headTag = landingId === null
       ? `<div class="trip-stop-head trip-stop-static">${head}</div>`
       : `<button type="button" class="trip-stop-head" data-landing-id="${landingId}">${head}</button>`;
@@ -1353,6 +1382,10 @@ async function loadTripConnections(tripId) {
     }
     tripView.connections = new Map((payload.stops || []).map((stop) => [stop.stopId, stop.connections || []]));
     tripView.limits = new Map((payload.stops || []).map((stop) => [stop.stopId, stop.limit || 3]));
+    tripView.timings = new Map((payload.stops || []).map((stop) => [stop.sequence, {
+      estimatedArrivalSeconds: stop.estimatedArrivalSeconds,
+      turnaround: stop.turnaround || null
+    }]));
     // Names and landings for a device whose cached payload predates data.stops.
     for (const stop of payload.stops || []) {
       if (stop.name) tripView.names.set(stop.stopId, stop.name);
@@ -1383,6 +1416,7 @@ function openTripView(tripId, stopId, seconds) {
   tripView = {
     tripId, stopId, sequence: tapped?.sequence ?? stops[0].sequence, stops,
     connections: null, note: "Checking…",
+    scheduleTurnaround: schedule.turnaround || null, timings: new Map(),
     names: new Map(), landings: new Map(),
     // Says out loud what the times underneath are measured from. Read as "what is leaving now"
     // they would be wrong at every stop the boat has not reached yet.
@@ -1941,7 +1975,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=86&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=87&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

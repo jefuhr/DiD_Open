@@ -31,7 +31,10 @@ function index(departures, extra = {}) {
       t1: { stops: [
         { stopId: "87", sequence: 1, departureSeconds: 43200, arrivalSeconds: 43200 },
         { stopId: "18", sequence: 2, departureSeconds: 44100, arrivalSeconds: 44100 }
-      ] },
+      ], turnaround: {
+        stopId: "18", nextTripId: "turn", nextDepartureSeconds: 44400,
+        scheduledLayoverSeconds: 300
+      } },
       solo: { stops: [{ stopId: "87", sequence: 1, departureSeconds: 43200, arrivalSeconds: 43200 }] }
     },
     departures,
@@ -217,6 +220,59 @@ test("a late boat carries its delay into what it can connect to", () => {
   const greenpoint = late.stops.find((stop) => stop.stopId === "18");
   assert.deepEqual(greenpoint.connections.map((item) => item.tripId), ["later"]);
   assert.equal(greenpoint.afterSeconds, 44700, "the arrival moved with the boat");
+});
+
+test("a terminal turnaround reports its live eta and the break left after both delays", () => {
+  const view = index([departure({ tripId: "turn", stopId: "18", seconds: 44400, departureTime: "12:20:00" })]);
+  const result = tripConnections({
+    index: view, tripId: "t1", now: new Date("2026-08-27T15:00:00Z"),
+    updates: new Map([
+      ["t1|18", { delaySeconds: 600 }],
+      ["turn|18", { delaySeconds: 120 }]
+    ])
+  });
+  const terminal = result.stops.at(-1);
+  assert.equal(terminal.estimatedArrivalSeconds, 44700, "the terminal clock becomes the live 12:25 eta");
+  assert.deepEqual(terminal.turnaround, {
+    scheduledSeconds: 300,
+    estimatedSeconds: -180,
+    hasLiveTiming: true
+  }, "a five-minute scheduled turn becomes negative when the incoming delay outruns the return delay");
+  assert.equal(result.stops[0].turnaround, null, "only the terminating call owns the layover");
+  assert.equal(result.stops[0].estimatedArrivalSeconds, null, "intermediate clocks stay scheduled");
+});
+
+test("turnarounds use schedule timing for a missing leg and fall back when realtime is unsafe", () => {
+  const view = index([]);
+  const now = new Date("2026-08-27T15:00:00Z");
+  const outgoingOnly = tripConnections({
+    index: view, tripId: "t1", now,
+    updates: new Map([["turn|18", { delaySeconds: 300 }]])
+  }).stops.at(-1);
+  assert.equal(outgoingOnly.estimatedArrivalSeconds, null);
+  assert.deepEqual(outgoingOnly.turnaround, {
+    scheduledSeconds: 300, estimatedSeconds: 600, hasLiveTiming: true
+  });
+
+  const stale = tripConnections({
+    index: view, tripId: "t1", now, stale: true,
+    updates: new Map([["t1|18", { delaySeconds: 600 }]])
+  }).stops.at(-1);
+  assert.deepEqual(stale.turnaround, {
+    scheduledSeconds: 300, estimatedSeconds: null, hasLiveTiming: false
+  });
+
+  const canceledReturn = tripConnections({
+    index: view, tripId: "t1", now,
+    updates: new Map([
+      ["t1|18", { delaySeconds: 600 }],
+      ["turn|18", { canceled: true }]
+    ])
+  }).stops.at(-1);
+  assert.equal(canceledReturn.estimatedArrivalSeconds, 44700);
+  assert.deepEqual(canceledReturn.turnaround, {
+    scheduledSeconds: 300, estimatedSeconds: null, hasLiveTiming: false
+  });
 });
 
 // The feed only names a vessel for a trip it has already reached, so a boat leaving later has none

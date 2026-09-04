@@ -49,12 +49,40 @@ export function boatRuns({ trips, timesByTrip, boatAssignments }) {
     const list = runs.get(key) || [];
     list.push({
       tripId: trip.trip_id, routeId: trip.route_id, boat, serviceId: trip.service_id,
-      startSeconds: timeToSeconds(start), endSeconds: timeToSeconds(end), endStopId: times.at(-1).stop_id
+      startSeconds: timeToSeconds(start), endSeconds: timeToSeconds(end),
+      startStopId: times[0].stop_id, endStopId: times.at(-1).stop_id
     });
     runs.set(key, list);
   }
   for (const list of runs.values()) list.sort((left, right) => left.startSeconds - right.startSeconds);
   return runs;
+}
+
+// The ordinary pause between two trips worked by the same boat at the same terminal.
+//
+// A route/number identifies a working, not necessarily one physical hull. At a published shift
+// boundary dispatch may swap the vessel underneath that working, so a trip already identified as
+// ending a shift is deliberately excluded. The remaining adjacent runs are the cases where the
+// boat terminates, stays put and turns round for its next revenue trip.
+export function turnaroundLayovers({ runs, endsShift = new Map() }) {
+  const byTrip = new Map();
+  for (const list of runs.values()) {
+    for (let index = 0; index < list.length - 1; index += 1) {
+      const run = list[index];
+      const next = list[index + 1];
+      if (endsShift.has(run.tripId)) continue;
+      if (run.endStopId !== next.startStopId) continue;
+      const scheduledLayoverSeconds = next.startSeconds - run.endSeconds;
+      if (scheduledLayoverSeconds < 0) continue;
+      byTrip.set(run.tripId, {
+        stopId: run.endStopId,
+        nextTripId: next.tripId,
+        nextDepartureSeconds: next.startSeconds,
+        scheduledLayoverSeconds
+      });
+    }
+  }
+  return byTrip;
 }
 
 // Where a boat stops working, and how sure we are about it.

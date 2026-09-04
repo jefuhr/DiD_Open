@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import {
   CREW_ROUTE, CREW_ROUTE_ID, HOME_PORT_STOP_ID, boatDeparturesByDay, boatRuns, crewCalendars,
   crewShuttleRows, crewSwapIndex, homePortCrewShuttles, homePortDepartures, homePortRows,
-  serviceBreaks
+  serviceBreaks, turnaroundLayovers
 } from "./out-of-service.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -644,6 +644,7 @@ export async function buildDisplayData({
     certainAfterMinutes: Number(crewConfig.outOfService?.certainAfterMinutes) || 180,
     crewSwaps
   });
+  const turnarounds = turnaroundLayovers({ runs, endsShift: breaks.certainty });
 
   let departures = [];
   for (const [tripId, times] of timesByTrip) {
@@ -681,14 +682,18 @@ export async function buildDisplayData({
   }
   departures.sort((a, b) => a.seconds - b.seconds || a.routeId.localeCompare(b.routeId));
   const usedTripIds = new Set(departures.map((item) => item.tripId));
-  const tripSchedules = Object.fromEntries([...usedTripIds].map((tripId) => [tripId, {
-    stops: (timesByTrip.get(tripId) || []).map((stopTime) => ({
-      stopId: stopTime.stop_id,
-      sequence: Number(stopTime.stop_sequence),
-      arrivalSeconds: stopTime.arrival_time ? timeToSeconds(stopTime.arrival_time) : null,
-      departureSeconds: stopTime.departure_time ? timeToSeconds(stopTime.departure_time) : null
-    }))
-  }]));
+  const tripSchedules = Object.fromEntries([...usedTripIds].map((tripId) => {
+    const turnaround = turnarounds.get(tripId);
+    return [tripId, {
+      stops: (timesByTrip.get(tripId) || []).map((stopTime) => ({
+        stopId: stopTime.stop_id,
+        sequence: Number(stopTime.stop_sequence),
+        arrivalSeconds: stopTime.arrival_time ? timeToSeconds(stopTime.arrival_time) : null,
+        departureSeconds: stopTime.departure_time ? timeToSeconds(stopTime.departure_time) : null
+      })),
+      ...(turnaround ? { turnaround } : {})
+    }];
+  }));
   const landingIndex = stopLandingIndex(landings);
   const stopsDirectory = stopDirectory({
     tripSchedules,
@@ -816,7 +821,7 @@ export async function buildDisplayData({
 
   return {
     meta: {
-      schemaVersion: 10, generatedAt: new Date().toISOString(), landingNumber, departureWindowMinutes,
+      schemaVersion: 11, generatedAt: new Date().toISOString(), landingNumber, departureWindowMinutes,
       departuresShown, busesEnabled,
       landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },

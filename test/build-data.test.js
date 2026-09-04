@@ -62,7 +62,7 @@ test("display data includes the configured departure window and count", async ()
   const display = JSON.parse(await readFile(new URL("../config/display.json", import.meta.url), "utf8"));
   assert.equal(data.meta.departureWindowMinutes, display.departureWindowMinutes);
   assert.equal(data.meta.departuresShown, display.departuresShown);
-  assert.equal(data.meta.schemaVersion, 10);
+  assert.equal(data.meta.schemaVersion, 11);
   assert.ok(data.tripSchedules[data.departures[0].tripId]?.stops.length > 1);
   const directions = new Set(data.departures.map((item) => `${item.routeId}|${item.directionId}|${item.destination}`));
   assert.ok(directions.size > 4, "Pier 11 should expose more than four route directions");
@@ -138,7 +138,7 @@ test("NY Waterway departures are omitted when waterwayEnabled is false", async (
   assert.equal(data.meta.waterway.enabled, false);
   assert.equal(data.meta.waterway.agencyName, null);
   assert.equal(data.departures.some((item) => item.routeId.startsWith("wtr:")), false);
-  assert.equal(data.meta.schemaVersion, 10);
+  assert.equal(data.meta.schemaVersion, 11);
 });
 
 test("NY Waterway departures are omitted for landings without a waterwayStopIds mapping", async () => {
@@ -641,6 +641,33 @@ test("published crew shifts replace the gap guesswork", async () => {
   const er1 = data.departures.filter((item) => item.outOfService && item.routeId === "ER" && item.boatAssignment === 1);
   assert.ok(er1.some((item) => !item.endsDay), "ER1 should still tie up mid-morning");
   assert.ok(er1.some((item) => item.endsDay), "ER1 should still finish for the day");
+});
+
+test("a terminating boat carries its scheduled same-working turnaround", async () => {
+  const data = await buildDisplayData({ landingNumber: 16 });
+  const schedule = data.tripSchedules["556"];
+  assert.deepEqual(schedule.turnaround, {
+    stopId: "141",
+    nextTripId: "606",
+    nextDepartureSeconds: 26040,
+    scheduledLayoverSeconds: 360
+  });
+  assert.equal(schedule.stops.at(-1).stopId, schedule.turnaround.stopId,
+    "the turn belongs to the trip's terminating stop");
+
+  // A published shift ending means the route/number working may continue under another hull. It is
+  // not safe to call that a turnaround for the arriving crew or boat.
+  for (const departure of data.departures.filter((item) => item.endsShift)) {
+    assert.equal(data.tripSchedules[departure.tripId]?.turnaround, undefined,
+      `${departure.tripId} ends a shift and must not acquire a layover`);
+  }
+
+  // Partner feeds publish no boat assignment, so their consecutive sailings are never guessed into
+  // one vessel's break.
+  const east34 = await buildDisplayData({ landingNumber: 8 });
+  for (const [tripId, partnerSchedule] of Object.entries(east34.tripSchedules)) {
+    if (tripId.includes(":")) assert.equal(partnerSchedule.turnaround, undefined);
+  }
 });
 
 test("a crew handover ties the boat up unless a shuttle brings the relief out to it", async () => {

@@ -838,28 +838,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 86 display assets", async () => {
+test("offline shell includes version 87 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=86/);
-  assert.match(index, /app\.js\?v=86/);
-  assert.match(worker, /nyc-ferry-did-shell-v86/);
-  assert.match(worker, /styles\.css\?v=86/);
-  assert.match(worker, /app\.js\?v=86/);
+  assert.match(index, /styles\.css\?v=87/);
+  assert.match(index, /app\.js\?v=87/);
+  assert.match(worker, /nyc-ferry-did-shell-v87/);
+  assert.match(worker, /styles\.css\?v=87/);
+  assert.match(worker, /app\.js\?v=87/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=86"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=86"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=86"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=87"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=87"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=87"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=86'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=87'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=86'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=87'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -1375,6 +1375,50 @@ test("a departure row opens its trip, and a stop in it switches landing", async 
   // Closing puts the view away and forgets the trip.
   view.run("setTripOpen(false)");
   assert.equal(view.node("tripMenu").hidden, true);
+});
+
+test("a terminating trip shows its scheduled and live layover beside the eta", async () => {
+  const payload = structuredClone(SAMPLE);
+  payload.stops = {
+    1: { name: "Wall St/Pier 11", landingId: 16 },
+    2: { name: "East 34th Street", landingId: 8 }
+  };
+  payload.departures = [sailing(SERVICES.weekday, "12:00", 0)];
+  payload.departures[0].tripId = "turning";
+  payload.tripSchedules = {
+    turning: {
+      stops: [
+        { stopId: "1", sequence: 1, arrivalSeconds: 43200, departureSeconds: 43200 },
+        { stopId: "2", sequence: 2, arrivalSeconds: 44100, departureSeconds: 44100 }
+      ],
+      turnaround: {
+        stopId: "2", nextTripId: "return", nextDepartureSeconds: 44400,
+        scheduledLayoverSeconds: 300
+      }
+    }
+  };
+  const view = await board({ payload });
+
+  // Browsed days intentionally make no realtime request, but the schedule still knows the break.
+  view.run(`viewDate = "2026-08-14"; openTripView("turning", "1", 43200)`);
+  let html = view.node("tripStops").innerHTML;
+  assert.match(html, /scheduled 5 min/);
+  assert.equal((html.match(/trip-stop-layover/g) || []).length, 1, "only the terminal gets a layover");
+
+  // Today, the terminal clock and the remaining break move together. A delay may consume more
+  // than the whole turn, and that negative value is operationally useful rather than clamped away.
+  view.run(`viewDate = null; tripView.timings = new Map([[2, {
+    estimatedArrivalSeconds: 44700,
+    turnaround: { scheduledSeconds: 300, estimatedSeconds: -180, hasLiveTiming: true }
+  }]]); renderTripView()`);
+  html = view.node("tripStops").innerHTML;
+  assert.match(html, /12:25/);
+  assert.match(html, /5 → -3 min/);
+  assert.match(html, /aria-label="Scheduled layover 5 minutes, currently -3 minutes"/);
+
+  const css = await readFile(cssPath, "utf8");
+  assert.match(css, /\.trip-stop-timing\{[^}]*display:flex/);
+  assert.match(css, /\.trip-stop-layover\{[^}]*white-space|\.trip-stop-timing\{[^}]*white-space:nowrap/);
 });
 
 // A synthetic row -- a home-port run, a crew shuttle -- has no published trip behind it, so there is
