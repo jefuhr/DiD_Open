@@ -485,3 +485,61 @@ test("zoom stays inside the harbor, and dock names wait until there is room for 
   for (let press = 0; press < 20; press += 1) view.fire("zoomOut", "click", {});
   assert.deepEqual(view.view(), fitted, "zooming out past the whole harbor stops at the whole harbor");
 });
+
+// ---------------------------------------------------------------- modern features
+
+test("route filtering isolates a route and dims the rest", async () => {
+  const er = BOAT;
+  const sb = { ...BOAT, id: "40", name: "Curiosity", number: "H-118", route: "SB", routeId: "SB", color: "#FFD100" };
+  const view = await page({ boats: [er, sb] });
+
+  assert.equal(view.node("routeFilterBar").children.length, 3);
+  const sbPill = view.node("routeFilterBar").children[2];
+  sbPill.listeners.get("click")();
+
+  assert.equal(view.find("is-dimmed").length, 2); // dimmed boat + dimmed line
+  assert.match(view.listText(), /Curiosity/);
+  assert.doesNotMatch(view.listText(), /Opportunity/);
+});
+
+test("search filters the fleet list by boat name or hull number", async () => {
+  const er = BOAT;
+  const sb = { ...BOAT, id: "40", name: "Curiosity", number: "H-118", route: "SB", routeId: "SB", color: "#FFD100" };
+  const view = await page({ boats: [er, sb] });
+
+  view.node("boatSearch").listeners.get("input")({ target: { value: "118" } });
+  assert.match(view.listText(), /Curiosity/);
+  assert.doesNotMatch(view.listText(), /Opportunity/);
+
+  view.node("boatSearch").listeners.get("input")({ target: { value: "Opp" } });
+  assert.match(view.listText(), /Opportunity/);
+  assert.doesNotMatch(view.listText(), /Curiosity/);
+});
+
+test("tapping a dock opens the dock detail card with its departure link", async () => {
+  const view = await page();
+  const dock = view.find("dock")[0];
+  view.fire("chart", "click", { target: dock });
+  assert.equal(view.node("dockCard").hidden, false);
+  assert.match(view.node("dockCard").textContent, /East 34th Street/);
+  assert.match(view.node("dockCard").textContent, /View Landing Departures/);
+});
+
+test("tapping a boat opens the floating vessel card with live speed and departure link", async () => {
+  const view = await page();
+  const hull = view.find("boat-hull")[0];
+  view.fire("chart", "click", { target: hull });
+  assert.equal(view.node("vesselCard").hidden, false);
+  assert.match(view.node("vesselCard").textContent, /Opportunity/);
+  assert.match(view.node("vesselCard").textContent, /17\.5 kn/);
+  assert.match(view.node("vesselCard").textContent, /Open Departure Board/);
+});
+
+test("all themes have dedicated cartographic rules in map.css", async () => {
+  const css = await readFile(new URL("../public/assets/map.css", import.meta.url), "utf8");
+  const themes = ["night", "hacker", "kuromi", "windows-xp", "hello-kitty", "cinnamoroll", "pompompurin", "burger-king"];
+  for (const theme of themes) {
+    assert.match(css, new RegExp(`:root\\[data-theme="${theme}"\\] \\.tiles`));
+  }
+});
+

@@ -3,41 +3,60 @@
    ============================================================
 
    public/styles.css is loaded first and does the dressing: the fonts, the colour variables and
-   all eight themes come from there, so this page is whatever the board is wearing. Nothing here
-   names a colour that a theme would want to change — every surface is var(--card), var(--canvas)
-   or var(--sunken), and the only fixed colours on the page are the operators' own route colours,
-   which are facts about the routes rather than decisions about the look.
+   all themes come from there, so this page matches whatever the board is wearing.
+   Every surface uses var(--card), var(--canvas) or var(--sunken), and route colors keep the
+   operators' authentic palettes. */
 
-   What this file adds is the part the board has no equivalent of: a frame with a chart in it that
-   pans and zooms, and a list of what is on the water. */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+}
 
-/* The board never scrolls — its list does, inside a fixed shell. This page is the other shape: a
-   map of fixed height with a list running under it, and the page itself is what scrolls. */
-html, body { height: auto; overflow: auto; }
 .map-body {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 max(10px, env(safe-area-inset-left)) calc(16px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right));
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--canvas);
 }
 
-/* ---------------- the heading ---------------- */
+/* ---------------- the floating heading ---------------- */
 
-/* Borrowed wholesale from the board, sticky the same way its heading is on a phone, so arriving
-   here does not feel like arriving somewhere else. */
 .map-heading {
-  position: sticky;
+  position: absolute;
   top: 0;
-  z-index: 20;
-  margin: 0 -10px 8px;
-  padding: calc(10px + env(safe-area-inset-top)) 12px 8px;
-  background: var(--canvas);
-  border-bottom: 1px solid var(--line);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
+  background: color-mix(in srgb, var(--canvas) 85%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
-.map-heading h1 { font-size: clamp(19px, 2.6vh, 26px); }
+.map-heading h1 {
+  font-size: clamp(17px, 2.3vh, 22px);
+  margin: 0;
+  color: var(--navy);
+  white-space: nowrap;
+}
 .back-button { flex: 0 0 auto; }
 .back-icon {
-  width: 20px; height: 20px;
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: var(--navy);
   stroke-width: 2.4;
@@ -45,71 +64,153 @@ html, body { height: auto; overflow: auto; }
   stroke-linejoin: round;
 }
 
-/* ---------------- the chart ---------------- */
+/* ---------------- quick route filter bar ---------------- */
+
+.route-filter-bar {
+  position: absolute;
+  top: calc(52px + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  z-index: 29;
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  pointer-events: auto;
+}
+.route-filter-bar::-webkit-scrollbar { display: none; }
+.route-filter-pill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card) 85%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: var(--navy);
+  font: 900 11px/1 Lato, Arial, sans-serif;
+  cursor: pointer;
+  transition: all .2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  -webkit-tap-highlight-color: transparent;
+}
+.route-filter-pill:hover { background: var(--card); transform: translateY(-1px); }
+.route-filter-pill.is-active {
+  background: var(--navy);
+  color: var(--canvas);
+  border-color: var(--navy);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--navy) 40%, transparent);
+}
+.route-filter-pill .pill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.route-filter-pill .pill-count {
+  opacity: .75;
+  font-size: 10px;
+}
+
+/* ---------------- the chart frame ---------------- */
 
 .map-frame {
-  position: relative;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  /* The water is the board's own sunken surface, so it turns with the theme rather than staying
-     one fixed shade of blue behind a page that has gone pink or gone dark. */
   background: var(--sunken);
 }
 #chart {
   display: block;
   width: 100%;
-  height: min(58vh, 520px);
-  /* The map takes the gesture; without this a drag scrolls the page underneath it instead. */
+  height: 100%;
   touch-action: none;
   cursor: grab;
 }
 #chart.is-dragging { cursor: grabbing; }
 #chart:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
 
+/* ---------------- floating map tools ---------------- */
+
 .map-tools {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: calc(98px + env(safe-area-inset-top));
+  right: 12px;
+  z-index: 25;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  padding: 4px;
 }
 .map-tools button {
-  min-width: 38px;
-  min-height: 38px;
-  padding: 0 8px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
   color: var(--navy);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  font: 900 14px/1 Lato, Arial, sans-serif;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  font: 900 15px/1 Lato, Arial, sans-serif;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   -webkit-tap-highlight-color: transparent;
+  transition: background .15s ease, transform .15s ease;
 }
-.map-tools button:active { background: var(--sunken); }
+.map-tools button:hover { background: color-mix(in srgb, var(--navy) 10%, transparent); }
+.map-tools button:active { transform: scale(0.92); background: var(--sunken); }
 .map-tools button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 
-/* ---------------- the chart underneath ---------------- */
+/* ---------------- the chart tiles & themes ---------------- */
 
-/* OpenStreetMap with OpenSeaMap's seamarks over it. Held back from full strength so the routes and
-   the boats — the things this board is actually for — stay the loudest thing on the page, and so a
-   busy city map does not read as more important than the water. */
-.tiles { opacity: .82; }
-/* The seamark layer is thin and transparent by design; at full strength its buoys read as clearly
-   as a route line, which they are not. */
-.tiles-seamark { opacity: .75; }
+.tiles { opacity: .85; filter: saturate(.82) contrast(1.04); }
+.tiles-seamark { opacity: .65; }
 
-/* The tiles are the one thing on this page that cannot be recoloured by a variable, so the dark
-   themes invert them instead. The double hue-rotate is the standard trick: invert flips the
-   lightness and turns the blues orange, rotating twice by half the wheel puts the hues back where
-   they started. Without it a night board opens onto a white city. */
-:root[data-theme="night"] .tiles,
-:root[data-theme="hacker"] .tiles,
-:root[data-theme="kuromi"] .tiles {
-  filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9);
+/* Dedicated cartographic treatment for dark and accent themes */
+:root[data-theme="night"] .tiles {
+  filter: invert(1) hue-rotate(195deg) brightness(.72) contrast(1.18) saturate(.8);
+  opacity: .75;
 }
-:root[data-theme="hacker"] .tiles { opacity: .5; }
+:root[data-theme="hacker"] .tiles {
+  filter: invert(1) hue-rotate(85deg) brightness(.65) contrast(1.4) saturate(3);
+  opacity: .55;
+}
+:root[data-theme="kuromi"] .tiles {
+  filter: invert(1) hue-rotate(240deg) brightness(.68) contrast(1.25) saturate(1.2);
+  opacity: .7;
+}
+:root[data-theme="windows-xp"] .tiles {
+  filter: saturate(1.15) contrast(1.08);
+  opacity: .9;
+}
+:root[data-theme="hello-kitty"] .tiles {
+  filter: hue-rotate(-15deg) saturate(.95) brightness(1.02);
+  opacity: .88;
+}
+:root[data-theme="cinnamoroll"] .tiles {
+  filter: hue-rotate(10deg) saturate(1.05) brightness(1.02);
+  opacity: .88;
+}
+:root[data-theme="pompompurin"] .tiles {
+  filter: sepia(.2) saturate(.95);
+  opacity: .88;
+}
+:root[data-theme="burger-king"] .tiles {
+  filter: sepia(.15) saturate(1.1);
+  opacity: .88;
+}
 
 .map-credit {
   position: absolute;
@@ -122,19 +223,36 @@ html, body { height: auto; overflow: auto; }
   border-radius: 6px 0 0 0;
   font: 700 9px/1.2 Lato, Arial, sans-serif;
   pointer-events: none;
+  z-index: 2;
 }
 
-/* Route lines keep the operator's own colours: those say which line this is, and no theme has an
-   opinion worth more than that. The white casing under them is what keeps two routes sharing the
-   same stretch of river legible as two. */
-.route-casing { fill: none; stroke: var(--card); stroke-width: 7; stroke-opacity: .6; stroke-linecap: round; stroke-linejoin: round; }
-.route-line { fill: none; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+/* ---------------- vectors & markers ---------------- */
 
-/* Sizes on markers are in drawing units, and the fitted map is drawn about as many units wide as it
-   gets CSS pixels — so these read as pixels, and they stay that size at every zoom because the
-   group they sit in is counter-scaled. The route lines are the exception: they are not in that
-   group, so their width is held in real pixels by vector-effect instead. */
-.dock-mark { fill: var(--card); stroke: var(--ink); stroke-width: 1.6; }
+.route-casing {
+  fill: none;
+  stroke: var(--card);
+  stroke-width: 7;
+  stroke-opacity: .65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.route-line {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity .25s ease, stroke-width .25s ease;
+}
+.route-line.is-dimmed { opacity: .2; }
+
+.dock { cursor: pointer; }
+.dock-mark {
+  fill: var(--card);
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  transition: transform .2s ease, fill .2s ease;
+}
+.dock:hover .dock-mark { fill: var(--blue); transform: scale(1.3); }
 .dock-label {
   fill: var(--ink);
   font: 900 10px/1 Lato, Arial, sans-serif;
@@ -143,21 +261,44 @@ html, body { height: auto; overflow: auto; }
   stroke-width: 3px;
   stroke-linejoin: round;
   opacity: 0;
+  transition: opacity .2s ease;
+  pointer-events: none;
 }
-/* Thirty dock names at the fitted zoom is a hedge over the water, so they wait until there is room
-   for them — or until one of them is where the selected boat is going. */
-.docks.is-close .dock-label, .dock.is-target .dock-label { opacity: 1; }
-.dock.is-target .dock-mark { fill: var(--warning); }
+.docks.is-close .dock-label,
+.dock.is-target .dock-label { opacity: 1; }
+.dock.is-target .dock-mark { fill: var(--warning); stroke-width: 2.2; }
 
-.boat-hull { stroke: var(--navy); stroke-width: 1.6; }
-/* A boat working no route the board knows. The fill is left off the element rather than hardcoded
-   in the script, so the theme's own grey applies. */
+.boat {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.boat.is-dimmed { opacity: .25; }
+.boat-hull {
+  stroke: var(--navy);
+  stroke-width: 1.6;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.22));
+}
 .boat-hull:not([fill]) { fill: var(--muted); }
-/* The hull number, once the disc is big enough to hold it. No halo behind it: it sits on its own
-   disc, in whichever of black or white can be read on that colour. */
-.boat-number { font: 900 9px/1 Lato, Arial, sans-serif; pointer-events: none; }
-.boat-heading { fill: var(--navy); }
-.boat-halo { fill: none; stroke: var(--navy); stroke-width: 2.4; }
+.boat-number {
+  font: 900 9px/1 Lato, Arial, sans-serif;
+  pointer-events: none;
+}
+.boat-heading {
+  fill: var(--navy);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+.boat-halo {
+  fill: none;
+  stroke: var(--navy);
+  stroke-width: 2.4;
+  animation: halo-pulse 2.2s ease-in-out infinite;
+}
+@keyframes halo-pulse {
+  0%   { stroke-opacity: .9; transform: scale(1); }
+  50%  { stroke-opacity: .4; transform: scale(1.18); }
+  100% { stroke-opacity: .9; transform: scale(1); }
+}
+
 .boat-label {
   fill: var(--navy);
   font: 900 11px/1 Lato, Arial, sans-serif;
@@ -165,29 +306,242 @@ html, body { height: auto; overflow: auto; }
   stroke: var(--canvas);
   stroke-width: 3.5px;
   stroke-linejoin: round;
+  pointer-events: none;
 }
 .boat.is-stale .boat-hull { fill-opacity: .45; }
 
 .map-message {
   position: absolute;
-  inset: auto 8px 8px;
+  top: calc(98px + env(safe-area-inset-top));
+  left: 14px;
+  right: 68px;
   margin: 0;
-  padding: 8px 10px;
-  color: var(--muted);
-  background: var(--card);
+  padding: 8px 12px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 10px;
   font: 900 12px/1.3 Lato, Arial, sans-serif;
   text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  z-index: 26;
 }
 
-.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 8px 0; color: var(--muted); font: 900 11px/1 Lato, Arial, sans-serif; }
-.legend .key { display: inline-flex; align-items: center; gap: 5px; }
-.legend .swatch { width: 14px; height: 4px; border-radius: 2px; background: var(--muted); }
+/* ---------------- floating detail cards ---------------- */
 
-/* ---------------- what is out there ---------------- */
+.vessel-card, .dock-card {
+  position: absolute;
+  top: calc(98px + env(safe-area-inset-top));
+  left: 12px;
+  right: 64px;
+  max-width: 380px;
+  z-index: 28;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+  padding: 12px 14px;
+  animation: card-appear .22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes card-appear {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--canvas);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.card-close:hover { color: var(--ink); background: var(--sunken); }
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-right: 28px;
+}
+.card-route-chip {
+  padding: 3px 8px;
+  border-radius: 5px;
+  font: 900 11px/1 Lato, Arial, sans-serif;
+  letter-spacing: .03em;
+}
+.card-vessel-name {
+  font: 900 16px/1.2 Lato, Arial, sans-serif;
+  color: var(--navy);
+}
+.card-hull-number {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.card-status-line {
+  font: 700 13px/1.3 Lato, Arial, sans-serif;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.card-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font: 700 12px/1.2 Lato, Arial, sans-serif;
+  color: var(--muted);
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
+}
+.card-speed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 900;
+  color: var(--navy);
+}
+.card-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  margin-top: 8px;
+  border-radius: 8px;
+  background: var(--navy);
+  color: var(--canvas);
+  text-decoration: none;
+  font: 900 12px/1 Lato, Arial, sans-serif;
+  transition: opacity .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.card-action-btn:hover { opacity: .9; }
 
-.boats { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+/* ---------------- modern draggable bottom sheet ---------------- */
+
+.bottom-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 35;
+  background: var(--card);
+  border-top: 1px solid var(--line);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: calc(100% - 64px - env(safe-area-inset-top));
+}
+.bottom-sheet[data-state="peek"] {
+  transform: translateY(calc(100% - 66px - env(safe-area-inset-bottom)));
+}
+.bottom-sheet[data-state="half"] {
+  transform: translateY(calc(100% - 42vh));
+}
+.bottom-sheet[data-state="full"] {
+  transform: translateY(calc(100% - min(84vh, 780px)));
+}
+.sheet-handle-zone {
+  padding: 8px 0 6px;
+  cursor: grab;
+  display: flex;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.sheet-handle-bar {
+  width: 40px;
+  height: 4.5px;
+  border-radius: 3px;
+  background: var(--line);
+}
+.sheet-header {
+  padding: 0 14px 8px;
+}
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px 0 34px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--sunken);
+  color: var(--ink);
+  font: 700 13px/1 Lato, Arial, sans-serif;
+  outline: none;
+  -webkit-appearance: none;
+}
+.search-input:focus {
+  border-color: var(--blue);
+  background: var(--card);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 20%, transparent);
+}
+.sheet-scrollable {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 14px calc(18px + env(safe-area-inset-bottom));
+  flex: 1 1 auto;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 4px 0 8px;
+  color: var(--muted);
+  font: 900 11px/1 Lato, Arial, sans-serif;
+}
+.legend .key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background .15s ease;
+}
+.legend .key:hover { background: var(--sunken); }
+.legend .swatch {
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--muted);
+}
+
+/* ---------------- boat roster cards ---------------- */
+
+.boats {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
 .boats .boat-row {
   width: 100%;
   display: grid;
@@ -200,12 +554,18 @@ html, body { height: auto; overflow: auto; }
   color: var(--ink);
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   font: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
-.boats .boat-row[aria-pressed="true"] { border-color: var(--blue); background: var(--sunken); }
+.boats .boat-row:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.06); }
+.boats .boat-row[aria-pressed="true"] {
+  border-color: var(--blue);
+  background: var(--sunken);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 30%, transparent);
+}
 .boats .boat-row:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
 
 .route-chip {
@@ -227,24 +587,19 @@ html, body { height: auto; overflow: auto; }
 
 .empty {
   margin: 0;
-  padding: 14px 12px;
+  padding: 16px 12px;
   color: var(--muted);
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   font: 700 13px/1.4 Lato, Arial, sans-serif;
   text-align: center;
 }
 
-/* The board's position and the zoom's counter-scale are deliberately on two nested groups: only the
-   outer one moves when the feed says a boat has moved, so this eases a boat along the water without
-   also easing the whole fleet after every pinch. */
+/* ---------------- animations ---------------- */
+
 @media (prefers-reduced-motion: no-preference) {
   .boat { transition: transform .8s ease-out; }
-  /* transform-box is the whole reason this works. Its initial value is view-box, which makes
-     transform-origin: center mean the centre of the entire SVG viewBox — so every wake in the
-     fleet scaled about the middle of the harbor and flew off its own boat. An SVG shape needs
-     fill-box for a transform-origin that refers to the shape itself. */
   .boat-wake { transform-box: fill-box; transform-origin: center; animation: wake 2.6s ease-out infinite; }
   @keyframes wake {
     from { transform: scale(.5); opacity: .55; }
@@ -252,8 +607,30 @@ html, body { height: auto; overflow: auto; }
   }
 }
 
-/* Roomier on the phone-shaped surface, exactly as the board is. */
-@media (min-width: 821px) {
-  .map-body { padding-bottom: 24px; }
-  #chart { height: min(64vh, 620px); }
+/* ---------------- desktop / tablet layout ---------------- */
+
+@media (min-width: 900px) {
+  .bottom-sheet {
+    width: 390px;
+    left: 16px;
+    right: auto;
+    top: calc(72px + env(safe-area-inset-top));
+    bottom: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    transform: none !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    max-height: none;
+  }
+  .sheet-handle-zone { display: none; }
+  .vessel-card, .dock-card {
+    left: 422px;
+    right: auto;
+    width: 360px;
+  }
+  .route-filter-bar {
+    left: 422px;
+    right: 16px;
+  }
 }
+

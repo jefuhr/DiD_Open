@@ -10,15 +10,12 @@
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <meta name="robots" content="noindex" />
     <title>NYC Ferry Staff Board · Map</title>
-    <link rel="icon" href="/assets/app-icon.png?v=87" type="image/png" />
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=87" />
-    <!-- The board's own stylesheet, not a copy of it. Every variable, font and theme this page
-         needs already lives there, so the map is dressed by whatever the board is wearing rather
-         than by a second palette that drifts away from it. map.css only adds what a map needs. -->
-    <link rel="stylesheet" href="/styles.css?v=87" />
-    <link rel="stylesheet" href="/assets/map.css?v=2" />
-    <!-- Same bootstrap as the board, for the same reason: the theme has to be on the document
-         before the first paint, or a saved one arrives as a visible flash of the default. -->
+    <link rel="icon" href="/assets/app-icon.png?v=88" type="image/png" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=88" />
+    <!-- The board's own stylesheet, loaded first for design system variables, typography, and themes. -->
+    <link rel="stylesheet" href="/styles.css?v=88" />
+    <link rel="stylesheet" href="/assets/map.css?v=3" />
+    <!-- Theme bootstrap to prevent initial flash of unstyled/wrong theme -->
     <script>
       try {
         var saved = localStorage.getItem("nyc-ferry-did-theme");
@@ -27,17 +24,13 @@
       } catch (error) {
         document.documentElement.dataset.theme = "nyc-ferry";
       }
-      // "./" is this page's own directory — "/" on a kiosk, "/ferryTimesMobile/" behind the proxy.
-      // The board reads the same expression against its own URL, so both pages agree about which
-      // surface they are on and size their shared chrome the same way.
       document.documentElement.dataset.surface =
         new URL("./", location).pathname === "/" ? "kiosk" : "app";
     </script>
   </head>
   <body class="map-body">
+    <!-- Floating Header -->
     <div class="board-heading map-heading">
-      <!-- "." is the board's own directory: the site root on a kiosk, /ferryTimesMobile/ behind the
-           proxy. The same resolution the map button used to get here. -->
       <a class="menu-button back-button" href="." aria-label="Back to the board" title="Back to the board">
         <svg class="back-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M15 5 8 12l7 7" />
@@ -50,7 +43,11 @@
       </div>
     </div>
 
-    <div class="map-frame">
+    <!-- Quick Route Filter Bar -->
+    <div class="route-filter-bar" id="routeFilterBar" aria-label="Route filter"></div>
+
+    <!-- Full-Bleed Map Canvas Frame -->
+    <div class="map-frame" id="mapFrame">
       <svg id="chart" tabindex="0" role="img" aria-labelledby="chartTitle"></svg>
       <div class="map-tools">
         <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
@@ -58,13 +55,31 @@
         <button type="button" id="zoomFit" aria-label="Show the whole harbor">Fit</button>
       </div>
       <p class="map-message" id="mapMessage" hidden></p>
-      <!-- Required by the licences the tiles are published under, not decoration: OpenStreetMap
-           data is ODbL and asks to be credited wherever it is shown. -->
       <p class="map-credit">© OpenStreetMap · OpenSeaMap</p>
     </div>
 
-    <p class="legend" id="legend"></p>
-    <ol class="boats" id="boats"></ol>
-    <script src="/assets/map.js?v=2"></script>
+    <!-- Floating Interactive Cards -->
+    <div class="vessel-card" id="vesselCard" aria-live="polite" hidden></div>
+    <div class="dock-card" id="dockCard" aria-live="polite" hidden></div>
+
+    <!-- Modern Draggable Bottom Sheet -->
+    <div class="bottom-sheet" id="bottomSheet" data-state="half">
+      <div class="sheet-handle-zone" id="sheetHandle" role="button" tabindex="0" aria-label="Toggle vessel list">
+        <div class="sheet-handle-bar"></div>
+      </div>
+      <div class="sheet-header">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="search" id="boatSearch" class="search-input" placeholder="Search vessels, hull # or stop…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        </div>
+      </div>
+      <div class="sheet-scrollable">
+        <p class="legend" id="legend"></p>
+        <ol class="boats" id="boats"></ol>
+      </div>
+    </div>
+
+    <script src="/assets/map.js?v=3"></script>
   </body>
 </html>
+
