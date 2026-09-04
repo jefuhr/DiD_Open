@@ -302,8 +302,7 @@ test("landing menu lets an agent switch the board's landing", async () => {
   assert.match(app, /landingDataKey\(/);
   assert.match(app, /\/api\/display-data\$\{query\}/);
   // Close paths: the Done button, the scrim, and Escape.
-  assert.match(app, /landingMenuClose\.addEventListener\("click"/);
-  assert.match(app, /landingMenuScrim\.addEventListener\("click"/);
+  assert.match(app, /bindSheet\(setMenuOpen, \{ menu: elements\.landingMenu, trigger: elements\.menuButton, close: elements\.landingMenuClose, scrim: elements\.landingMenuScrim/);
   assert.match(app, /event\.key === "Escape"/);
   assert.match(app, /setAttribute\("aria-expanded", String\(open\)\)/);
   // Touch targets stay finger-sized.
@@ -490,7 +489,7 @@ function sailing(serviceId, time, index) {
 const SAMPLE = {
   meta: {
     timezone: "America/New_York", agencyName: "NYC Ferry", landingNumber: 16,
-    departureWindowMinutes: 180, departuresShown: 4, routesShown: 5,
+    departureWindowMinutes: 180, departuresShown: 4,
     landing: { name: "Pier 11", displayName: "Wall St / Pier 11", stopIds: ["1"] }
   },
   routes: { ER: { id: "ER", shortName: "ER", name: "East River", color: "#004E72", textColor: "#FFFFFF", mode: "ferry", operator: "NYC Ferry" } },
@@ -1395,10 +1394,10 @@ test("the trip view is wired into the surfaces that can bury it", async () => {
     readFile(appPath, "utf8"), readFile(indexPath, "utf8"), readFile(cssPath, "utf8")
   ]);
   // Escape closes it, and it is tested first because it is the topmost surface.
-  const escapes = [...app.matchAll(/event\.key === "Escape" && !elements\.(\w+)\.hidden/g)].map((match) => match[1]);
-  assert.equal(escapes[0], "tripMenu");
+  assert.match(app, /const sheets = \[\s*bindSheet\(setTripOpen/);
+  assert.match(app, /event\.key === "Escape" && openSheet/);
   // The arrow keys must not step the date underneath an open sheet.
-  assert.match(app, /if \(!elements\.tripMenu\.hidden \|\|/);
+  assert.match(app, /if \(openSheet \|\| event\.metaKey/);
   // Switching landing invalidates the trip: a new payload has different trip schedules.
   assert.match(app, /setTripOpen\(false\);\n\s*elements\.landing\.textContent/);
   // It reuses the sheet's own classes, which is what gets it themed on all eight boards for free.

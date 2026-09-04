@@ -57,26 +57,21 @@ test("routes retain their official abbreviations and colors", async () => {
   }
 });
 
-test("display data includes the configured slideshow interval and all directions", async () => {
+test("display data includes the configured departure window and count", async () => {
   const data = await buildDisplayData({ landingNumber: 16 });
   const display = JSON.parse(await readFile(new URL("../config/display.json", import.meta.url), "utf8"));
-  assert.equal(data.meta.slideSeconds, display.slideSeconds);
   assert.equal(data.meta.departureWindowMinutes, display.departureWindowMinutes);
   assert.equal(data.meta.departuresShown, display.departuresShown);
-  assert.equal(data.meta.routesShown, display.routesShown);
   assert.equal(data.meta.schemaVersion, 10);
   assert.ok(data.tripSchedules[data.departures[0].tripId]?.stops.length > 1);
   const directions = new Set(data.departures.map((item) => `${item.routeId}|${item.directionId}|${item.destination}`));
-  assert.ok(directions.size > 4, "Pier 11 should require more than one four-route slide");
+  assert.ok(directions.size > 4, "Pier 11 should expose more than four route directions");
 });
 
 test("display counts support every whole number from one through five", async () => {
   for (let departuresShown = 1; departuresShown <= 5; departuresShown += 1) {
-    for (let routesShown = 1; routesShown <= 5; routesShown += 1) {
-      const data = await buildDisplayData({ landingNumber: 16, departuresShown, routesShown });
-      assert.equal(data.meta.departuresShown, departuresShown);
-      assert.equal(data.meta.routesShown, routesShown);
-    }
+    const data = await buildDisplayData({ landingNumber: 16, departuresShown });
+    assert.equal(data.meta.departuresShown, departuresShown);
   }
 });
 
@@ -84,10 +79,6 @@ test("display counts reject values outside one through five", async () => {
   await assert.rejects(
     () => buildDisplayData({ landingNumber: 16, departuresShown: 0 }),
     /departuresShown must be a whole number from 1 through 5/
-  );
-  await assert.rejects(
-    () => buildDisplayData({ landingNumber: 16, routesShown: 6 }),
-    /routesShown must be a whole number from 1 through 5/
   );
   await assert.rejects(
     () => buildDisplayData({ landingNumber: 16, departuresShown: 2.5 }),

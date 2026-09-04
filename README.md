@@ -5,7 +5,7 @@ an offline-first departure display for NYC Ferry landings. a local Node server b
 this branch is the **mobile staff variant**: everything the `staff` branch does, reflowed for a phone in an agent's hand. it is the same codebase and the same data, with a phone layout added — open it on a 1080p kiosk screen and you still get the wall board.
 
 - no ad and no header bar — the board gets the whole screen. a slim strip keeps the landing name, clock, route count, and data-freshness chip.
-- no slideshow. every route direction is on screen at once; rows compress to fit, so `routesShown` and `slideSeconds` are ignored by the display (the build still validates them).
+- no slideshow. every route direction is on screen at once; rows compress to fit.
 - each departure squeezes time, countdown, crew boat assignment, boat name, and delay/on-time/LAST status into one compact slot. `departuresShown` still controls how many columns appear (set to `5` here).
 - every scheduled boat shows its crew assignment next to the vessel name — `ER5` is East River boat 5. see [boat assignments](#boat-assignments).
 - service alerts and SFTP landing notices behave exactly as on the rider display.
@@ -164,10 +164,8 @@ everything lives in [`config/display.json`](./config/display.json):
 ```json
 {
   "landingNumber": 26,
-  "slideSeconds": 16,
   "departureWindowMinutes": 500,
   "departuresShown": 5,
-  "routesShown": 4,
   "waterwayEnabled": true,
   "seastreakEnabled": true,
   "nyuEnabled": true,
@@ -179,10 +177,8 @@ everything lives in [`config/display.json`](./config/display.json):
 | setting | range | what it does |
 |---|---|---|
 | `landingNumber` | `2`–`26` | which landing this kiosk shows. `1` is unused. |
-| `slideSeconds` | `3`–`300` | unused on the staff board (no paging); still validated. |
 | `departureWindowMinutes` | `1`–`1440` | a route only appears if its next departure is within this many minutes. once it qualifies, the board still fills every departure column, even with later trips outside the window. |
 | `departuresShown` | `1`–`5` | departure columns per route row. |
-| `routesShown` | `1`–`5` | unused on the staff board (every route direction shows); still validated. |
 | `waterwayEnabled` | `true` / `false` | merge in NY Waterway departures. see below. |
 | `seastreakEnabled` | `true` / `false` | merge in Seastreak departures. see below. |
 | `nyuEnabled` | `true` / `false` | merge in NYU Langone ferry departures. see below. |

@@ -18,9 +18,9 @@
 // !! deliberately bounds the generated calendar so the feed expires loudly (build-data.js warns on
 // !! a lapsed partner feed) rather than drifting silently out of date on a live board.
 
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { gtfsDate, toCsv, writeGtfsFiles } from "./gtfs-utils.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT_DIR = path.join(ROOT, "gtfs/liberty");
@@ -62,16 +62,6 @@ const LEG_MINUTES = {
   inbound: [{ from: "2557122", to: "2557121", minutes: 10 }, { from: "2557121", to: "2557120", minutes: 5 }]
 };
 
-function csvValue(value) {
-  const text = String(value ?? "");
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-function toCsv(header, rows) {
-  return [header.join(","), ...rows.map((row) => header.map((key) => csvValue(row[key])).join(","))].join("\n").concat("\n");
-}
-function gtfsDate(date) {
-  return `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}`;
-}
 function hhmmss(totalMinutes) {
   return `${String(Math.floor(totalMinutes / 60)).padStart(2, "0")}:${String(totalMinutes % 60).padStart(2, "0")}:00`;
 }
@@ -138,8 +128,7 @@ async function main() {
       [{ feed_publisher_name: AGENCY_NAME, feed_publisher_url: SOURCE_URL, feed_lang: "en", feed_start_date: startDate, feed_end_date: endDate, feed_version: `transcribed-${SOURCE_CHECKED_ON}` }])
   };
 
-  await mkdir(OUTPUT_DIR, { recursive: true });
-  for (const [name, contents] of Object.entries(files)) await writeFile(path.join(OUTPUT_DIR, name), contents, "utf8");
+  await writeGtfsFiles(OUTPUT_DIR, files);
   const perDay = Object.fromEntries(SERVICES.map((s) => [s.id, tripRows.filter((t) => t.service_id === s.id).length]));
   console.log(`Wrote gtfs/liberty/ from ${SOURCE_URL} as checked on ${SOURCE_CHECKED_ON}.`);
   console.log(`  trips: ${JSON.stringify(perDay)}  valid ${startDate}-${endDate}`);

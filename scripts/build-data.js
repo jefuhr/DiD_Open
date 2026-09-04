@@ -521,7 +521,6 @@ export async function buildDisplayData({
   root = ROOT,
   landingNumber: landingOverride,
   departuresShown: departuresShownOverride,
-  routesShown: routesShownOverride,
   waterwayEnabled: waterwayEnabledOverride,
   seastreakEnabled: seastreakEnabledOverride,
   nyuEnabled: nyuEnabledOverride,
@@ -563,10 +562,6 @@ export async function buildDisplayData({
   if (!Number.isInteger(landingNumber) || !landingConfig || landingConfig.unused) {
     throw new Error(`Landing number must be an active landing from ${activeLandingNumbers[0]} through ${activeLandingNumbers.at(-1)}; received ${landingOverride ?? display.landingNumber}.`);
   }
-  const slideSeconds = Number(display.slideSeconds);
-  if (!Number.isFinite(slideSeconds) || slideSeconds < 3 || slideSeconds > 300) {
-    throw new Error(`config/display.json slideSeconds must be between 3 and 300; received ${display.slideSeconds}.`);
-  }
   const departureWindowMinutes = Number(display.departureWindowMinutes);
   if (!Number.isFinite(departureWindowMinutes) || departureWindowMinutes < 1 || departureWindowMinutes > 1440) {
     throw new Error(`config/display.json departureWindowMinutes must be between 1 and 1440; received ${display.departureWindowMinutes}.`);
@@ -574,10 +569,6 @@ export async function buildDisplayData({
   const departuresShown = Number(departuresShownOverride ?? display.departuresShown);
   if (!Number.isInteger(departuresShown) || departuresShown < 1 || departuresShown > 5) {
     throw new Error(`config/display.json departuresShown must be a whole number from 1 through 5; received ${departuresShownOverride ?? display.departuresShown}.`);
-  }
-  const routesShown = Number(routesShownOverride ?? display.routesShown);
-  if (!Number.isInteger(routesShown) || routesShown < 1 || routesShown > 5) {
-    throw new Error(`config/display.json routesShown must be a whole number from 1 through 5; received ${routesShownOverride ?? display.routesShown}.`);
   }
   // config/display.json "busesEnabled" keeps or drops connecting shuttle-bus routes (GTFS
   // route_type 3) from both feeds: the Rockaway shuttles at landing 18 and the NY Waterway
@@ -810,7 +801,7 @@ export async function buildDisplayData({
   // is read in file order.
   const seenDepartures = new Set();
   const deduped = departures.filter((item) => {
-    const key = [item.serviceId, item.routeId, item.variant || "", item.stopId, item.departureTime, item.destination].join(" ");
+    const key = [item.serviceId, item.routeId, item.variant || "", item.stopId, item.departureTime, item.destination].join("\0");
     if (seenDepartures.has(key)) return false;
     seenDepartures.add(key);
     return true;
@@ -825,8 +816,8 @@ export async function buildDisplayData({
 
   return {
     meta: {
-      schemaVersion: 10, generatedAt: new Date().toISOString(), landingNumber, slideSeconds, departureWindowMinutes,
-      departuresShown, routesShown, busesEnabled,
+      schemaVersion: 10, generatedAt: new Date().toISOString(), landingNumber, departureWindowMinutes,
+      departuresShown, busesEnabled,
       landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },
       timezone: agency.agency_timezone || "America/New_York", agencyName: agency.agency_name || "NYC Ferry", feedVersion: feed.feed_version,

@@ -1841,9 +1841,23 @@ elements.nearestButton.addEventListener("click", () => {
   if (saved && saved.id !== data?.meta?.landingNumber) return void selectLanding(saved.id);
   locateNearest();
 });
-elements.menuButton.addEventListener("click", () => setMenuOpen(elements.landingMenu.hidden));
-elements.landingMenuClose.addEventListener("click", () => setMenuOpen(false));
-elements.landingMenuScrim.addEventListener("click", () => setMenuOpen(false));
+
+function bindSheet(setOpen, { menu, trigger, close, scrim, canClose = () => true }) {
+  trigger?.addEventListener("click", () => setOpen(menu.hidden));
+  close.addEventListener("click", () => setOpen(false));
+  scrim.addEventListener("click", () => setOpen(false));
+  return { menu, setOpen, canClose };
+}
+
+const sheets = [
+  bindSheet(setTripOpen, { menu: elements.tripMenu, close: elements.tripMenuClose, scrim: elements.tripMenuScrim }),
+  bindSheet(setMenuOpen, { menu: elements.landingMenu, trigger: elements.menuButton, close: elements.landingMenuClose, scrim: elements.landingMenuScrim, canClose: () => !railDocked() }),
+  bindSheet(setFilterOpen, { menu: elements.filterMenu, trigger: elements.filterButton, close: elements.filterMenuClose, scrim: elements.filterMenuScrim }),
+  bindSheet(setThemeOpen, { menu: elements.themeMenu, trigger: elements.themeButton, close: elements.themeMenuClose, scrim: elements.themeMenuScrim }),
+  bindSheet(setAlertMenuOpen, { menu: elements.alertMenu, trigger: elements.serviceAlerts, close: elements.alertMenuClose, scrim: elements.alertMenuScrim }),
+  bindSheet(setChangelogOpen, { menu: elements.changelogMenu, trigger: elements.changelogButton, close: elements.changelogMenuClose, scrim: elements.changelogMenuScrim })
+];
+
 elements.landingList.addEventListener("click", (event) => {
   const star = event.target.closest("[data-favourite-id]");
   if (star) return setLandingFavourite(Number(star.dataset.favouriteId), star.getAttribute("aria-pressed") !== "true");
@@ -1854,19 +1868,11 @@ for (const button of elements.sortOptions) {
   button.addEventListener("click", () => selectSort(button.dataset.sort));
 }
 elements.clockToggle.addEventListener("click", toggleClockFormat);
-elements.filterButton.addEventListener("click", () => setFilterOpen(elements.filterMenu.hidden));
-elements.filterMenuClose.addEventListener("click", () => setFilterOpen(false));
-elements.filterMenuScrim.addEventListener("click", () => setFilterOpen(false));
 elements.filterReset.addEventListener("click", showAllOperators);
 elements.filterList.addEventListener("click", (event) => {
   const option = event.target.closest("[data-operator]");
   if (option) setOperatorHidden(option.dataset.operator, option.getAttribute("aria-checked") === "true");
 });
-elements.serviceAlerts.addEventListener("click", () => setAlertMenuOpen(elements.alertMenu.hidden));
-elements.alertMenuClose.addEventListener("click", () => setAlertMenuOpen(false));
-elements.alertMenuScrim.addEventListener("click", () => setAlertMenuOpen(false));
-elements.tripMenuClose.addEventListener("click", () => setTripOpen(false));
-elements.tripMenuScrim.addEventListener("click", () => setTripOpen(false));
 // A row opens the trip it belongs to. Delegated because the board is rewritten every fifteen
 // seconds and per-row listeners would be re-bound with it.
 elements.departures.addEventListener("click", (event) => {
@@ -1888,12 +1894,6 @@ elements.tripStops.addEventListener("click", (event) => {
   setTripOpen(false);
   selectLanding(Number(head.dataset.landingId));
 });
-elements.changelogButton.addEventListener("click", () => setChangelogOpen(elements.changelogMenu.hidden));
-elements.changelogMenuClose.addEventListener("click", () => setChangelogOpen(false));
-elements.changelogMenuScrim.addEventListener("click", () => setChangelogOpen(false));
-elements.themeButton.addEventListener("click", () => setThemeOpen(elements.themeMenu.hidden));
-elements.themeMenuClose.addEventListener("click", () => setThemeOpen(false));
-elements.themeMenuScrim.addEventListener("click", () => setThemeOpen(false));
 elements.themeList.addEventListener("click", (event) => {
   const option = event.target.closest("[data-theme]");
   if (option) selectTheme(option.dataset.theme);
@@ -1902,16 +1902,12 @@ elements.datePrev.addEventListener("click", () => stepDate(-1));
 elements.dateNext.addEventListener("click", () => stepDate(1));
 elements.dateCurrent.addEventListener("click", showToday);
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !elements.tripMenu.hidden) return setTripOpen(false);
-  if (event.key === "Escape" && !elements.landingMenu.hidden && !railDocked()) return setMenuOpen(false);
-  if (event.key === "Escape" && !elements.filterMenu.hidden) return setFilterOpen(false);
-  if (event.key === "Escape" && !elements.themeMenu.hidden) return setThemeOpen(false);
-  if (event.key === "Escape" && !elements.alertMenu.hidden) return setAlertMenuOpen(false);
-  if (event.key === "Escape" && !elements.changelogMenu.hidden) return setChangelogOpen(false);
+  const openSheet = sheets.find(({ menu, canClose }) => !menu.hidden && canClose());
+  if (event.key === "Escape" && openSheet) return openSheet.setOpen(false);
   // Arrow keys page through the schedule, which is how anyone reaches for a date stepper on a
   // desktop board. Only when the landing menu is closed and nothing is being typed into.
   // A docked rail does not swallow the arrow keys: it is part of the board, not a dialog over it.
-  if (!elements.tripMenu.hidden || (!elements.landingMenu.hidden && !railDocked()) || !elements.filterMenu.hidden || !elements.themeMenu.hidden || !elements.alertMenu.hidden || !elements.changelogMenu.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (openSheet || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (event.key === "ArrowLeft") stepDate(-1);
   else if (event.key === "ArrowRight") stepDate(1);

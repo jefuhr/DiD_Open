@@ -1,9 +1,7 @@
 {
   "landingNumber": 26,
-  "slideSeconds": 16,
   "departureWindowMinutes": 1440,
   "departuresShown": 5,
-  "routesShown": 4,
   "waterwayEnabled": true,
   "seastreakEnabled": true,
   "nyuEnabled": true,

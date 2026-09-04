@@ -16,9 +16,9 @@
 // web app uses for schedule browsing makes it answer for any date. Probing a full week is what
 // tells us which weekdays actually run, so service days are observed rather than assumed.
 
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { gtfsDate, toCsv, writeGtfsFiles } from "./gtfs-utils.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT_DIR = path.join(ROOT, "gtfs/nyu");
@@ -42,19 +42,6 @@ const STOP_NAMES = {
 // The feed is regenerated rather than long-lived, so the service window is deliberately short;
 // build-data.js reads calendar.txt start/end dates to decide whether a service is in effect.
 const SERVICE_WEEKS = 26;
-
-function csvValue(value) {
-  const text = String(value ?? "");
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-
-function toCsv(header, rows) {
-  return [header.join(","), ...rows.map((row) => header.map((key) => csvValue(row[key])).join(","))].join("\n").concat("\n");
-}
-
-function gtfsDate(date) {
-  return `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}`;
-}
 
 // "6:00 AM" / "12:30 PM" -> "06:00:00" / "12:30:00"
 export function toGtfsTime(label) {
@@ -208,8 +195,7 @@ async function main() {
       [{ feed_publisher_name: AGENCY_NAME, feed_publisher_url: AGENCY_URL, feed_lang: "en", feed_start_date: startDate, feed_end_date: endDate, feed_version: `passio-${ROUTE_ID}-${startDate}` }])
   };
 
-  await mkdir(OUTPUT_DIR, { recursive: true });
-  for (const [name, contents] of Object.entries(files)) await writeFile(path.join(OUTPUT_DIR, name), contents, "utf8");
+  await writeGtfsFiles(OUTPUT_DIR, files);
   console.log(`Wrote ${Object.keys(files).length} files to gtfs/nyu/ (${tripRows.length} trips).`);
 }
 

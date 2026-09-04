@@ -14,9 +14,9 @@
 // !! the feed lapses and the rows stop appearing, which is the intended failure: re-read SOURCE_URL
 // !! and update the dates and times rather than extending the calendar.
 
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { addMinutes, toCsv, writeGtfsFiles } from "./gtfs-utils.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT_DIR = path.join(ROOT, "gtfs/gi");
@@ -200,20 +200,8 @@ const MANHATTAN_CROSSING_MINUTES = 7;
 // arrival is never shown as a departure. They exist so the trips are well-formed GTFS.
 const CROSSING_MINUTES = { redhook: 8, pier6: 10 };
 
-function csvValue(value) {
-  const text = String(value ?? "");
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-function toCsv(header, rows) {
-  return [header.join(","), ...rows.map((row) => header.map((key) => csvValue(row[key])).join(","))].join("\n").concat("\n");
-}
 function hhmmss(value) {
   return `${value}:00`;
-}
-function addMinutes(value, minutes) {
-  const [hours, mins] = value.split(":").map(Number);
-  const total = hours * 60 + mins + minutes;
-  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
 export function buildTimetable() {
@@ -303,8 +291,7 @@ async function main() {
         feed_version: `transcribed-${SOURCE_CHECKED_ON}` }])
   };
 
-  await mkdir(OUTPUT_DIR, { recursive: true });
-  for (const [name, contents] of Object.entries(files)) await writeFile(path.join(OUTPUT_DIR, name), contents, "utf8");
+  await writeGtfsFiles(OUTPUT_DIR, files);
   console.log(`Wrote gtfs/gi/ from ${SOURCE_URL} as checked on ${SOURCE_CHECKED_ON}.`);
   for (const line of LINES) {
     console.log(`  ${line.routeId}: ${line.fromShore.length} from ${line.shoreName} (+${(line.noPickupFromShore || []).length} no-pickup), ${line.fromIsland.length} from Governors Island`);

@@ -55,9 +55,10 @@
 // !! download this replaces and are not here: no landing on this board is within two hundred
 // !! miles of them.
 
-import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
+import { readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { toCsv, writeGtfsFiles } from "./gtfs-utils.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT_DIR = path.join(ROOT, "gtfs/seastreak");
@@ -184,14 +185,6 @@ const WEEKEND_NEW_YORK_DEPARTURES = [
   { calls: [["bmb", "20:15"], ["east35", "20:45"], ["highlands", "21:30"]] },
 ];
 
-function toCsv(headers, rows) {
-  const escape = (value) => {
-    const text = value == null ? "" : String(value);
-    return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-  };
-  return [headers.join(","), ...rows.map((row) => headers.map((header) => escape(row[header])).join(","))].join("\n") + "\n";
-}
-
 // One printed row is one trip. The boarding side is whichever side the table is headed for; the
 // other side's calls are arrivals, so they are drop-off only and never advertise a departure.
 function tripRows(table, { boardingSide, directionId, idPrefix, service }) {
@@ -295,8 +288,7 @@ async function main() {
          feed_start_date: WEEKEND_SERVICE_START, feed_end_date: SERVICE_END, feed_version: `transcribed-${SOURCE_CHECKED_ON}` }])
   };
 
-  await mkdir(OUTPUT_DIR, { recursive: true });
-  for (const [name, contents] of Object.entries(files)) await writeFile(path.join(OUTPUT_DIR, name), contents, "utf8");
+  await writeGtfsFiles(OUTPUT_DIR, files);
   // The directory used to hold a downloaded feed, which had files this one does not write:
   // calendar_dates.txt full of exception dates for service ids that no longer exist, and a
   // shapes.txt for trips that no longer exist. Left behind they are not merely dead weight — a
