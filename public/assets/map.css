@@ -1,180 +1,4 @@
-/* ============================================================
-   the map, in the board's own clothes
-   ============================================================
-
-   public/styles.css is loaded first and does the dressing: the fonts, the colour variables and
-   all themes come from there, so this page matches whatever the board is wearing.
-   Every surface uses var(--card), var(--canvas) or var(--sunken), and route colors keep the
-   operators' authentic palettes. */
-
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background: var(--canvas);
-  -webkit-font-smoothing: antialiased;
-}
-
-.map-body {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--canvas);
-}
-
-/* ---------------- the floating heading ---------------- */
-
-.map-heading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 30;
-  margin: 0;
-  padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
-  background: color-mix(in srgb, var(--canvas) 85%, transparent);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.map-heading h1 {
-  font-size: clamp(17px, 2.3vh, 22px);
-  margin: 0;
-  color: var(--navy);
-  white-space: nowrap;
-}
-.back-button { flex: 0 0 auto; }
-.back-icon {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: var(--navy);
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* ---------------- quick route filter bar ---------------- */
-
-.route-filter-bar {
-  position: absolute;
-  top: calc(52px + env(safe-area-inset-top));
-  left: 0;
-  right: 0;
-  z-index: 29;
-  display: flex;
-  gap: 6px;
-  padding: 6px 12px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  pointer-events: auto;
-}
-.route-filter-bar::-webkit-scrollbar { display: none; }
-.route-filter-pill {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--card) 85%, transparent);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  color: var(--navy);
-  font: 900 11px/1 Lato, Arial, sans-serif;
-  cursor: pointer;
-  transition: all .2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-  -webkit-tap-highlight-color: transparent;
-}
-.route-filter-pill:hover { background: var(--card); transform: translateY(-1px); }
-.route-filter-pill.is-active {
-  background: var(--navy);
-  color: var(--canvas);
-  border-color: var(--navy);
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--navy) 40%, transparent);
-}
-.route-filter-pill .pill-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-.route-filter-pill .pill-count {
-  opacity: .75;
-  font-size: 10px;
-}
-
-/* ---------------- the chart frame ---------------- */
-
-.map-frame {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  background: var(--sunken);
-}
-#chart {
-  display: block;
-  width: 100%;
-  height: 100%;
-  touch-action: none;
-  cursor: grab;
-}
-#chart.is-dragging { cursor: grabbing; }
-#chart:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
-
-/* ---------------- floating map tools ---------------- */
-
-.map-tools {
-  position: absolute;
-  top: calc(98px + env(safe-area-inset-top));
-  right: 12px;
-  z-index: 25;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--card) 88%, transparent);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--line);
-  padding: 4px;
-}
-.map-tools button {
-  min-width: 36px;
-  min-height: 36px;
-  padding: 0;
-  color: var(--navy);
-  background: transparent;
-  border: none;
-  border-radius: 7px;
-  font: 900 15px/1 Lato, Arial, sans-serif;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-  transition: background .15s ease, transform .15s ease;
-}
-.map-tools button:hover { background: color-mix(in srgb, var(--navy) 10%, transparent); }
-.map-tools button:active { transform: scale(0.92); background: var(--sunken); }
-.map-tools button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
-
-/* ---------------- theme variables for vector cartography ---------------- */
-
+/* Shared board tokens and the existing theme palettes dress the whole map. */
 :root {
   --map-water: #e3f0f7;
   --map-land: #ffffff;
@@ -342,631 +166,233 @@ html, body {
   opacity: .88;
 }
 
-/* ---------------- the chart tiles & backdrop ---------------- */
 
-.tiles { opacity: .85; filter: saturate(.82) contrast(1.04); }
-.tiles-seamark { opacity: .65; }
-
-/* ---------------- modern vector cartography backdrop ---------------- */
-
-.chart-backdrop {
-  pointer-events: auto;
+html, body { height: 100%; margin: 0; overflow: hidden; }
+.map-body {
+  height: 100dvh; display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  background: var(--canvas); color: var(--ink);
 }
-.map-water {
-  fill: var(--map-water, var(--canvas));
-  transition: fill .3s ease;
+.map-heading {
+  grid-column: 1 / -1; margin: 0; padding: calc(16px + env(safe-area-inset-top)) 24px 16px;
+  gap: 16px; border-bottom: 1px solid var(--line); background: var(--card);
 }
-.map-landmass {
-  fill: var(--map-land, var(--card));
-  stroke: var(--map-land-stroke, var(--line));
-  stroke-width: 1.2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-  transition: fill .3s ease, stroke .3s ease;
+.map-heading-copy { margin-right: auto; min-width: 0; }
+.eyebrow { display: block; color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+.map-heading h1 { margin: 5px 0 0; font-size: 28px; line-height: 1.1; text-transform: none; letter-spacing: -.025em; }
+.back-icon { width: 20px; height: 20px; fill: none; stroke: var(--navy); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.map-heading .board-state { gap: 8px; }
+.map-heading { flex-wrap: nowrap; }
+.map-heading .board-state { flex: 0 0 auto; flex-wrap: nowrap; }
+.map-heading .status, .map-heading .route-count { padding: 8px 10px; font-size: 12px; border-radius: 999px; }
+.status[data-state="loading"] i, .status[data-state="offline"] i { background: var(--muted); box-shadow: none; }
+.status[data-state="stale"] i { background: var(--warning); box-shadow: none; }
+.route-filter-bar {
+  grid-column: 1 / -1; display: flex; gap: 7px; padding: 12px 24px;
+  background: var(--card); border-bottom: 1px solid var(--line);
+  overflow-x: auto; scrollbar-width: thin; min-width: 0;
 }
-.map-channel {
-  fill: none;
-  stroke: var(--map-seamark-channel, rgba(0, 78, 114, 0.22));
-  stroke-width: 1;
-  stroke-dasharray: 4 3;
+.route-filter-pill {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+  min-height: 38px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer;
 }
-.map-street-casing {
-  fill: none;
-  stroke: var(--map-street-casing, rgba(0, 29, 65, 0.08));
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.route-filter-pill:hover { background: var(--sunken); }
+.route-filter-pill.is-active { background: var(--navy); color: var(--canvas); border-color: var(--navy); }
+.pill-code { font-weight: 900; }
+.pill-name { font-size: 11px; }
+.pill-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 20%, transparent); }
+.map-frame {
+  position: relative; grid-column: 2; grid-row: 3; min-width: 0; min-height: 0;
+  overflow: hidden; background: var(--map-water);
 }
-.map-street {
-  fill: none;
-  stroke: var(--map-street, var(--line));
-  stroke-width: 1.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: stroke .3s ease;
+#chart { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#chart.is-dragging { cursor: grabbing; }
+#chart:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
+.map-context {
+  position: absolute; top: 22px; left: 24px; z-index: 2; pointer-events: none;
+  padding: 12px 16px; border-radius: 12px; background: color-mix(in srgb, var(--card) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  box-shadow: 0 3px 15px color-mix(in srgb, var(--ink) 5%, transparent);
 }
-.map-street.street-interstate {
-  stroke-width: 1.8;
+.map-context strong { display: block; margin: 5px 0; font-size: 18px; color: var(--navy); }
+.map-context > span:last-child { font-size: 11px; color: var(--muted); }
+.map-tools { position: absolute; right: 20px; top: 22px; display: flex; flex-direction: column; gap: 5px; }
+.map-tools button {
+  width: 40px; height: 40px; padding: 0; border: 1px solid var(--line); border-radius: 9px;
+  background: var(--card); color: var(--navy); font: inherit; font-size: 16px; font-weight: 900; cursor: pointer;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 7%, transparent);
 }
-.map-street-casing.street-interstate {
-  stroke-width: 3.2;
+.map-tools button:hover { background: var(--sunken); }
+.north-arrow { display: grid; justify-items: center; margin-bottom: 8px; color: var(--navy); font-size: 26px; line-height: 1; }
+.north-arrow small { font-size: 10px; font-weight: 900; margin-top: 4px; }
+.map-key {
+  position: absolute; left: 20px; bottom: 30px; display: flex; gap: 14px; flex-wrap: wrap;
+  padding: 10px 13px; border: 1px solid var(--line); border-radius: 9px;
+  background: color-mix(in srgb, var(--card) 94%, transparent); font-size: 10px; color: var(--muted);
 }
-
-/* ---------------- bridges across waterways ---------------- */
-
-.chart-bridges {
-  pointer-events: auto;
-}
-.bridge-group {
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.bridge-casing {
-  stroke: var(--map-bridge-casing, var(--card));
-  stroke-width: 3.8;
-  stroke-linecap: square;
-  transition: stroke .3s ease;
-}
-.bridge-deck {
-  stroke: var(--map-bridge, var(--navy));
-  stroke-width: 2.4;
-  stroke-linecap: square;
-  transition: stroke .3s ease, stroke-width .2s ease;
-}
-.bridge-group:hover .bridge-deck,
-.bridge-group:focus-visible .bridge-deck {
-  stroke: var(--blue);
-  stroke-width: 3.4;
-}
-.bridge-clearance-badge {
-  font: 900 6.5px/1 Lato, Arial, sans-serif;
-  fill: var(--map-bridge-label, var(--navy));
-  text-anchor: middle;
-  dominant-baseline: central;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .2s ease;
-}
-.chart-backdrop.is-close .bridge-clearance-badge {
-  opacity: 0.95;
-}
-
-/* ---------------- naval markings (seamarks) ---------------- */
-
-.chart-seamarks {
-  pointer-events: auto;
-}
-.seamark {
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.seamark-halo {
-  fill: var(--map-seamark-light, #ffd54f);
-  opacity: .28;
-  animation: seamark-glow 3s infinite ease-in-out;
-}
-.seamark-light-core {
-  fill: var(--map-seamark-light, #ffd54f);
-  stroke: #ffffff;
-  stroke-width: .8;
-}
-.seamark-buoy-icon.seamark-buoy-green {
-  fill: var(--map-seamark-buoy-green, #10b981);
-  stroke: #ffffff;
-  stroke-width: .8;
-}
-.seamark-buoy-icon.seamark-buoy-red {
-  fill: var(--map-seamark-buoy-red, #ef4444);
-  stroke: #ffffff;
-  stroke-width: .8;
-}
-.seamark-buoy-icon.seamark-buoy-red-white {
-  fill: #ffffff;
-  stroke: #ef4444;
-  stroke-width: 1;
-}
-.seamark-label {
-  font: 800 6px/1 Lato, Arial, sans-serif;
-  fill: var(--map-bridge-label, var(--navy));
-  dominant-baseline: central;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .2s ease;
-}
-.chart-backdrop.is-close .seamark-label {
-  opacity: 0.85;
-}
-
-@keyframes seamark-glow {
-  0%, 100% { r: 5; opacity: .2; }
-  50% { r: 8; opacity: .45; }
-}
-
-/* ---------------- bridge & seamark floating cards ---------------- */
-
-.bridge-card, .seamark-card {
-  position: absolute;
-  top: calc(108px + env(safe-area-inset-top));
-  left: 14px;
-  right: 14px;
-  z-index: 28;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--card) 92%, transparent);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--line);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  animation: card-pop .24s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: auto;
-}
-
-.card-clearance-box {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--sunken);
-  border: 1px solid var(--line);
-}
-.card-clearance-label {
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  color: var(--muted);
-}
-.card-clearance-val {
-  font: 900 18px/1.1 Oswald, Lato, sans-serif;
-  color: var(--navy);
-}
-.card-clearance-badge {
-  align-self: flex-start;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .04em;
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #86efac;
-}
-.card-clearance-note {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--muted);
-  line-height: 1.35;
-}
-.card-seamark-desc {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-.map-credit {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  margin: 0;
-  padding: 2px 6px;
-  color: var(--muted);
-  background: color-mix(in srgb, var(--card) 78%, transparent);
-  border-radius: 6px 0 0 0;
-  font: 700 9px/1.2 Lato, Arial, sans-serif;
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* ---------------- vectors & markers ---------------- */
-
-.route-casing {
-  fill: none;
-  stroke: var(--card);
-  stroke-width: 7;
-  stroke-opacity: .65;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.route-line {
-  fill: none;
-  stroke-width: 3.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: opacity .25s ease, stroke-width .25s ease;
-}
-.route-line.is-dimmed { opacity: .2; }
-
+.map-key span { display: flex; align-items: center; gap: 6px; }
+.map-key i { display: inline-block; }
+.key-route { width: 17px; height: 3px; background: var(--blue); border-radius: 2px; }
+.key-dock { width: 8px; height: 8px; border: 1.5px solid var(--ink); background: var(--card); border-radius: 50%; }
+.key-vessel { width: 9px; height: 9px; background: var(--blue); border: 1px solid var(--navy); border-radius: 50%; }
+.key-channel { width: 16px; border-top: 1px dashed var(--muted); }
+.key-light { width: 7px; height: 7px; background: var(--map-seamark-light); box-shadow: 0 0 0 3px color-mix(in srgb, var(--map-seamark-light) 20%, transparent); border-radius: 50%; }
+.map-credit { position: absolute; bottom: 0; right: 0; margin: 0; padding: 4px 8px; background: var(--map-water); color: var(--muted); font-size: 9px; }
+.tiles { opacity: .75; filter: saturate(.6); }
+.map-credit a { color: inherit; }
+.map-water { fill: var(--map-water); }
+.map-landmass { fill: var(--map-land); stroke: var(--map-land-stroke); stroke-width: 1.2; stroke-linejoin: round; }
+.map-street-casing, .map-street { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.map-street-casing { stroke: var(--map-street-casing); stroke-width: 3; }
+.map-street { stroke: var(--map-street); stroke-width: 1.3; }
+.map-street.is-priority { stroke: color-mix(in srgb, var(--muted) 45%, var(--map-land)); stroke-width: 1.5; }
+.map-park { fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linejoin: round; pointer-events: none; }
+.street-label-anchor { pointer-events: none; }
+.street-label { fill: var(--muted); font: 700 9px Lato, Arial, sans-serif; paint-order: stroke; stroke: var(--map-land); stroke-width: 3px; stroke-linejoin: round; opacity: 0; }
+.street-label.is-priority { fill: var(--ink); font-size: 10px; stroke-width: 3.5px; }
+.street-interstate.map-street { stroke-width: 2; }
+.map-channel { fill: none; stroke: var(--map-seamark-channel); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.place-labels { pointer-events: none; }
+.place-label text { fill: var(--muted); font: 900 12px Lato, Arial, sans-serif; letter-spacing: .13em; paint-order: stroke; stroke: var(--map-land); stroke-width: 3px; stroke-linejoin: round; }
+.place-water text { fill: color-mix(in srgb, var(--muted) 75%, var(--map-water)); font-size: 12px; font-weight: 400; font-style: italic; letter-spacing: .06em; stroke: var(--map-water); }
+.place-island text { font-size: 9px; letter-spacing: .02em; }
+.place-park text { fill: var(--muted); font-size: 11px; font-style: italic; letter-spacing: .04em; }
+.bridge-group, .seamark { cursor: pointer; }
+.dock, .boat, .bridge-group, .seamark { -webkit-tap-highlight-color: transparent; }
+.marker-hit { fill: transparent; }
+.bridge-hit { stroke: transparent; stroke-width: 16; }
+.bridge-casing { stroke: var(--map-bridge-casing); stroke-width: 4; }
+.bridge-deck { stroke: var(--map-bridge); stroke-width: 2; opacity: .65; }
+.bridge-clearance-badge, .seamark-label { fill: var(--map-bridge-label); font: 700 9px Lato, Arial, sans-serif; paint-order: stroke; stroke: var(--map-water); stroke-width: 3px; pointer-events: none; opacity: 0; }
+.bridge-clearance-badge { text-anchor: middle; }
+.chart-backdrop.is-close .bridge-clearance-badge, .chart-backdrop.is-close .seamark-label { opacity: 1; }
+.seamark-halo { fill: var(--map-seamark-light); opacity: .18; }
+.seamark-light-core { fill: var(--map-seamark-light); stroke: var(--map-land); stroke-width: 1; }
+.seamark-buoy-icon { stroke: var(--map-land); stroke-width: .8; }
+.seamark-buoy-green { fill: var(--map-seamark-buoy-green); }
+.seamark-buoy-red { fill: var(--map-seamark-buoy-red); }
+.seamark-buoy-red-white { fill: var(--map-land); stroke: var(--map-seamark-buoy-red); }
+.chart-seamarks .seamark-buoy { visibility: hidden; pointer-events: none; }
+.chart-backdrop.is-close .seamark-buoy { visibility: visible; pointer-events: auto; }
+.casings, .lines { display: none; }
+.route-casing { fill: none; stroke: var(--map-water); stroke-width: 6; stroke-opacity: .8; stroke-linecap: round; stroke-linejoin: round; }
+.route-line { fill: none; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; }
+.route-line.is-dimmed { opacity: .12; }
 .dock { cursor: pointer; }
-.dock-mark {
-  fill: var(--card);
-  stroke: var(--ink);
-  stroke-width: 1.6;
-  transition: transform .2s ease, fill .2s ease;
-}
-.dock:hover .dock-mark { fill: var(--blue); transform: scale(1.3); }
-.dock-label {
-  fill: var(--ink);
-  font: 900 10px/1 Lato, Arial, sans-serif;
-  paint-order: stroke;
-  stroke: var(--canvas);
-  stroke-width: 3px;
-  stroke-linejoin: round;
-  opacity: 0;
-  transition: opacity .2s ease;
-  pointer-events: none;
-}
-.docks.is-close .dock-label,
-.dock.is-target .dock-label { opacity: 1; }
-.dock.is-target .dock-mark { fill: var(--warning); stroke-width: 2.2; }
-
-.boat {
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.boat.is-dimmed { opacity: .25; }
-.boat-hull {
-  stroke: var(--navy);
-  stroke-width: 1.6;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.22));
-}
+.dock-mark { fill: var(--card); stroke: var(--ink); stroke-width: 1.4; }
+.dock:hover .dock-mark, .dock:focus-visible .dock-mark { fill: var(--blue); }
+.dock-label { fill: var(--ink); font: 700 10px Lato, Arial, sans-serif; paint-order: stroke; stroke: var(--map-land); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; opacity: 0; }
+.dock.is-target .dock-mark { fill: var(--warning); stroke-width: 2; }
+.boat { cursor: pointer; }
+.boat.is-dimmed { opacity: .18; }
+.boat-hull { stroke: var(--card); stroke-width: 2; filter: drop-shadow(0 1px 2px #0005); }
 .boat-hull:not([fill]) { fill: var(--muted); }
-.boat-number {
-  font: 900 9px/1 Lato, Arial, sans-serif;
-  pointer-events: none;
+.boat-heading { fill: var(--navy); }
+.boat-halo { fill: none; stroke: var(--navy); stroke-width: 1.5; }
+.boat-number { font: 900 9px Lato, Arial, sans-serif; pointer-events: none; }
+.boat-label { fill: var(--navy); font: 900 11px Lato, Arial, sans-serif; paint-order: stroke; stroke: var(--card); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+.boat.is-stale .boat-hull { fill-opacity: .4; stroke-dasharray: 2 2; }
+.boat-wake { opacity: .16; }
+:root[data-theme="night"] .route-casing, :root[data-theme="kuromi"] .route-casing, :root[data-theme="hacker"] .route-casing { stroke: color-mix(in srgb, var(--map-water) 60%, var(--muted)); }
+:root[data-theme="night"] .boat-hull, :root[data-theme="kuromi"] .boat-hull, :root[data-theme="hacker"] .boat-hull { stroke: var(--ink); }
+.map-message { position: absolute; top: 130px; left: 20px; right: 76px; margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--card); font-size: 12px; line-height: 1.4; z-index: 3; }
+.vessel-card, .dock-card, .bridge-card, .seamark-card {
+  position: absolute; bottom: 84px; left: 20px; width: min(360px, calc(100% - 40px)); max-height: calc(100% - 110px);
+  overflow-y: auto; z-index: 4; padding: 18px; border: 1px solid var(--line); border-radius: 14px;
+  background: var(--card); box-shadow: 0 8px 30px color-mix(in srgb, var(--ink) 15%, transparent);
 }
-.boat-heading {
-  fill: var(--navy);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+.card-close { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%; background: var(--sunken); color: var(--ink); font-size: 20px; cursor: pointer; }
+.card-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-right: 28px; }
+.card-route-chip { padding: 5px 7px; border-radius: 5px; font-size: 11px; font-weight: 900; }
+.card-vessel-name { color: var(--navy); font-size: 16px; font-weight: 900; }
+.card-hull-number { color: var(--muted); font-size: 12px; }
+.card-status-line { font-size: 13px; line-height: 1.5; margin-bottom: 10px; }
+.card-meta-row { display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.card-speed-badge { font-weight: 900; color: var(--navy); }
+.card-action-btn { display: inline-flex; margin-top: 14px; padding: 12px; border-radius: 7px; background: var(--navy); color: var(--canvas); font-size: 12px; font-weight: 900; text-decoration: none; }
+.card-clearance-box { display: grid; gap: 8px; padding: 12px; background: var(--sunken); border-radius: 8px; }
+.card-clearance-label { font-size: 10px; font-weight: 900; text-transform: uppercase; color: var(--muted); letter-spacing: .05em; }
+.card-clearance-val { font-size: 22px; color: var(--navy); font-weight: 900; }
+.card-clearance-note, .card-seamark-desc { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.bottom-sheet { grid-column: 1; grid-row: 3; min-height: 0; background: var(--card); border-right: 1px solid var(--line); }
+.fleet-content { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+.sheet-handle-zone { display: none; }
+.sheet-header { padding: 24px 18px 16px; }
+.fleet-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.fleet-heading h2 { margin: 0; font-size: 20px; color: var(--navy); letter-spacing: -.02em; }
+.fleet-heading > span { color: var(--muted); font-size: 10px; }
+.fleet-description { margin: 7px 0 18px; color: var(--muted); font-size: 12px; }
+.search-box { position: relative; }
+.search-icon { position: absolute; left: 12px; top: 14px; width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+.search-input { width: 100%; height: 44px; padding: 0 12px 0 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--canvas); color: var(--ink); font: inherit; font-size: 13px; }
+.sheet-scrollable { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 14px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.boats { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.boat-row {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto;
+  gap: 8px; align-items: center; width: 100%; padding: 14px 10px; border: 1px solid var(--line);
+  border-radius: 10px; background: var(--card); color: var(--ink); text-align: left; cursor: pointer; font: inherit;
 }
-.boat-halo {
-  fill: none;
-  stroke: var(--navy);
-  stroke-width: 2.4;
-  animation: halo-pulse 2.2s ease-in-out infinite;
+.boat-row:hover { background: var(--canvas); }
+.boat-row[aria-pressed="true"] { border-color: var(--blue); background: var(--sunken); box-shadow: inset 3px 0 var(--blue); }
+.route-chip { grid-column: 1; grid-row: 1; min-width: 34px; padding: 5px; border-radius: 5px; text-align: center; font-size: 11px; font-weight: 900; background: var(--muted); color: var(--card); }
+.boats .boat-name { grid-column: 2; grid-row: 1; min-width: 0; color: var(--navy); font-size: 13px; font-weight: 900; white-space: normal; line-height: 1.4; }
+.boats .boat-number { display: block; color: var(--muted); font-size: 10px; font-weight: 400; }
+.boat-doing { grid-column: 1 / -1; grid-row: 2; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.boat-figures { grid-column: 3; grid-row: 1; text-align: right; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.boat-figures b { display: block; color: var(--navy); font-size: 12px; line-height: 1.6; }
+.fleet-footer { margin: 0; padding: 12px 18px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; line-height: 1.5; }
+.boats .empty { display: block; margin: 0; padding: 24px 16px; border: 1px dashed var(--line); border-radius: 10px; background: var(--canvas); color: var(--muted); font-size: 13px; line-height: 1.6; text-align: left; }
+.map-body button:focus-visible, .map-body a:focus-visible, .search-input:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.landing-confirm { position: fixed; z-index: 28; left: 362px; bottom: 30px; width: min(360px, calc(100% - 390px)); margin: 0; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--ink); box-shadow: 0 10px 30px rgba(0, 0, 0, .18); animation: card-appear .2s cubic-bezier(.16, 1, .3, 1); }
+.landing-confirm::backdrop { background: transparent; }
+.landing-confirm h2 { margin: 0 0 7px; color: var(--navy); font-size: 18px; }
+.landing-confirm p { margin: 0; font-size: 13px; line-height: 1.4; }
+.landing-confirm-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.landing-confirm-actions button { flex: 1; min-height: 38px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--canvas); color: var(--navy); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.landing-confirm-actions .confirm-departures { background: var(--navy); color: var(--canvas); border-color: var(--navy); }
+@media (max-width: 1100px) {
+  .pill-name { display: none; }
+  .map-body { grid-template-columns: 300px minmax(0, 1fr); }
 }
-@keyframes halo-pulse {
-  0%   { stroke-opacity: .9; transform: scale(1); }
-  50%  { stroke-opacity: .4; transform: scale(1.18); }
-  100% { stroke-opacity: .9; transform: scale(1); }
+@media (max-width: 700px) {
+  .map-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto; }
+  .map-heading { padding: calc(10px + env(safe-area-inset-top)) 12px 10px; gap: 10px; }
+  .map-heading h1 { font-size: 22px; }
+  .map-heading .eyebrow { font-size: 8px; letter-spacing: .08em; }
+  .map-heading .route-count { display: none; }
+  .map-heading .status { font-size: 10px; padding: 7px 9px; }
+  .route-filter-bar { padding: 8px 12px; gap: 5px; scrollbar-width: none; }
+  .route-filter-pill { min-height: 36px; padding: 8px 10px; font-size: 11px; }
+  .map-frame { grid-column: 1; grid-row: 3; }
+  .map-context { top: 10px; left: 10px; padding: 9px 11px; }
+  .map-context .eyebrow, .map-context > span:last-child { display: none; }
+  .map-context strong { font-size: 13px; margin: 0; }
+  .map-tools { top: 10px; right: 10px; gap: 4px; }
+  .map-tools button { width: 36px; height: 36px; font-size: 14px; }
+  .north-arrow { font-size: 20px; margin-bottom: 3px; }
+  .map-key { left: 10px; bottom: 24px; padding: 7px 9px; gap: 10px; font-size: 9px; }
+  .map-credit { font-size: 8px; }
+  .map-message { top: 52px; left: 10px; right: 56px; font-size: 11px; }
+  .bottom-sheet { grid-column: 1; grid-row: 4; border-right: 0; border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  .sheet-handle-zone { display: flex; align-items: center; gap: 9px; width: 100%; height: 42px; padding: 0 16px; border: 0; background: var(--card); color: var(--navy); font: inherit; font-size: 12px; font-weight: 900; cursor: pointer; }
+  .sheet-handle-bar { width: 22px; height: 3px; background: var(--line); border-radius: 3px; }
+  #sheetToggleText { margin-left: auto; font-size: 10px; color: var(--muted); font-weight: 700; }
+  .fleet-content { height: min(29dvh, 250px); }
+  .bottom-sheet[data-state="peek"] .fleet-content { display: none; }
+  .sheet-header { padding: 0 12px 10px; }
+  .fleet-heading, .fleet-description, .fleet-footer { display: none; }
+  .search-input { height: 38px; font-size: 16px; }
+  .search-icon { top: 11px; }
+  .boats { gap: 6px; }
+  .boat-row { padding: 10px; gap: 5px 8px; }
+  .vessel-card, .dock-card, .bridge-card, .seamark-card { left: 10px; bottom: 24px; width: calc(100% - 62px); max-height: calc(100% - 74px); padding: 14px; }
+  .landing-confirm { left: 10px; right: 10px; bottom: calc(42px + min(29dvh, 250px) + 12px); width: auto; padding: 14px; }
+  .bottom-sheet[data-state="peek"] ~ .landing-confirm { bottom: 54px; }
 }
-
-.boat-label {
-  fill: var(--navy);
-  font: 900 11px/1 Lato, Arial, sans-serif;
-  paint-order: stroke;
-  stroke: var(--canvas);
-  stroke-width: 3.5px;
-  stroke-linejoin: round;
-  pointer-events: none;
+@media (max-height: 520px) and (max-width: 700px) {
+  .fleet-content { height: 22dvh; }
+  .map-key, .map-context { display: none; }
 }
-.boat.is-stale .boat-hull { fill-opacity: .45; }
-
-.map-message {
-  position: absolute;
-  top: calc(98px + env(safe-area-inset-top));
-  left: 14px;
-  right: 68px;
-  margin: 0;
-  padding: 8px 12px;
-  color: var(--ink);
-  background: color-mix(in srgb, var(--card) 92%, transparent);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  font: 900 12px/1.3 Lato, Arial, sans-serif;
-  text-align: center;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  z-index: 26;
-}
-
-/* ---------------- floating detail cards ---------------- */
-
-.vessel-card, .dock-card {
-  position: absolute;
-  top: calc(98px + env(safe-area-inset-top));
-  left: 12px;
-  right: 64px;
-  max-width: 380px;
-  z-index: 28;
-  background: color-mix(in srgb, var(--card) 92%, transparent);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
-  padding: 12px 14px;
-  animation: card-appear .22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes card-appear {
-  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.card-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--canvas);
-  color: var(--muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  line-height: 1;
-  -webkit-tap-highlight-color: transparent;
-}
-.card-close:hover { color: var(--ink); background: var(--sunken); }
-.card-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-  padding-right: 28px;
-}
-.card-route-chip {
-  padding: 3px 8px;
-  border-radius: 5px;
-  font: 900 11px/1 Lato, Arial, sans-serif;
-  letter-spacing: .03em;
-}
-.card-vessel-name {
-  font: 900 16px/1.2 Lato, Arial, sans-serif;
-  color: var(--navy);
-}
-.card-hull-number {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-.card-status-line {
-  font: 700 13px/1.3 Lato, Arial, sans-serif;
-  color: var(--ink);
-  margin-bottom: 8px;
-}
-.card-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font: 700 12px/1.2 Lato, Arial, sans-serif;
-  color: var(--muted);
-  padding-top: 6px;
-  border-top: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
-}
-.card-speed-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 900;
-  color: var(--navy);
-}
-.card-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  margin-top: 8px;
-  border-radius: 8px;
-  background: var(--navy);
-  color: var(--canvas);
-  text-decoration: none;
-  font: 900 12px/1 Lato, Arial, sans-serif;
-  transition: opacity .15s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.card-action-btn:hover { opacity: .9; }
-
-/* ---------------- modern draggable bottom sheet ---------------- */
-
-.bottom-sheet {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 35;
-  background: var(--card);
-  border-top: 1px solid var(--line);
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.14);
-  display: flex;
-  flex-direction: column;
-  transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1);
-  max-height: calc(100% - 64px - env(safe-area-inset-top));
-}
-.bottom-sheet[data-state="peek"] {
-  transform: translateY(calc(100% - 66px - env(safe-area-inset-bottom)));
-}
-.bottom-sheet[data-state="half"] {
-  transform: translateY(calc(100% - 42vh));
-}
-.bottom-sheet[data-state="full"] {
-  transform: translateY(calc(100% - min(84vh, 780px)));
-}
-.sheet-handle-zone {
-  padding: 8px 0 6px;
-  cursor: grab;
-  display: flex;
-  justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-}
-.sheet-handle-bar {
-  width: 40px;
-  height: 4.5px;
-  border-radius: 3px;
-  background: var(--line);
-}
-.sheet-header {
-  padding: 0 14px 8px;
-}
-.search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  left: 10px;
-  width: 16px;
-  height: 16px;
-  color: var(--muted);
-  pointer-events: none;
-}
-.search-input {
-  width: 100%;
-  height: 36px;
-  padding: 0 12px 0 34px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--sunken);
-  color: var(--ink);
-  font: 700 13px/1 Lato, Arial, sans-serif;
-  outline: none;
-  -webkit-appearance: none;
-}
-.search-input:focus {
-  border-color: var(--blue);
-  background: var(--card);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 20%, transparent);
-}
-.sheet-scrollable {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 0 14px calc(18px + env(safe-area-inset-bottom));
-  flex: 1 1 auto;
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  margin: 4px 0 8px;
-  color: var(--muted);
-  font: 900 11px/1 Lato, Arial, sans-serif;
-}
-.legend .key {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: background .15s ease;
-}
-.legend .key:hover { background: var(--sunken); }
-.legend .swatch {
-  width: 14px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--muted);
-}
-
-/* ---------------- boat roster cards ---------------- */
-
-.boats {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 6px;
-}
-.boats .boat-row {
-  width: 100%;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 2px 10px;
-  align-items: center;
-  text-align: left;
-  min-height: 56px;
-  padding: 8px 10px;
-  color: var(--ink);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  font: inherit;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
-}
-.boats .boat-row:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.06); }
-.boats .boat-row[aria-pressed="true"] {
-  border-color: var(--blue);
-  background: var(--sunken);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 30%, transparent);
-}
-.boats .boat-row:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
-
-.route-chip {
-  grid-row: span 2;
-  min-width: 42px;
-  padding: 5px 7px;
-  border-radius: 6px;
-  background: var(--muted);
-  color: var(--card);
-  font: 900 12px/1 Lato, Arial, sans-serif;
-  letter-spacing: .04em;
-  text-align: center;
-}
-.boat-name { color: var(--navy); font: 900 15px/1.2 Lato, Arial, sans-serif; }
-.boat-number { margin-left: 6px; color: var(--muted); font-size: 12px; font-weight: 700; }
-.boat-doing { grid-column: 2; color: var(--muted); font: 700 12px/1.25 Lato, Arial, sans-serif; }
-.boat-figures { grid-row: span 2; text-align: right; color: var(--muted); font: 700 11px/1.3 Lato, Arial, sans-serif; font-variant-numeric: tabular-nums; }
-.boat-figures b { display: block; color: var(--navy); font: 900 15px/1.1 Lato, Arial, sans-serif; }
-
-.empty {
-  margin: 0;
-  padding: 16px 12px;
-  color: var(--muted);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  font: 700 13px/1.4 Lato, Arial, sans-serif;
-  text-align: center;
-}
-
-/* ---------------- animations ---------------- */
-
-@media (prefers-reduced-motion: no-preference) {
-  .boat { transition: transform .8s ease-out; }
-  .boat-wake { transform-box: fill-box; transform-origin: center; animation: wake 2.6s ease-out infinite; }
-  @keyframes wake {
-    from { transform: scale(.5); opacity: .55; }
-    to   { transform: scale(2.2); opacity: 0; }
-  }
-}
-
-/* ---------------- desktop / tablet layout ---------------- */
-
-@media (min-width: 900px) {
-  .bottom-sheet {
-    width: 390px;
-    left: 16px;
-    right: auto;
-    top: calc(72px + env(safe-area-inset-top));
-    bottom: 16px;
-    border-radius: 16px;
-    border: 1px solid var(--line);
-    transform: none !important;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-    max-height: none;
-  }
-  .sheet-handle-zone { display: none; }
-  .vessel-card, .dock-card, .bridge-card, .seamark-card {
-    left: 422px;
-    right: auto;
-    width: 360px;
-  }
-  .route-filter-bar {
-    left: 422px;
-    right: 16px;
-  }
-}
-
+@media (prefers-reduced-motion: reduce) { .map-body *, .map-body *::before, .map-body *::after { animation: none !important; transition: none !important; } }

@@ -6,7 +6,7 @@
       "date": "27 August 2026",
       "title": "What's new",
       "notes": [
-        "now you can tap the depatures and see the stops :3"
+        "-now you can tap the depatures and see the stops :3"
       ]
     },
     {
@@ -16,6 +16,17 @@
       "notes": [
         "-added dispatch alert, same google doc from the dispatch office, will always be updated",
         "-added themes :0 give me a shout if you have a request"
+      ]
+    },
+    {
+      "version": "2026-09-4",
+      "date": "21 August 2026",
+      "title": "WHERES THE MAP",
+      "notes": [
+        "-added cool map that sticks with themes",
+        "-includes navel shit and stuff, boat stuff",
+        "-provisions for sept 8th timetable changes (waterway, seastreak and ferry all change on the same day kinnnndaaa crazy",
+        "-belford route moves to waterway, rip seastreak friends"
       ]
     }
   ]

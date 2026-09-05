@@ -53,6 +53,9 @@ test("Pier C sits at the Brooklyn homeport, not across the river", () => {
   assert.ok(pierC, "the Pier C landing is configured");
   assert.ok(pierC.latitude > 40.69 && pierC.latitude < 40.72, `Pier C latitude ${pierC.latitude} is outside the Brooklyn Navy Yard`);
   assert.ok(pierC.longitude > -73.99 && pierC.longitude < -73.96, `Pier C longitude ${pierC.longitude} is outside the Brooklyn Navy Yard`);
+  // Western pier footprint: https://www.openstreetmap.org/way/700015264
+  assert.ok(Math.abs(pierC.latitude - 40.70372) < 0.0003 && Math.abs(pierC.longitude + 73.97658) < 0.0003,
+    "Pier C must sit on the western pier, not in the basin near the passenger landing");
 });
 
 test("one unbuildable landing costs that landing and nothing else", async () => {

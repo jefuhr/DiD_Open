@@ -1,21 +1,15 @@
 // The map page.
 //
 // Reads /api/map once for the harbor and /api/boats every fifteen seconds for what is on it, and
-// draws both: an SVG of the route shapes, the docks and the fleet, over raster tiles from
-// OpenStreetMap with OpenSeaMap's seamark layer on top.
+// draws both: an SVG of the route shapes, docks and fleet over bundled shorelines and roads.
 //
-// The tiles are the only thing on this page that comes from anywhere but this server, and the only
+// Fallback tiles are the only thing on this page that comes from anywhere but this server, and the only
 // reason its Content-Security-Policy names a host other than 'self' — for images, and nothing else.
 // Everything drawn over them is this server's own data, which is what makes the page degrade
 // rather than break: with no signal the backdrop is missing and the harbor is still there.
 //
-// Modernized with:
-// - Inertial kinetic momentum and smooth camera easing (flyTo)
-// - Full-bleed viewport with an interactive draggable bottom sheet (peek/half/full)
-// - Floating vessel and landing detail cards
-// - Quick route filter pills and real-time boat search
-// - Dead-reckoning vessel animation between 15s refresh cycles
-// - Full theme support across all 9 design themes
+// A themed vector overview, with street tiles as a fallback. Positions are reported fixes;
+// the map never invents vessel movement between updates.
 //
 // Everything is written through textContent and createElementNS rather than innerHTML, strictly
 // keeping the zero-innerHTML XSS contract.
@@ -50,7 +44,6 @@ const hasRaf = typeof requestAnimationFrame === "function";
 let harbor = null;
 let boats = [];
 let selectedId = null;
-let selectedDock = null;
 let activeRouteFilter = null;
 let searchQuery = "";
 let projection = null;
@@ -62,6 +55,7 @@ let tileLayer = null;
 let chartBackdrop = null;
 let tilesDrawnFor = "";
 let fleetIsClose = false;
+let detailKind = null;
 
 const previousFix = new Map();
 const heading = new Map();
@@ -69,7 +63,7 @@ let wanted = new URLSearchParams(location.search).get("boat") || null;
 
 // Camera animation state
 let cameraAnimation = null;
-let inertiaVelocity = null;
+const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)");
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -149,6 +143,7 @@ function tileZoomFor() {
 
 function drawTiles() {
   if (!tileLayer || !view || !projection) return;
+  if (harbor?.chart) return;
   const toWorldX = (x) => (x - projection.padding) / projection.scale + projection.left;
   const toWorldY = (y) => (y - projection.padding) / projection.scale + projection.top;
   const west = toWorldX(view.x);
@@ -222,10 +217,11 @@ function drawChartBackdrop(chartData) {
     const landGroup = svgNode("g", { class: "chart-land" });
     for (const land of chartData.landmass) {
       if (!land.points || land.points.length < 3) continue;
-      const d = pathData(land.points) + " Z";
+      const d = [land.points, ...(land.holes || [])].map((ring) => pathData(ring) + " Z").join(" ");
       const path = svgNode("path", {
         class: `map-landmass land-${land.id}`,
         d,
+        "fill-rule": "evenodd",
         "vector-effect": "non-scaling-stroke"
       });
       path.dataset.landId = land.id;
@@ -233,6 +229,16 @@ function drawChartBackdrop(chartData) {
     }
     backdrop.append(landGroup);
   }
+
+  const parks = svgNode("g", { class: "chart-parks" });
+  for (const park of chartData.parks || []) {
+    const outline = svgNode("path", { class: "map-park", d: pathData(park.points) + " Z", "vector-effect": "non-scaling-stroke" });
+    const title = svgNode("title");
+    title.textContent = park.name;
+    outline.append(title);
+    parks.append(outline);
+  }
+  backdrop.append(parks);
 
   // 3. Navigation Channels / Fairways
   if (chartData.channels) {
@@ -253,6 +259,7 @@ function drawChartBackdrop(chartData) {
   // 4. Major Streets (arterials and expressways only, no side streets)
   if (chartData.streets) {
     const streetGroup = svgNode("g", { class: "chart-streets" });
+    const streetLabels = svgNode("g", { class: "chart-street-labels" });
     for (const street of chartData.streets) {
       if (!street.points || street.points.length < 2) continue;
       const d = pathData(street.points);
@@ -262,13 +269,28 @@ function drawChartBackdrop(chartData) {
         "vector-effect": "non-scaling-stroke"
       });
       const line = svgNode("path", {
-        class: `map-street street-${street.type}`,
+        class: `map-street street-${street.type}${street.priority ? " is-priority" : ""}`,
         d,
         "vector-effect": "non-scaling-stroke"
       });
       streetGroup.append(casing, line);
+      const middle = Math.floor((street.points.length - 1) / 2);
+      const [x1, y1] = projection.point(...street.points[middle]);
+      const [x2, y2] = projection.point(...street.points[middle + 1]);
+      const { outer, inner } = marker("street-label-anchor", ...street.points[middle]);
+      let angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+      if (angle > 90) angle -= 180;
+      if (angle < -90) angle += 180;
+      const label = svgNode("text", { class: `street-label${street.priority ? " is-priority" : ""}`, transform: `rotate(${street.priority ? 0 : angle.toFixed(1)})`, y: -4, "text-anchor": "middle" });
+      label.textContent = street.labelName || street.name;
+      outer.dataset.latitude = street.points[middle][0];
+      outer.dataset.longitude = street.points[middle][1];
+      outer.dataset.highway = String(street.type === "highway");
+      outer.dataset.priority = String(Boolean(street.priority));
+      inner.append(label);
+      streetLabels.append(outer);
     }
-    backdrop.append(streetGroup);
+    backdrop.append(streetGroup, streetLabels);
   }
 
   // 5. Bridges across waterways (with clearances)
@@ -286,6 +308,9 @@ function drawChartBackdrop(chartData) {
       group.dataset.bridgeId = bridge.id;
       group.dataset.clearanceFeet = bridge.clearanceFeet;
       group.dataset.name = bridge.name;
+      group.setAttribute("tabindex", "0");
+      group.setAttribute("role", "button");
+      group.setAttribute("aria-label", bridge.name);
 
       const casing = svgNode("line", {
         class: "bridge-casing",
@@ -303,12 +328,14 @@ function drawChartBackdrop(chartData) {
         y2: y2.toFixed(1),
         "vector-effect": "non-scaling-stroke"
       });
-      const inner = svgNode("g", { class: "scaler", transform: `translate(${mx},${my})` });
+      const anchor = svgNode("g", { transform: `translate(${mx},${my})` });
+      const inner = svgNode("g", { class: "scaler" });
       const badge = svgNode("text", { class: "bridge-clearance-badge", x: 0, y: -3 });
-      badge.textContent = `${bridge.clearanceFeet}'`;
+      badge.textContent = bridge.name;
       inner.append(badge);
-
-      group.append(casing, deck, inner);
+      anchor.append(inner);
+      const hit = svgNode("line", { class: "bridge-hit", x1, y1, x2, y2, "vector-effect": "non-scaling-stroke" });
+      group.append(hit, casing, deck, anchor);
       bridgeGroup.append(group);
     }
     backdrop.append(bridgeGroup);
@@ -325,6 +352,10 @@ function drawChartBackdrop(chartData) {
       );
       outer.dataset.seamarkId = seamark.id;
       outer.dataset.name = seamark.name;
+      outer.setAttribute("tabindex", "0");
+      outer.setAttribute("role", "button");
+      outer.setAttribute("aria-label", seamark.name);
+      inner.append(svgNode("circle", { class: "marker-hit", r: 10 }));
 
       if (seamark.type === "light") {
         const halo = svgNode("circle", { class: "seamark-halo", r: 6 });
@@ -346,6 +377,30 @@ function drawChartBackdrop(chartData) {
     backdrop.append(seamarkGroup);
   }
 
+  const places = [
+    ["MANHATTAN", 40.770, -73.977, "borough"],
+    ["BROOKLYN", 40.674, -73.970, "borough"],
+    ["QUEENS", 40.756, -73.906, "borough"],
+    ["THE BRONX", 40.825, -73.873, "borough"],
+    ["STATEN ISLAND", 40.607, -74.109, "borough"],
+    ["NEW JERSEY", 40.739, -74.060, "borough"],
+    ["ROCKAWAY", 40.581, -73.814, "borough"],
+    ["Upper Bay", 40.655, -74.032, "water"],
+    ["Lower Bay", 40.555, -74.038, "water"],
+    ["Hudson River", 40.761, -74.015, "water"],
+    ["Central Park", 40.782, -73.965, "park"],
+    ["East River", 40.779, -73.932, "water"],
+    ["Governors Island", 40.689, -74.017, "island"]
+  ];
+  const labels = svgNode("g", { class: "place-labels" });
+  for (const [name, lat, lon, kind] of places) {
+    const { outer, inner } = marker(`place-label place-${kind}`, lat, lon);
+    const label = svgNode("text", { "text-anchor": "middle" });
+    label.textContent = name;
+    inner.append(label);
+    labels.append(outer);
+  }
+  backdrop.append(labels);
   return backdrop;
 }
 
@@ -356,7 +411,7 @@ function drawHarbor() {
   view = { ...base };
 
   const title = svgNode("title", { id: "chartTitle" });
-  title.textContent = "NYC Ferry routes, landings and the boats currently running them, on a chart of the harbor.";
+  title.textContent = "NYC Ferry landings and vessel positions, with harbor landmarks and marine reference details.";
   chart.append(title);
 
   tileLayer = svgNode("g", { class: "tiles" });
@@ -390,7 +445,10 @@ function drawHarbor() {
     outer.dataset.dockId = landing.id;
     outer.dataset.latitude = landing.latitude;
     outer.dataset.longitude = landing.longitude;
-    inner.append(svgNode("circle", { class: "dock-mark", r: 4 }));
+    outer.setAttribute("tabindex", "0");
+    outer.setAttribute("role", "button");
+    outer.setAttribute("aria-label", `Departures at ${landing.displayName || landing.name}`);
+    inner.append(svgNode("circle", { class: "marker-hit", r: 10 }), svgNode("circle", { class: "dock-mark", r: 4 }));
     const label = svgNode("text", { class: "dock-label", x: 7, y: 3.5 });
     label.textContent = landing.displayName || landing.name;
     inner.append(label);
@@ -399,7 +457,6 @@ function drawHarbor() {
   chart.append(dockLayer, fleetLayer);
 
   renderRouteFilters();
-  legend();
   applyView();
 }
 
@@ -411,15 +468,18 @@ function renderRouteFilters() {
 
   const allPill = element("button", `route-filter-pill${!activeRouteFilter ? " is-active" : ""}`, "All routes");
   allPill.type = "button";
+  allPill.setAttribute("aria-pressed", String(!activeRouteFilter));
   allPill.addEventListener("click", () => setRouteFilter(null));
   routeFilterBar.append(allPill);
 
   for (const route of harbor.routes) {
     const pill = element("button", `route-filter-pill${activeRouteFilter === route.id ? " is-active" : ""}`);
     pill.type = "button";
+    pill.setAttribute("aria-pressed", String(activeRouteFilter === route.id));
+    pill.title = route.name;
     const dot = element("span", "pill-dot");
     dot.style.background = route.color;
-    pill.append(dot, element("span", null, route.shortName));
+    pill.append(dot, element("span", "pill-code", route.shortName), element("span", "pill-name", route.name));
     pill.addEventListener("click", () => setRouteFilter(activeRouteFilter === route.id ? null : route.id));
     routeFilterBar.append(pill);
   }
@@ -427,6 +487,9 @@ function renderRouteFilters() {
 
 function setRouteFilter(routeId) {
   activeRouteFilter = routeId;
+  const route = harbor.routes.find((item) => item.id === routeId);
+  document.getElementById("mapScope").textContent = route?.name || "The whole harbor";
+  document.getElementById("mapScopeDetail").textContent = route ? `${route.shortName} · Selected vessels highlighted` : "Landings & vessel positions";
   renderRouteFilters();
   updateRouteLineStyles();
   drawFleet();
@@ -437,20 +500,6 @@ function updateRouteLineStyles() {
   for (const line of chart.querySelectorAll(".route-line")) {
     const match = !activeRouteFilter || line.dataset.route === activeRouteFilter;
     line.classList.toggle("is-dimmed", !match);
-  }
-}
-
-function legend() {
-  const host = document.getElementById("legend");
-  if (!host || !harbor?.routes) return;
-  host.textContent = "";
-  for (const route of harbor.routes) {
-    const key = element("span", "key");
-    const swatch = element("span", "swatch");
-    swatch.style.background = route.color;
-    key.append(swatch, element("span", null, route.shortName));
-    key.addEventListener("click", () => setRouteFilter(activeRouteFilter === route.id ? null : route.id));
-    host.append(key);
   }
 }
 
@@ -471,6 +520,10 @@ function drawFleet() {
     const matchesFilter = !activeRouteFilter || boat.routeId === activeRouteFilter;
     const { outer, inner } = marker("boat", boat.latitude, boat.longitude);
     outer.dataset.boat = boat.id;
+    outer.setAttribute("tabindex", "0");
+    outer.setAttribute("role", "button");
+    outer.setAttribute("aria-label", `${boat.name || boat.number || "Vessel"}: ${statusLine(boat)}`);
+    inner.append(svgNode("circle", { class: "marker-hit", r: 12 }));
     if ((boat.ageSeconds ?? 0) > STALE_FIX_SECONDS) outer.classList.add("is-stale");
     if (!matchesFilter) outer.classList.add("is-dimmed");
 
@@ -527,14 +580,62 @@ function metresBetween(from, to) {
 function applyView() {
   chart.setAttribute("viewBox", `${view.x.toFixed(1)} ${view.y.toFixed(1)} ${view.width.toFixed(1)} ${view.height.toFixed(1)}`);
   drawTiles();
-  const scale = (view.width / base.width).toFixed(3);
+  const box = chart.getBoundingClientRect();
+  const unitsPerPixel = Math.max(view.width / (box.width || 360), view.height / (box.height || 480));
+  const scale = unitsPerPixel.toFixed(3);
   for (const scaler of chart.querySelectorAll(".scaler")) scaler.setAttribute("transform", `scale(${scale})`);
   const close = base.width / view.width >= LABEL_ZOOM;
   if (dockLayer) dockLayer.classList.toggle("is-close", close);
   if (chartBackdrop) chartBackdrop.classList.toggle("is-close", close);
+  layoutDockLabels(unitsPerPixel, close);
+  layoutStreetLabels(unitsPerPixel, close);
   if (fleetLayer && close !== fleetIsClose) {
     fleetIsClose = close;
     drawFleet();
+  }
+}
+
+// Keep names legible at every viewport size; crowded landing labels wait for more room.
+function layoutDockLabels(units, close) {
+  const occupied = [];
+  const docks = [...chart.querySelectorAll(".dock")].sort((a, b) =>
+    Number(b.classList.contains("is-target")) - Number(a.classList.contains("is-target")));
+  for (const dock of docks) {
+    const label = dock.querySelectorAll(".dock-label")[0];
+    const [x, y] = projection.point(Number(dock.dataset.latitude), Number(dock.dataset.longitude));
+    const target = dock.classList.contains("is-target");
+    const major = /Wall|34th|Rockaway|St. George|Bay Ridge|Astoria|90th/i.test(label.textContent);
+    const labelWidth = (label.textContent.length * 5.8 + 12) * units;
+    const left = x + 7 * units + labelWidth > view.x + view.width;
+    label.setAttribute("x", left ? -7 : 7);
+    label.setAttribute("text-anchor", left ? "end" : "start");
+    const rect = { x: left ? x - 7 * units - labelWidth : x + 7 * units, y: y - 8 * units, w: labelWidth, h: 18 * units };
+    const inside = x >= view.x && x <= view.x + view.width && y >= view.y && y <= view.y + view.height;
+    const collides = occupied.some((r) => rect.x < r.x + r.w && rect.x + rect.w > r.x && rect.y < r.y + r.h && rect.y + rect.h > r.y);
+    const show = inside && (target || ((major || close) && !collides));
+    label.style.opacity = show ? "1" : "0";
+    label.style.pointerEvents = show ? "auto" : "none";
+    if (show) occupied.push(rect);
+  }
+}
+
+if (typeof ResizeObserver === "function") new ResizeObserver(() => { if (view) applyView(); }).observe(chart);
+
+function layoutStreetLabels(units, close) {
+  const occupied = [];
+  const named = new Set();
+  for (const anchor of chart.querySelectorAll(".street-label-anchor")) {
+    const label = anchor.querySelectorAll(".street-label")[0];
+    const [x, y] = projection.point(Number(anchor.dataset.latitude), Number(anchor.dataset.longitude));
+    const priority = anchor.dataset.priority === "true";
+    const width = (label.textContent.length * 5.5 + 8) * units;
+    const height = (priority ? 14 : 28) * units;
+    const rect = { x: x - width / 2, y: y - 13 * units, width, height };
+    const inside = rect.x > view.x && rect.x + width < view.x + view.width && rect.y > view.y && rect.y + height < view.y + view.height;
+    const collides = occupied.some((r) => rect.x < r.x + r.width && rect.x + width > r.x && rect.y < r.y + r.height && rect.y + height > r.y);
+    const show = inside && !named.has(label.textContent) && !collides && (close || anchor.dataset.highway === "true" || priority);
+    label.style.opacity = show ? "1" : "0";
+    if (show) { named.add(label.textContent); occupied.push(rect); }
   }
 }
 
@@ -566,7 +667,7 @@ function cancelCameraAnimation() {
 function animateTo(target, duration = 320) {
   if (!view || !base) return;
   const clamped = clampView(target);
-  if (!hasRaf) {
+  if (!hasRaf || reducedMotion?.matches) {
     setView(clamped);
     return;
   }
@@ -633,7 +734,6 @@ function pinchSpan() {
 chart.addEventListener("pointerdown", (event) => {
   if (!view) return;
   cancelCameraAnimation();
-  chart.setPointerCapture(event.pointerId);
   pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, originX: event.clientX, originY: event.clientY });
   pointerHistory = [{ x: event.clientX, y: event.clientY, time: Date.now() }];
   if (pointers.size === 1) {
@@ -641,6 +741,7 @@ chart.addEventListener("pointerdown", (event) => {
     dragged = false;
     chart.classList.add("is-dragging");
   } else if (pointers.size === 2) {
+    dragged = true;
     grabbed = null;
     pinchDistance = pinchSpan().distance;
   }
@@ -649,8 +750,13 @@ chart.addEventListener("pointerdown", (event) => {
 chart.addEventListener("pointermove", (event) => {
   if (!pointers.has(event.pointerId) || !view) return;
   const origin = pointers.get(event.pointerId);
-  if (Math.hypot(event.clientX - origin.originX, event.clientY - origin.originY) > 4) dragged = true;
+  if (Math.hypot(event.clientX - origin.originX, event.clientY - origin.originY) > 4) {
+    dragged = true;
+    // Capture only a drag: capturing pointerdown retargets a landing's click to the SVG.
+    chart.setPointerCapture(event.pointerId);
+  }
   pointers.set(event.pointerId, { ...origin, x: event.clientX, y: event.clientY });
+  if (!dragged && pointers.size === 1) return;
 
   const now = Date.now();
   pointerHistory.push({ x: event.clientX, y: event.clientY, time: now });
@@ -670,11 +776,12 @@ chart.addEventListener("pointermove", (event) => {
 
 for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
   chart.addEventListener(name, (event) => {
+    if (name === "lostpointercapture" && chart.hasPointerCapture?.(event.pointerId)) return;
     pointers.delete(event.pointerId);
     if (pointers.size < 2) pinchDistance = 0;
     if (pointers.size === 0) {
       // Kinetic inertia glide if flicked
-      if (dragged && hasRaf && pointerHistory.length >= 2) {
+      if (dragged && hasRaf && !reducedMotion?.matches && pointerHistory.length >= 2) {
         const last = pointerHistory.at(-1);
         const prev = pointerHistory[0];
         const dt = Math.max(1, last.time - prev.time);
@@ -715,6 +822,12 @@ chart.addEventListener("wheel", (event) => {
 
 chart.addEventListener("keydown", (event) => {
   if (!view) return;
+  if ((event.key === "Enter" || event.key === " ") && event.target !== chart) {
+    event.preventDefault();
+    event.target.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    return;
+  }
+  if (event.key === "Escape") { select(selectedId, { recentre: false }); return; }
   const step = view.width / 8;
   const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
   if (moves[event.key]) {
@@ -725,7 +838,7 @@ chart.addEventListener("keydown", (event) => {
 });
 
 chart.addEventListener("click", (event) => {
-  if (dragged) return;
+  if (dragged && event.detail !== 0) return;
   const pickedBoat = event.target.closest?.(".boat");
   if (pickedBoat) {
     hideDockCard();
@@ -779,6 +892,7 @@ document.getElementById("zoomFit").addEventListener("click", () => {
 
 function updateVesselCard() {
   if (!vesselCard) return;
+  if (detailKind && detailKind !== "vessel") { vesselCard.hidden = true; return; }
   const boat = boats.find((b) => b.id === selectedId);
   if (!boat) {
     vesselCard.hidden = true;
@@ -810,54 +924,71 @@ function updateVesselCard() {
     : statusLine(boat));
 
   const metaRow = element("div", "card-meta-row");
-  const speed = element("span", "card-speed-badge", boat.speedKnots == null ? "Docked" : `⚡ ${boat.speedKnots.toFixed(1)} kn`);
+  const speed = element("span", "card-speed-badge", boat.speedKnots == null ? "Speed unavailable" : `${boat.speedKnots.toFixed(1)} kn`);
   const age = element("span", null, ageLabel(boat.ageSeconds));
   metaRow.append(speed, age);
 
   const actionBtn = element("a", "card-action-btn", "Open Departure Board");
-  actionBtn.href = boat.stop ? `./?landing=${boat.stop.id}` : ".";
+  // Vehicle stop IDs are GTFS IDs; board links need the configured landing number.
+  const landing = boat.stop?.latitude == null ? null : harbor.landings
+    .map((dock) => ({ dock, distance: metresBetween(dock, boat.stop) }))
+    .filter((item) => item.distance < 300)
+    .sort((a, b) => a.distance - b.distance)[0]?.dock;
+  actionBtn.href = landing ? `./?landing=${landing.id}` : ".";
 
   vesselCard.append(closeBtn, titleRow, status, metaRow, actionBtn);
 }
 
 function showDockCard(dock) {
   if (!dockCard) return;
+  detailKind = "dock";
   dockCard.textContent = "";
   dockCard.hidden = false;
   if (vesselCard) vesselCard.hidden = true;
   if (bridgeCard) bridgeCard.hidden = true;
   if (seamarkCard) seamarkCard.hidden = true;
 
-  const closeBtn = element("button", "card-close", "×");
-  closeBtn.type = "button";
-  closeBtn.setAttribute("aria-label", "Close dock card");
-  closeBtn.addEventListener("click", hideDockCard);
-
-  const titleRow = element("div", "card-title-row");
-  const name = element("span", "card-vessel-name", dock.displayName || dock.name);
-  titleRow.append(name);
-
-  const routesAtDock = (harbor?.routes || []).filter((r) =>
-    r.paths?.some((path) => path.some((pt) => metresBetween({ latitude: pt[0], longitude: pt[1] }, dock) < 200)));
-
-  const routesRow = element("div", "card-status-line", routesAtDock.length
-    ? `Routes: ${routesAtDock.map((r) => r.shortName).join(", ")}`
-    : "NYC Ferry Landing");
-
-  const actionBtn = element("a", "card-action-btn", "View Landing Departures");
-  actionBtn.href = `./?landing=${dock.id}`;
-
-  dockCard.append(closeBtn, titleRow, routesRow, actionBtn);
+  const title = element("h2", null, "Open departures?");
+  title.id = "landingConfirmTitle";
+  const description = element("p", null, `View the departure board for ${dock.displayName || dock.name}?`);
+  description.id = "landingConfirmDescription";
+  const actions = element("div", "landing-confirm-actions");
+  const cancel = element("button", null, "Stay on map");
+  cancel.type = "button";
+  cancel.autofocus = true;
+  cancel.addEventListener("click", hideDockCard);
+  const open = element("button", "confirm-departures", "Open departures");
+  open.type = "button";
+  open.addEventListener("click", () => location.assign(`./?landing=${encodeURIComponent(dock.id)}`));
+  actions.append(cancel, open);
+  dockCard.append(title, description, actions);
+  // Keep this in the same floating-card layer as vessel details. A non-modal dialog preserves
+  // the map underneath and still gives keyboard users an Escape/cancel path.
+  dockCard.show?.();
 }
 
 function hideDockCard() {
   if (!dockCard) return;
+  dockCard.close?.();
   dockCard.hidden = true;
   dockCard.textContent = "";
+  if (detailKind === "dock") detailKind = null;
 }
+
+if (dockCard) dockCard.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  hideDockCard();
+});
+if (dockCard) dockCard.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    hideDockCard();
+  }
+});
 
 function showBridgeCard(bridge) {
   if (!bridgeCard) return;
+  detailKind = "bridge";
   bridgeCard.textContent = "";
   bridgeCard.hidden = false;
   if (vesselCard) vesselCard.hidden = true;
@@ -878,11 +1009,9 @@ function showBridgeCard(bridge) {
   const clearanceBox = element("div", "card-clearance-box");
   const heading = element("div", "card-clearance-label", "Vertical Navigational Clearance");
   const value = element("div", "card-clearance-val", `${bridge.clearanceFeet} ft (${bridge.clearanceMeters} m)`);
-  const statusBadge = element("span", "card-clearance-badge", "✓ CLEAR FOR ALL FERRIES");
-  const margin = Math.max(0, bridge.clearanceFeet - 32);
   const note = element("div", "card-clearance-note",
-    `NYC Ferry vessels have an air draft of 26–32 ft (safe margin: ${margin} ft). ${bridge.clearanceNote}`);
-  clearanceBox.append(heading, value, statusBadge, note);
+    `Reference only; verify current charts, tide and vessel air draft. ${bridge.clearanceNote || ""}`);
+  clearanceBox.append(heading, value, note);
 
   bridgeCard.append(closeBtn, titleRow, typeLine, clearanceBox);
 }
@@ -891,11 +1020,14 @@ function hideBridgeCard() {
   if (!bridgeCard) return;
   bridgeCard.hidden = true;
   bridgeCard.textContent = "";
+  if (detailKind === "bridge") detailKind = null;
 }
 
 function showSeamarkCard(seamark) {
   if (!seamarkCard) return;
+  detailKind = "seamark";
   seamarkCard.textContent = "";
+  if (detailKind === "seamark") detailKind = null;
   seamarkCard.hidden = false;
   if (vesselCard) vesselCard.hidden = true;
   if (dockCard) dockCard.hidden = true;
@@ -930,10 +1062,11 @@ function hideSeamarkCard() {
 
 if (sheetHandle && bottomSheet) {
   sheetHandle.addEventListener("click", () => {
-    const states = ["peek", "half", "full"];
-    const current = bottomSheet.dataset.state || "half";
-    const next = states[(states.indexOf(current) + 1) % states.length];
+    const next = bottomSheet.dataset.state === "peek" ? "half" : "peek";
     bottomSheet.dataset.state = next;
+    sheetHandle.setAttribute("aria-expanded", String(next !== "peek"));
+    sheetHandle.setAttribute("aria-label", next === "peek" ? "Expand vessel list" : "Collapse vessel list");
+    document.getElementById("sheetToggleText").textContent = next === "peek" ? "Expand" : "Collapse";
   });
 }
 
@@ -980,6 +1113,7 @@ function select(id, { recentre = true } = {}) {
   hideDockCard();
   hideBridgeCard();
   hideSeamarkCard();
+  detailKind = "vessel";
   drawFleet();
   renderList();
   if (recentre) {
@@ -1011,19 +1145,20 @@ function renderList() {
   });
 
   const countElem = document.getElementById("boatCount");
+  document.getElementById("listCount").textContent = `${filtered.length} ${filtered.length === 1 ? "vessel" : "vessels"}${activeRouteFilter || searchQuery ? ` of ${boats.length}` : " reporting"}`;
   if (countElem) {
     countElem.textContent = boats.length
       ? `${number.format(boats.length)} ${boats.length === 1 ? "boat" : "boats"}`
-      : "None out";
+      : "No positions";
   }
 
   if (!boats.length) {
-    list.append(element("li", "empty", "No NYC Ferry vessel is reporting a position right now. Outside service hours that is what an empty harbor looks like — and the partner operators never report one."));
+    list.append(element("li", "empty", "No NYC Ferry vessel is reporting a position right now. Routes and landings are still available. Partner operators do not supply positions here."));
     return;
   }
 
-  if (!filtered.length && searchQuery) {
-    list.append(element("li", "empty", `No boats match "${searchQuery}".`));
+  if (!filtered.length) {
+    list.append(element("li", "empty", searchQuery ? `No boats match "${searchQuery}".` : "No vessels are reporting on this route right now."));
     return;
   }
 
@@ -1131,16 +1266,18 @@ async function load() {
     const at = payload.fetchedAt ? new Date(payload.fetchedAt) : null;
     if (statusText) {
       statusText.textContent = !payload.available ? "No feed" : payload.stale ? "Saved" : "Live";
+      document.getElementById("mapStatus").dataset.state = !payload.available ? "offline" : payload.stale ? "stale" : "live";
+      document.getElementById("feedNote").textContent = `${at ? `Updated ${timeLabel.format(at)} · ` : ""}NYC Ferry positions · Refreshes every 15s`;
     }
     message(!payload.available
       ? "The vessel feed is not answering. Nothing here is current."
       : following || (payload.stale ? `Last positions the feed gave${at ? `, at ${timeLabel.format(at)}` : ""}.` : ""));
   } catch {
     if (statusText) statusText.textContent = "Offline";
-    message("Could not reach the server.");
+    document.getElementById("mapStatus").dataset.state = "offline";
+    message("Could not reach the server. Any displayed positions may be out of date.");
   }
 }
 
 load();
 setInterval(load, REFRESH_MS);
-

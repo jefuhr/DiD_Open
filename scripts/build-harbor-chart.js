@@ -12,6 +12,8 @@
 // --map-street, --map-bridge, --map-seamark).
 
 import { mkdir, writeFile } from "node:fs/promises";
+import shoreline from "../content/harbor-shoreline.json" with { type: "json" };
+import manhattanDetails from "../content/manhattan-details.json" with { type: "json" };
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,333 +25,13 @@ function pt(lat, lon) {
 }
 
 export function buildHarborChartData() {
-  // ---------------------------------------------------------------- Landmass
-  const landmass = [
-    {
-      id: "manhattan",
-      name: "Manhattan",
-      points: [
-        pt(40.7010, -74.0150), pt(40.7013, -74.0125), pt(40.7032, -74.0060),
-        pt(40.7065, -73.9995), pt(40.7088, -73.9930), pt(40.7108, -73.9840),
-        pt(40.7125, -73.9775), pt(40.7150, -73.9745), pt(40.7225, -73.9720),
-        pt(40.7315, -73.9725), pt(40.7380, -73.9715), pt(40.7445, -73.9705),
-        pt(40.7525, -73.9655), pt(40.7585, -73.9595), pt(40.7665, -73.9515),
-        pt(40.7745, -73.9435), pt(40.7780, -73.9415), pt(40.7850, -73.9375),
-        pt(40.7930, -73.9325), pt(40.8030, -73.9300), pt(40.8115, -73.9325),
-        pt(40.8190, -73.9355), pt(40.8280, -73.9340), pt(40.8355, -73.9340),
-        pt(40.8430, -73.9330), pt(40.8510, -73.9265), pt(40.8630, -73.9215),
-        pt(40.8710, -73.9175), pt(40.8745, -73.9160), pt(40.8785, -73.9240),
-        pt(40.8740, -73.9300), pt(40.8655, -73.9340), pt(40.8565, -73.9420),
-        pt(40.8510, -73.9455), pt(40.8420, -73.9490), pt(40.8310, -73.9540),
-        pt(40.8190, -73.9610), pt(40.8070, -73.9690), pt(40.7950, -73.9780),
-        pt(40.7840, -73.9870), pt(40.7720, -73.9950), pt(40.7600, -74.0035),
-        pt(40.7485, -74.0090), pt(40.7380, -74.0115), pt(40.7280, -74.0135),
-        pt(40.7160, -74.0175), pt(40.7070, -74.0185), pt(40.7025, -74.0170),
-        pt(40.7010, -74.0150)
-      ]
-    },
-    {
-      id: "brooklyn-queens",
-      name: "Brooklyn & Queens",
-      points: [
-        pt(40.7380, -73.9580), pt(40.7420, -73.9605), pt(40.7460, -73.9580),
-        pt(40.7510, -73.9540), pt(40.7550, -73.9460), pt(40.7640, -73.9430),
-        pt(40.7715, -73.9360), pt(40.7780, -73.9220), pt(40.7810, -73.9100),
-        pt(40.7780, -73.8960), pt(40.7830, -73.8860), pt(40.7740, -73.8700),
-        pt(40.7850, -73.8480), pt(40.7920, -73.8260), pt(40.7910, -73.7850),
-        pt(40.7820, -73.7650), pt(40.7500, -73.7600), pt(40.7000, -73.7600),
-        pt(40.6600, -73.8000), pt(40.6400, -73.8400), pt(40.6250, -73.8700),
-        pt(40.5950, -73.9200), pt(40.5820, -73.9500), pt(40.5750, -73.9850),
-        pt(40.5740, -74.0020), pt(40.5880, -74.0150), pt(40.6050, -74.0360),
-        pt(40.6220, -74.0380), pt(40.6400, -74.0385), pt(40.6470, -74.0260),
-        pt(40.6580, -74.0180), pt(40.6720, -74.0140), pt(40.6810, -74.0135),
-        pt(40.6860, -74.0075), pt(40.6930, -74.0020), pt(40.7030, -73.9960),
-        pt(40.7040, -73.9880), pt(40.7015, -73.9740), pt(40.7090, -73.9700),
-        pt(40.7120, -73.9660), pt(40.7220, -73.9630), pt(40.7320, -73.9620),
-        pt(40.7380, -73.9580)
-      ]
-    },
-    {
-      id: "the-bronx",
-      name: "The Bronx",
-      points: [
-        pt(40.8800, -73.9200), pt(40.8820, -73.9100), pt(40.8650, -73.9050),
-        pt(40.8500, -73.9150), pt(40.8400, -73.9280), pt(40.8280, -73.9320),
-        pt(40.8120, -73.9320), pt(40.8030, -73.9260), pt(40.7980, -73.9180),
-        pt(40.8010, -73.8980), pt(40.8060, -73.8750), pt(40.8040, -73.8480),
-        pt(40.8080, -73.8340), pt(40.8120, -73.7920), pt(40.8350, -73.7800),
-        pt(40.8750, -73.7800), pt(40.8950, -73.8400), pt(40.8950, -73.9000),
-        pt(40.8800, -73.9200)
-      ]
-    },
-    {
-      id: "staten-island",
-      name: "Staten Island",
-      points: [
-        pt(40.6465, -74.0740), pt(40.6480, -74.1000), pt(40.6440, -74.1350),
-        pt(40.6350, -74.1700), pt(40.6350, -74.2000), pt(40.6150, -74.2050),
-        pt(40.5800, -74.2150), pt(40.5500, -74.2250), pt(40.5230, -74.2480),
-        pt(40.5000, -74.2500), pt(40.5100, -74.2200), pt(40.5250, -74.1800),
-        pt(40.5400, -74.1300), pt(40.5750, -74.0800), pt(40.6050, -74.0530),
-        pt(40.6250, -74.0680), pt(40.6465, -74.0740)
-      ]
-    },
-    {
-      id: "new-jersey",
-      name: "New Jersey Shoreline",
-      points: [
-        pt(40.8520, -73.9620), pt(40.8300, -73.9750), pt(40.8000, -73.9950),
-        pt(40.7700, -74.0150), pt(40.7530, -74.0240), pt(40.7350, -74.0280),
-        pt(40.7250, -74.0320), pt(40.7140, -74.0340), pt(40.7080, -74.0400),
-        pt(40.6850, -74.0650), pt(40.6650, -74.0750), pt(40.6550, -74.0950),
-        pt(40.6450, -74.1350), pt(40.6500, -74.1800), pt(40.6300, -74.2100),
-        pt(40.5200, -74.2600), pt(40.4400, -74.2500), pt(40.4350, -74.0850),
-        pt(40.4450, -74.0600), pt(40.4650, -74.0000), pt(40.4300, -73.9800),
-        pt(40.4000, -74.2800), pt(40.8600, -74.2800), pt(40.8520, -73.9620)
-      ]
-    },
-    {
-      id: "rockaway-peninsula",
-      name: "Rockaway Peninsula",
-      points: [
-        pt(40.5500, -73.9250), pt(40.5560, -73.9100), pt(40.5680, -73.8750),
-        pt(40.5780, -73.8360), pt(40.5840, -73.8310), pt(40.5870, -73.8150),
-        pt(40.5920, -73.7950), pt(40.6000, -73.7400), pt(40.5880, -73.7400),
-        pt(40.5800, -73.8000), pt(40.5700, -73.8500), pt(40.5550, -73.9000),
-        pt(40.5500, -73.9250)
-      ]
-    },
-    {
-      id: "governors-island",
-      name: "Governors Island",
-      points: [
-        pt(40.6930, -74.0160), pt(40.6910, -74.0115), pt(40.6865, -74.0135),
-        pt(40.6840, -74.0185), pt(40.6880, -74.0225), pt(40.6930, -74.0160)
-      ]
-    },
-    {
-      id: "roosevelt-island",
-      name: "Roosevelt Island",
-      points: [
-        pt(40.7725, -73.9395), pt(40.7680, -73.9450), pt(40.7570, -73.9535),
-        pt(40.7485, -73.9620), pt(40.7510, -73.9635), pt(40.7610, -73.9535),
-        pt(40.7725, -73.9395)
-      ]
-    },
-    {
-      id: "randalls-wards",
-      name: "Randalls & Wards Island",
-      points: [
-        pt(40.8000, -73.9230), pt(40.7960, -73.9140), pt(40.7850, -73.9200),
-        pt(40.7820, -73.9280), pt(40.7880, -73.9350), pt(40.7970, -73.9300),
-        pt(40.8000, -73.9230)
-      ]
-    },
-    {
-      id: "rikers-island",
-      name: "Rikers Island",
-      points: [
-        pt(40.7940, -73.8880), pt(40.7910, -73.8790), pt(40.7830, -73.8820),
-        pt(40.7850, -73.8960), pt(40.7940, -73.8880)
-      ]
-    },
-    {
-      id: "liberty-island",
-      name: "Liberty Island",
-      points: [
-        pt(40.6910, -74.0450), pt(40.6885, -74.0435), pt(40.6875, -74.0465),
-        pt(40.6900, -74.0475), pt(40.6910, -74.0450)
-      ]
-    },
-    {
-      id: "ellis-island",
-      name: "Ellis Island",
-      points: [
-        pt(40.7005, -74.0410), pt(40.6975, -74.0380), pt(40.6965, -74.0425),
-        pt(40.6995, -74.0440), pt(40.7005, -74.0410)
-      ]
-    }
-  ];
+  // Shoreline polygons are bundled from OSM instead of approximating the coast by hand.
+  const landmass = shoreline.landmass;
+
 
   // ---------------------------------------------------------------- Major Streets
-  const streets = [
-    {
-      id: "fdr-drive",
-      name: "FDR Drive",
-      type: "highway",
-      points: [
-        pt(40.7015, -74.0130), pt(40.7040, -74.0040), pt(40.7090, -73.9870),
-        pt(40.7125, -73.9760), pt(40.7250, -73.9710), pt(40.7420, -73.9695),
-        pt(40.7580, -73.9575), pt(40.7740, -73.9420), pt(40.7880, -73.9340),
-        pt(40.8030, -73.9285)
-      ]
-    },
-    {
-      id: "west-side-highway",
-      name: "West Side Highway (Route 9A)",
-      type: "highway",
-      points: [
-        pt(40.7020, -74.0165), pt(40.7140, -74.0150), pt(40.7300, -74.0105),
-        pt(40.7500, -74.0060), pt(40.7650, -73.9985), pt(40.7840, -73.9835),
-        pt(40.8080, -73.9650), pt(40.8350, -73.9490), pt(40.8520, -73.9415),
-        pt(40.8750, -73.9180)
-      ]
-    },
-    {
-      id: "bqe",
-      name: "Brooklyn-Queens Expressway (I-278)",
-      type: "interstate",
-      points: [
-        pt(40.6120, -74.0320), pt(40.6400, -74.0180), pt(40.6650, -74.0040),
-        pt(40.6920, -73.9940), pt(40.7030, -73.9750), pt(40.7150, -73.9480),
-        pt(40.7270, -73.9300), pt(40.7450, -73.9120), pt(40.7680, -73.9040),
-        pt(40.7760, -73.9180)
-      ]
-    },
-    {
-      id: "belt-parkway",
-      name: "Belt Parkway",
-      type: "highway",
-      points: [
-        pt(40.6120, -74.0320), pt(40.5980, -74.0150), pt(40.5840, -73.9850),
-        pt(40.5830, -73.9350), pt(40.6050, -73.8850), pt(40.6350, -73.8350),
-        pt(40.6600, -73.7850)
-      ]
-    },
-    {
-      id: "lie",
-      name: "Long Island Expressway (I-495)",
-      type: "interstate",
-      points: [
-        pt(40.7420, -73.9550), pt(40.7380, -73.9250), pt(40.7350, -73.8850),
-        pt(40.7400, -73.8350), pt(40.7550, -73.7650)
-      ]
-    },
-    {
-      id: "grand-central-pkwy",
-      name: "Grand Central Parkway",
-      type: "highway",
-      points: [
-        pt(40.7750, -73.9200), pt(40.7700, -73.8900), pt(40.7620, -73.8500),
-        pt(40.7500, -73.8200)
-      ]
-    },
-    {
-      id: "cross-bronx-expwy",
-      name: "Cross Bronx Expressway (I-95)",
-      type: "interstate",
-      points: [
-        pt(40.8510, -73.9420), pt(40.8460, -73.9250), pt(40.8420, -73.8900),
-        pt(40.8350, -73.8500), pt(40.8300, -73.8150)
-      ]
-    },
-    {
-      id: "major-deegan",
-      name: "Major Deegan Expressway (I-87)",
-      type: "interstate",
-      points: [
-        pt(40.8030, -73.9280), pt(40.8250, -73.9300), pt(40.8500, -73.9150),
-        pt(40.8750, -73.9050), pt(40.8950, -73.8950)
-      ]
-    },
-    {
-      id: "bruckner-expwy",
-      name: "Bruckner Expressway (I-278)",
-      type: "interstate",
-      points: [
-        pt(40.8000, -73.9180), pt(40.8100, -73.8850), pt(40.8200, -73.8550),
-        pt(40.8300, -73.8250)
-      ]
-    },
-    {
-      id: "staten-island-expwy",
-      name: "Staten Island Expressway (I-278)",
-      type: "interstate",
-      points: [
-        pt(40.6060, -74.0530), pt(40.6080, -74.0900), pt(40.6120, -74.1350),
-        pt(40.6200, -74.1750), pt(40.6350, -74.1950)
-      ]
-    },
-    {
-      id: "flatbush-ave",
-      name: "Flatbush Avenue",
-      type: "arterial",
-      points: [
-        pt(40.6950, -73.9850), pt(40.6750, -73.9700), pt(40.6400, -73.9550),
-        pt(40.6100, -73.9350), pt(40.5850, -73.8950), pt(40.5790, -73.8880)
-      ]
-    },
-    {
-      id: "atlantic-ave",
-      name: "Atlantic Avenue",
-      type: "arterial",
-      points: [
-        pt(40.6915, -74.0010), pt(40.6870, -73.9750), pt(40.6800, -73.9350),
-        pt(40.6750, -73.8850)
-      ]
-    },
-    {
-      id: "cross-bay-blvd",
-      name: "Cross Bay Boulevard",
-      type: "arterial",
-      points: [
-        pt(40.6650, -73.8400), pt(40.6350, -73.8350), pt(40.6050, -73.8200),
-        pt(40.5880, -73.8180)
-      ]
-    },
-    {
-      id: "rockaway-beach-blvd",
-      name: "Rockaway Beach Boulevard",
-      type: "arterial",
-      points: [
-        pt(40.5680, -73.8750), pt(40.5780, -73.8360), pt(40.5850, -73.8180),
-        pt(40.5900, -73.7850)
-      ]
-    },
-    {
-      id: "42nd-street",
-      name: "42nd Street",
-      type: "arterial",
-      points: [pt(40.7620, -74.0020), pt(40.7550, -73.9850), pt(40.7490, -73.9680)]
-    },
-    {
-      id: "34th-street",
-      name: "34th Street",
-      type: "arterial",
-      points: [pt(40.7565, -74.0040), pt(40.7490, -73.9860), pt(40.7440, -73.9710)]
-    },
-    {
-      id: "14th-street",
-      name: "14th Street",
-      type: "arterial",
-      points: [pt(40.7430, -74.0080), pt(40.7360, -73.9900), pt(40.7290, -73.9730)]
-    },
-    {
-      id: "canal-street",
-      name: "Canal Street",
-      type: "arterial",
-      points: [pt(40.7225, -74.0110), pt(40.7180, -74.0000), pt(40.7140, -73.9940)]
-    },
-    {
-      id: "broadway-manhattan",
-      name: "Broadway",
-      type: "arterial",
-      points: [
-        pt(40.7040, -74.0130), pt(40.7150, -74.0050), pt(40.7350, -73.9910),
-        pt(40.7550, -73.9860), pt(40.7850, -73.9780), pt(40.8250, -73.9520),
-        pt(40.8650, -73.9250)
-      ]
-    },
-    {
-      id: "nj-turnpike",
-      name: "NJ Turnpike (I-95)",
-      type: "interstate",
-      points: [
-        pt(40.6400, -74.1700), pt(40.6700, -74.1200), pt(40.7100, -74.0800),
-        pt(40.7600, -74.0500), pt(40.8200, -74.0100), pt(40.8520, -73.9650)
-      ]
-    }
-  ];
+  const streets = [...manhattanDetails.streets, ...shoreline.streets];
+
 
   // ---------------------------------------------------------------- Bridges (All Water Clearances)
   const bridges = [
@@ -1024,11 +706,13 @@ export function buildHarborChartData() {
   ];
 
   return {
-    version: 1,
+    version: 2,
     name: "New York Harbor Navigational Chart",
     generatedAt: new Date().toISOString(),
     description: "Modern vector cartography for New York Harbor with landmass, major streets, bridges with clearances, and naval seamarks. Base chart carries zero route lines.",
     landmass,
+    parks: manhattanDetails.parks,
+    shoreline: { source: shoreline.source, sourceUrl: shoreline.sourceUrl, license: shoreline.license, generatedAt: shoreline.generatedAt },
     streets,
     bridges,
     seamarks,
@@ -1039,7 +723,7 @@ export function buildHarborChartData() {
 export async function writeHarborChart(options = {}) {
   const root = options.root || ROOT;
   const data = buildHarborChartData();
-  const json = JSON.stringify(data, null, 2) + "\n";
+  const json = JSON.stringify(data) + "\n";
 
   const contentDir = path.join(root, "content");
   await mkdir(contentDir, { recursive: true });
