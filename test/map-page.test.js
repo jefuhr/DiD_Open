@@ -101,13 +101,14 @@ async function page({ boats = [BOAT], available = true, stale = false, query = "
     return registry.get(id);
   };
   const asked = [];
+  const navigated = [];
   const live = { boats };
   let poll = null;
 
   const context = {
     console, Promise, Intl, Math, JSON, Number, String, Object, Array, Boolean, Error, Set, Map, Date, URLSearchParams,
     // How the board hands a boat over: /map?boat=Tooth%20Ferry.
-    location: { search: query },
+    location: { search: query, assign: (url) => navigated.push(url) },
     document: {
       getElementById: (id) => (ids.includes(id) ? byId(id) : null),
       createElement: (tag) => makeNode(tag),
@@ -131,6 +132,7 @@ async function page({ boats = [BOAT], available = true, stale = false, query = "
   const chart = byId("chart");
   return {
     asked,
+    navigated,
     chart,
     node: byId,
     view: () => chart.getAttribute("viewBox").split(" ").map(Number),
@@ -200,8 +202,8 @@ test("an empty harbor says so instead of looking broken", async () => {
   assert.equal(view.find("boat").length, 0);
   assert.match(view.listText(), /No NYC Ferry vessel is reporting/);
   // The one place left that says the partners are never on here.
-  assert.match(view.listText(), /partner operators never report one/);
-  assert.equal(view.node("boatCount").textContent, "None out");
+  assert.match(view.listText(), /Partner operators do not supply positions/);
+  assert.equal(view.node("boatCount").textContent, "No positions");
   // The routes are still drawn: the harbor did not go anywhere.
   assert.equal(view.find("route-line").length, 2);
 });
@@ -480,7 +482,8 @@ test("zoom stays inside the harbor, and dock names wait until there is room for 
 
   // Everything on the map is counter-scaled so a boat stays the same size on screen at any zoom.
   const scaled = view.find("scaler").map((node) => Number(node.attrs.transform.match(/[\d.]+/)[0]));
-  assert.ok(scaled.every((factor) => Math.abs(factor - close[2] / fitted[2]) < 0.01));
+  const unitsPerPixel = Math.max(close[2] / 360, close[3] / 480);
+  assert.ok(scaled.every((factor) => Math.abs(factor - unitsPerPixel) < 0.01));
 
   for (let press = 0; press < 20; press += 1) view.fire("zoomOut", "click", {});
   assert.deepEqual(view.view(), fitted, "zooming out past the whole harbor stops at the whole harbor");
@@ -516,13 +519,45 @@ test("search filters the fleet list by boat name or hull number", async () => {
   assert.doesNotMatch(view.listText(), /Curiosity/);
 });
 
-test("tapping a dock opens the dock detail card with its departure link", async () => {
+test("tapping a dock confirms the landing before opening its departure board", async () => {
   const view = await page();
   const dock = view.find("dock")[0];
   view.fire("chart", "click", { target: dock });
+  assert.deepEqual(view.navigated, []);
   assert.equal(view.node("dockCard").hidden, false);
+  assert.equal(view.node("dockCard").attrs.open, undefined, "the landing prompt is not a modal takeover");
   assert.match(view.node("dockCard").textContent, /East 34th Street/);
-  assert.match(view.node("dockCard").textContent, /View Landing Departures/);
+  view.node("dockCard").descendants().find((node) => node.textContent === "Open departures").listeners.get("click")();
+  assert.deepEqual(view.navigated, ["./?landing=17"]);
+});
+
+test("canceling a landing confirmation keeps the map view and does not navigate", async () => {
+  const view = await page();
+  const before = view.view();
+  view.fire("chart", "click", { target: view.find("dock")[0] });
+  view.node("dockCard").descendants().find((node) => node.textContent === "Stay on map").listeners.get("click")();
+  assert.equal(view.node("dockCard").hidden, true);
+  assert.deepEqual(view.navigated, []);
+  assert.deepEqual(view.view(), before);
+});
+
+test("dragging from a landing pans without opening departures", async () => {
+  const view = await page();
+  const dock = view.find("dock")[0];
+  view.fire("chart", "pointerdown", { target: dock, pointerId: 1, clientX: 100, clientY: 100 });
+  view.fire("chart", "pointermove", { target: dock, pointerId: 1, clientX: 140, clientY: 100 });
+  view.fire("chart", "pointerup", { target: dock, pointerId: 1 });
+  view.fire("chart", "click", { target: dock, detail: 1 });
+  assert.deepEqual(view.navigated, []);
+  view.fire("chart", "click", { target: dock, detail: 0 });
+  assert.equal(view.node("dockCard").hidden, false, "keyboard activation still works after a drag");
+  assert.deepEqual(view.navigated, []);
+});
+
+test("vessel departure links resolve feed stops to board landing numbers", async () => {
+  const view = await page({ boats: [{ ...BOAT, stop: { ...BOAT.stop, id: "vendor-stop-999" } }] });
+  view.fire("chart", "click", { target: view.find("boat")[0] });
+  assert.equal(view.node("vesselCard").children.find((node) => node.tag === "a").href, "./?landing=17");
 });
 
 test("tapping a boat opens the floating vessel card with live speed and departure link", async () => {
@@ -555,7 +590,7 @@ test("renders modern vector cartography backdrop with landmass, streets, bridges
   assert.ok(view.find("seamark").length >= 25, "should render naval seamarks");
 });
 
-test("tapping a bridge opens the bridge detail card showing clearance and safety margin", async () => {
+test("tapping a bridge shows reference clearance without certifying safe passage", async () => {
   const { buildHarborChartData } = await import("../scripts/build-harbor-chart.js");
   const chartData = buildHarborChartData();
   const view = await page({ harbor: { ...HARBOR, chart: chartData } });
@@ -566,8 +601,8 @@ test("tapping a bridge opens the bridge detail card showing clearance and safety
   assert.equal(view.node("bridgeCard").hidden, false);
   assert.match(view.node("bridgeCard").textContent, /Brooklyn Bridge/);
   assert.match(view.node("bridgeCard").textContent, /127 ft/);
-  assert.match(view.node("bridgeCard").textContent, /✓ CLEAR FOR ALL FERRIES/);
-  assert.match(view.node("bridgeCard").textContent, /safe margin: 95 ft/);
+  assert.match(view.node("bridgeCard").textContent, /verify current charts, tide and vessel air draft/);
+  assert.doesNotMatch(view.node("bridgeCard").textContent, /CLEAR FOR ALL FERRIES|safe margin/);
 
   // Clicking chart background dismisses the card
   view.fire("chart", "click", { target: view.chart });
@@ -610,4 +645,39 @@ test("all themes define cartographic CSS variables for modern vector cartography
   }
 });
 
+test("route filters describe the selection and explain a route with no reporting vessels", async () => {
+  const view = await page();
+  view.node("routeFilterBar").children[2].listeners.get("click")();
+  assert.equal(view.node("mapScope").textContent, "South Brooklyn");
+  assert.equal(view.node("routeFilterBar").children[2].getAttribute("aria-pressed"), "true");
+  assert.match(view.listText(), /No vessels are reporting on this route/);
+});
 
+test("refreshing positions preserves an open marine detail card", async () => {
+  const { buildHarborChartData } = await import("../scripts/build-harbor-chart.js");
+  const view = await page({ harbor: { ...HARBOR, chart: buildHarborChartData() } });
+  view.fire("chart", "click", { target: view.find("boat")[0] });
+  view.fire("chart", "click", { target: view.find("bridge-group")[0] });
+  await view.refresh([BOAT]);
+  assert.equal(view.node("bridgeCard").hidden, false);
+  assert.equal(view.node("vesselCard").hidden, true);
+  const anchor = view.find("bridge-clearance-badge")[0].parent.parent;
+  assert.match(anchor.getAttribute("transform"), /translate\(/, "bridge labels retain their geographic anchor");
+});
+
+test("bundled cartography includes named streets and does not request hidden raster tiles", async () => {
+  const { buildHarborChartData } = await import("../scripts/build-harbor-chart.js");
+  const view = await page({ harbor: { ...HARBOR, chart: buildHarborChartData() } });
+  assert.equal(view.layer("tiles").children.length, 0);
+  assert.ok(view.find("street-label").some((label) => /Broadway/.test(label.textContent)));
+  assert.ok(view.find("place-label").length > 5);
+});
+
+test("mobile vessel list toggle exposes its expanded state", async () => {
+  const view = await page();
+  view.fire("sheetHandle", "click");
+  assert.equal(view.node("bottomSheet").dataset.state, "peek");
+  assert.equal(view.node("sheetHandle").getAttribute("aria-expanded"), "false");
+  view.fire("sheetHandle", "click");
+  assert.equal(view.node("sheetHandle").getAttribute("aria-expanded"), "true");
+});

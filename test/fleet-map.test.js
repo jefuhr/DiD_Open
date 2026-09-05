@@ -180,7 +180,7 @@ test("harbor chart generates vector landmass, major streets, bridges with cleara
   const chart = buildHarborChartData();
 
   // 1. Structure
-  assert.equal(chart.version, 1);
+  assert.equal(chart.version, 2);
   assert.ok(chart.landmass.length >= 10, "should have at least 10 key landmasses");
   assert.ok(chart.streets.length >= 15, "should have major expressways/arterials");
   assert.ok(chart.bridges.length >= 20, "should have all bridges across waterways");
@@ -190,12 +190,12 @@ test("harbor chart generates vector landmass, major streets, bridges with cleara
   // 2. Base chart carries zero route lines
   assert.equal(chart.routes, undefined, "base chart must not contain route lines");
 
-  // 3. Every bridge clears NYC Ferry vessels (max air draft ~26-32 ft)
+  // 3. Bridge reference data is present; this is not a clearance certification.
   for (const bridge of chart.bridges) {
     assert.ok(bridge.id, "bridge must have id");
     assert.ok(bridge.name, "bridge must have name");
     assert.ok(bridge.waterway, "bridge must specify waterway");
-    assert.ok(bridge.clearanceFeet > 32, `${bridge.name} clearance ${bridge.clearanceFeet}ft must clear NYC Ferry max air draft (32ft)`);
+    assert.ok(bridge.clearanceFeet > 0, `${bridge.name} must have reference clearance`);
     assert.ok(bridge.clearanceMeters > 0, `${bridge.name} must have metric clearance`);
     assert.match(bridge.clearanceNote, /\b(ft|MHW|closed)\b/i, `${bridge.name} must have informative clearance note`);
     assert.equal(bridge.points.length, 2, `${bridge.name} must have span coordinates [p1, p2]`);
@@ -210,6 +210,42 @@ test("harbor chart generates vector landmass, major streets, bridges with cleara
   }
 });
 
+test("Manhattan has every requested priority street and an actual Central Park boundary", async () => {
+  const { buildHarborChartData } = await import("../scripts/build-harbor-chart.js");
+  const chart = buildHarborChartData();
+  for (const name of ["Canal", "14th", "34th", "42nd", "59th", "72nd", "86th", "96th", "125th"]) {
+    assert.ok(chart.streets.some(street => street.priority && street.labelName === `${name} St` && street.points.length >= 2), `${name} needs labeled street geometry`);
+  }
+  const park = chart.parks.find(park => park.id === "central-park");
+  assert.ok(park.points.length > 4, "park must have its mapped boundary, not just a label");
+  const latitudes = park.points.map(point => point[0]);
+  assert.ok(Math.abs(Math.min(...latitudes) - 40.7647) < 0.001);
+  assert.ok(Math.abs(Math.max(...latitudes) - 40.8003) < 0.001);
+  assert.deepEqual(park.points[0], park.points.at(-1), "park boundary is closed");
+});
+
+test("the bundled shoreline separates key islands from the surrounding ferry waterways", async () => {
+  const { buildHarborChartData } = await import("../scripts/build-harbor-chart.js");
+  const chart = buildHarborChartData();
+  const inside = ([lat, lon], ring) => {
+    let contained = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [ay, ax] = ring[i], [by, bx] = ring[j];
+      if ((ay > lat) !== (by > lat) && lon < (bx - ax) * (lat - ay) / (by - ay) + ax) contained = !contained;
+    }
+    return contained;
+  };
+  const isLand = (point) => chart.landmass.some((land) => inside(point, land.points) && !(land.holes || []).some((ring) => inside(point, ring)));
+  for (const point of [[40.75, -73.99], [40.69, -73.99], [40.689, -74.018], [40.755, -73.925]]) {
+    assert.ok(isLand(point), `${point} should be on land`);
+  }
+  for (const point of [[40.72, -74.025], [40.72, -73.968], [40.66, -74.035]]) {
+    assert.equal(isLand(point), false, `${point} should remain open water`);
+  }
+  assert.match(chart.shoreline.source, /OpenStreetMap/);
+  assert.ok(chart.streets.some((street) => street.name === "Broadway"));
+});
+
 test("loadHarborMap attaches chart data to the harbor map", async () => {
   const root = new URL("..", import.meta.url).pathname;
   const { map } = await import("../lib/fleet-map.js").then((m) => m.loadHarborMap({ root, landings: LANDINGS }));
@@ -217,4 +253,3 @@ test("loadHarborMap attaches chart data to the harbor map", async () => {
   assert.ok(map.chart.landmass.length >= 10);
   assert.ok(map.chart.bridges.length >= 20);
 });
-

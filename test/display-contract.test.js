@@ -511,10 +511,11 @@ const SAMPLE = {
   tripSchedules: {}
 };
 
-async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = {} } = {}) {
+async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = {}, query = "" } = {}) {
   const [app, index] = await Promise.all([readFile(appPath, "utf8"), readFile(indexPath, "utf8")]);
   const ids = [...index.matchAll(/id="([^"]+)"/g)].map((match) => match[1]);
   const nodes = new Map(), classes = new Map(), listeners = new Map(), store = new Map(Object.entries(stored));
+  const requested = [];
   const node = (id) => {
     if (nodes.has(id)) return nodes.get(id);
     const made = {
@@ -538,7 +539,7 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = 
   }
   const context = {
     console, Promise, Intl, Math, JSON, Number, String, Object, Array, Boolean, Error, Set, Map, RegExp,
-    isNaN, parseInt, parseFloat, URL, encodeURIComponent, decodeURIComponent, Date: Frozen,
+    isNaN, parseInt, parseFloat, URL, URLSearchParams, encodeURIComponent, decodeURIComponent, Date: Frozen,
     HTMLInputElement: class {}, HTMLTextAreaElement: class {},
     // Standard in every browser this ships to, and used by the filter, theme and trip panels to
     // find the control that opened them. Without it here the harness is a browser the client does
@@ -556,11 +557,12 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = 
     },
     // A desktop-shaped window: the landing rail docks only on a tablet, so under test the menu is
     // the drawer every other assertion here expects it to be.
-    navigator: {}, location: { reload() {} },
+    navigator: {}, location: { search: query, reload() {} },
     window: { matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) },
     setInterval: () => 0, clearInterval() {}, setTimeout: () => 0, clearTimeout() {},
     async fetch(url) {
       const path = String(url);
+      requested.push(path);
       // Cloned, because a real fetch hands back a fresh object every time. Returning the shared
       // fixture by reference lets one test's `data.calendars = []` reach every later test.
       const body = path.startsWith("/api/display-data") ? structuredClone(payload)
@@ -577,6 +579,7 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = 
   await new Promise((resolve) => setTimeout(resolve, 0));
   return {
     context,
+    requested,
     node,
     click: (id) => listeners.get(`${id}:click`)?.(),
     run: (source) => vm.runInContext(source, context),
@@ -585,6 +588,15 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = 
     text: () => node("departures").innerHTML.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
   };
 }
+
+test("a landing link overrides the saved board once, then allows another selection", async () => {
+  const view = await board({ query: "?landing=27", stored: { "nyc-ferry-did-selected-landing": "16" } });
+  assert.ok(view.requested.includes("/api/display-data?landingId=27"));
+  view.run('localStorage.setItem(landingKey, "17")');
+  assert.equal(view.run("selectedLanding()"), 17);
+  const invalid = await board({ query: "?landing=not-a-landing", stored: { "nyc-ferry-did-selected-landing": "16" } });
+  assert.ok(invalid.requested.includes("/api/display-data?landingId=16"));
+});
 
 test("the date stepper walks the schedule forwards and back, and returns to today", async () => {
   const view = await board();
@@ -838,16 +850,16 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 87 display assets", async () => {
+test("offline shell includes the current departure-link script", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
   assert.match(index, /styles\.css\?v=87/);
-  assert.match(index, /app\.js\?v=87/);
-  assert.match(worker, /nyc-ferry-did-shell-v87/);
+  assert.match(index, /app\.js\?v=89/);
+  assert.match(worker, /nyc-ferry-did-shell-v89/);
   assert.match(worker, /styles\.css\?v=87/);
-  assert.match(worker, /app\.js\?v=87/);
+  assert.match(worker, /app\.js\?v=89/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
@@ -996,7 +1008,8 @@ test("the map page draws itself from this origin alone", async () => {
   // The tile hosts are the one deliberate exception, so this pins them rather than forbidding them:
   // exactly two, both over TLS, and nothing else off this origin anywhere on the page. Adding a
   // third — an analytics beacon, a font, a CDN — has to be a decision somebody makes here.
-  const OFF_ORIGIN = /https?:\/\/(?!www\.w3\.org\/|www\.openseamap\.org\b)[^\s"'`)]+/g;
+  // Attribution links are navigation, not resources loaded by the page.
+  const OFF_ORIGIN = /https?:\/\/(?!www\.w3\.org\/|www\.openseamap\.org\b|www\.openstreetmap\.org\/copyright|carto\.com\/attributions)[^\s"'`)]+/g;
   const hosts = new Set();
   for (const source of [page, script, styles]) {
     for (const url of source.match(OFF_ORIGIN) || []) hosts.add(new URL(url).host);
@@ -1062,7 +1075,8 @@ test("anything given a transform-origin in the map's SVG also gets a transform-b
   for (const rule of styles.match(/[^{}]*\{[^}]*transform-origin[^}]*\}/g) || []) {
     assert.match(rule, /transform-box:\s*fill-box/, `a transform-origin without a transform-box:\n${rule}`);
   }
-  assert.match(styles, /\.boat-wake\s*\{[^}]*transform-box:\s*fill-box/);
+  // Wakes are now static; if animation returns, the loop above still guards its origin.
+  assert.doesNotMatch(styles, /\.boat-wake\s*\{[^}]*animation:/);
 });
 
 // A merge once shipped conflict markers in index.html and sw.js. Nothing caught it: the contract

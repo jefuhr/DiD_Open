@@ -24,7 +24,7 @@
   "23": { "name": "Stuyvesant Cove", "displayName": "Stuyvesant Cove / East 14th St", "stopIds": ["114"] },
   "24": { "name": "Sunset Park", "displayName": "Sunset Park / BAT", "stopIds": ["118"], "nyuStopIds": ["13139"] },
   "25": { "name": "Battery Park City", "displayName": "Battery Park City / Brookfield Place", "stopIds": ["136"], "waterwayStopIds": ["2729332"], "libertyStopIds": ["2557122"] },
-  "27": { "name": "Pier C", "displayName": "Pier C (Staff)", "virtual": true, "stopIds": ["home-port"], "latitude": 40.7045, "longitude": -73.974 },
+  "27": { "name": "Pier C", "displayName": "Pier C (Staff)", "virtual": true, "stopIds": ["home-port"], "latitude": 40.70372, "longitude": -73.97658 },
   "26": { "name": "Pier 79", "displayName": "Midtown West / Pier 79", "stopIds": ["138"], "waterwayStopIds": ["2439145"], "seastreakStopIds": ["8306"], "ikeaStopIds": ["midtown"] },
   "28": { "name": "Whitehall", "displayName": "Battery / Whitehall", "stopIds": [], "latitude": 40.70136, "longitude": -74.012666, "siferryStopIds": ["whitehall"], "seastreakStopIds": ["170"], "giStopIds": ["bmb"], "statueStopIds": ["BP"] },
   "29": { "name": "Soissons Landing", "displayName": "Governors Island / Soissons Landing", "stopIds": [], "latitude": 40.6893, "longitude": -74.0169, "giStopIds": ["soissons"] },

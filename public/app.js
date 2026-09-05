@@ -1571,7 +1571,14 @@ async function loadRealtime() {
   refreshTripConnections();
 }
 
+// A map link selects the initial board once; subsequent menu choices still work normally.
+let linkedLanding = Number(new URLSearchParams(location.search).get("landing"));
 function selectedLanding() {
+  if (Number.isInteger(linkedLanding) && linkedLanding > 0) {
+    const requested = linkedLanding;
+    linkedLanding = null;
+    return requested;
+  }
   const value = Number(localStorage.getItem(landingKey));
   return Number.isInteger(value) && value > 0 ? value : null;
 }
@@ -1975,7 +1982,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=87&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=89&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

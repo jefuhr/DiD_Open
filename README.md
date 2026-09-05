@@ -72,9 +72,26 @@ is deliberate: it is a second screen of the same app, not a second site, and the
 would give that away is a page that stays blue while the board has gone pink. the only fixed
 colours on it are the operators' own route colours, which are facts about the routes.
 
-the backdrop is **OpenStreetMap with [OpenSeaMap](https://www.openseamap.org)'s seamark layer over
-it** — the buoys, lights and channel marks. openseamap's own tiles are a transparent overlay and are
-nearly empty on their own, so they are drawn on the OSM base the same way openseamap.org draws them.
+the backdrop is a **bundled, themeable vector shoreline** sourced from OpenStreetMap through
+[CARTO's basemap](https://github.com/CartoDB/basemap-styles). It includes piers, islands, inlets and
+major roads. Street names stay subtle, with more labels appearing on zoom; landing names avoid
+overlapping one another. Bridges, navigation channels, lights and buoys are retained, with finer
+marine labels appearing on zoom. The marine information is a service reference, not a navigation
+chart or a guarantee of vessel clearance.
+
+The desktop vessel list sits beside the map; on phones it collapses to give the map more room.
+Route filters highlight vessels; route lines are hidden to keep the harbor clear. Tapping a landing
+marker or its visible name asks for confirmation before opening that landing's departure board. Vessel search and next-stop
+information support quick staff lookups. All nine board themes apply, including when the server
+blocks inline scripts. Pier C is positioned on the western Navy Yard pier using
+[its mapped footprint](https://www.openstreetmap.org/way/700015264).
+
+To refresh the geographic source, run `npm run build:shoreline`, then
+`node scripts/build-manhattan-details.js`, then `node scripts/build-harbor-chart.js`.
+The first two commands need network access (the shoreline builder also needs development
+dependencies). Manhattan's priority street labels and Central Park boundary are bundled in
+`content/manhattan-details.json`. Normal builds and startup use the bundled JSON. Source,
+date and ODbL license information are stored alongside each geographic dataset.
 
 everything on top of that is this server's own: the route lines come out of `gtfs/shapes.txt` and
 the docks out of [`config/landings.json`](./config/landings.json), built once at startup by
@@ -83,10 +100,11 @@ in [`public/assets/map.js`](./public/assets/map.js) — no map library — with 
 `ctrl`/`⌘` + scroll to zoom on a desktop. plain scrolling is left alone so the page can still be
 scrolled past.
 
-three things follow from having a tile layer at all, and they are the price of it:
+If a chart payload has no bundled backdrop, the map falls back to OpenStreetMap and OpenSeaMap
+raster tiles:
 
 - **the two tile hosts are the only exception in the Content-Security-Policy**, which is otherwise `default-src 'self'`. they are allowed for `img-src` and nothing else, so nothing off this origin can execute, fetch or style anything.
-- **the tiles are the only part of the page that needs a signal.** they are cross-origin, so the service worker does not cache them. with no network the backdrop is simply missing and the routes, docks and boats are drawn exactly as they were before there was one.
+- **the fallback tiles need a signal.** the normal vector backdrop makes no external tile requests and remains available with cached server data.
 - **the projection is Web Mercator**, because that is what raster tiles are cut to. drawn in anything else the route lines sit a few hundred metres off the water they are meant to be on.
 
 attribution is required by the licences and is printed in the corner of the map.
