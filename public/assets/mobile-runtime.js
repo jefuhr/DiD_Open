@@ -1,5 +1,23 @@
 /* Shared board/map primitives. No framework and no persistent DOM snapshots. */
 (() => {
+  // iOS standalone windows can disagree with fixed inset/dvh after resuming.
+  // Follow the visible viewport, but never resize the page around pinch zoom.
+  function syncViewport() {
+    if (document.documentElement.dataset.surface !== "app") return;
+    const viewport = globalThis.visualViewport;
+    if (viewport && viewport.scale !== 1) return;
+    const height = viewport?.height || globalThis.innerHeight;
+    if (!height) return;
+    const style = document.documentElement.style;
+    style.setProperty("--app-viewport-height", `${height}px`);
+    style.setProperty("--app-viewport-top", `${viewport?.offsetTop || 0}px`);
+  }
+  globalThis.addEventListener?.("resize", syncViewport);
+  globalThis.addEventListener?.("pageshow", syncViewport);
+  globalThis.visualViewport?.addEventListener("resize", syncViewport);
+  globalThis.visualViewport?.addEventListener("scroll", syncViewport);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncViewport(); });
+  syncViewport();
   const memory = new Map();
   const storage = {
     getItem(key) {
@@ -270,6 +288,7 @@
     };
   }
   globalThis.MobileRuntime = {
+    syncViewport,
     storage,
     request,
     reconcile,

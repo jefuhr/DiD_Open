@@ -522,3 +522,20 @@ test("unchanged service notices do not repeatedly announce their text", async (t
   observer.disconnect();
   assert.equal(records.length, 0);
 });
+
+test('the app follows visible viewport changes and leaves pinch zoom alone', async t => {
+  const p = await page(t);
+  const viewport = new p.w.EventTarget();
+  Object.assign(viewport, { height: 780, offsetTop: 0, scale: 1 });
+  Object.defineProperty(p.w, 'visualViewport', { value: viewport, configurable: true });
+  p.w.dispatchEvent(new p.w.Event('resize'));
+  const style = p.w.document.documentElement.style;
+  assert.equal(style.getPropertyValue('--app-viewport-height'), '780px');
+  Object.assign(viewport, { height: 400, offsetTop: 20 });
+  p.w.dispatchEvent(new p.w.Event('resize'));
+  assert.equal(style.getPropertyValue('--app-viewport-height'), '400px');
+  assert.equal(style.getPropertyValue('--app-viewport-top'), '20px');
+  Object.assign(viewport, { height: 200, scale: 2 });
+  p.w.dispatchEvent(new p.w.Event('resize'));
+  assert.equal(style.getPropertyValue('--app-viewport-height'), '400px');
+});
