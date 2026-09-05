@@ -1,19 +1,49 @@
 /* Shared board/map primitives. No framework and no persistent DOM snapshots. */
 (() => {
-  // iOS standalone windows can disagree with fixed inset/dvh after resuming.
-  // Follow the visible viewport, but never resize the page around pinch zoom.
+  // WebKit can omit the status-bar/safe-area height from visualViewport AND innerHeight
+  // in installed apps (webkit.org/b/254868). Copying that height into the shell reproduces
+  // the bottom gap. Use CSS 100vh in installed mode; measure the visual viewport only
+  // when an on-screen keyboard actually reduces it. Never size against screen.height:
+  // that would overflow iPad split windows and external displays.
+  let viewportProbe, keyboardOpen = false;
+  function installedViewportHeight() {
+    if (!viewportProbe) {
+      viewportProbe = document.createElement("div");
+      viewportProbe.setAttribute("aria-hidden", "true");
+      viewportProbe.style.cssText = "position:absolute;top:0;left:0;width:0;height:100vh;visibility:hidden;pointer-events:none;contain:strict;";
+      document.body.append(viewportProbe);
+    }
+    return viewportProbe.getBoundingClientRect().height || globalThis.innerHeight;
+  }
   function syncViewport() {
-    if (document.documentElement.dataset.surface !== "app") return;
+    const root = document.documentElement;
+    if (root.dataset.surface !== "app" && !document.body?.classList.contains("map-body")) return;
     const viewport = globalThis.visualViewport;
     if (viewport && viewport.scale !== 1) return;
-    const height = viewport?.height || globalThis.innerHeight;
+    const installed = globalThis.navigator?.standalone === true ||
+      globalThis.matchMedia?.("(display-mode: standalone), (display-mode: fullscreen)").matches;
+    let height = viewport?.height || globalThis.innerHeight;
     if (!height) return;
-    const style = document.documentElement.style;
-    style.setProperty("--app-viewport-height", `${height}px`);
-    style.setProperty("--app-viewport-top", `${viewport?.offsetTop || 0}px`);
+    if (installed && document.body) {
+      const fullHeight = installedViewportHeight();
+      const focused = document.activeElement;
+      const editing = focused?.matches("textarea, input:not([type=button]):not([type=submit]):not([type=checkbox]):not([type=radio]):not([type=range])") || focused?.isContentEditable;
+      // Keep following the keyboard through blur/its closing animation until the viewport
+      // recovers. A hardware keyboard, notch, or status bar alone must not shrink the shell.
+      keyboardOpen = !!((editing || keyboardOpen) && fullHeight - height > Math.max(120, fullHeight * .18));
+      if (!keyboardOpen) height = "100vh";
+    } else keyboardOpen = false;
+    root.dataset.keyboard = keyboardOpen ? "open" : "closed";
+    const style = root.style;
+    style.setProperty("--app-viewport-height", typeof height === "number" ? `${height}px` : height);
+    style.setProperty("--app-viewport-top", `${installed && !keyboardOpen ? 0 : viewport?.offsetTop || 0}px`);
   }
   globalThis.addEventListener?.("resize", syncViewport);
   globalThis.addEventListener?.("pageshow", syncViewport);
+  globalThis.addEventListener?.("orientationchange", syncViewport);
+  globalThis.matchMedia?.("(display-mode: standalone), (display-mode: fullscreen)").addEventListener?.("change", syncViewport);
+  document.addEventListener("focusin", syncViewport);
+  document.addEventListener("focusout", syncViewport);
   globalThis.visualViewport?.addEventListener("resize", syncViewport);
   globalThis.visualViewport?.addEventListener("scroll", syncViewport);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) syncViewport(); });
