@@ -123,3 +123,7 @@
 }
 .landing-menu-panel .landing-list { padding-bottom: 8px; }
 .landing-menu-panel > .landing-menu-head, .landing-menu-panel > .landing-search { flex-shrink: 0; }
+@media (max-width: 700px) {
+  /* Keep the selected vessel and map controls visible above the detail card. */
+  .map-body .vessel-card { max-height: 40%; width: calc(100% - 76px); }
+}

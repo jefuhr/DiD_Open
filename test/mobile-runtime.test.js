@@ -93,7 +93,7 @@ const deferred = () => {
 
 async function page(
   t,
-  { map = false, stored = {}, handler, brokenStorage = false } = {},
+  { map = false, stored = {}, handler, brokenStorage = false, query = "" } = {},
 ) {
   const markup = await readFile(
     new URL(
@@ -103,7 +103,7 @@ async function page(
     "utf8",
   );
   const dom = new JSDOM(markup, {
-    url: `https://ferry.test/ferryTimesMobile/${map ? "map" : ""}`,
+    url: `https://ferry.test/ferryTimesMobile/${map ? "map" : ""}${query}`,
     runScripts: "outside-only",
     pretendToBeVisual: true,
   });
@@ -538,4 +538,36 @@ test('the app follows visible viewport changes and leaves pinch zoom alone', asy
   Object.assign(viewport, { height: 200, scale: 2 });
   p.w.dispatchEvent(new p.w.Event('resize'));
   assert.equal(style.getPropertyValue('--app-viewport-height'), '400px');
+});
+
+test('a departure boat link starts with the vessel sheet collapsed', async t => {
+  const p = await page(t, { map: true, query: '?boat=Opportunity' });
+  assert.equal(p.node('#bottomSheet').dataset.state, 'peek');
+  assert.equal(p.node('#sheetHandle').getAttribute('aria-expanded'), 'false');
+  assert.equal(p.run('selectedId'), '19');
+});
+
+test('pan deltas remain stable across queued frames and cancellation never starts inertia', async t => {
+  const p = await page(t, { map: true });
+  const chart = p.node('#chart');
+  p.w.DOMPoint = class {
+    constructor(x,y) { this.x=x; this.y=y; }
+    matrixTransform(matrix) { return matrix.transform(this); }
+  };
+  chart.getScreenCTM = () => {
+    const [x,y,width] = chart.getAttribute('viewBox').split(' ').map(Number);
+    return { inverse: () => ({ transform: point => ({ x:x+point.x*width/390, y:y+point.y*width/390 }) }) };
+  };
+  chart.setPointerCapture = () => {};
+  p.run('setView({x:base.width/3,y:base.height/3,width:base.width/3})'); await p.flush();
+  const start = p.run('view.x');
+  const unit = Number(chart.getAttribute('viewBox').split(' ')[2])/390;
+  const fire = (type,x) => { const e = new p.w.Event(type); Object.assign(e,{pointerId:1,clientX:x,clientY:150}); chart.dispatchEvent(e); };
+  fire('pointerdown',100);
+  fire('pointermove',110); fire('pointermove',120);
+  assert.ok(Math.abs(p.run('view.x')-(start-20*unit))<.01);
+  await p.flush(); fire('pointermove',130);
+  assert.ok(Math.abs(p.run('view.x')-(start-30*unit))<.01);
+  fire('pointercancel',130); fire('lostpointercapture',130);
+  assert.equal(p.run('cameraAnimation'),null);
 });

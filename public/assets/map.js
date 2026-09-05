@@ -731,6 +731,9 @@ function zoomBy(factor, clientX, clientY, { animate = false } = {}) {
 const pointers = new Map();
 let grabbed = null;
 let pinchDistance = 0;
+let gestureView = null;
+let gestureMatrix = null;
+let pinchAnchor = null;
 let dragged = false;
 let pointerHistory = [];
 
@@ -743,19 +746,45 @@ function pinchSpan() {
   };
 }
 
+// All pointer samples in a gesture use one camera transform. The rendered SVG may
+// lag the logical camera by a frame, so reading its CTM on every move feeds pan
+// changes back into subsequent deltas and makes the camera jump.
+function gesturePoint(x, y) {
+  if (!gestureMatrix) return null;
+  const point = new DOMPoint(x, y).matrixTransform(gestureMatrix);
+  return { x: point.x, y: point.y };
+}
+function beginGesture() {
+  // Flush a queued camera position before capturing the new gesture's transform.
+  applyView();
+  gestureView = { ...view };
+  gestureMatrix = chart.getScreenCTM()?.inverse() || null;
+  pointerHistory = [];
+  if (pointers.size === 1) {
+    const first = [...pointers.values()][0];
+    grabbed = gesturePoint(first.x, first.y);
+    pinchDistance = 0;
+  } else if (pointers.size === 2) {
+    const span = pinchSpan();
+    grabbed = null;
+    pinchDistance = span.distance;
+    pinchAnchor = gesturePoint(span.clientX, span.clientY);
+  }
+}
+
 chart.addEventListener("pointerdown", (event) => {
   if (!view) return;
   cancelCameraAnimation();
   pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, originX: event.clientX, originY: event.clientY });
   pointerHistory = [{ x: event.clientX, y: event.clientY, time: Date.now() }];
   if (pointers.size === 1) {
-    grabbed = toDrawing(event.clientX, event.clientY);
+    beginGesture();
     dragged = false;
     chart.classList.add("is-dragging");
   } else if (pointers.size === 2) {
     dragged = true;
     grabbed = null;
-    pinchDistance = pinchSpan().distance;
+    beginGesture();
   }
 });
 
@@ -775,13 +804,17 @@ chart.addEventListener("pointermove", (event) => {
   if (pointerHistory.length > 5) pointerHistory.shift();
 
   if (pointers.size === 1 && grabbed) {
-    const drawingPos = toDrawing(event.clientX, event.clientY);
-    if (drawingPos) setView({ x: view.x - (drawingPos.x - grabbed.x), y: view.y - (drawingPos.y - grabbed.y), width: view.width });
+    const drawingPos = gesturePoint(event.clientX, event.clientY);
+    if (drawingPos) setView({ x: gestureView.x - (drawingPos.x - grabbed.x), y: gestureView.y - (drawingPos.y - grabbed.y), width: gestureView.width });
   } else if (pointers.size === 2 && pinchDistance > 0) {
     const span = pinchSpan();
     if (span.distance > 0) {
-      zoomBy(pinchDistance / span.distance, span.clientX, span.clientY);
-      pinchDistance = span.distance;
+      const point = gesturePoint(span.clientX, span.clientY);
+      if (!point || !pinchAnchor) return;
+      const width = Math.min(base.width, Math.max(base.width / MAX_ZOOM, gestureView.width * pinchDistance / span.distance));
+      const factor = width / gestureView.width;
+      setView({ x: pinchAnchor.x - (point.x - gestureView.x) * factor,
+        y: pinchAnchor.y - (point.y - gestureView.y) * factor, width });
     }
   }
 });
@@ -789,26 +822,35 @@ chart.addEventListener("pointermove", (event) => {
 for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
   chart.addEventListener(name, (event) => {
     if (name === "lostpointercapture" && chart.hasPointerCapture?.(event.pointerId)) return;
+    if (!pointers.has(event.pointerId)) return;
     pointers.delete(event.pointerId);
+    if (pointers.size === 1) beginGesture();
     if (pointers.size < 2) pinchDistance = 0;
     if (pointers.size === 0) {
       // Kinetic inertia glide if flicked
-      if (dragged && hasRaf && !reducedMotion?.matches && pointerHistory.length >= 2) {
+      if (name === "pointerup" && dragged && hasRaf && !reducedMotion?.matches && pointerHistory.length >= 2) {
         const last = pointerHistory.at(-1);
         const prev = pointerHistory[0];
         const dt = Math.max(1, last.time - prev.time);
-        if (dt < 180) {
+        if (dt < 180 && Date.now() - last.time < 80) {
           const ctm = chart.getScreenCTM();
           if (ctm) {
-            const scale = view.width / chart.getBoundingClientRect().width;
+            const inverse = ctm.inverse();
+            const origin = new DOMPoint(0, 0).matrixTransform(inverse);
+            const pixel = new DOMPoint(1, 0).matrixTransform(inverse);
+            const scale = Math.hypot(pixel.x - origin.x, pixel.y - origin.y);
             let vx = ((last.x - prev.x) / dt) * scale;
             let vy = ((last.y - prev.y) / dt) * scale;
             if (Math.hypot(vx, vy) > 0.08) {
-              const glide = () => {
-                vx *= 0.92;
-                vy *= 0.92;
+              let lastFrame = performance.now();
+              const glide = (now) => {
+                const elapsed = Math.min(32, Math.max(0, now - lastFrame));
+                lastFrame = now;
+                const decay = Math.pow(0.92, elapsed / 16.7);
+                vx *= decay;
+                vy *= decay;
                 if (Math.hypot(vx, vy) > 0.005 && view && base) {
-                  view = clampView({ x: view.x - vx * 16, y: view.y - vy * 16, width: view.width });
+                  view = clampView({ x: view.x - vx * elapsed, y: view.y - vy * elapsed, width: view.width });
                   applyView();
                   cameraAnimation = requestAnimationFrame(glide);
                 } else {
@@ -1069,6 +1111,12 @@ function hideSeamarkCard() {
 // ---------------------------------------------------------------- bottom sheet & search
 
 if (sheetHandle && bottomSheet) {
+  if (wanted) {
+    bottomSheet.dataset.state = "peek";
+    sheetHandle.setAttribute("aria-expanded", "false");
+    sheetHandle.setAttribute("aria-label", "Expand vessel list");
+    document.getElementById("sheetToggleText").textContent = "Expand";
+  }
   sheetHandle.addEventListener("click", () => {
     const next = bottomSheet.dataset.state === "peek" ? "half" : "peek";
     bottomSheet.dataset.state = next;
