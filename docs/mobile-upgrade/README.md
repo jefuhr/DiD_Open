@@ -1,7 +1,7 @@
 # Mobile console upgrade
 
-Latest follow-up: [installed app viewport fix](installed-viewport-fix.md), based on
-Claude's `4ddb87d` updates on local `mobile`, with a regression fixture for the iOS bottom gap.
+Latest follow-up: [the strip under the alert bar on an installed board](installed-viewport-fix.md),
+which replaces the first attempt at that gap, `4fad843`, and carries the regression fixture for it.
 
 Work lives on `jefuhr/mobile-console-upgrade`, based on local `mobile` at `1a97588`. The desktop-based `jefuhr/mobile-perf-animations` branch was left behind. No deployment or server API changes are included.
 

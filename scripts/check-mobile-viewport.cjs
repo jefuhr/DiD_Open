@@ -1,5 +1,7 @@
-// Reproduce WebKit's standalone viewport discrepancy explicitly. Ordinary phone emulation
-// reports equal CSS/visual heights and cannot catch this installed-app regression.
+// Reproduce the installed board's window/web-view mismatch explicitly. An installed iOS board is
+// handed a window whose CSS units cover the whole screen and a web view that stops one status bar
+// short of it, so the shell has to be sized by what is painted rather than by the window. Ordinary
+// phone emulation reports the two as equal and cannot catch a shell that overhangs the edge.
 const assert = require("assert");
 const { main } = require("./mobile-check-harness.cjs");
 const baseline = process.argv.includes("--baseline");
@@ -15,7 +17,7 @@ main("installed viewport", { api: {
     for (const asset of ["mobile-runtime.js", "mobile-console.css"])
       await page.route(`**/assets/${asset}?*`, (route) => route.fulfill({
         contentType: asset.endsWith(".js") ? "text/javascript" : "text/css",
-        body: execFileSync("git", ["show", `4ddb87d:public/assets/${asset}`])
+        body: execFileSync("git", ["show", `4fad843:public/assets/${asset}`])
       }));
   }
   const cdp = await page.context().newCDPSession(page);
@@ -23,7 +25,9 @@ main("installed viewport", { api: {
   await page.addInitScript(() => {
     // Init scripts precede the viewport meta tag: innerHeight can still use the 980px
     // desktop layout here. The fixture's initial device size is explicitly 390x844.
-    window.viewportFixture = { installed: true, layoutHeight: 844, missing: 47, height: null, top: 0, scale: 1, display: "browser" };
+    // `unpainted` is the part of that window the web view is not drawn in — the phone's screenshot
+    // showed 47 of 844, the height of the status bar the translucent style draws the board under.
+    window.viewportFixture = { installed: true, layoutHeight: 844, unpainted: 47, height: null, top: 0, scale: 1, display: "browser" };
     Object.defineProperty(navigator, "standalone", { get: () => viewportFixture.installed });
     const realMatchMedia = window.matchMedia.bind(window);
     window.matchMedia = (query) => {
@@ -33,10 +37,10 @@ main("installed viewport", { api: {
       });
       return result;
     };
-    const available = () => viewportFixture.layoutHeight - viewportFixture.missing;
-    Object.defineProperty(window, "innerHeight", { configurable: true, get: available });
+    const painted = () => viewportFixture.layoutHeight - viewportFixture.unpainted;
+    Object.defineProperty(window, "innerHeight", { configurable: true, get: painted });
     for (const [key, get] of Object.entries({
-      height: () => viewportFixture.height ?? available(),
+      height: () => viewportFixture.height ?? painted(),
       offsetTop: () => viewportFixture.top,
       scale: () => viewportFixture.scale
     })) Object.defineProperty(visualViewport, key, { configurable: true, get });
@@ -79,16 +83,17 @@ main("installed viewport", { api: {
     const shell = view === "board" ? "#screen" : ".map-body";
     const bottom = view === "board" ? "#serviceAlerts" : "#bottomSheet";
     assert.equal(await page.evaluate(() => visualViewport.height), 797);
-    await measure(`${view}: launch with 47px missing`, bottom, 844);
+    // The window is 844 and 100vh agrees; the last bar has to stop at 797, where the paint does.
+    await measure(`${view}: launch with 47px of the window unpainted`, bottom, 797);
     await shot(`viewport-${view}-${baseline ? "before" : "after"}.png`);
-    await change({ missing: 81 });
-    await measure(`${view}: both insets missing`, bottom, 844);
-    await change({ missing: 0 });
-    await measure(`${view}: correct browser metrics`, bottom, 844);
+    await change({ unpainted: 81 });
+    await measure(`${view}: a shorter web view still`, bottom, 763);
+    await change({ unpainted: 0 });
+    await measure(`${view}: a window that is painted all the way down`, bottom, 844);
     if (view === "board") {
       await page.locator("#menuButton").click();
       await page.waitForTimeout(250);
-      await measure("drawer: full screen", "#landingMenu", 844);
+      await measure("drawer: the same bounds as the board", "#landingMenu", 844);
       await page.locator("#landingSearch").focus();
     } else {
       await page.locator("#sheetHandle").click();
@@ -99,23 +104,22 @@ main("installed viewport", { api: {
     await measure(`${view}: keyboard`, shell, 420);
     if (view === "board") await measure("drawer: keyboard", "#landingMenu", 420);
     await page.evaluate(() => document.activeElement.blur());
-    await change({ height: 400, top: 20 });
-    await measure(`${view}: keyboard closing`, shell, 420);
-    await change({ height: null, missing: 47, top: 0 });
+    await change({ height: null, unpainted: 47, top: 0 });
     await page.evaluate(() => window.dispatchEvent(new Event("pageshow")));
-    await measure(`${view}: restored after keyboard/resume`, bottom, 844);
+    await measure(`${view}: restored after keyboard/resume`, bottom, 797);
     await change({ height: 390, scale: 2 });
-    await measure(`${view}: pinch zoom leaves layout still`, bottom, 844);
+    await measure(`${view}: pinch zoom leaves layout still`, bottom, 797);
     await change({ installed: false, scale: 1, height: 700 });
     await measure(`${view}: ordinary browser toolbar`, bottom, 700);
+    // Nothing branches on how the board was launched any more; these prove it stayed that way.
     for (const display of ["standalone", "fullscreen"]) {
       await change({ display, height: null });
-      await measure(`${view}: ${display} media query`, bottom, 844);
+      await measure(`${view}: ${display} media query`, bottom, 797);
     }
     for (const size of [{ width: 844, height: 390 }, { width: 768, height: 1024 }, { width: 1024, height: 768 }]) {
       await page.setViewportSize(size);
-      await change({ layoutHeight: size.height, missing: 21 });
-      await measure(`${view}: rotate/resize ${size.width}x${size.height}`, shell, size.height);
+      await change({ layoutHeight: size.height, unpainted: 21 });
+      await measure(`${view}: rotate/resize ${size.width}x${size.height}`, shell, size.height - 21);
     }
   }
   await save(`viewport-${baseline ? "baseline" : "checks"}.json`, results);

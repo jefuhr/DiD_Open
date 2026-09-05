@@ -1,43 +1,64 @@
-# Installed app bottom gap
+# The strip under the alert bar on an installed board
 
-Built on the latest local `mobile`, `4ddb87d`, including Claude's connection handling,
-chart delivery, shared asset-version stamping, and browser harness changes.
+Built on local `mobile`. Supersedes the first attempt at this, `4fad843`, which read the
+symptom backwards and cut the alert bar in half.
 
-The previous runtime copied `visualViewport.height` directly into the board's fixed
-height. In an installed iOS app that value can omit safe-area/status-bar space, even
-with `viewport-fit=cover`. `innerHeight` or fixed inset positioning alone is not a reliable
-fallback. This is documented in [WebKit 254868](https://bugs.webkit.org/show_bug.cgi?id=254868)
-and [237961](https://bugs.webkit.org/show_bug.cgi?id=237961).
+## What the phone actually showed
 
-The new browser fixture reproduces the resulting board gap by reporting 797px from
-both JavaScript measurements for an 844px window, with 47px top and 34px bottom safe
-areas. The actual device's measurements have not been captured; the screenshot is
-consistent with this failure, but the simulation is not physical iPhone confirmation.
+Two home-screen screenshots of the same iPhone (390×844pt, 3×), taken twenty-six minutes
+apart, measured pixel by pixel:
 
-Installed mode now uses CSS `100vh`, including during rotation and resume. Detection
-covers `navigator.standalone` and both standalone/fullscreen display media queries.
-Regular browser windows continue to track the visual viewport. Board, map, landing
-drawer, and modal panels share the same bounds; the root kiosk board remains unchanged.
-The implementation uses window-sized CSS units, not physical screen dimensions, so
-tablet windows can resize without overflowing onto the rest of the display.
+| | shell height | alert bar | painted down to |
+| --- | ---: | --- | ---: |
+| Before `4fad843` (shell sized from `visualViewport.height`) | 797pt | whole bar, home-indicator padding and all | 797pt |
+| After `4fad843` (shell sized `100vh` when installed) | 844pt | second line and padding gone, first line cut through the middle | 797pt |
 
-When an editable control is focused and the visual viewport substantially shrinks,
-the installed shell follows the keyboard height and offset. It keeps doing so through
-blur until the viewport recovers. Hardware-keyboard focus alone does not shrink it;
-pinch zoom leaves the layout still. Bottom safe-area padding remains inside the last
-surface, and is removed while the on-screen keyboard occupies that edge.
+The shell moved down by 47pt and the bar's last line disappeared, but the yellow ended on
+exactly the same screen row both times, with the same 47pt of page-background colour below
+it and the home indicator sitting in that strip.
+
+47pt is the status bar. That is the whole diagnosis: with
+`apple-mobile-web-app-status-bar-style: black-translucent`, iOS lets the board draw under the
+status bar and then gives it a web view one status bar shorter than the window, anchored to the
+top. The board is painted from 0 to 797 on an 844pt screen; the system fills the rest with the
+document's background colour, which is why the strip is canvas-coloured rather than white or
+navy, and why nothing the page does can reach it.
+
+The two measurements disagree because they answer different questions. `visualViewport.height`
+and `innerHeight` report 797 — what is on screen. CSS `vh` reports 844 — the window. `4fad843`
+took the difference as WebKit under-reporting and forced `100vh`, so the shell hung 47pt over
+the edge the screen stops painting at, and the last thing in it lost its bottom half. The
+`env(safe-area-inset-bottom)` iOS hands out is measured against that window too, which is why
+the bar's home-indicator clearance was landing 47pt above the home indicator.
+
+## The change
+
+- `public/index.html`, `public/map.html`: `default` instead of `black-translucent`. The web view
+  then starts below the status bar and ends at the screen's own bottom edge. This is the fix;
+  everything else keeps the board honest while it gets there.
+  `env(safe-area-inset-top)` goes to 0 to match, which every use of it here already tolerates —
+  they all add it to a padding rather than standing in for one.
+- `public/assets/mobile-runtime.js`, `public/assets/mobile-console.css`: the shell is measured
+  from the visual viewport again, with no branch on how the board was launched and no `100vh`.
+  A viewport unit describes the window; only `visualViewport` describes what is painted. The
+  keyboard is now recognised by the one thing that distinguishes it — it shrinks the visual
+  viewport without shrinking `innerHeight` — rather than by tracking focus, which also means the
+  bottom safe-area padding gets out of the way without any state to get stuck in.
+
+An already-installed icon may hold the status bar style it was added with. If the strip survives
+a deploy, remove the board from the home screen and add it again.
 
 ## Verification
 
-- 344 Node tests pass, including short installed metrics, keyboard focus/blur,
-  recovery, rotation, media-query detection, root-mounted maps, and kiosk isolation.
-- 28 browser geometry checks pass in `viewport-checks.json`, covering board/map,
-  missing one/both safe areas, correct metrics, full-height drawers, keyboard opening
-  and closing, resume, zoom, ordinary browser mode, and phone/tablet resizing.
-- The board's simulated 47px gap becomes 0px: alert-bar bottom 797 → 844. Its bottom
-  safe-area padding remains 34px. See `viewport-board-before.png` / `viewport-board-after.png`.
-- Existing route-layout checks (15 viewport/text-size combinations) and map-drag
-  checks pass. Browser runs report no uncaught page errors.
+- 344 Node tests pass, including the shell tracking the visual viewport on board and map, the
+  keyboard opening and closing, a shrink too small to be a keyboard, pinch zoom, rotation, and
+  the kiosk keeping the fixed screen it was drawn for.
+- 26 browser geometry checks pass in `viewport-checks.json`. The fixture reports a window of 844
+  with 47 of it unpainted, as the phone does, and every check asserts that a shell, drawer, sheet
+  or alert bar ends where the paint ends. `viewport-baseline.json` is the same run against
+  `4fad843`: it overshoots in nine of the thirteen cases per view — every one where the window is
+  larger than what is painted in it.
+- Existing route-layout and map-drag checks pass; the browser runs report no page errors.
 
 Run an application server at `MOBILE_TEST_ORIGIN` (default `http://127.0.0.1:8094`), then:
 
@@ -49,11 +70,11 @@ npm run test:mobile-route-layout
 npm run test:mobile-map-drag
 ```
 
-The baseline pins the runtime and console stylesheet to `4ddb87d`. The new check uses
-Claude's shared Chromium harness, explicit safe-area overrides, and controlled viewport
-measurements. These model the known WebKit failure; desktop Chromium does not reproduce
-the iOS system web-app container itself. Physical iPhone home-screen launch, keyboard,
-rotation, and resume still need confirmation. No deployment was performed.
+The limit worth stating plainly: Chromium can be told to report a short visual viewport, so the
+shell-sizing half of this is genuinely tested. It cannot reproduce an iOS web view that is
+smaller than its window, so the screenshots here show the shell stopping at 797 rather than the
+screen doing it, and the status bar change itself — the part that removes the strip — has been
+reasoned from the two device screenshots and not reproduced on a physical iPhone. Home-screen
+launch, rotation and resume still need confirming on the phone.
 
-Asset version is 95, generated with `npm run stamp:bump`; existing installed clients
-can receive the coordinated shell update when this change is deployed.
+Asset version 96, generated with `npm run stamp:bump`. No deployment was performed.

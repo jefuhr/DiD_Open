@@ -80,11 +80,10 @@
 }
 :root { --app-safe-bottom: env(safe-area-inset-bottom, 0px); }
 :root[data-keyboard="open"] { --app-safe-bottom: 0px; }
-/* CSS fills installed windows even before runtime loads. visualViewport can be shorter
-   by the status-bar height on iOS; it is used only for the keyboard in that mode. */
-@media (display-mode: standalone), (display-mode: fullscreen) {
-  :root { --app-viewport-height: 100vh; }
-}
+/* The shell is the visible viewport, measured, never a viewport unit. A unit describes the window
+   the page was given; on an installed iOS board that window is taller than the web view drawn in
+   it, and a shell in vh hangs its last bar over the edge where the screen stops painting. 100dvh is
+   only the value that holds until the runtime's first measurement. */
 :root[data-surface="app"] :is(.screen, .landing-menu, .filter-menu), .map-body {
   position: fixed; top: var(--app-viewport-top, 0px); right: 0; bottom: auto; left: 0;
   height: var(--app-viewport-height, 100dvh);

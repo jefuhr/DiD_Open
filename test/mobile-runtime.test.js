@@ -540,59 +540,52 @@ test('the app follows visible viewport changes and leaves pinch zoom alone', asy
   assert.equal(style.getPropertyValue('--app-viewport-height'), '400px');
 });
 
-test('installed board and map ignore short iOS viewport metrics until the keyboard opens', async t => {
+test('the installed board and map are sized by what is painted, not by the window', async t => {
   for (const map of [false, true]) {
     const p = await page(t, { map });
     const root = p.w.document.documentElement;
     // Root-mounted maps are still app surfaces; the root departure board is a kiosk.
     if (map) root.dataset.surface = 'kiosk';
     Object.defineProperty(p.w.navigator, 'standalone', { value: true });
+    // An installed iOS board: the window is 844 and CSS vh says so, but the web view drawn in it
+    // is one status bar shorter. 797 is the number that is on screen, so it is the shell's height.
     Object.defineProperty(p.w, 'innerHeight', { value: 797, configurable: true });
-    let fullHeight = 844;
-    p.w.HTMLElement.prototype.getBoundingClientRect = function () {
-      return { height: this.style.height === '100vh' ? fullHeight : 0 };
-    };
     const viewport = new p.w.EventTarget();
-    Object.assign(viewport, { height: 797, offsetTop: 47, scale: 1 });
+    Object.assign(viewport, { height: 797, offsetTop: 0, scale: 1 });
     Object.defineProperty(p.w, 'visualViewport', { value: viewport });
     const resize = (values) => {
       Object.assign(viewport, values);
       p.w.dispatchEvent(new p.w.Event('resize'));
     };
     resize({});
-    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '100vh');
+    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '797px');
     assert.equal(root.style.getPropertyValue('--app-viewport-top'), '0px');
-    // Both safe areas omitted, and a focused search with a hardware keyboard: still full height.
-    p.node(map ? '#boatSearch' : '#landingSearch').focus();
+    assert.equal(root.dataset.keyboard, 'closed');
+    // A safe area appearing or a toolbar sliding in is not a keyboard: follow it, and leave the
+    // home indicator's clearance inside the last bar where it belongs.
     resize({ height: 763 });
-    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '100vh');
+    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '763px');
     assert.equal(root.dataset.keyboard, 'closed');
     resize({ height: 400, offsetTop: 20 });
     assert.equal(root.style.getPropertyValue('--app-viewport-height'), '400px');
     assert.equal(root.style.getPropertyValue('--app-viewport-top'), '20px');
     assert.equal(root.dataset.keyboard, 'open');
-    p.w.document.activeElement.blur();
-    resize({});
-    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '400px');
     resize({ height: 797, offsetTop: 0 });
+    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '797px');
     assert.equal(root.dataset.keyboard, 'closed');
-    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '100vh');
     resize({ height: 400, scale: 2 });
-    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '100vh');
-    // Rotation changes CSS vh directly; a stale portrait reading must not get frozen in pixels.
-    fullHeight = 390;
+    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '797px');
+    // Rotation: a landscape window is short without a keyboard being anywhere near it.
+    Object.defineProperty(p.w, 'innerHeight', { value: 390, configurable: true });
     resize({ height: 369, scale: 1 });
+    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '369px');
     assert.equal(root.dataset.keyboard, 'closed');
-    assert.equal(root.style.getPropertyValue('--app-viewport-height'), '100vh');
   }
 });
 
-test('installed display media queries work without navigator.standalone and leave the kiosk alone', async t => {
+test('the kiosk board keeps the fixed screen it was drawn for', async t => {
   const p = await page(t);
-  p.w.matchMedia = query => ({ matches: query.includes('display-mode: fullscreen') });
-  p.w.dispatchEvent(new p.w.Event('resize'));
   const root = p.w.document.documentElement;
-  assert.equal(root.style.getPropertyValue('--app-viewport-height'), '100vh');
   root.dataset.surface = 'kiosk';
   root.style.removeProperty('--app-viewport-height');
   p.w.dispatchEvent(new p.w.Event('resize'));
