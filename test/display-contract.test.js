@@ -348,13 +348,13 @@ test("partner operators show their mark in the route badge", async () => {
   assert.match(worker, /\/assets\/cityferry\.png/);
 });
 
-test("two directly accessible buttons swap the departure view", async () => {
+test("two buttons at the bottom of the landing drawer swap the departure view", async () => {
   const [app, css, index] = await Promise.all([
     readFile(appPath, "utf8"), readFile(cssPath, "utf8"), readFile(indexPath, "utf8")
   ]);
   // Both buttons sit above the landing list, and each reports its own pressed state so the
   // active view is announced rather than only shown by colour.
-  const panel = index.slice(index.indexOf('class="board-footer"'), index.indexOf('id="landingMenuPanel"'));
+  const panel = index.slice(index.indexOf('id="landingMenuPanel"'), index.indexOf('</nav>', index.indexOf('id="landingMenuPanel"')));
   assert.match(panel, /class="sort-toggle" role="group" aria-label="Sort departures"/);
   assert.match(panel, /id="sortByRoute" data-sort="route" aria-pressed="false"/);
   assert.match(panel, /id="sortByTime" data-sort="time" aria-pressed="true"/);
@@ -860,23 +860,23 @@ test("offline shell includes the current departure-link script", async () => {
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=91/);
-  assert.match(index, /app\.js\?v=91/);
-  assert.match(worker, /nyc-ferry-did-shell-v91/);
-  assert.match(worker, /styles\.css\?v=91/);
-  assert.match(worker, /app\.js\?v=91/);
+  assert.match(index, /styles\.css\?v=92/);
+  assert.match(index, /app\.js\?v=92/);
+  assert.match(worker, /nyc-ferry-did-shell-v92/);
+  assert.match(worker, /styles\.css\?v=92/);
+  assert.match(worker, /app\.js\?v=92/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=91"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=91"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=91"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=92"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=92"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=92"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=91'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=92'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=91'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=92'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of

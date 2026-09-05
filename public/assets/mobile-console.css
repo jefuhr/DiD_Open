@@ -112,3 +112,14 @@
   :root[data-surface="app"] .clock time { font-family: inherit; font-size: .8125rem; }
   :root[data-surface="app"] .clock span { font-size: .625rem; white-space: normal; text-align: right; }
 }
+
+/* A scrolling flex column must never shrink route cards to fit the viewport. */
+:root[data-surface="app"] .departures[data-view="routes"] > .departure { flex: 0 0 auto; }
+.landing-menu-panel { height: 100%; }
+:root[data-surface="app"] .landing-menu-panel .sort-toggle,
+.landing-menu-panel .sort-toggle {
+  flex: 0 0 auto; margin-top: auto; padding: 12px 14px max(12px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line); border-bottom: 0;
+}
+.landing-menu-panel .landing-list { padding-bottom: 8px; }
+.landing-menu-panel > .landing-menu-head, .landing-menu-panel > .landing-search { flex-shrink: 0; }

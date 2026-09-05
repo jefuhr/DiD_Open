@@ -2010,11 +2010,6 @@ document.addEventListener("keydown", (event) => {
   else if (event.key === "ArrowRight") stepDate(1);
 });
 
-if (document.documentElement.dataset.surface === "kiosk") {
-  const sort = document.querySelector(".sort-toggle");
-  const search = document.querySelector(".landing-search");
-  if (sort && search) search.before(sort);
-}
 railMedia.addEventListener("change", applyRail);
 applyRail();
 applyTheme();
@@ -2043,7 +2038,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=91&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=92&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
