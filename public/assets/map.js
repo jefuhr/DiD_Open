@@ -1302,6 +1302,13 @@ function followWanted() {
   return "";
 }
 
+// What the chip says and how it is dressed are decided together, so the word and the colour cannot
+// drift apart the way an "Offline" label sitting on the stale styling did.
+function setFeedStatus(label, state) {
+  if (statusText) statusText.textContent = label;
+  const chip = document.getElementById("mapStatus");
+  if (chip) chip.dataset.state = state;
+}
 function applyPositions(payload, saved = false) {
   boats = payload.boats || [];
   updateHeadings(boats);
@@ -1311,11 +1318,27 @@ function applyPositions(payload, saved = false) {
   renderList();
   const stale = saved || payload.stale;
   const at = payload.fetchedAt ? new Date(payload.fetchedAt) : null;
-  statusText.textContent = stale ? "Saved" : !payload.available ? "No feed" : "Live";
-  document.getElementById("mapStatus").dataset.state = stale ? "stale" : !payload.available ? "offline" : "live";
-  document.getElementById("feedNote").textContent = `${at && Number.isFinite(+at) ? `Updated ${timeLabel.format(at)} · ` : ""}NYC Ferry positions · Refreshes every 15s`;
+  if (stale) setFeedStatus("Saved", "stale");
+  else if (!payload.available) setFeedStatus("No feed", "offline");
+  else setFeedStatus("Live", "live");
+  const note = document.getElementById("feedNote");
+  if (note) note.textContent = `${at && Number.isFinite(+at) ? `Updated ${timeLabel.format(at)} · ` : ""}NYC Ferry positions · Refreshes every 15s`;
   message(stale ? `Saved positions${at && Number.isFinite(+at) ? `, at ${timeLabel.format(at)}` : ""} · refreshing when connected. These positions may be out of date.`
     : !payload.available ? "The vessel feed is not answering. Nothing here is current." : following);
+}
+// Only the small half of the harbor is kept locally. Bounds, routes and docks are 13 KB together;
+// the chart backdrop is a megabyte of landmass and street geometry. Writing the whole thing on
+// every load overruns Safari's 5 MB origin quota — which fails silently, so the cache never worked
+// — and spends that quota against the saved schedules, which are the ones that matter offline.
+// The backdrop still comes back offline: the service worker caches /api/map like every other API
+// response, so it arrives a beat after the docks rather than not at all.
+const GEOMETRY_KEY = "nyc-ferry-map-geometry";
+function localHarbor({ bounds, routes, landings }) {
+  return { bounds, routes, landings };
+}
+// Cheap enough to run on every refresh, unlike stringifying the chart to compare it with itself.
+function harborFingerprint(value) {
+  return `${JSON.stringify(localHarbor(value))}|${value.chart?.generatedAt || ""}`;
 }
 async function load() {
   // Both requests start together. Geometry failure does not suppress the vessel roster.
@@ -1324,10 +1347,10 @@ async function load() {
     const payload = await response.json();
     if (!payload.bounds || !Array.isArray(payload.landings) || !Array.isArray(payload.routes)) throw new Error();
     geometryFresh = true;
-    const unchanged = harbor && JSON.stringify(harbor) === JSON.stringify(payload);
+    const unchanged = harbor && harborFingerprint(harbor) === harborFingerprint(payload);
     const previousView = view && { ...view };
     harbor = payload;
-    storage.setItem("nyc-ferry-map-geometry", JSON.stringify(harbor));
+    storage.setItem(GEOMETRY_KEY, JSON.stringify(localHarbor(payload)));
     if (!unchanged) {
       drawHarbor();
       if (previousView) { view = clampView(previousView); applyView(); }
@@ -1340,14 +1363,16 @@ async function load() {
     return payload;
   });
   const results = await Promise.allSettled([geometry, positions]);
-  if (results[1].status === "fulfilled") applyPositions(results[1].value);
-  else {
-    statusText.textContent = boats.length ? "Saved" : "Offline";
-    document.getElementById("mapStatus").dataset.state = "stale";
-    message("Could not reach the server. Any displayed positions may be out of date.");
+  if (results[1].status === "fulfilled") {
+    applyPositions(results[1].value);
+    return;
   }
+  // "Saved" describes boats that are on screen. With none drawn there is nothing saved to describe.
+  if (boats.length) setFeedStatus("Saved", "stale");
+  else setFeedStatus("Offline", "offline");
+  message("Could not reach the server. Any displayed positions may be out of date.");
 }
-const savedHarbor = storage.json("nyc-ferry-map-geometry");
+const savedHarbor = storage.json(GEOMETRY_KEY);
 if (savedHarbor?.bounds && Array.isArray(savedHarbor.landings) && Array.isArray(savedHarbor.routes)) {
   harbor = savedHarbor;
   drawHarbor();

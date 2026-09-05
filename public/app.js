@@ -64,6 +64,10 @@ const elements = {
   sortOptions: [...document.querySelectorAll("[data-sort]")]
 };
 
+// The prefix for every localStorage key this board owns: the chosen landing, the favourites, the
+// theme, the hidden operators and the saved schedules. It resembles the service worker's cache
+// names and is deliberately not versioned with them — bumping it would orphan all of that on every
+// device on every release. scripts/stamp-assets.js scopes its rewrite to sw.js for this reason.
 const cacheKey = "nyc-ferry-did-data-v6";
 // Which landing this device is showing. Persisted so an agent's choice survives a reload and
 // so an offline start knows which cached board to restore.
@@ -127,7 +131,10 @@ let viewDate = null;
 let tripView = null;
 let tripRequest = 0;
 let data;
-let realtime = { updates: [], vehicles: [], available: false, stale: true };
+// `stale` gates whether live timings may be trusted; `cached` says whether there is saved data
+// behind them at all. A device that has never reached the feed is stale without being cached, and
+// the two have to be told apart because only one of them can honestly be called "Saved".
+let realtime = { updates: [], vehicles: [], available: false, stale: true, cached: false };
 let serviceAlerts = null;
 let manualOverride = { active: false, message: "", updatedAt: null };
 
@@ -1586,13 +1593,19 @@ async function loadRealtime() {
     if (!response.ok) throw new Error();
     const payload = await response.json();
     if (generation !== landingRequest || token !== realtimeRequest) return;
-    realtime = payload;
+    // A snapshot the service worker served is saved data too, just saved a layer further out.
+    realtime = { ...payload, cached: Boolean(payload.stale) };
     storage.setItem(key, JSON.stringify(payload));
   } catch {
     if (generation !== landingRequest || token !== realtimeRequest) return;
-    realtime = { ...storage.json(key, { updates: [], vehicles: [], available: false }), stale: true };
+    const saved = storage.json(key);
+    realtime = saved
+      ? { ...saved, stale: true, cached: true }
+      : { updates: [], vehicles: [], available: false, stale: true, cached: false };
   }
-  reconcileHTML(elements.status, `<i></i><span>${scheduleSaved ? "Saved schedule" : realtime.stale ? "Saved" : "Live"}</span>`);
+  reconcileHTML(elements.status, `<i></i><span>${
+    scheduleSaved ? "Saved schedule" : !realtime.stale ? "Live" : realtime.cached ? "Saved" : "Local schedule"
+  }</span>`);
   render();
   refreshTripConnections();
 }
@@ -1639,7 +1652,10 @@ async function load(selected = selectedLanding()) {
     setTripOpen(false);
     manualOverride = { active: false };
     renderManualOverride();
-    realtime = { ...storage.json(`${cacheKey}-realtime-${selected}`, { updates: [], vehicles: [] }), stale: true };
+    const savedRealtime = storage.json(`${cacheKey}-realtime-${selected}`);
+    realtime = savedRealtime
+      ? { ...savedRealtime, stale: true, cached: true }
+      : { updates: [], vehicles: [], available: false, stale: true, cached: false };
     data = null;
     void loadManualOverride();
   }

@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
 import { landingChoices, loadAllLandingData, operatorRoster, stopIdsForLanding } from "./lib/landing-data.js";
 import { clampLimit, createConnectionIndex, tripConnections, vesselsByBoat } from "./lib/connections.js";
 import { createCounterService } from "./lib/counters.js";
@@ -29,7 +30,7 @@ const sftpConfig = await loadSftpOverrideConfig({ configPath: SFTP_CONFIG, rootP
 // stay scoped to one landing and partner operators docking elsewhere never get fetched at all.
 const LANDING_CHOICES = landingChoices(JSON.parse(await readFile(path.join(ROOT, "config/landings.json"), "utf8")));
 const landingData = await loadAllLandingData({ root: ROOT, choices: LANDING_CHOICES });
-const displayDataJson = new Map([...landingData.byLanding].map(([id, data]) => [id, `${JSON.stringify(data)}\n`]));
+const displayDataJson = new Map([...landingData.byLanding].map(([id, data]) => [id, precompressed(`${JSON.stringify(data)}\n`)]));
 // The filter panel is per device and spans every landing, so it needs the whole roster rather
 // than whatever the landing on screen happens to carry.
 const OPERATORS = operatorRoster(landingData.byLanding);
@@ -40,7 +41,7 @@ console.log(`Loaded ${landingData.byLanding.size} of ${LANDING_CHOICES.length} l
 // trip index that turns "in transit to stop 4 of trip 863" into the name of a landing. Built once
 // from the bundled feed, which is the same contract the landing data above has.
 const harbor = await loadHarborMap({ root: ROOT, landings: landingData.available });
-const harborMapJson = `${JSON.stringify(harbor.map)}\n`;
+const harborMapJson = precompressed(`${JSON.stringify(harbor.map)}\n`);
 console.log(`Charted ${harbor.map.routes.length} routes and ${harbor.map.landings.length} docks for the map.`);
 
 const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json") });
@@ -125,7 +126,41 @@ function headers(response) {
   // are all still drawn from this server's own data.
   response.setHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https://tile.openstreetmap.org https://tiles.openseamap.org; style-src 'self'; script-src 'self'; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
 }
-function json(response, status, body) { headers(response); response.writeHead(status, { "Content-Type": TYPES[".json"], "Cache-Control":"no-cache" }); response.end(`${JSON.stringify(body)}\n`); }
+// Nothing between this server and a phone compresses, and the map's chart alone is a megabyte of
+// JSON on a cellular connection. Below roughly one packet there is nothing to win, so small
+// answers go out as they always did rather than paying for a header and a deflate.
+const COMPRESS_MIN_BYTES = 1400;
+function acceptsGzip(request) {
+  return /(^|,)\s*gzip\s*(;|,|$)/i.test(request?.headers?.["accept-encoding"] || "");
+}
+// The two large bodies never change between restarts, so they are deflated once at boot instead of
+// on every request. Everything else is small enough that compressing it inline is cheaper than
+// keeping a second copy of it in memory.
+function precompressed(body) {
+  return { raw: body, gzip: gzipSync(body) };
+}
+// `body` is either a string or a { raw, gzip } pair from precompressed(). The request is taken off
+// the response rather than threaded through twenty call sites; Node has linked the two since 15.
+function send(response, status, extraHeaders, body) {
+  const raw = typeof body === "string" ? body : body.raw;
+  const gzip = !acceptsGzip(response.req) ? null
+    : typeof body === "string"
+      ? (Buffer.byteLength(raw) >= COMPRESS_MIN_BYTES ? gzipSync(raw) : null)
+      : body.gzip;
+  const payload = gzip || Buffer.from(raw);
+  headers(response);
+  response.writeHead(status, {
+    ...extraHeaders,
+    "Content-Length": payload.length,
+    // A shared cache keyed on the URL alone must not hand a deflated body to a client that asked
+    // for plain text. /api/map is the one response here with a public max-age, and it is also the
+    // one worth compressing most.
+    "Vary": "Accept-Encoding",
+    ...(gzip ? { "Content-Encoding": "gzip" } : {})
+  });
+  response.end(payload);
+}
+function json(response, status, body) { send(response, status, { "Content-Type": TYPES[".json"], "Cache-Control":"no-cache" }, `${JSON.stringify(body)}\n`); }
 async function serve(response, file) {
   try { const info = await stat(file); if (!info.isFile()) throw new Error(); const extension = path.extname(file); const noCache = [".html", ".css", ".js"].includes(extension) || path.basename(file) === "sw.js"; headers(response); response.writeHead(200, { "Content-Type": TYPES[extension] || "application/octet-stream", "Content-Length": info.size, "Cache-Control": noCache ? "no-cache, must-revalidate" : "public, max-age=3600" }); createReadStream(file).pipe(response); }
   catch { json(response, 404, { error: "Not found" }); }
@@ -161,9 +196,7 @@ async function handle(request, response) {
     // that failed to build at startup — stale published times beat a blank board.
     try {
       const body = built ?? await readFile(DATA, "utf8");
-      headers(response);
-      response.writeHead(200, { "Content-Type":TYPES[".json"], "Cache-Control":"no-cache" });
-      return response.end(body);
+      return send(response, 200, { "Content-Type":TYPES[".json"], "Cache-Control":"no-cache" }, body);
     } catch (error) { return json(response, 503, { error:"Display data unavailable", detail:error.message }); }
   }
   // NYU's live estimates ride along in the same payload: its updates are already namespaced with
@@ -203,9 +236,7 @@ async function handle(request, response) {
   // which is worth an hour of browser cache: it is by far the largest thing the map page fetches
   // and by far the least likely to have changed since the last time it was asked for.
   if (url.pathname === "/api/map") {
-    headers(response);
-    response.writeHead(200, { "Content-Type": TYPES[".json"], "Cache-Control": "public, max-age=3600" });
-    return response.end(harborMapJson);
+    return send(response, 200, { "Content-Type": TYPES[".json"], "Cache-Control": "public, max-age=3600" }, harborMapJson);
   }
   // The map's live half, read off the same cached snapshot /api/realtime uses. Ages are measured
   // against the snapshot rather than against now, so a cache being served during an upstream outage

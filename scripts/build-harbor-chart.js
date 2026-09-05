@@ -1,6 +1,6 @@
 // Generates modern vector cartography for New York Harbor.
 //
-// Produces content/harbor-chart.json and public/assets/harbor-chart.json.
+// Produces content/harbor-chart.json, which the server folds into /api/map at boot.
 // Contains:
 // 1. Waterways and Landmass (shoreline polygons for boroughs and islands)
 // 2. Major streets only (arterials and expressways)
@@ -720,6 +720,10 @@ export function buildHarborChartData() {
   };
 }
 
+// Written to content/ only. There used to be a byte-identical copy at public/assets/, which put a
+// second megabyte in the repository that nothing ever fetched: the map page reads the chart out of
+// /api/map, which the server builds from the content/ copy at boot. A file under public/ is a file
+// the world can download, so a spare one is not free.
 export async function writeHarborChart(options = {}) {
   const root = options.root || ROOT;
   const data = buildHarborChartData();
@@ -728,10 +732,6 @@ export async function writeHarborChart(options = {}) {
   const contentDir = path.join(root, "content");
   await mkdir(contentDir, { recursive: true });
   await writeFile(path.join(contentDir, "harbor-chart.json"), json, "utf8");
-
-  const assetsDir = path.join(root, "public/assets");
-  await mkdir(assetsDir, { recursive: true });
-  await writeFile(path.join(assetsDir, "harbor-chart.json"), json, "utf8");
 
   return data;
 }

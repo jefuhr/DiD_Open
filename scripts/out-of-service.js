@@ -58,6 +58,11 @@ export function boatRuns({ trips, timesByTrip, boatAssignments }) {
   return runs;
 }
 
+// A turn is a pause, not a lay-up. Ninety minutes is far longer than any scheduled turn and far
+// shorter than a boat that ties up and waits out the midday lull, so it separates the two without
+// having to guess at either.
+const MAX_TURNAROUND_SECONDS = 90 * 60;
+
 // The ordinary pause between two trips worked by the same boat at the same terminal.
 //
 // A route/number identifies a working, not necessarily one physical hull. At a published shift
@@ -74,6 +79,9 @@ export function turnaroundLayovers({ runs, endsShift = new Map() }) {
       if (run.endStopId !== next.startStopId) continue;
       const scheduledLayoverSeconds = next.startSeconds - run.endSeconds;
       if (scheduledLayoverSeconds < 0) continue;
+      // A gap this long is the boat standing down between peaks, not turning round. Saying
+      // "scheduled 240 min" beside a call would read as a turn that nobody is waiting through.
+      if (scheduledLayoverSeconds > MAX_TURNAROUND_SECONDS) continue;
       byTrip.set(run.tripId, {
         stopId: run.endStopId,
         nextTripId: next.tripId,

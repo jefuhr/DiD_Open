@@ -235,11 +235,27 @@ test("a terminal turnaround reports its live eta and the break left after both d
   assert.equal(terminal.estimatedArrivalSeconds, 44700, "the terminal clock becomes the live 12:25 eta");
   assert.deepEqual(terminal.turnaround, {
     scheduledSeconds: 300,
-    estimatedSeconds: -180,
+    estimatedSeconds: 0,
     hasLiveTiming: true
-  }, "a five-minute scheduled turn becomes negative when the incoming delay outruns the return delay");
+  }, "an incoming delay that outruns the return delay leaves no turn, not a negative one");
   assert.equal(result.stops[0].turnaround, null, "only the terminating call owns the layover");
   assert.equal(result.stops[0].estimatedArrivalSeconds, null, "intermediate clocks stay scheduled");
+});
+
+// The ordinary shape of a late turn, and the reason the floor above is not a rounding nicety: the
+// arriving trip's delay is normally published before the departing trip's, so for a minute or two
+// every late boat in the harbor looks like this.
+test("a late arrival with no return delay yet reports no turn left rather than a negative one", () => {
+  const view = index([departure({ tripId: "turn", stopId: "18", seconds: 44400, departureTime: "12:20:00" })]);
+  const result = tripConnections({
+    index: view, tripId: "t1", now: new Date("2026-08-27T15:00:00Z"),
+    updates: new Map([["t1|18", { delaySeconds: 1200 }]])
+  });
+  assert.deepEqual(result.stops.at(-1).turnaround, {
+    scheduledSeconds: 300,
+    estimatedSeconds: 0,
+    hasLiveTiming: true
+  });
 });
 
 test("turnarounds use schedule timing for a missing leg and fall back when realtime is unsafe", () => {
