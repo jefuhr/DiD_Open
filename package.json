@@ -15,7 +15,11 @@
     "dev": "node --watch server.js",
     "test": "node --test",
     "build:shoreline": "node scripts/build-harbor-shoreline.js",
-    "test:mobile-browser": "node scripts/check-mobile-browser.cjs"
+    "stamp": "node scripts/stamp-assets.js",
+    "stamp:bump": "node scripts/stamp-assets.js --bump",
+    "test:mobile-browser": "node scripts/check-mobile-browser.cjs",
+    "test:mobile-map-drag": "node scripts/check-mobile-map-drag.cjs",
+    "test:mobile-route-layout": "node scripts/check-mobile-route-layout.cjs"
   },
   "dependencies": {
     "gtfs-realtime-bindings": "2.1.0",

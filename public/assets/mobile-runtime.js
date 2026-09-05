@@ -89,6 +89,16 @@
       focused.focus({ preventScroll: true });
     if (parent.scrollTop !== scroll) parent.scrollTop = scroll;
   }
+  // Patches the existing nodes in place rather than replacing them, so focus, scroll, text
+  // selection and running animations survive a re-render.
+  //
+  // The consequence worth knowing before you build nodes to pass in here: a matched node is the
+  // OLD one with the new one's attributes copied onto it, and the new one is discarded. Anything
+  // that is not an attribute goes with it — most importantly addEventListener. A fresh node's
+  // handler never runs; the handler attached the first time does, closing over whatever it closed
+  // over then. Either delegate the listener to a stable ancestor (the map does this on `chart`) or
+  // make the handler read current state rather than captured state (the vessel card calls
+  // `select(selectedId)`, not `select(boat.id)`, for exactly this reason).
   function reconcileNodes(parent, incoming) {
     const old = [...parent.childNodes];
     const key = (node) =>

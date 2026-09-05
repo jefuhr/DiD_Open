@@ -14,10 +14,10 @@
 :root[data-surface="app"] .sort-toggle { margin: 0; padding: 0; gap: 4px; flex: 1 0 100%; }
 :root[data-surface="app"] .sort-option { min-height: 44px; font-size: 14px; }
 :root[data-surface="app"] .departures { gap: 12px; align-content: start; grid-auto-rows: max-content; scroll-padding: 12px; }
-:root[data-surface="app"] .departure { height: auto; min-height: 0; border-radius: var(--radius); box-shadow: 0 2px 6px rgb(0 0 0 / .04); animation: none; padding: 16px; }
-:root[data-surface="app"] .timeline-row { display: flex; gap: 12px; }
+:root[data-surface="app"] .departure { height: auto; min-height: 0; border-radius: var(--radius); box-shadow: 0 2px 6px rgb(0 0 0 / .04); animation: none; }
+:root[data-surface="app"] .timeline-row { display: flex; }
 :root[data-surface="app"] .tl-head { gap: 12px; }
-:root[data-surface="app"] .tl-head time { font-size: 30px; font-variant-numeric: tabular-nums; }
+:root[data-surface="app"] .tl-head time { font-variant-numeric: tabular-nums; }
 :root[data-surface="app"] .tl-relative { font-size: 14px; }
 :root[data-surface="app"] .tl-dest { font-size: 22px; line-height: 1.2; }
 :root[data-surface="app"] :is(.tl-dest, .destination strong, .via, .route-name, .boat-name, .tl-boat, .tl-context) { white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
@@ -36,6 +36,9 @@
 .map-body .map-heading { gap: 12px; }
 .map-body .card-close { width: 44px; height: 44px; }
 .map-body .search-input { min-height: 44px; }
+/* One phone block. It was four, appended over four commits, and a rule's behaviour depended on
+   which of them it had landed in. Everything here is ordered so the 820px block further down still
+   wins where the two overlap. */
 @media (max-width: 700px) {
   :root[data-surface="app"] .product-nav { order: 2; }
   :root[data-surface="app"] .nearest-button { order: 1; }
@@ -43,13 +46,21 @@
   :root[data-surface="app"] .product-nav .map-icon { display: none; }
   :root[data-surface="app"] .departure:not(.timeline-row) { display: grid; grid-template-columns: 1fr; gap: 12px; }
   :root[data-surface="app"] .departure-slots { border-left: 0; }
+  /* Inert while the 820px block below lays the heading out as a grid, and kept because it is what
+     the heading falls back to if that block ever stops applying. */
+  :root[data-surface="app"] .board-heading:not(.map-heading) h1 { flex: 1 1 calc(100% - 120px); white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
+  :root[data-surface="app"] .board-heading:not(.map-heading) .board-state { flex: 1 1 calc(100% - 130px); flex-wrap: wrap; }
   .map-heading { flex-wrap: wrap; }
   .map-heading-copy { flex: 1; }
   .map-heading .product-nav { order: 2; }
   .map-heading .board-state { margin-left: auto; }
-  .map-body .fleet-content { display: flex; height: min(29dvh,250px); overflow: hidden; opacity: 1; transition: height var(--sheet), opacity var(--fade), transform var(--sheet); }
-  .map-body .bottom-sheet[data-state="peek"] .fleet-content { display: flex; height: 0; opacity: 0; transform: translateY(12px); visibility: hidden; }
+  /* visibility rides the transition at 0s so the collapsed sheet leaves the tab order the moment it
+     starts closing, and rejoins it the moment it starts opening. */
+  .map-body .fleet-content { display: flex; height: min(29dvh,250px); overflow: hidden; opacity: 1; visibility: visible; transition: height var(--sheet), opacity var(--fade), transform var(--sheet), visibility 0s; }
+  .map-body .bottom-sheet[data-state="peek"] .fleet-content { display: flex; height: 0; opacity: 0; transform: translateY(12px); visibility: hidden; transition: height var(--sheet), opacity var(--fade), transform var(--sheet), visibility 0s var(--sheet); }
   .map-tools button { width: 44px; height: 44px; }
+  /* Keep the selected vessel and map controls visible above the detail card. */
+  .map-body .vessel-card { max-height: 40%; width: calc(100% - 76px); }
 }
 @media (max-height: 520px) and (max-width: 700px) { .map-body .fleet-content { height: 22dvh; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
@@ -57,14 +68,6 @@
 :root[data-surface="kiosk"] .product-nav { padding: 0; border: 0; background: none; }
 :root[data-surface="kiosk"] .product-nav > a:first-child, :root[data-surface="kiosk"] .product-nav .map-button span { display: none; }
 :root[data-surface="kiosk"] .board-footer .sort-toggle { display: none; }
-@media (max-width: 700px) {
-  .map-body .fleet-content { visibility: visible; transition: height var(--sheet), opacity var(--fade), transform var(--sheet), visibility 0s; }
-  .map-body .bottom-sheet[data-state="peek"] .fleet-content { transition: height var(--sheet), opacity var(--fade), transform var(--sheet), visibility 0s var(--sheet); }
-}
-@media (max-width: 700px) {
-  :root[data-surface="app"] .board-heading:not(.map-heading) h1 { flex: 1 1 calc(100% - 120px); white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
-  :root[data-surface="app"] .board-heading:not(.map-heading) .board-state { flex: 1 1 calc(100% - 130px); flex-wrap: wrap; }
-}
 /* The map remains an app surface even when opened from the root-mounted kiosk. */
 :root[data-surface="kiosk"] .map-body .product-nav { display: flex; padding: 3px; border: 1px solid var(--line); background: var(--card); }
 :root[data-surface="kiosk"] .map-body .product-nav > a:first-child { display: inline-flex; }
@@ -123,7 +126,3 @@
 }
 .landing-menu-panel .landing-list { padding-bottom: 8px; }
 .landing-menu-panel > .landing-menu-head, .landing-menu-panel > .landing-search { flex-shrink: 0; }
-@media (max-width: 700px) {
-  /* Keep the selected vessel and map controls visible above the detail card. */
-  .map-body .vessel-card { max-height: 40%; width: calc(100% - 76px); }
-}

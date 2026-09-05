@@ -855,28 +855,49 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
+// The version these assert against is read rather than written down. Pinning the literal here meant
+// a bump had to be made in six places at once — five shipped files and this test — and the one that
+// gets missed is invisible until an installed board is quietly running last week's code.
+test("every asset reference carries the configured version", async () => {
+  const { readAssetVersion, findDrift } = await import("../scripts/stamp-assets.js");
+  const version = await readAssetVersion();
+  const drift = await findDrift(version);
+  assert.deepEqual(drift, [], `run \`npm run stamp\`: these references are not on version ${version}`);
+});
+
+// The stored data this board keeps is not an asset and does not ride the asset version. Its prefix
+// only looks like the service worker's cache names, and a stamp that rewrote it would log every
+// device out of its landing, its favourites and its theme on every release.
+test("the localStorage prefix is not versioned with the assets", async () => {
+  const app = await readFile(appPath, "utf8");
+  assert.match(app, /^const cacheKey = "nyc-ferry-did-data-v6";$/m,
+    "public/app.js cacheKey must stay pinned at v6");
+});
+
 test("offline shell includes the current departure-link script", async () => {
+  const { readAssetVersion } = await import("../scripts/stamp-assets.js");
+  const version = await readAssetVersion();
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=93/);
-  assert.match(index, /app\.js\?v=93/);
-  assert.match(worker, /nyc-ferry-did-shell-v93/);
-  assert.match(worker, /styles\.css\?v=93/);
-  assert.match(worker, /app\.js\?v=93/);
+  assert.ok(index.includes(`styles.css?v=${version}`));
+  assert.ok(index.includes(`app.js?v=${version}`));
+  assert.ok(worker.includes(`nyc-ferry-did-shell-v${version}`));
+  assert.ok(worker.includes(`styles.css?v=${version}`));
+  assert.ok(worker.includes(`app.js?v=${version}`));
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=93"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=93"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=93"/);
+  assert.ok(index.includes(`rel="icon" href="/assets/app-icon.png?v=${version}"`));
+  assert.ok(index.includes(`rel="apple-touch-icon" href="/assets/app-icon-180.png?v=${version}"`));
+  assert.ok(index.includes(`rel="manifest" href="/assets/site.webmanifest?v=${version}"`));
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=93'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=${version}'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=93'"));
+  assert.ok(worker.includes(`'/assets/site.webmanifest?v=${version}'`));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of

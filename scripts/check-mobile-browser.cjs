@@ -4,6 +4,10 @@ const os = require("os");
 const fs = require("fs/promises");
 const http = require("http");
 const path = require("path");
+// One definition of where the application server is, shared with the other checks — this script
+// honoured MOBILE_TEST_ORIGIN and the other two hardcoded the port, so the variable moved one of
+// the three.
+const { ORIGIN } = require("./mobile-check-harness.cjs");
 const root = process.cwd();
 (async () => {
   const baselineRoot = await fs.mkdtemp(
@@ -31,9 +35,7 @@ const root = process.cwd();
     "/api/map",
     "/api/boats",
   ]) {
-    const r = await fetch(
-      (process.env.MOBILE_TEST_ORIGIN || "http://127.0.0.1:8094") + url,
-    );
+    const r = await fetch(ORIGIN + url);
     fixture.set(url, await r.text());
   }
   const vessel = {
