@@ -1,0 +1,34 @@
+[
+  {
+    "mode": "baseline",
+    "coldMs": 1642,
+    "cachedMs": 1573,
+    "drawerFeedbackMs": 16,
+    "cameraFrames": {
+      "medianMs": 16.7,
+      "p95Ms": 133.3
+    },
+    "refresh": {
+      "cards": 25,
+      "retained": 0,
+      "mutations": 4
+    },
+    "errors": []
+  },
+  {
+    "mode": "after",
+    "coldMs": 1208,
+    "cachedMs": 328,
+    "drawerFeedbackMs": 29,
+    "cameraFrames": {
+      "medianMs": 16.7,
+      "p95Ms": 100
+    },
+    "refresh": {
+      "cards": 25,
+      "retained": 25,
+      "mutations": 1
+    },
+    "errors": []
+  }
+]

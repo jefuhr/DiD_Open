@@ -1,3 +1,4 @@
+import { runtimeStub } from "./helpers/runtime-stub.js";
 // The map page, run rather than read.
 //
 // The other client-side contract tests assert on source text, which is enough for "does the markup
@@ -123,6 +124,8 @@ async function page({ boats = [BOAT], available = true, stale = false, query = "
       return { ok: true, json: async () => body };
     }
   };
+  runtimeStub(context);
+  delete context.requestAnimationFrame; // Exercise the deterministic, non-animated camera path.
   context.globalThis = context;
   vm.createContext(context);
   vm.runInContext(source, context, { filename: "map.js" });
@@ -216,7 +219,7 @@ test("a feed that is not answering is not passed off as an empty harbor", async 
 
 test("a cached snapshot says when it was taken", async () => {
   const view = await page({ stale: true });
-  assert.match(view.node("mapMessage").textContent, /Last positions the feed gave/);
+  assert.match(view.node("mapMessage").textContent, /Saved positions/);
   assert.equal(view.node("mapStatusText").textContent, "Saved");
 });
 

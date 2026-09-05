@@ -1,3 +1,4 @@
+const { storage, request, reconcile, poll, reveal } = MobileRuntime;
 // The map page.
 //
 // Reads /api/map once for the harbor and /api/boats every fifteen seconds for what is on it, and
@@ -42,6 +43,7 @@ const sheetHandle = document.getElementById("sheetHandle");
 const hasRaf = typeof requestAnimationFrame === "function";
 
 let harbor = null;
+let geometryFresh = false;
 let boats = [];
 let selectedId = null;
 let activeRouteFilter = null;
@@ -511,7 +513,7 @@ function hullDigits(number) {
 
 function drawFleet() {
   if (!fleetLayer) return;
-  fleetLayer.textContent = "";
+  const markers = [];
   const hull = fleetIsClose ? 10.5 : 6;
   const halo = fleetIsClose ? 16 : 11;
   const bow = fleetIsClose ? "M0,-17 L4.4,-9.8 L-4.4,-9.8 Z" : "M0,-12 L3.6,-5.6 L-3.6,-5.6 Z";
@@ -520,6 +522,7 @@ function drawFleet() {
     const matchesFilter = !activeRouteFilter || boat.routeId === activeRouteFilter;
     const { outer, inner } = marker("boat", boat.latitude, boat.longitude);
     outer.dataset.boat = boat.id;
+    outer.setAttribute("data-key", String(boat.id));
     outer.setAttribute("tabindex", "0");
     outer.setAttribute("role", "button");
     outer.setAttribute("aria-label", `${boat.name || boat.number || "Vessel"}: ${statusLine(boat)}`);
@@ -551,8 +554,9 @@ function drawFleet() {
       label.textContent = boat.name || boat.number || "Boat";
       inner.append(label);
     }
-    fleetLayer.append(outer);
+    markers.push(outer);
   }
+  reconcile(fleetLayer, markers);
   markTargetDock();
   updateVesselCard();
   applyView();
@@ -577,10 +581,18 @@ function metresBetween(from, to) {
 
 // ---------------------------------------------------------------- pan, zoom & camera easing
 
+let viewFramePending = false;
+function scheduleView() {
+  if (!hasRaf) return applyView();
+  if (viewFramePending) return;
+  viewFramePending = true;
+  requestAnimationFrame(() => { viewFramePending = false; applyView(); });
+}
 function applyView() {
+  // Read layout before changing SVG attributes to avoid a forced layout on every camera frame.
+  const box = chart.getBoundingClientRect();
   chart.setAttribute("viewBox", `${view.x.toFixed(1)} ${view.y.toFixed(1)} ${view.width.toFixed(1)} ${view.height.toFixed(1)}`);
   drawTiles();
-  const box = chart.getBoundingClientRect();
   const unitsPerPixel = Math.max(view.width / (box.width || 360), view.height / (box.height || 480));
   const scale = unitsPerPixel.toFixed(3);
   for (const scaler of chart.querySelectorAll(".scaler")) scaler.setAttribute("transform", `scale(${scale})`);
@@ -654,7 +666,7 @@ function setView(next) {
   if (!base) return;
   cancelCameraAnimation();
   view = clampView(next);
-  applyView();
+  scheduleView();
 }
 
 function cancelCameraAnimation() {
@@ -892,20 +904,18 @@ document.getElementById("zoomFit").addEventListener("click", () => {
 
 function updateVesselCard() {
   if (!vesselCard) return;
-  if (detailKind && detailKind !== "vessel") { vesselCard.hidden = true; return; }
+  if (detailKind && detailKind !== "vessel") { reveal(vesselCard, false); return; }
   const boat = boats.find((b) => b.id === selectedId);
   if (!boat) {
-    vesselCard.hidden = true;
-    vesselCard.textContent = "";
+    reveal(vesselCard, false);
     return;
   }
-  vesselCard.textContent = "";
-  vesselCard.hidden = false;
+  reveal(vesselCard, true);
 
   const closeBtn = element("button", "card-close", "×");
   closeBtn.type = "button";
   closeBtn.setAttribute("aria-label", "Close vessel card");
-  closeBtn.addEventListener("click", () => select(boat.id));
+  closeBtn.addEventListener("click", () => select(selectedId));
 
   const titleRow = element("div", "card-title-row");
   const chip = element("span", "card-route-chip", boat.route || "Ferry");
@@ -930,13 +940,13 @@ function updateVesselCard() {
 
   const actionBtn = element("a", "card-action-btn", "Open Departure Board");
   // Vehicle stop IDs are GTFS IDs; board links need the configured landing number.
-  const landing = boat.stop?.latitude == null ? null : harbor.landings
+  const landing = boat.stop?.latitude == null || !harbor ? null : harbor.landings
     .map((dock) => ({ dock, distance: metresBetween(dock, boat.stop) }))
     .filter((item) => item.distance < 300)
     .sort((a, b) => a.distance - b.distance)[0]?.dock;
   actionBtn.href = landing ? `./?landing=${landing.id}` : ".";
 
-  vesselCard.append(closeBtn, titleRow, status, metaRow, actionBtn);
+  reconcile(vesselCard, [closeBtn, titleRow, status, metaRow, actionBtn]);
 }
 
 function showDockCard(dock) {
@@ -944,9 +954,9 @@ function showDockCard(dock) {
   detailKind = "dock";
   dockCard.textContent = "";
   dockCard.hidden = false;
-  if (vesselCard) vesselCard.hidden = true;
-  if (bridgeCard) bridgeCard.hidden = true;
-  if (seamarkCard) seamarkCard.hidden = true;
+  if (vesselCard) reveal(vesselCard, false);
+  if (bridgeCard) reveal(bridgeCard, false);
+  if (seamarkCard) reveal(seamarkCard, false);
 
   const title = element("h2", null, "Open departures?");
   title.id = "landingConfirmTitle";
@@ -990,10 +1000,10 @@ function showBridgeCard(bridge) {
   if (!bridgeCard) return;
   detailKind = "bridge";
   bridgeCard.textContent = "";
-  bridgeCard.hidden = false;
-  if (vesselCard) vesselCard.hidden = true;
+  reveal(bridgeCard, true);
+  if (vesselCard) reveal(vesselCard, false);
   if (dockCard) dockCard.hidden = true;
-  if (seamarkCard) seamarkCard.hidden = true;
+  if (seamarkCard) reveal(seamarkCard, false);
 
   const closeBtn = element("button", "card-close", "×");
   closeBtn.type = "button";
@@ -1018,8 +1028,7 @@ function showBridgeCard(bridge) {
 
 function hideBridgeCard() {
   if (!bridgeCard) return;
-  bridgeCard.hidden = true;
-  bridgeCard.textContent = "";
+  reveal(bridgeCard, false);
   if (detailKind === "bridge") detailKind = null;
 }
 
@@ -1027,11 +1036,10 @@ function showSeamarkCard(seamark) {
   if (!seamarkCard) return;
   detailKind = "seamark";
   seamarkCard.textContent = "";
-  if (detailKind === "seamark") detailKind = null;
-  seamarkCard.hidden = false;
-  if (vesselCard) vesselCard.hidden = true;
+  reveal(seamarkCard, true);
+  if (vesselCard) reveal(vesselCard, false);
   if (dockCard) dockCard.hidden = true;
-  if (bridgeCard) bridgeCard.hidden = true;
+  if (bridgeCard) reveal(bridgeCard, false);
 
   const closeBtn = element("button", "card-close", "×");
   closeBtn.type = "button";
@@ -1054,8 +1062,8 @@ function showSeamarkCard(seamark) {
 
 function hideSeamarkCard() {
   if (!seamarkCard) return;
-  seamarkCard.hidden = true;
-  seamarkCard.textContent = "";
+  reveal(seamarkCard, false);
+  if (detailKind === "seamark") detailKind = null;
 }
 
 // ---------------------------------------------------------------- bottom sheet & search
@@ -1130,7 +1138,7 @@ function select(id, { recentre = true } = {}) {
 function renderList() {
   const list = document.getElementById("boats");
   if (!list) return;
-  list.textContent = "";
+  const entries = [];
 
   const filtered = boats.filter((boat) => {
     if (activeRouteFilter && boat.routeId !== activeRouteFilter) return false;
@@ -1153,17 +1161,18 @@ function renderList() {
   }
 
   if (!boats.length) {
-    list.append(element("li", "empty", "No NYC Ferry vessel is reporting a position right now. Routes and landings are still available. Partner operators do not supply positions here."));
+    reconcile(list, [element("li", "empty", "No NYC Ferry vessel is reporting a position right now. Routes and landings are still available. Partner operators do not supply positions here.")]);
     return;
   }
 
   if (!filtered.length) {
-    list.append(element("li", "empty", searchQuery ? `No boats match "${searchQuery}".` : "No vessels are reporting on this route right now."));
+    reconcile(list, [element("li", "empty", searchQuery ? `No boats match "${searchQuery}".` : "No vessels are reporting on this route right now.")]);
     return;
   }
 
   for (const boat of filtered) {
     const item = element("li");
+    item.setAttribute("data-key", String(boat.id));
     const row = element("button", "boat-row");
     row.type = "button";
     row.setAttribute("aria-pressed", String(boat.id === selectedId));
@@ -1190,8 +1199,9 @@ function renderList() {
     row.append(chip, name, doing, figures);
     row.addEventListener("click", () => select(boat.id));
     item.append(row);
-    list.append(item);
+    entries.push(item);
   }
+  reconcile(list, entries);
 }
 
 function readableOn(hex) {
@@ -1235,6 +1245,7 @@ function findWanted() {
 
 function followWanted() {
   if (!wanted) return null;
+  if (!harbor || !base) return "";
   const found = findWanted();
   if (!found) return `${wanted} is not reporting a position right now.`;
   wanted = null;
@@ -1243,41 +1254,56 @@ function followWanted() {
   return "";
 }
 
+function applyPositions(payload, saved = false) {
+  boats = payload.boats || [];
+  updateHeadings(boats);
+  if (selectedId && !boats.some(boat => boat.id === selectedId)) selectedId = null;
+  const following = followWanted();
+  drawFleet();
+  renderList();
+  const stale = saved || payload.stale;
+  const at = payload.fetchedAt ? new Date(payload.fetchedAt) : null;
+  statusText.textContent = stale ? "Saved" : !payload.available ? "No feed" : "Live";
+  document.getElementById("mapStatus").dataset.state = stale ? "stale" : !payload.available ? "offline" : "live";
+  document.getElementById("feedNote").textContent = `${at && Number.isFinite(+at) ? `Updated ${timeLabel.format(at)} · ` : ""}NYC Ferry positions · Refreshes every 15s`;
+  message(stale ? `Saved positions${at && Number.isFinite(+at) ? `, at ${timeLabel.format(at)}` : ""} · refreshing when connected. These positions may be out of date.`
+    : !payload.available ? "The vessel feed is not answering. Nothing here is current." : following);
+}
 async function load() {
-  try {
-    if (!harbor) {
-      const chartResponse = await fetch("/api/map");
-      if (!chartResponse.ok) throw new Error(String(chartResponse.status));
-      harbor = await chartResponse.json();
-      drawHarbor();
-    }
-
-    const response = await fetch("/api/boats", { cache: "no-store" });
+  // Both requests start together. Geometry failure does not suppress the vessel roster.
+  const geometry = geometryFresh ? Promise.resolve() : request("/api/map").then(async response => {
+    if (!response.ok) throw new Error();
     const payload = await response.json();
-    if (!response.ok && !payload.boats) throw new Error(String(response.status));
-
-    boats = payload.boats || [];
-    updateHeadings(boats);
-    if (selectedId && !boats.some((boat) => boat.id === selectedId)) selectedId = null;
-    const following = followWanted();
-    drawFleet();
-    renderList();
-
-    const at = payload.fetchedAt ? new Date(payload.fetchedAt) : null;
-    if (statusText) {
-      statusText.textContent = !payload.available ? "No feed" : payload.stale ? "Saved" : "Live";
-      document.getElementById("mapStatus").dataset.state = !payload.available ? "offline" : payload.stale ? "stale" : "live";
-      document.getElementById("feedNote").textContent = `${at ? `Updated ${timeLabel.format(at)} · ` : ""}NYC Ferry positions · Refreshes every 15s`;
+    if (!payload.bounds || !Array.isArray(payload.landings) || !Array.isArray(payload.routes)) throw new Error();
+    geometryFresh = true;
+    const unchanged = harbor && JSON.stringify(harbor) === JSON.stringify(payload);
+    const previousView = view && { ...view };
+    harbor = payload;
+    storage.setItem("nyc-ferry-map-geometry", JSON.stringify(harbor));
+    if (!unchanged) {
+      drawHarbor();
+      if (previousView) { view = clampView(previousView); applyView(); }
     }
-    message(!payload.available
-      ? "The vessel feed is not answering. Nothing here is current."
-      : following || (payload.stale ? `Last positions the feed gave${at ? `, at ${timeLabel.format(at)}` : ""}.` : ""));
-  } catch {
-    if (statusText) statusText.textContent = "Offline";
-    document.getElementById("mapStatus").dataset.state = "offline";
+  });
+  const positions = request("/api/boats", { cache: "no-store" }).then(async response => {
+    const payload = await response.json();
+    if (!Array.isArray(payload.boats)) throw new Error();
+    storage.setItem("nyc-ferry-map-positions", JSON.stringify(payload));
+    return payload;
+  });
+  const results = await Promise.allSettled([geometry, positions]);
+  if (results[1].status === "fulfilled") applyPositions(results[1].value);
+  else {
+    statusText.textContent = boats.length ? "Saved" : "Offline";
+    document.getElementById("mapStatus").dataset.state = "stale";
     message("Could not reach the server. Any displayed positions may be out of date.");
   }
 }
-
-load();
-setInterval(load, REFRESH_MS);
+const savedHarbor = storage.json("nyc-ferry-map-geometry");
+if (savedHarbor?.bounds && Array.isArray(savedHarbor.landings) && Array.isArray(savedHarbor.routes)) {
+  harbor = savedHarbor;
+  drawHarbor();
+}
+const savedPositions = storage.json("nyc-ferry-map-positions");
+if (Array.isArray(savedPositions?.boats)) applyPositions(savedPositions, true);
+poll(load, REFRESH_MS);

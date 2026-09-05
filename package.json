@@ -14,7 +14,8 @@
     "predev": "node scripts/build-data.js",
     "dev": "node --watch server.js",
     "test": "node --test",
-    "build:shoreline": "node scripts/build-harbor-shoreline.js"
+    "build:shoreline": "node scripts/build-harbor-shoreline.js",
+    "test:mobile-browser": "node scripts/check-mobile-browser.cjs"
   },
   "dependencies": {
     "gtfs-realtime-bindings": "2.1.0",
@@ -22,7 +23,9 @@
   },
   "devDependencies": {
     "@mapbox/vector-tile": "^2.0.4",
+    "jsdom": "^30.0.1",
     "pbf": "^4.0.1",
+    "playwright": "^1.63.0",
     "polygon-clipping": "^0.15.7"
   }
 }

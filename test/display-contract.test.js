@@ -1,3 +1,4 @@
+import { runtimeStub } from "./helpers/runtime-stub.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -291,13 +292,13 @@ test("landing menu lets an agent switch the board's landing", async () => {
   // No landingId still resolves to the configured landing, so the kiosk contract is unchanged.
   assert.match(server, /requested === null \? Number\(displayConfig\.landingNumber\) : Number\(requested\)/);
   // The client names its landing so realtime comes back scoped to it.
-  assert.match(app, /\/api\/realtime\$\{query\}/);
+  assert.match(app, /\/api\/realtime\?landingId=/);
   // Menu markup and the accessible toggle.
   assert.match(index, /id="menuButton"[^>]*aria-expanded="false"[^>]*aria-controls="landingMenu"/);
   assert.match(index, /id="landingMenu"[^>]*hidden/);
   assert.match(index, /id="landingList"/);
   // Selection is persisted and restored, including for an offline start.
-  assert.match(app, /localStorage\.setItem\(landingKey/);
+  assert.match(app, /storage\.setItem\(landingKey/);
   assert.match(app, /function selectedLanding\(\)/);
   assert.match(app, /landingDataKey\(/);
   assert.match(app, /\/api\/display-data\$\{query\}/);
@@ -322,8 +323,8 @@ test("SFTP landing notices replace all GTFS display regions", async () => {
   assert.doesNotMatch(server, /request\.method === "POST"|KIOSK_OVERRIDE_TOKEN/);
   assert.match(index, /id="manualOverride"[^>]*hidden[^>]*aria-live="assertive"/);
   assert.match(app, /\/api\/override\?landingId=/);
-  assert.match(app, /setInterval\(loadManualOverride, 5_000\)/);
-  assert.match(app, /manualOverrideMessage\.textContent/);
+  assert.match(app, /poll\(loadManualOverride, 5_000\)/);
+  assert.match(app, /setText\(elements\.manualOverrideMessage/);
   // A notice takes the whole screen: the board, the alert strip and the docked landing rail all go.
   assert.match(css, /\.screen\.override-active \.content,\.screen\.override-active \.service-alert-bar,\.screen\.override-active \.landing-menu\{display:none\}/);
   assert.match(css, /\.manual-override-box\{/);
@@ -335,10 +336,10 @@ test("partner operators show their mark in the route badge", async () => {
     readFile(cssPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(app, /prefix: "wtr:", src: "assets\/waterway\.png"/);
-  assert.match(app, /prefix: "sea:", src: "assets\/seastreak\.png"/);
-  assert.match(app, /prefix: "nyu:", src: "assets\/nyu\.png"/);
-  assert.match(app, /prefix: "lib:", src: "assets\/cityferry\.png"/);
+  assert.match(app, /prefix: "wtr:", src: "\/assets\/waterway\.png"/);
+  assert.match(app, /prefix: "sea:", src: "\/assets\/seastreak\.png"/);
+  assert.match(app, /prefix: "nyu:", src: "\/assets\/nyu\.png"/);
+  assert.match(app, /prefix: "lib:", src: "\/assets\/cityferry\.png"/);
   assert.match(app, /class="route-badge-logo" src="\$\{partnerLogo\.src\}"/);
   assert.match(css, /\.route-badge-logo\{[^}]*object-fit:contain/);
   assert.match(worker, /\/assets\/waterway\.png/);
@@ -347,22 +348,22 @@ test("partner operators show their mark in the route badge", async () => {
   assert.match(worker, /\/assets\/cityferry\.png/);
 });
 
-test("two buttons at the top of the menu swap the departure view", async () => {
+test("two directly accessible buttons swap the departure view", async () => {
   const [app, css, index] = await Promise.all([
     readFile(appPath, "utf8"), readFile(cssPath, "utf8"), readFile(indexPath, "utf8")
   ]);
   // Both buttons sit above the landing list, and each reports its own pressed state so the
   // active view is announced rather than only shown by colour.
-  const panel = index.slice(index.indexOf('id="landingMenuPanel"'), index.indexOf('id="landingList"'));
+  const panel = index.slice(index.indexOf('class="board-footer"'), index.indexOf('id="landingMenuPanel"'));
   assert.match(panel, /class="sort-toggle" role="group" aria-label="Sort departures"/);
   assert.match(panel, /id="sortByRoute" data-sort="route" aria-pressed="false"/);
   assert.match(panel, /id="sortByTime" data-sort="time" aria-pressed="true"/);
   assert.match(css, /\.sort-option\[aria-pressed="true"\]\{[^}]*background:var\(--navy\)/);
 
   // Departure time is the default; only an explicit choice of "route" opts out of it.
-  assert.match(app, /localStorage\.getItem\(sortKey\) === "route" \? "route" : "time"/);
-  assert.match(app, /localStorage\.setItem\(sortKey, next\)/);
-  assert.match(app, /return sortedBy\(\) === "route" \? renderRouteBoard\(\) : renderTimeline\(\)/);
+  assert.match(app, /storage\.getItem\(sortKey\) === "route" \? "route" : "time"/);
+  assert.match(app, /storage\.setItem\(sortKey, next\)/);
+  assert.match(app, /sortedBy\(\) === "route" \? renderRouteBoard\(\) : renderTimeline\(\)/);
 });
 
 test("the timeline lists every upcoming sailing in departure order, route on each row", async () => {
@@ -439,7 +440,7 @@ test("24-hour is the default, and one helper decides it for every printed time",
   assert.match(app, /return clockFormat\(\) === "12"\s*\n\s*\? \{ hour: "numeric", hourCycle: "h12" \}\s*\n\s*: \{ hour: "2-digit", hourCycle: "h23" \}/);
   // Absent a stored choice it is 24-hour: this is a crew board and the schedule, the workbook and
   // the radio all speak in it.
-  assert.match(app, /localStorage\.getItem\(clockKey\) === "12" \? "12" : "24"/);
+  assert.match(app, /storage\.getItem\(clockKey\) === "12" \? "12" : "24"/);
 
   // Every formatter that prints an hour for someone to read goes through the helper. Counting them
   // is what stops a fourth being added later in a fixed cycle and going unnoticed.
@@ -573,16 +574,18 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = 
       return { ok: true, json: async () => body };
     }
   };
+  const flush = runtimeStub(context);
   context.globalThis = context;
   vm.createContext(context);
   vm.runInContext(app, context, { filename: "app.js" });
   await new Promise((resolve) => setTimeout(resolve, 0));
+  flush();
   return {
     context,
     requested,
     node,
-    click: (id) => listeners.get(`${id}:click`)?.(),
-    run: (source) => vm.runInContext(source, context),
+    click: (id) => { listeners.get(`${id}:click`)?.(); flush(); },
+    run: (source) => { const result = vm.runInContext(source, context); flush(); return result; },
     stored: () => [...store.entries()],
     times: () => [...node("departures").innerHTML.matchAll(/<time>(\d\d:\d\d)/g)].map((match) => match[1]),
     text: () => node("departures").innerHTML.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
@@ -724,6 +727,8 @@ test("the browsed date is never persisted and resets when the landing changes", 
   // And a landing switch re-runs load(), which clears both the memoized days and the date.
   view.run(`viewDate = "2026-09-01";`);
   await view.run("load()");
+  assert.equal(view.run("viewDate"), "2026-09-01", "same-landing refresh keeps the date");
+  await view.run("load(4)");
   assert.equal(view.run("viewDate"), null);
 });
 
@@ -855,30 +860,30 @@ test("offline shell includes the current departure-link script", async () => {
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=87/);
-  assert.match(index, /app\.js\?v=89/);
-  assert.match(worker, /nyc-ferry-did-shell-v89/);
-  assert.match(worker, /styles\.css\?v=87/);
-  assert.match(worker, /app\.js\?v=89/);
+  assert.match(index, /styles\.css\?v=90/);
+  assert.match(index, /app\.js\?v=90/);
+  assert.match(worker, /nyc-ferry-did-shell-v90/);
+  assert.match(worker, /styles\.css\?v=90/);
+  assert.match(worker, /app\.js\?v=90/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=87"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=87"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=87"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=90"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=90"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=90"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=87'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=90'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=87'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=90'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
 // the shell — a partner badge that 404s offline leaves an empty box where the operator should be.
 test("the Governors Island badge ships with the offline shell", async () => {
   const [app, worker] = await Promise.all([readFile(appPath, "utf8"), readFile(workerPath, "utf8")]);
-  assert.match(app, /\{ prefix: "gi:", src: "assets\/gi\.png"/);
+  assert.match(app, /\{ prefix: "gi:", src: "\/assets\/gi\.png"/);
   assert.match(worker, /'\/assets\/gi\.png'/);
 });
 
@@ -1121,8 +1126,8 @@ test("anything wider than a phone gets the roomy layout, and a landing rail it c
   assert.match(app, /matchMedia\("\(min-width:821px\)"\)/);
   assert.match(app, /dataset\.surface !== "kiosk" && railMedia\.matches/);
   // Shown by default, hidden only because someone hid it, and remembered either way.
-  assert.match(app, /localStorage\.getItem\(railKey\) !== "hidden"/);
-  assert.match(app, /localStorage\.setItem\(railKey, open \? "shown" : "hidden"\)/);
+  assert.match(app, /storage\.getItem\(railKey\) !== "hidden"/);
+  assert.match(app, /storage\.setItem\(railKey, open \? "shown" : "hidden"\)/);
   // Rotating an iPad crosses the boundary, so the rail cannot be decided once at startup.
   assert.match(app, /railMedia\.addEventListener\("change", applyRail\)/);
 });
@@ -1170,7 +1175,7 @@ test("the home port board says what its stars mean", async () => {
   assert.match(app, /renderBoardNote\(\);/);
   // Outside the departures list: that list scrolls, and the kiosk view sizes its rows to a fixed
   // height that a one-line legend would be stretched to fill.
-  assert.match(index, /<p class="board-note" id="boardNote" hidden><\/p>\s*\n\s*<div class="departures"/);
+  assert.match(index, /<p class="board-note" id="boardNote" hidden><\/p>[\s\S]*?<div class="departures"/);
   assert.match(css, /\.board-note\{/);
 });
 
@@ -1457,7 +1462,7 @@ test("the trip view is wired into the surfaces that can bury it", async () => {
   // The arrow keys must not step the date underneath an open sheet.
   assert.match(app, /if \(openSheet \|\| event\.metaKey/);
   // Switching landing invalidates the trip: a new payload has different trip schedules.
-  assert.match(app, /setTripOpen\(false\);\n\s*elements\.landing\.textContent/);
+  assert.match(app, /if \(changed\) \{[\s\S]*?setTripOpen\(false\)/);
   // It reuses the sheet's own classes, which is what gets it themed on all eight boards for free.
   assert.match(index, /class="filter-menu trip-menu" id="tripMenu" hidden/);
   assert.match(index, /class="filter-menu-panel trip-panel"/);

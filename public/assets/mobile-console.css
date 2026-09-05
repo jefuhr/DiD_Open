@@ -1,0 +1,70 @@
+/* Shared console rhythm; palette and operator marks remain owned by the themes. */
+:root { --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --radius: 12px; --press: 120ms; --fade: 180ms; --sheet: 240ms; --camera: 300ms; }
+.product-nav { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.product-nav a { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 48px; min-height: 44px; padding: 0 8px; color: var(--navy); font: 700 13px Lato, sans-serif; text-decoration: none; border-radius: 8px; }
+.product-nav a[aria-current] { background: var(--navy); color: var(--card); }
+.product-nav .map-button { width: auto; height: auto; border: 0; box-shadow: none; background: transparent; }
+.product-nav .map-icon { width: 18px; height: 18px; }
+.landing-search { display: grid; gap: 8px; padding: 12px 16px; color: var(--muted); font-size: 13px; }
+.landing-search input { width: 100%; min-height: 44px; padding: 10px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: 16px; }
+:root[data-surface="app"] .board-heading { flex-wrap: wrap; gap: 12px; }
+:root[data-surface="app"] .board-heading h1 { flex: 1; font-size: clamp(22px, 4vw, 34px); line-height: 1.1; }
+:root[data-surface="app"] .board-state { flex-basis: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+:root[data-surface="app"] .board-footer { flex-wrap: wrap; gap: 8px; }
+:root[data-surface="app"] .sort-toggle { margin: 0; padding: 0; gap: 4px; flex: 1 0 100%; }
+:root[data-surface="app"] .sort-option { min-height: 44px; font-size: 14px; }
+:root[data-surface="app"] .departures { gap: 12px; align-content: start; grid-auto-rows: max-content; scroll-padding: 12px; }
+:root[data-surface="app"] .departure { height: auto; min-height: 0; border-radius: var(--radius); box-shadow: 0 2px 6px rgb(0 0 0 / .04); animation: none; padding: 16px; }
+:root[data-surface="app"] .timeline-row { display: flex; gap: 12px; }
+:root[data-surface="app"] .tl-head { gap: 12px; }
+:root[data-surface="app"] .tl-head time { font-size: 30px; font-variant-numeric: tabular-nums; }
+:root[data-surface="app"] .tl-relative { font-size: 14px; }
+:root[data-surface="app"] .tl-dest { font-size: 22px; line-height: 1.2; }
+:root[data-surface="app"] :is(.tl-dest, .destination strong, .via, .route-name, .boat-name, .tl-boat, .tl-context) { white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
+:root[data-surface="app"] :is(.tl-meta, .tl-status, .departure-last-slot) { flex-wrap: wrap; overflow: visible; white-space: normal; line-height: 1.5; gap: 6px; }
+:root[data-surface="app"] :is(.tl-context, .tl-boat, .boat-name) { font-size: 14px; }
+:root[data-surface="app"] .departure-slot { min-height: 72px; padding: 12px 8px; }
+:root[data-surface="app"] .departure-slot:nth-child(n) { display: flex; }
+:root[data-surface="app"] .departure-slots { height: auto; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); }
+:root[data-surface="app"] .slot-time-row { flex-wrap: wrap; overflow: visible; gap: 8px; }
+:root[data-surface="app"] time { font-variant-numeric: tabular-nums; }
+:root[data-surface="app"] :is(button, .landing-star), .map-body button { min-height: 44px; min-width: 44px; }
+:root[data-surface="app"] :is(button, a), .map-body :is(button, a) { touch-action: manipulation; transition: background-color var(--press), opacity var(--press); }
+:root[data-surface="app"] button:active, .map-body button:active { opacity: .72; }
+:root[data-surface="app"] :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.filter-menu-panel, .landing-menu-panel { animation: none; }
+.map-body .map-heading { gap: 12px; }
+.map-body .card-close { width: 44px; height: 44px; }
+.map-body .search-input { min-height: 44px; }
+@media (max-width: 700px) {
+  :root[data-surface="app"] .product-nav { order: 2; }
+  :root[data-surface="app"] .nearest-button { order: 1; }
+  :root[data-surface="app"] .board-state { order: 3; }
+  :root[data-surface="app"] .product-nav .map-icon { display: none; }
+  :root[data-surface="app"] .departure:not(.timeline-row) { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  :root[data-surface="app"] .departure-slots { border-left: 0; }
+  .map-heading { flex-wrap: wrap; }
+  .map-heading-copy { flex: 1; }
+  .map-heading .product-nav { order: 2; }
+  .map-heading .board-state { margin-left: auto; }
+  .map-body .fleet-content { display: flex; height: min(29dvh,250px); overflow: hidden; opacity: 1; transition: height var(--sheet), opacity var(--fade), transform var(--sheet); }
+  .map-body .bottom-sheet[data-state="peek"] .fleet-content { display: flex; height: 0; opacity: 0; transform: translateY(12px); visibility: hidden; }
+  .map-tools button { width: 44px; height: 44px; }
+}
+@media (max-height: 520px) and (max-width: 700px) { .map-body .fleet-content { height: 22dvh; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+/* Kiosk keeps its fixed layout and original map affordance. */
+:root[data-surface="kiosk"] .product-nav { padding: 0; border: 0; background: none; }
+:root[data-surface="kiosk"] .product-nav > a:first-child, :root[data-surface="kiosk"] .product-nav .map-button span { display: none; }
+:root[data-surface="kiosk"] .board-footer .sort-toggle { display: none; }
+@media (max-width: 700px) {
+  .map-body .fleet-content { visibility: visible; transition: height var(--sheet), opacity var(--fade), transform var(--sheet), visibility 0s; }
+  .map-body .bottom-sheet[data-state="peek"] .fleet-content { transition: height var(--sheet), opacity var(--fade), transform var(--sheet), visibility 0s var(--sheet); }
+}
+@media (max-width: 700px) {
+  :root[data-surface="app"] .board-heading:not(.map-heading) h1 { flex: 1 1 calc(100% - 120px); white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
+  :root[data-surface="app"] .board-heading:not(.map-heading) .board-state { flex: 1 1 calc(100% - 130px); flex-wrap: wrap; }
+}
+/* The map remains an app surface even when opened from the root-mounted kiosk. */
+:root[data-surface="kiosk"] .map-body .product-nav { display: flex; padding: 3px; border: 1px solid var(--line); background: var(--card); }
+:root[data-surface="kiosk"] .map-body .product-nav > a:first-child { display: inline-flex; }

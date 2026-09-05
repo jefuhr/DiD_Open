@@ -1,3 +1,4 @@
+const { storage, request, html: reconcileHTML, poll, panel, contentTransition } = MobileRuntime;
 const elements = {
   screen: document.querySelector("#screen"),
   landing: document.querySelector("#landingName"),
@@ -131,7 +132,7 @@ let serviceAlerts = null;
 let manualOverride = { active: false, message: "", updatedAt: null };
 
 function sortedBy() {
-  return localStorage.getItem(sortKey) === "route" ? "route" : "time";
+  return storage.getItem(sortKey) === "route" ? "route" : "time";
 }
 
 function renderSortToggle() {
@@ -143,7 +144,7 @@ function renderSortToggle() {
 
 function selectSort(next) {
   if (next !== "route" && next !== "time") return;
-  localStorage.setItem(sortKey, next);
+  storage.setItem(sortKey, next);
   renderSortToggle();
   // Re-order in place: the menu stays open so the choice can be changed again, and nothing
   // needs refetching because sorting only touches the order cards are laid out in.
@@ -175,7 +176,7 @@ function operatorOf(routeId) {
 // server. Ordering is the same either way — home agency first, partners alphabetically.
 function operatorList() {
   try {
-    const stored = JSON.parse(localStorage.getItem(operatorsKey) || "[]");
+    const stored = JSON.parse(storage.getItem(operatorsKey) || "[]");
     const roster = Array.isArray(stored) ? stored.filter((name) => typeof name === "string") : [];
     if (roster.length) return roster;
   } catch {
@@ -189,7 +190,7 @@ function operatorList() {
 
 function hiddenOperators() {
   try {
-    const stored = JSON.parse(localStorage.getItem(hiddenOperatorsKey) || "[]");
+    const stored = JSON.parse(storage.getItem(hiddenOperatorsKey) || "[]");
     return new Set(Array.isArray(stored) ? stored.filter((name) => typeof name === "string") : []);
   } catch {
     return new Set();
@@ -204,7 +205,7 @@ function setOperatorHidden(name, hidden) {
   const next = hiddenOperators();
   if (hidden) next.add(name);
   else next.delete(name);
-  localStorage.setItem(hiddenOperatorsKey, JSON.stringify([...next]));
+  storage.setItem(hiddenOperatorsKey, JSON.stringify([...next]));
   renderFilterMenu();
   // The list is rebuilt from scratch, so put the cursor back on the row that was just toggled —
   // otherwise a keyboard user is dropped to the top of the panel after every single switch.
@@ -214,7 +215,7 @@ function setOperatorHidden(name, hidden) {
 }
 
 function showAllOperators() {
-  localStorage.removeItem(hiddenOperatorsKey);
+  storage.removeItem(hiddenOperatorsKey);
   renderFilterMenu();
   render();
 }
@@ -244,7 +245,7 @@ function renderFilterMenu() {
 }
 
 function setFilterOpen(open) {
-  elements.filterMenu.hidden = !open;
+  panel(elements.filterMenu, open);
   elements.filterButton.setAttribute("aria-expanded", String(open));
   if (open) (elements.filterList.querySelector(".filter-option") || elements.filterMenuClose)?.focus();
   else elements.filterButton.focus();
@@ -264,7 +265,7 @@ function renderChangelogBang() {
   const newest = changelogVersion(changelog[0]);
   let seen = "";
   try {
-    seen = localStorage.getItem(changelogSeenKey) || "";
+    seen = storage.getItem(changelogSeenKey) || "";
   } catch {
     seen = "";
   }
@@ -286,12 +287,12 @@ function renderChangelog() {
 
 function setChangelogOpen(open) {
   if (open) renderChangelog();
-  elements.changelogMenu.hidden = !open;
+  panel(elements.changelogMenu, open);
   elements.changelogButton.setAttribute("aria-expanded", String(open));
   if (open) {
     // Opening it is reading it.
     try {
-      localStorage.setItem(changelogSeenKey, changelogVersion(changelog[0]));
+      storage.setItem(changelogSeenKey, changelogVersion(changelog[0]));
     } catch {
       // A device that will not store the mark simply keeps showing it.
     }
@@ -304,7 +305,7 @@ function setChangelogOpen(open) {
 
 async function loadChangelog() {
   try {
-    const response = await fetch("/api/changelog", { cache: "no-store" });
+    const response = await request("/api/changelog", { cache: "no-store" });
     if (!response.ok) throw new Error();
     const payload = await response.json();
     changelog = Array.isArray(payload.entries) ? payload.entries : [];
@@ -315,7 +316,7 @@ async function loadChangelog() {
 }
 
 function activeTheme() {
-  const saved = localStorage.getItem(themeKey);
+  const saved = storage.getItem(themeKey);
   return THEMES.some((theme) => theme.id === saved) ? saved : THEMES[0].id;
 }
 
@@ -340,7 +341,7 @@ function renderThemeMenu() {
 
 function selectTheme(id) {
   if (!THEMES.some((theme) => theme.id === id)) return;
-  localStorage.setItem(themeKey, id);
+  storage.setItem(themeKey, id);
   applyTheme();
   // The sheet stays open so the themes can be compared against the board behind it, which is the
   // whole reason this lives in the footer rather than in the landing drawer.
@@ -353,14 +354,14 @@ function selectTheme(id) {
 }
 
 function setThemeOpen(open) {
-  elements.themeMenu.hidden = !open;
+  panel(elements.themeMenu, open);
   elements.themeButton.setAttribute("aria-expanded", String(open));
   if (open) (elements.themeList.querySelector(".theme-option") || elements.themeMenuClose)?.focus();
   else elements.themeButton.focus();
 }
 
 function clockFormat() {
-  return localStorage.getItem(clockKey) === "12" ? "12" : "24";
+  return storage.getItem(clockKey) === "12" ? "12" : "24";
 }
 
 // The hour half of every formatter that prints a time for someone to read.
@@ -385,13 +386,15 @@ function renderClockToggle() {
 }
 
 function toggleClockFormat() {
-  localStorage.setItem(clockKey, clockFormat() === "12" ? "24" : "12");
+  storage.setItem(clockKey, clockFormat() === "12" ? "24" : "12");
   renderClockToggle();
   // Every printed time changes at once: the rows, the clock and the notice stamp. The browsed-day
   // cache holds rendered HTML, so it has to go with them.
   resetSchedule();
   renderManualOverride();
   updateClock();
+  render();
+  if (tripView) renderTripView();
 }
 
 function displayCount(key) {
@@ -611,6 +614,7 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
       };
       group.departures.push({
         ...departure,
+        serviceDate,
         delay,
         delta,
         live: frame.live,
@@ -867,9 +871,14 @@ function tripAttrs(item) {
     ` role="button" tabindex="0" aria-haspopup="dialog" aria-label="${escapeHtml(label)}"`;
 }
 
+function sailingKey(item) {
+  const serviceDate = addDays(viewFrame().dateKey, -Math.floor(item.seconds / 86400));
+  return escapeHtml(JSON.stringify([serviceDate, item.tripId, item.stopId, item.seconds]));
+}
+
 function departureCell(item) {
   const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } = departureStatus(item);
-  return `<div class="departure-slot"${tripAttrs(item)}>
+  return `<div class="departure-slot" data-key="${sailingKey(item)}"${tripAttrs(item)}>
     <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta, item.live !== false))}</span></div>
     <span class="departure-last-slot">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
   </div>`;
@@ -882,13 +891,13 @@ function departureCell(item) {
 // the operator's mark instead. A partner route with a real short name (W44, Greenwich) keeps it,
 // and NYC Ferry badges are never touched.
 const PARTNER_BADGES = [
-  { prefix: "wtr:", src: "assets/waterway.png", alt: "NY Waterway", useLogo: (shortName) => /^\d+$/.test(shortName) },
-  { prefix: "sea:", src: "assets/seastreak.png", alt: "Seastreak", useLogo: () => true },
-  { prefix: "nyu:", src: "assets/nyu.png", alt: "NYU Langone Ferry", useLogo: () => true },
-  { prefix: "lib:", src: "assets/cityferry.png", alt: "Liberty Landing Ferry", useLogo: () => true },
+  { prefix: "wtr:", src: "/assets/waterway.png", alt: "NY Waterway", useLogo: (shortName) => /^\d+$/.test(shortName) },
+  { prefix: "sea:", src: "/assets/seastreak.png", alt: "Seastreak", useLogo: () => true },
+  { prefix: "nyu:", src: "/assets/nyu.png", alt: "NYU Langone Ferry", useLogo: () => true },
+  { prefix: "lib:", src: "/assets/cityferry.png", alt: "Liberty Landing Ferry", useLogo: () => true },
   // The Trust's own short names ("RH", "BBP") would read as NYC Ferry route codes on a board that
   // already carries a South Brooklyn boat to the same island, so the wordmark shows instead.
-  { prefix: "gi:", src: "assets/gi.png", alt: "The Trust for Governors Island", useLogo: () => true }
+  { prefix: "gi:", src: "/assets/gi.png", alt: "The Trust for Governors Island", useLogo: () => true }
 ];
 
 function partnerBadgeLogo(routeId, shortName) {
@@ -935,6 +944,7 @@ function renderDateBar() {
 }
 
 function stepDate(amount) {
+  contentTransition(elements.departures);
   const frame = viewFrame();
   const range = scheduleRange();
   const next = addDays(frame.dateKey, amount);
@@ -944,6 +954,7 @@ function stepDate(amount) {
 }
 
 function showToday() {
+  contentTransition(elements.departures);
   if (viewDate === null) return;
   viewDate = null;
   render();
@@ -974,15 +985,31 @@ function renderBoardNote() {
   if (homePort) elements.boardNote.textContent = HOME_PORT_NOTE;
 }
 
+let renderFrame = null;
 function render() {
+  if (renderFrame !== null) return;
+  renderFrame = requestAnimationFrame(() => { renderFrame = null; renderNow(); });
+}
+function renderNow() {
   if (!data) return;
+  const oldOperations = new Map([...elements.departures.querySelectorAll("[data-key]")].map(node => [node.dataset.key, operationalText(node)]));
   applyDisplayCounts();
   renderDateBar();
   renderBoardNote();
-  return sortedBy() === "route" ? renderRouteBoard() : renderTimeline();
+  sortedBy() === "route" ? renderRouteBoard() : renderTimeline();
+  let changes = 0;
+  for (const node of elements.departures.querySelectorAll("[data-key]")) {
+    const previous = oldOperations.get(node.dataset.key);
+    if (previous !== undefined && previous !== operationalText(node)) { contentTransition(node); changes++; }
+  }
+  if (changes) document.querySelector("#boardAnnouncement").textContent = `Vessel or service status updated at ${elements.time.textContent}.`;
 }
 
 // An empty board caused by the filter is not a schedule fact, and must never be read as one.
+function operationalText(node) {
+  return [...node.querySelectorAll(".vessel-delay-badge, .tl-boat, .boat-name, .boat-assignment, .no-pickup-badge, .drop-off-badge")].map(item => item.textContent).join("|");
+}
+
 function emptyFilterBoard() {
   return `<div class="empty"><div><strong>EVERYTHING IS HIDDEN</strong><span>All operators are filtered out. Tap the filter button to show them again.</span></div></div>`;
 }
@@ -1006,11 +1033,11 @@ function renderTimeline() {
   elements.routeCount.textContent = `${rows.length} departure${rows.length === 1 ? "" : "s"}`;
 
   if (!rows.length) {
-    elements.departures.innerHTML = allOperatorsHidden() ? emptyFilterBoard() : emptyBoard();
+    reconcileHTML(elements.departures, allOperatorsHidden() ? emptyFilterBoard() : emptyBoard());
     return;
   }
 
-  elements.departures.innerHTML = rows.map(({ departure, group }) => {
+  reconcileHTML(elements.departures, rows.map(({ departure, group }) => {
     const visual = routeVisual(group.routeId, group.variant);
     const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } =
       departureStatus(departure);
@@ -1043,7 +1070,7 @@ function renderTimeline() {
     // The destination gets a line of its own because it is the longest thing on the row and the
     // one that reads worst truncated.
     const notInService = group.outOfService || group.crewShuttle ? " timeline-row-oos" : "";
-    return `<article class="departure timeline-row route-${visual.routeClass}${variantClass}${notInService}"${visual.style}${tripAttrs(departure)}>
+    return `<article data-key="${sailingKey(departure)}" class="departure timeline-row route-${visual.routeClass}${variantClass}${notInService}"${visual.style}${tripAttrs(departure)}>
       <div class="tl-head">
         <time>${departureLabel(departure)}</time>
         <span class="route-badge${visual.partnerLogo ? " route-badge-image" : ""}">${visual.badgeContent}${variantBadge}</span>
@@ -1056,7 +1083,7 @@ function renderTimeline() {
         <span class="tl-status">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}</span>
       </div>
     </article>`;
-  }).join("");
+  }).join(""));
 }
 
 function renderRouteBoard() {
@@ -1069,11 +1096,11 @@ function renderRouteBoard() {
   elements.routeCount.textContent = `${groups.length} route direction${groups.length === 1 ? "" : "s"}`;
 
   if (!groups.length) {
-    elements.departures.innerHTML = allOperatorsHidden() ? emptyFilterBoard() : emptyBoard();
+    reconcileHTML(elements.departures, allOperatorsHidden() ? emptyFilterBoard() : emptyBoard());
     return;
   }
 
-  elements.departures.innerHTML = groups.map((group) => {
+  reconcileHTML(elements.departures, groups.map((group) => {
     const { route, partnerLogo, variantLabel, badgeContent, routeClass, isOtherOperator, style: routeStyle } =
       routeVisual(group.routeId, group.variant);
     const variantClass = group.variant ? ` variant-${group.variant.toLowerCase()}` : "";
@@ -1084,7 +1111,7 @@ function renderRouteBoard() {
     const operatorBadge = isOtherOperator ? `<small class="route-operator">${escapeHtml(route.operator)}</small>` : "";
     const slots = [...group.departures];
     while (slots.length < departuresShown) slots.push(null);
-    return `<article class="departure route-${routeClass}${variantClass}"${routeStyle}>
+    return `<article data-key="${escapeHtml(group.key)}" class="departure route-${routeClass}${variantClass}"${routeStyle}>
       <div class="route">
         <span class="route-badge${partnerLogo ? " route-badge-image" : ""}">${badgeContent}${variantBadge}</span>
         <span class="route-name">${escapeHtml(routeName)}${operatorBadge}</span>
@@ -1092,7 +1119,7 @@ function renderRouteBoard() {
       <div class="destination"><strong>${escapeHtml(group.destination)}${viaLabel(group)}</strong><span>${groupContext(group, isOtherOperator)}</span></div>
       <div class="departure-slots">${slots.map((item) => item ? departureCell(item) : `<div class="departure-slot unavailable"><span>No scheduled trip</span></div>`).join("")}</div>
     </article>`;
-  }).join("");
+  }).join(""));
 }
 
 function ageLabel(timestamp) {
@@ -1102,21 +1129,25 @@ function ageLabel(timestamp) {
   return `${Math.floor(ageMs / 3_600_000)} hr ago`;
 }
 
+function setText(node, value) {
+  if (node.textContent !== value) node.textContent = value;
+}
+
 function renderManualOverride() {
   const active = Boolean(manualOverride?.active && manualOverride.message);
   elements.screen.classList.toggle("override-active", active);
   elements.manualOverride.hidden = !active;
-  elements.manualOverrideMessage.textContent = active ? manualOverride.message : "";
+  setText(elements.manualOverrideMessage, active ? manualOverride.message : "");
   const length = manualOverride?.message?.length || 0;
   elements.manualOverrideBox.dataset.size = length > 700 ? "long" : length > 280 ? "medium" : "short";
 
   const updatedAt = Date.parse(manualOverride?.updatedAt);
-  elements.manualOverrideUpdated.textContent = active && Number.isFinite(updatedAt)
+  setText(elements.manualOverrideUpdated, active && Number.isFinite(updatedAt)
     ? `Updated ${new Intl.DateTimeFormat("en-US", {
       timeZone: data?.meta?.timezone || "America/New_York",
       month: "long", day: "numeric", ...hourOptions(), minute: "2-digit"
     }).format(new Date(updatedAt))}`
-    : "";
+    : "");
 
   if (data) {
     document.title = active
@@ -1126,12 +1157,15 @@ function renderManualOverride() {
 }
 
 async function loadManualOverride() {
-  const landingId = data?.meta?.landingNumber;
+  const landingId = data?.meta?.landingNumber ?? requestedLanding;
   if (!landingId) return;
+  const generation = landingRequest;
   try {
-    const response = await fetch(`/api/override?landingId=${encodeURIComponent(landingId)}`, { cache: "no-store" });
+    const response = await request(`/api/override?landingId=${encodeURIComponent(landingId)}`, { cache: "no-store" });
     if (!response.ok) throw new Error();
-    manualOverride = await response.json();
+    const payload = await response.json();
+    if (generation !== landingRequest) return;
+    manualOverride = payload;
     renderManualOverride();
   } catch {
     // Preserve the last known state if the local server is temporarily unreachable.
@@ -1342,7 +1376,7 @@ function renderTripView() {
   const stops = tripView.stops;
   elements.tripSummary.textContent = tripView.summary;
   renderTripMapLink();
-  elements.tripStops.innerHTML = stops.map((stop) => {
+  reconcileHTML(elements.tripStops, stops.map((stop) => {
     // Keyed on sequence, not stop id: a loop trip calls at the same pier twice and dimming by id
     // would grey out the wrong half of it.
     const past = stop.sequence < tripView.sequence;
@@ -1364,13 +1398,13 @@ function renderTripView() {
       ${headTag}
       <ul class="trip-conns">${connectionsFor(stop)}</ul>
     </li>`;
-  }).join("");
+  }).join(""));
 }
 
 async function loadTripConnections(tripId) {
   const token = tripRequest;
   try {
-    const response = await fetch(`/api/connections?tripId=${encodeURIComponent(tripId)}`, { cache: "no-store" });
+    const response = await request(`/api/connections?tripId=${encodeURIComponent(tripId)}`, { cache: "no-store" });
     if (!response.ok) throw new Error(`Connections responded ${response.status}`);
     const payload = await response.json();
     if (token !== tripRequest || !tripView) return;
@@ -1391,7 +1425,7 @@ async function loadTripConnections(tripId) {
       if (stop.name) tripView.names.set(stop.stopId, stop.name);
       tripView.landings.set(stop.stopId, stop.landingId ?? null);
     }
-    if (payload.stale) tripView.summary = `${tripView.summary} · Saved`;
+    tripView.summary = tripView.summary.replace(/ · Saved$/, "") + (payload.stale ? " · Saved" : "");
     renderTripView();
   } catch {
     if (token !== tripRequest || !tripView) return;
@@ -1440,7 +1474,7 @@ function refreshTripConnections() {
 }
 
 function setTripOpen(open) {
-  elements.tripMenu.hidden = !open;
+  panel(elements.tripMenu, open);
   if (open) {
     elements.tripMenuClose.focus();
     return;
@@ -1458,7 +1492,7 @@ function setAlertMenuOpen(open) {
   // Nothing to expand into. The bar is disabled in that state, so this only guards the keyboard.
   if (open && !(serviceAlerts?.alerts || []).length) return;
   if (open) renderAlertMenu();
-  elements.alertMenu.hidden = !open;
+  panel(elements.alertMenu, open);
   elements.serviceAlerts.setAttribute("aria-expanded", String(open));
   if (open) elements.alertMenuClose?.focus();
   else elements.serviceAlerts.focus();
@@ -1483,7 +1517,7 @@ function renderServiceAlerts() {
     // is a background refresh, not something they just did.
     if (expandable) renderAlertMenu();
     else {
-      elements.alertMenu.hidden = true;
+      panel(elements.alertMenu, false);
       elements.serviceAlerts.setAttribute("aria-expanded", "false");
     }
   }
@@ -1520,14 +1554,14 @@ function renderServiceAlerts() {
 
 async function loadServiceAlerts() {
   try {
-    const response = await fetch("/api/alerts", { cache: "no-store" });
+    const response = await request("/api/alerts", { cache: "no-store" });
     if (!response.ok) throw new Error();
     serviceAlerts = await response.json();
-    localStorage.setItem(`${cacheKey}-alerts`, JSON.stringify(serviceAlerts));
+    storage.setItem(`${cacheKey}-alerts`, JSON.stringify(serviceAlerts));
   } catch {
-    const saved = localStorage.getItem(`${cacheKey}-alerts`);
+    const saved = storage.getItem(`${cacheKey}-alerts`);
     serviceAlerts = saved
-      ? { ...JSON.parse(saved), stale: true }
+      ? { ...storage.json(`${cacheKey}-alerts`, {}), stale: true }
       : { available: false, stale: true, fetchedAt: null, alerts: [] };
   }
   renderServiceAlerts();
@@ -1538,36 +1572,28 @@ function updateClock() {
   const timeZone = data?.meta?.timezone || "America/New_York";
   elements.time.textContent = new Intl.DateTimeFormat("en-US", { timeZone, ...hourOptions(), minute: "2-digit" }).format(now);
   elements.date.textContent = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long", month: "long", day: "numeric" }).format(now);
-  render();
 }
 
+let realtimeRequest = 0;
 async function loadRealtime() {
+  if (!data) return;
+  const landingId = data.meta.landingNumber;
+  const generation = landingRequest;
+  const token = ++realtimeRequest;
+  const key = `${cacheKey}-realtime-${landingId}`;
   try {
-    // The server tracks every landing, so name ours: without it the payload carries updates for
-    // the whole system. Before display data has loaded there is no landing to name, and the
-    // unfiltered response is still correct.
-    const landingId = data?.meta?.landingNumber;
-    const query = landingId ? `?landingId=${encodeURIComponent(landingId)}` : "";
-    const response = await fetch(`/api/realtime${query}`, { cache: "no-store" });
+    const response = await request(`/api/realtime?landingId=${encodeURIComponent(landingId)}`, { cache: "no-store" });
     if (!response.ok) throw new Error();
-    realtime = await response.json();
-    localStorage.setItem(`${cacheKey}-realtime`, JSON.stringify(realtime));
-    // "Live" and "Saved", not "Live estimates" and "Saved live estimates". The chip sits on the one
-    // line the landing name also has to fit on, and the word it was spending that width on is the
-    // one word a green dot beside the label already implies.
-    elements.status.innerHTML = `<i></i><span>${realtime.stale ? "Saved" : "Live"}</span>`;
+    const payload = await response.json();
+    if (generation !== landingRequest || token !== realtimeRequest) return;
+    realtime = payload;
+    storage.setItem(key, JSON.stringify(payload));
   } catch {
-    const saved = localStorage.getItem(`${cacheKey}-realtime`);
-    if (saved) {
-      realtime = { ...JSON.parse(saved), stale: true };
-      elements.status.innerHTML = "<i></i><span>Saved</span>";
-    } else {
-      elements.status.innerHTML = "<i></i><span>Local schedule</span>";
-    }
+    if (generation !== landingRequest || token !== realtimeRequest) return;
+    realtime = { ...storage.json(key, { updates: [], vehicles: [], available: false }), stale: true };
   }
+  reconcileHTML(elements.status, `<i></i><span>${scheduleSaved ? "Saved schedule" : realtime.stale ? "Saved" : "Live"}</span>`);
   render();
-  // The open trip view ages at the same rate the board does, and rides the same timer rather than
-  // starting one of its own.
   refreshTripConnections();
 }
 
@@ -1579,7 +1605,7 @@ function selectedLanding() {
     linkedLanding = null;
     return requested;
   }
-  const value = Number(localStorage.getItem(landingKey));
+  const value = Number(storage.getItem(landingKey));
   return Number.isInteger(value) && value > 0 ? value : null;
 }
 
@@ -1587,43 +1613,73 @@ function landingDataKey(landingNumber) {
   return `${cacheKey}-landing-${landingNumber}`;
 }
 
-async function load() {
-  const selected = selectedLanding();
-  // No stored choice means this device has never picked one, so take whatever the build
-  // configured. Once a board loads, its landing is remembered for the next start.
-  const query = selected === null ? "" : `?landingId=${encodeURIComponent(selected)}`;
-  try {
-    const response = await fetch(`/api/display-data${query}`, { cache: "no-store" });
-    if (!response.ok) throw new Error();
-    data = await response.json();
-    localStorage.setItem(landingKey, String(data.meta.landingNumber));
-    localStorage.setItem(landingDataKey(data.meta.landingNumber), JSON.stringify(data));
-  } catch {
-    const saved = selected === null ? null : localStorage.getItem(landingDataKey(selected));
-    if (!saved) throw new Error("No display data is available.");
-    data = JSON.parse(saved);
-  }
-  // A new payload invalidates every memoized day, and a new landing is a fresh question — nobody
-  // switching docks means "and keep showing me next Tuesday".
+let landingRequest = 0;
+let requestedLanding = null;
+let scheduleSaved = false;
+function validSchedule(value, selected) {
+  return value?.meta?.landing?.displayName && value.routes && Array.isArray(value.calendars) && Array.isArray(value.departures)
+    && (selected === null || value.meta.landingNumber === selected);
+}
+function applySchedule(payload) {
+  data = payload;
   resetSchedule();
-  viewDate = null;
-  // A different landing is a different payload, and the open trip belonged to the old one.
-  setTripOpen(false);
   elements.landing.textContent = data.meta.landing.displayName;
   renderLandingList();
-  // The operator rows come from the payload, so a new landing means a new list — and a filter that
-  // named an operator this landing does not carry means an unlit button rather than a stale badge.
   renderFilterMenu();
   renderNearest();
-  await loadManualOverride();
   updateClock();
-  loadRealtime();
-  loadServiceAlerts();
+  render();
+}
+async function load(selected = selectedLanding()) {
+  const token = ++landingRequest;
+  const changed = selected !== requestedLanding;
+  requestedLanding = selected;
+  if (changed) {
+    viewDate = null;
+    setTripOpen(false);
+    manualOverride = { active: false };
+    renderManualOverride();
+    realtime = { ...storage.json(`${cacheKey}-realtime-${selected}`, { updates: [], vehicles: [] }), stale: true };
+    data = null;
+    void loadManualOverride();
+  }
+  const saved = storage.json(landingDataKey(selected));
+  if (validSchedule(saved, selected)) {
+    scheduleSaved = true;
+    applySchedule(saved);
+    reconcileHTML(elements.status, '<i></i><span>Saved · refreshing</span>');
+  } else if (!data) {
+    reconcileHTML(elements.departures, '<div class="empty"><div><strong>Loading schedule…</strong><span>Fetching this landing’s departures.</span></div></div>');
+  }
+  const query = selected === null ? "" : `?landingId=${encodeURIComponent(selected)}`;
+  try {
+    const response = await request(`/api/display-data${query}`, { cache: "no-store" });
+    if (!response.ok) throw new Error();
+    const payload = await response.json();
+    if (token !== landingRequest) return;
+    if (!validSchedule(payload, selected)) throw new Error('Invalid schedule');
+    storage.setItem(landingKey, String(payload.meta.landingNumber));
+    storage.setItem(landingDataKey(payload.meta.landingNumber), JSON.stringify(payload));
+    requestedLanding = payload.meta.landingNumber;
+    scheduleSaved = Boolean(response.saved);
+    applySchedule(payload);
+    if (changed) contentTransition(elements.departures);
+  } catch {
+    if (token !== landingRequest) return;
+    if (!data) {
+      reconcileHTML(elements.departures, '<div class="empty"><div><strong>Landing unavailable</strong><span>No saved schedule for this landing. Choose another landing or retry when connected.</span></div></div>');
+      return;
+    }
+  }
+  if (token !== landingRequest) return;
+  void loadManualOverride();
+  void loadRealtime();
+  void loadServiceAlerts();
 }
 
 function favouriteLandings() {
   try {
-    const stored = JSON.parse(localStorage.getItem(favouriteLandingsKey) || "[]");
+    const stored = JSON.parse(storage.getItem(favouriteLandingsKey) || "[]");
     return new Set(Array.isArray(stored) ? stored.filter(Number.isInteger) : []);
   } catch {
     return new Set();
@@ -1634,7 +1690,7 @@ function setLandingFavourite(landingNumber, favourite) {
   const next = favouriteLandings();
   if (favourite) next.add(landingNumber);
   else next.delete(landingNumber);
-  localStorage.setItem(favouriteLandingsKey, JSON.stringify([...next]));
+  storage.setItem(favouriteLandingsKey, JSON.stringify([...next]));
   renderLandingList();
   // The list is rebuilt and reordered under the tap, so put the cursor back on the star that was
   // just pressed rather than dropping a keyboard user wherever that row landed.
@@ -1681,7 +1737,7 @@ function favouriteMark() {
 }
 
 function renderLandingList() {
-  const landings = JSON.parse(localStorage.getItem(landingsKey) || "[]");
+  const landings = storage.json(landingsKey, []);
   if (!landings.length) return;
   const current = data?.meta?.landingNumber;
   const favourites = favouriteLandings();
@@ -1692,26 +1748,27 @@ function renderLandingList() {
     ...landings.filter((landing) => favourites.has(landing.id)),
     ...landings.filter((landing) => !favourites.has(landing.id))
   ];
-  elements.landingList.innerHTML = ordered.map((landing) => {
+  const query = document.querySelector("#landingSearch")?.value.trim().toLowerCase() || "";
+  reconcileHTML(elements.landingList, ordered.filter(landing => landing.displayName.toLowerCase().includes(query)).map((landing) => {
     const starred = favourites.has(landing.id);
     const name = escapeHtml(landing.displayName);
-    return `<li class="landing-row${starred ? " is-favourite" : ""}">
+    return `<li data-key="${landing.id}" class="landing-row${starred ? " is-favourite" : ""}">
     <button type="button" class="landing-star" data-favourite-id="${landing.id}" aria-pressed="${starred}" aria-label="${starred ? `Remove ${name} from favourites` : `Add ${name} to favourites`}" title="${starred ? "Remove from favourites" : "Add to favourites"}">${mark}</button>
     <button type="button" class="landing-option${landing.id === current ? " is-current" : ""}" data-landing-id="${landing.id}"${landing.id === current ? ' aria-current="true"' : ""}>
       <span class="landing-option-name">${name}</span>
     </button>
   </li>`;
-  }).join("");
+  }).join(""));
 }
 
 async function loadLandings() {
   try {
-    const response = await fetch("/api/landings", { cache: "no-store" });
+    const response = await request("/api/landings", { cache: "no-store" });
     if (!response.ok) throw new Error();
     const payload = await response.json();
-    localStorage.setItem(landingsKey, JSON.stringify(payload.landings || []));
+    storage.setItem(landingsKey, JSON.stringify(payload.landings || []));
     if (Array.isArray(payload.operators) && payload.operators.length) {
-      localStorage.setItem(operatorsKey, JSON.stringify(payload.operators));
+      storage.setItem(operatorsKey, JSON.stringify(payload.operators));
     }
   } catch {
     // Keep whatever list was saved; the menu still works offline.
@@ -1729,7 +1786,7 @@ async function loadLandings() {
 
 function savedNearest() {
   try {
-    const saved = JSON.parse(localStorage.getItem(nearestKey) || "null");
+    const saved = JSON.parse(storage.getItem(nearestKey) || "null");
     if (!saved || !Number.isInteger(saved.id)) return null;
     return Date.now() - Number(saved.at) > nearestMaxAgeMs ? null : saved;
   } catch {
@@ -1756,7 +1813,7 @@ function buttonLabel(landing) {
 }
 
 function nearestLanding(latitude, longitude) {
-  const landings = JSON.parse(localStorage.getItem(landingsKey) || "[]");
+  const landings = storage.json(landingsKey, []);
   let best = null;
   for (const landing of landings) {
     // A landing the build could not place is skipped rather than guessed at: missing from the
@@ -1808,7 +1865,7 @@ function locateNearest() {
       // Only reachable from a landing list cached before landings carried positions. One online
       // start refreshes it, so this is a "not yet" rather than a real error.
       if (!best) return flashNearest("No fix", "No landing positions are available yet.");
-      localStorage.setItem(nearestKey, JSON.stringify({ id: best.id, name: best.name, distance: distanceLabel(best.metres), at: Date.now() }));
+      storage.setItem(nearestKey, JSON.stringify({ id: best.id, name: best.name, distance: distanceLabel(best.metres), at: Date.now() }));
       renderNearest();
     },
     (error) => {
@@ -1845,11 +1902,11 @@ if (!document.documentElement.dataset.surface) {
 const railDocked = () => document.documentElement.dataset.surface !== "kiosk" && railMedia.matches;
 
 function setMenuOpen(open, moveFocus = true) {
-  elements.landingMenu.hidden = !open;
+  panel(elements.landingMenu, open, !railDocked());
   elements.menuButton.setAttribute("aria-expanded", String(open));
   document.body.classList.toggle("menu-open", open);
   // Only the docked rail is a preference. A drawer is always closed to begin with.
-  if (railDocked()) localStorage.setItem(railKey, open ? "shown" : "hidden");
+  if (railDocked()) storage.setItem(railKey, open ? "shown" : "hidden");
   if (!moveFocus) return;
   if (open) (elements.landingList.querySelector(".is-current") || elements.landingMenuClose)?.focus();
   else elements.menuButton.focus();
@@ -1861,7 +1918,7 @@ function applyRail() {
   const docked = railDocked();
   document.body.classList.toggle("sidebar-docked", docked);
   elements.landingMenuClose.textContent = docked ? "Hide" : "Done";
-  setMenuOpen(docked && localStorage.getItem(railKey) !== "hidden", false);
+  setMenuOpen(docked && storage.getItem(railKey) !== "hidden", false);
 }
 
 async function selectLanding(landingNumber) {
@@ -1869,12 +1926,9 @@ async function selectLanding(landingNumber) {
   // rail is not in the way of anything, so it stays where it is.
   const dismiss = () => { if (!railDocked()) setMenuOpen(false); };
   if (!Number.isInteger(landingNumber) || landingNumber === data?.meta?.landingNumber) return dismiss();
-  localStorage.setItem(landingKey, String(landingNumber));
+  storage.setItem(landingKey, String(landingNumber));
   dismiss();
-  elements.departures.innerHTML = `<div class="empty"><div><strong>Loading…</strong><span>Switching landing.</span></div></div>`;
-  await load().catch(() => {
-    elements.departures.innerHTML = `<div class="empty"><div><strong>Landing unavailable</strong><span>That landing could not be loaded.</span></div></div>`;
-  });
+  await load(landingNumber);
 }
 
 elements.nearestButton.addEventListener("click", () => {
@@ -1884,7 +1938,7 @@ elements.nearestButton.addEventListener("click", () => {
 });
 
 function bindSheet(setOpen, { menu, trigger, close, scrim, canClose = () => true }) {
-  trigger?.addEventListener("click", () => setOpen(menu.hidden));
+  trigger?.addEventListener("click", () => setOpen(trigger.getAttribute("aria-expanded") !== "true"));
   close.addEventListener("click", () => setOpen(false));
   scrim.addEventListener("click", () => setOpen(false));
   return { menu, setOpen, canClose };
@@ -1899,6 +1953,7 @@ const sheets = [
   bindSheet(setChangelogOpen, { menu: elements.changelogMenu, trigger: elements.changelogButton, close: elements.changelogMenuClose, scrim: elements.changelogMenuScrim })
 ];
 
+document.querySelector("#landingSearch")?.addEventListener("input", renderLandingList);
 elements.landingList.addEventListener("click", (event) => {
   const star = event.target.closest("[data-favourite-id]");
   if (star) return setLandingFavourite(Number(star.dataset.favouriteId), star.getAttribute("aria-pressed") !== "true");
@@ -1954,6 +2009,11 @@ document.addEventListener("keydown", (event) => {
   else if (event.key === "ArrowRight") stepDate(1);
 });
 
+if (document.documentElement.dataset.surface === "kiosk") {
+  const sort = document.querySelector(".sort-toggle");
+  const search = document.querySelector(".landing-search");
+  if (sort && search) search.before(sort);
+}
 railMedia.addEventListener("change", applyRail);
 applyRail();
 applyTheme();
@@ -1966,10 +2026,10 @@ loadLandings();
 load().catch(() => {
   elements.departures.innerHTML = `<div class="empty"><div><strong>Schedule unavailable</strong><span>The local schedule needs attention.</span></div></div>`;
 });
-setInterval(updateClock, 15_000);
-setInterval(loadRealtime, 15_000);
-setInterval(loadServiceAlerts, 60_000);
-setInterval(loadManualOverride, 5_000);
+poll(updateClock, 15_000);
+poll(() => data ? loadRealtime() : load(requestedLanding), 15_000);
+poll(loadServiceAlerts, 60_000);
+poll(loadManualOverride, 5_000);
 if ("serviceWorker" in navigator) {
   let reloadingForUpdate = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
@@ -1982,7 +2042,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=89&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=90&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

@@ -1,15 +1,44 @@
-// The page tells the worker where it lives.
-//
-// The board is served at the site root on a kiosk and proxied under /ferryTimesMobile/ on
-// juliet.nyc, where the root belongs to another site entirely. Its assets sit at the root in both
-// cases, so those paths are fixed — but the document does not, and precaching a hardcoded '/' put
-// somebody else's landing page in the shell on one host and failed the install outright when it
-// 404ed. app.js passes its own directory in the registration URL, so the one entry that moves is
-// the one entry that is asked for.
-const SHELL='nyc-ferry-did-shell-v89',DATA='nyc-ferry-did-data-v87';
-const BASE=new URL(self.location.href).searchParams.get('base')||'/';
-const FILES=[BASE,'/styles.css?v=87','/app.js?v=89','/assets/app-icon.png?v=87','/assets/app-icon-180.png?v=87','/assets/app-icon-192.png?v=87','/assets/app-icon-512.png?v=87','/assets/app-icon-maskable-512.png?v=87','/assets/site.webmanifest?v=87','/assets/kitty.png?v=87','/assets/waterway.png','/assets/seastreak.png','/assets/nyu.png','/assets/cityferry.png','/assets/gi.png','/assets/fonts/lato-regular-latin.woff2','/assets/fonts/lato-bold-latin.woff2','/assets/fonts/lato-black-latin.woff2','/assets/fonts/oswald-variable-latin.woff2','/assets/fonts/bk-flame-latin.woff2'];
+const SHELL='nyc-ferry-did-shell-v90',DATA='nyc-ferry-did-data-v90';
+const requestedBase = new URL(self.location.href).searchParams.get('base');
+const BASE = requestedBase === '/ferryTimesMobile/' ? requestedBase : '/';
+const FILES=[BASE,'/assets/app-icon.png?v=90','/assets/app-icon-180.png?v=90','/assets/app-icon-maskable-512.png?v=90','/assets/waterway.png','/assets/seastreak.png','/assets/nyu.png','/assets/cityferry.png','/assets/gi.png',`${BASE}map`,'/styles.css?v=90','/app.js?v=90','/assets/mobile-runtime.js?v=90','/assets/mobile-console.css?v=90','/assets/map.js?v=90','/assets/map.css?v=90','/assets/map-theme.js?v=90','/assets/site.webmanifest?v=90','/assets/app-icon-192.png?v=90','/assets/app-icon-512.png?v=90','/assets/fonts/lato-regular-latin.woff2','/assets/fonts/lato-bold-latin.woff2','/assets/fonts/lato-black-latin.woff2','/assets/fonts/oswald-variable-latin.woff2'];
+// Theme artwork and optional fonts enter the cache after first use.
 self.addEventListener('install',event=>event.waitUntil(caches.open(SHELL).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('nyc-ferry-did-')&&![SHELL,DATA].includes(key)).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
-async function networkFirst(request,cacheName){const cache=await caches.open(cacheName);try{const response=await fetch(request);if(response.ok)await cache.put(request,response.clone());return response}catch{const saved=await cache.match(request);if(saved)return saved;throw new Error('offline')}}
-self.addEventListener('fetch',event=>{if(event.request.method!=='GET'||new URL(event.request.url).origin!==location.origin)return;const url=new URL(event.request.url);if(url.pathname.startsWith('/api/'))event.respondWith(networkFirst(event.request,DATA));else if(event.request.mode==='navigate')event.respondWith(networkFirst(event.request,SHELL).catch(()=>caches.match(BASE)));else event.respondWith(caches.match(event.request).then(saved=>saved||fetch(event.request).then(response=>{if(response.ok)caches.open(SHELL).then(cache=>cache.put(event.request,response.clone()));return response})))});
+async function networkFirst(request,cacheName,wait=10000){
+  const cache=await caches.open(cacheName).catch(()=>null);
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),wait);
+  try{
+    const response=await fetch(request,{signal:controller.signal});
+    if(!response.ok)throw new Error('unavailable');
+    // Cache errors must not discard a successful response.
+    try{await cache?.put(request,response.clone())}catch{}
+    return response;
+  }catch(error){
+    const saved=await cache?.match(request);
+    if(saved){
+      if(cacheName===DATA){
+        const headers=new Headers(saved.headers);headers.set('X-Ferry-Saved','1');
+        return new Response(saved.body,{status:saved.status,statusText:saved.statusText,headers});
+      }
+      return saved;
+    }
+    if(request.mode==='navigate'){
+      const isMap=/\/map(?:\.html)?$/.test(new URL(request.url).pathname);
+      const shell=await cache?.match(isMap?`${BASE}map`:BASE);
+      if(shell)return shell;
+    }
+    throw error;
+  }finally{clearTimeout(timer)}
+}
+self.addEventListener('fetch',event=>{
+  if(event.request.method!=='GET'||new URL(event.request.url).origin!==location.origin)return;
+  const url=new URL(event.request.url);
+  if(url.pathname.startsWith('/api/'))event.respondWith(networkFirst(event.request,DATA));
+  else if(event.request.mode==='navigate')event.respondWith(networkFirst(event.request,SHELL,2500));
+  else event.respondWith(caches.match(event.request).then(saved=>saved||fetch(event.request).then(response=>{
+    if(response.ok)event.waitUntil(caches.open(SHELL).then(cache=>cache.put(event.request,response.clone())).catch(()=>{}));
+    return response;
+  })));
+});

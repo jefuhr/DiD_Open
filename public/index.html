@@ -9,16 +9,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
-    <link rel="icon" href="/assets/app-icon.png?v=87" type="image/png" />
+    <link rel="icon" href="/assets/app-icon.png?v=90" type="image/png" />
     <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=87" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=90" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
          come from the manifest, which is why the board installs as a bare shortcut without it.
          It lives under /assets/ because that is a path the deployment's proxy forwards to this
          server — a manifest at the site root is served by the landing page, not by the board. -->
-    <link rel="manifest" href="/assets/site.webmanifest?v=87" />
-    <link rel="stylesheet" href="/styles.css?v=87" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=90" />
+    <link rel="stylesheet" href="/styles.css?v=90" />
     <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
          after the board has already been drawn once, and a saved theme applied there arrives as a
          visible flash of the other one. -->
@@ -39,6 +39,7 @@
       document.documentElement.dataset.surface =
         new URL("./", location).pathname === "/" ? "kiosk" : "app";
     </script>
+    <link rel="stylesheet" href="/assets/mobile-console.css?v=90" />
   </head>
   <body>
     <main class="screen" id="screen">
@@ -53,12 +54,14 @@
             <!-- A link rather than a button, and relative rather than rooted: the board is the site
                  root on a kiosk and lives under /ferryTimesMobile/ on juliet.nyc, and "map" resolves
                  against whichever of the two this document was served from. -->
+            <nav class="product-nav" aria-label="Main"><a href="." aria-current="page">Board</a>
             <a class="map-button" id="mapButton" href="map" aria-label="Map of the boats on the water" title="Map of the boats on the water">
               <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4Z" />
                 <path d="M9 4v13m6-6.5v13" />
               </svg>
-            </a>
+              <span>Map</span>
+            </a></nav>
             <!-- Icon only. The button's state is carried by its colour and its title, and the row it
                  sits in has three controls on a phone where it used to have two. -->
             <button type="button" class="nearest-button" id="nearestButton" data-state="idle">
@@ -79,11 +82,17 @@
                the kiosk view sizes its rows to a fixed height, and this belongs to the board rather
                than to any sailing on it. -->
           <p class="board-note" id="boardNote" hidden></p>
-          <div class="departures" id="departures" aria-live="polite"></div>
+          <span id="boardAnnouncement" class="visually-hidden" role="status" aria-live="polite"></span>
+          <div class="departures" id="departures"></div>
           <!-- Below the list, not above it: the question "what about tomorrow?" is the one you have
                after you have read today's boats and run out of them. The clock format sits beside
                it because both are about how the board is read rather than what it says. -->
           <div class="board-footer">
+          <div class="sort-toggle" role="group" aria-label="Sort departures">
+            <button type="button" class="sort-option" id="sortByRoute" data-sort="route" aria-pressed="false">Route</button>
+            <button type="button" class="sort-option" id="sortByTime" data-sort="time" aria-pressed="true">Departure time</button>
+          </div>
+
             <button type="button" class="filter-button" id="filterButton" aria-expanded="false" aria-controls="filterMenu" aria-label="Filter operators">
               <svg class="filter-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M3 5h18l-7 8v6l-4 2v-8Z" />
@@ -115,15 +124,12 @@
             <!-- The change log, beside the drawer's own title. Its own mark rather than a glyph,
                  because it is the one thing in here that is not a landing. -->
             <button type="button" class="changelog-button" id="changelogButton" aria-expanded="false" aria-controls="changelogMenu" aria-label="What's new">
-              <img class="changelog-icon" src="/assets/kitty.png?v=87" alt="" width="128" height="128" />
+              <img class="changelog-icon" src="/assets/kitty.png?v=90" alt="" width="128" height="128" loading="lazy" />
               <span class="changelog-bang" id="changelogBang" aria-hidden="true" hidden>!</span>
             </button>
             <button type="button" class="landing-menu-close" id="landingMenuClose">Done</button>
           </div>
-          <div class="sort-toggle" role="group" aria-label="Sort departures">
-            <button type="button" class="sort-option" id="sortByRoute" data-sort="route" aria-pressed="false">Route</button>
-            <button type="button" class="sort-option" id="sortByTime" data-sort="time" aria-pressed="true">Departure time</button>
-          </div>
+          <label class="landing-search">Find a landing<input id="landingSearch" type="search" autocomplete="off" placeholder="Name of landing" /></label>
           <ul class="landing-list" id="landingList"></ul>
         </nav>
       </div>
@@ -230,6 +236,7 @@
         </div>
       </div>
     </main>
-    <script type="module" src="/app.js?v=89"></script>
+    <script src="/assets/mobile-runtime.js?v=90"></script>
+    <script type="module" src="/app.js?v=90"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-@font-face{font-family:Lato;src:url('/assets/fonts/lato-regular-latin.woff2')}@font-face{font-family:Lato;src:url('/assets/fonts/lato-bold-latin.woff2');font-weight:700}@font-face{font-family:Lato;src:url('/assets/fonts/lato-black-latin.woff2');font-weight:900}@font-face{font-family:Oswald;src:url('/assets/fonts/oswald-variable-latin.woff2');font-weight:500 700}
+@font-face{font-family:Lato;src:url('/assets/fonts/lato-regular-latin.woff2');font-display:swap}@font-face{font-family:Lato;src:url('/assets/fonts/lato-bold-latin.woff2');font-weight:700;font-display:swap}@font-face{font-family:Lato;src:url('/assets/fonts/lato-black-latin.woff2');font-weight:900;font-display:swap}@font-face{font-family:Oswald;src:url('/assets/fonts/oswald-variable-latin.woff2');font-weight:500 700;font-display:swap}
 /* Flame, the typeface Colophon Foundry drew for Burger King. Loaded for one theme, so it is only
    fetched when that theme asks for it -- the precache carries it, but nothing else references it. */
 @font-face{font-family:Flame;src:url('/assets/fonts/bk-flame-latin.woff2');font-weight:400 700;font-display:swap}

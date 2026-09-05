@@ -10,20 +10,18 @@
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <meta name="robots" content="noindex" />
     <title>NYC Ferry Staff Board · Map</title>
-    <link rel="icon" href="/assets/app-icon.png?v=88" type="image/png" />
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=88" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=90" />
+    <link rel="icon" href="/assets/app-icon.png?v=90" type="image/png" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=90" />
     <!-- The board's own stylesheet, loaded first for design system variables, typography, and themes. -->
-    <script src="/assets/map-theme.js?v=4"></script>
-    <link rel="stylesheet" href="/styles.css?v=88" />
-    <link rel="stylesheet" href="/assets/map.css?v=7" />
+    <script src="/assets/map-theme.js?v=90"></script>
+    <link rel="stylesheet" href="/styles.css?v=90" />
+    <link rel="stylesheet" href="/assets/map.css?v=90" />
+    <link rel="stylesheet" href="/assets/mobile-console.css?v=90" />
   </head>
   <body class="map-body">
     <header class="board-heading map-heading">
-      <a class="menu-button back-button" href="." aria-label="Back to the board" title="Back to the board">
-        <svg class="back-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M15 5 8 12l7 7" />
-        </svg>
-      </a>
+      <nav class="product-nav" aria-label="Main"><a href=".">Board</a><a href="map" aria-current="page">Map</a></nav>
       <div class="map-heading-copy"><span class="eyebrow">NYC Ferry · Staff overview</span><h1>On the water</h1></div>
       <div class="board-state">
         <div class="route-count" id="boatCount">Loading…</div>
@@ -74,6 +72,7 @@
       </div>
     </aside>
 
-    <script src="/assets/map.js?v=7"></script>
+    <script src="/assets/mobile-runtime.js?v=90"></script>
+    <script src="/assets/map.js?v=90"></script>
   </body>
 </html>

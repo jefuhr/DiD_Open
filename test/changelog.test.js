@@ -18,7 +18,7 @@ async function bangHidden({ entries, seen }) {
   const store = { "nyc-ferry-did-changelog-seen": seen };
   const localStorage = { getItem: (key) => store[key] ?? null, setItem: (key, value) => { store[key] = value; } };
   const elements = { changelogBang: { hidden: null } };
-  new Function("changelog", "localStorage", "elements", "changelogSeenKey",
+  new Function("changelog", "storage", "elements", "changelogSeenKey",
     `${version}${bang}; renderChangelogBang();`)(entries, localStorage, elements, "nyc-ferry-did-changelog-seen");
   return elements.changelogBang.hidden;
 }
@@ -43,7 +43,7 @@ test("the mark shows only while the newest entry is unread", async () => {
 
 test("opening the sheet is what marks it read", async () => {
   const src = await readFile(appPath, "utf8");
-  assert.match(src, /localStorage\.setItem\(changelogSeenKey, changelogVersion\(changelog\[0\]\)\)/);
+  assert.match(src, /storage\.setItem\(changelogSeenKey, changelogVersion\(changelog\[0\]\)\)/);
   // And a device that refuses to store it keeps showing the mark rather than throwing.
   assert.match(src, /\} catch \{\n\s+\/\/ A device that will not store the mark simply keeps showing it\./);
 });
@@ -62,7 +62,8 @@ test("the button carries the site's own kitty, and the shell caches it", async (
   assert.match(css, /\.changelog-button\{[^}]*margin-right:auto/);
   assert.match(index, /<span class="changelog-bang" id="changelogBang" aria-hidden="true" hidden>!<\/span>/);
   // An icon missing from the precache is a broken image the first time the board opens offline.
-  assert.match(worker, /'\/assets\/kitty\.png\?v=\d+'/);
+  assert.doesNotMatch(worker, /const FILES=.*kitty/);
+  assert.match(worker, /cache\.put\(event\.request/);
   assert.match(css, /\.changelog-bang\{/);
 });
 
