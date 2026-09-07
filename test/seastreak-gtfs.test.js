@@ -21,11 +21,14 @@ async function feed() {
 }
 
 // The board points at these three by id in config/landings.json. Renumbering them in a feed rebuild
-// would take Seastreak off the board at Whitehall, East 35th and Pier 79 without failing anything.
+// would take Seastreak off the board at Whitehall, East 35th and Brookfield without failing
+// anything. West 39th (8306) was the third of these until September 2026: it was called at only by
+// the Belford workings NY Waterway now runs, so Pier 79 no longer names Seastreak at all.
 test("the three piers the board watches keep their ids", async () => {
   const { stops } = await feed();
   const ids = new Set(stops.map((stop) => stop.stop_id));
-  for (const id of ["170", "168", "8306"]) assert.ok(ids.has(id), `stop ${id} is missing from the feed`);
+  for (const id of ["170", "168", "9825"]) assert.ok(ids.has(id), `stop ${id} is missing from the feed`);
+  assert.equal(ids.has("8306"), false, "West 39th St left the timetable and must not come back silently");
 });
 
 // The bug this feed was rewritten to remove. Each sailing is printed in both of Seastreak's tables —
@@ -75,30 +78,44 @@ test("every trip runs forwards and is boardable exactly once at each end", async
   }
 });
 
-// The PDF prints some sailings in red with the note that they do not run on Fridays. Colour does not
-// survive a text extraction, so this is the assertion that the colour was read at all.
-test("the Monday-to-Thursday sailings are a real, smaller subset of the week", async () => {
+// The weekday sheets print the last sailing of the night twice: once in blue for Monday to
+// Wednesday and once in purple for Thursday and Friday. Colour does not survive a text extraction,
+// so this is the assertion that the colour was read at all. It replaces the August timetable's red
+// "not on Fridays" rows, which is why ss-mon-thu is asserted gone rather than merely absent.
+test("the coloured sailings split the week in two, and cover it exactly once", async () => {
   const { calendar, trips } = await feed();
   const services = Object.fromEntries(calendar.map((row) => [row.service_id, row]));
+  assert.equal(services["ss-mon-thu"], undefined, "the red Monday-to-Thursday rows are gone");
+
   assert.equal(services["ss-weekday"].friday, "1");
-  assert.equal(services["ss-mon-thu"].friday, "0");
-  for (const day of ["monday", "tuesday", "wednesday", "thursday"]) {
-    assert.equal(services["ss-mon-thu"][day], "1");
+  for (const day of ["monday", "tuesday", "wednesday"]) {
+    assert.equal(services["ss-mon-wed"][day], "1", `blue runs on ${day}`);
+    assert.equal(services["ss-thu-fri"][day], "0", `purple does not run on ${day}`);
   }
-  // The weekday services are the weekday page and nothing else; the weekend page has its own.
-  for (const id of ["ss-weekday", "ss-mon-thu"]) {
-    assert.equal(services[id].saturday, "0", `${id} is off the weekday page and cannot run Saturday`);
+  for (const day of ["thursday", "friday"]) {
+    assert.equal(services["ss-mon-wed"][day], "0", `blue does not run on ${day}`);
+    assert.equal(services["ss-thu-fri"][day], "1", `purple runs on ${day}`);
+  }
+
+  // The weekday services are the weekday sheets and nothing else; the weekend sheet has its own.
+  for (const id of ["ss-weekday", "ss-mon-wed", "ss-thu-fri"]) {
+    assert.equal(services[id].saturday, "0", `${id} is off a weekday sheet and cannot run Saturday`);
     assert.equal(services[id].sunday, "0");
   }
-  const monThu = trips.filter((trip) => trip.service_id === "ss-mon-thu");
-  assert.ok(monThu.length > 0 && monThu.length < trips.length,
-    "expected some but not all sailings to be Monday-to-Thursday");
+
+  // One blue and one purple row in each printed table, and neither is the whole timetable.
+  for (const id of ["ss-mon-wed", "ss-thu-fri"]) {
+    const coloured = trips.filter((trip) => trip.service_id === id);
+    assert.equal(coloured.length, 2, `${id} is the last boat each way, and only that`);
+    assert.ok(coloured.length < trips.length);
+  }
 });
 
-// The weekend page was missed on the first transcription of this PDF: the board showed no Seastreak
-// boat at all on a Saturday. It is a different route rather than a thinner weekday — four stops,
-// none of the Belford or west side piers — so this checks both that it is there and that it is that
-// shape, since a weekend table accidentally filled in from the weekday one would still be non-empty.
+// The weekend page was missed on the first transcription of this timetable: the board showed no
+// Seastreak boat at all on a Saturday. It is a different route rather than a thinner weekday — as
+// of September 2026 a three-stop shuttle, having lost the Sandy Hook Beach call it had in August —
+// so this checks both that it is there and that it is that shape, since a weekend table
+// accidentally filled in from the weekday one would still be non-empty.
 test("the weekend page is transcribed, and calls only where it says it calls", async () => {
   const { calendar, trips, stopTimes } = await feed();
   const weekend = calendar.find((row) => row.service_id === "ss-weekend");
@@ -111,13 +128,13 @@ test("the weekend page is transcribed, and calls only where it says it calls", a
 
   const weekendTrips = new Set(
     trips.filter((trip) => trip.service_id === "ss-weekend").map((trip) => trip.trip_id));
-  assert.equal(weekendTrips.size, 12, "six sailings each way on the weekend page");
+  assert.equal(weekendTrips.size, 10, "five sailings each way on the weekend page");
 
   const calls = stopTimes.filter((row) => weekendTrips.has(row.trip_id));
   const served = new Set(calls.map((row) => row.stop_id));
   assert.deepEqual([...served].sort(),
-    ["168", "170", "176", "sandy-hook-beach"].sort(),
-    "the weekend boat runs Highlands, Sandy Hook, Battery Maritime and East 35th, and nowhere else");
+    ["168", "170", "176"].sort(),
+    "the weekend boat runs Highlands, Battery Maritime and East 35th, and nowhere else");
 
   // The reason this matters to the board: Battery/Whitehall reads Seastreak stop 170, and before
   // the weekend page was read that landing had nothing to show on a Saturday.

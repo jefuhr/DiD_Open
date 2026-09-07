@@ -519,17 +519,18 @@ test("Seastreak's terminating boats show as arrivals at both Manhattan piers", a
     }
   }
 
-  // West 39th St is Pier 79 on this board, and its boats are Belford's — under Seastreak until
-  // 2026-09-04 and under NY Waterway from the 8th. The board carries both feeds across the
-  // handover and lets the calendars decide which is showing, so both sets of arrivals are here.
-  assert.equal(pier79.meta.seastreak.enabled, true);
+  // West 39th St is Pier 79 on this board, and its boats were Belford's. Seastreak ran them until
+  // 2026-09-04 and NY Waterway from the 8th; the September Seastreak timetable prints no West 39th
+  // column at all, so that operator is off this pier entirely and landing 26 no longer names it.
+  // The Belford arrivals are NY Waterway's alone now.
+  assert.equal(pier79.meta.seastreak.enabled, false, "Seastreak no longer calls at West 39th St");
   assert.equal(pier79.meta.waterwayBelford.enabled, true);
   const fromBelford = arrivals(pier79).filter((item) => item.destination === "Arrives from Belford, NJ");
-  assert.ok(fromBelford.some((item) => String(item.routeId).startsWith("sea:")), "Seastreak's Belford arrivals");
-  assert.ok(fromBelford.some((item) => String(item.routeId).startsWith("wbf:")), "NY Waterway's Belford arrivals");
-  // The ordinary sailings come with them: the pier gets the whole service, not only the arrivals.
-  assert.ok(pier79.departures.some((item) => String(item.routeId).startsWith("sea:") && !item.arrival),
-    "Pier 79 must also show the boats leaving for New Jersey");
+  assert.ok(fromBelford.length > 0, "NY Waterway's Belford arrivals");
+  assert.ok(fromBelford.every((item) => String(item.routeId).startsWith("wbf:")),
+    "every Belford arrival at Pier 79 is NY Waterway's");
+  assert.equal(pier79.departures.some((item) => String(item.routeId).startsWith("sea:")), false,
+    "no Seastreak row may survive at a pier Seastreak stopped calling at");
 
   assert.ok(arrivals(east34).some((item) => /Highlands/.test(item.destination)));
 });

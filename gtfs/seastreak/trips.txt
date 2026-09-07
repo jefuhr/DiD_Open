@@ -1,56 +1,45 @@
 route_id,service_id,trip_id,trip_headsign,direction_id
-211,ss-belford-mon-thu,ss-nj-01,"Paulus Hook, NJ",0
-211,ss-weekday,ss-nj-02,"East 35th St., NYC",0
-211,ss-belford,ss-nj-03,Battery Maritime Building Slip 5,0
+211,ss-weekday,ss-nj-01,"East 35th St., NYC",0
+211,ss-weekday,ss-nj-02,Battery Maritime Building Slip 5,0
+211,ss-weekday,ss-nj-03,"East 35th St., NYC",0
 211,ss-weekday,ss-nj-04,"East 35th St., NYC",0
-211,ss-belford-mon-thu,ss-nj-05,"West 39th St., NYC",0
+211,ss-weekday,ss-nj-05,"East 35th St., NYC",0
 211,ss-weekday,ss-nj-06,"East 35th St., NYC",0
 211,ss-weekday,ss-nj-07,"East 35th St., NYC",0
-211,ss-belford,ss-nj-08,"West 39th St., NYC",0
-211,ss-weekday,ss-nj-09,"East 35th St., NYC",0
-211,ss-mon-thu,ss-nj-10,"East 35th St., NYC",0
+211,ss-weekday,ss-nj-08,"East 35th St., NYC",0
+211,ss-weekday,ss-nj-09,Battery Maritime Building Slip 5,0
+211,ss-weekday,ss-nj-10,"Brookfield Place, NY",0
 211,ss-weekday,ss-nj-11,Battery Maritime Building Slip 5,0
-211,ss-mon-thu,ss-nj-12,Battery Maritime Building Slip 5,0
-211,ss-belford-mon-thu,ss-nj-13,Battery Maritime Building Slip 5,0
+211,ss-weekday,ss-nj-12,Battery Maritime Building Slip 5,0
+211,ss-weekday,ss-nj-13,Battery Maritime Building Slip 5,0
 211,ss-weekday,ss-nj-14,Battery Maritime Building Slip 5,0
-211,ss-mon-thu,ss-nj-15,Battery Maritime Building Slip 5,0
-211,ss-belford,ss-nj-16,Battery Maritime Building Slip 5,0
-211,ss-weekday,ss-nj-17,Battery Maritime Building Slip 5,0
-211,ss-belford-mon-thu,ss-nj-18,Battery Maritime Building Slip 5,0
-211,ss-weekday,ss-nj-19,Battery Maritime Building Slip 5,0
-211,ss-weekday,ss-nj-20,Battery Maritime Building Slip 5,0
-211,ss-weekday,ss-nj-21,Battery Maritime Building Slip 5,0
-211,ss-weekday,ss-nj-22,Battery Maritime Building Slip 5,0
-211,ss-belford-mon-thu,ss-ny-01,"Belford, NJ",1
-211,ss-weekday,ss-ny-02,"Highlands, NJ",1
-211,ss-belford,ss-ny-03,"Belford, NJ",1
+211,ss-weekday,ss-nj-15,Battery Maritime Building Slip 5,0
+211,ss-mon-wed,ss-nj-16,Battery Maritime Building Slip 5,0
+211,ss-thu-fri,ss-nj-17,Battery Maritime Building Slip 5,0
+211,ss-weekday,ss-ny-01,"Highlands, NJ",1
+211,ss-weekday,ss-ny-02,"Atlantic Highlands, NJ",1
+211,ss-weekday,ss-ny-03,"Atlantic Highlands, NJ",1
 211,ss-weekday,ss-ny-04,"Atlantic Highlands, NJ",1
 211,ss-weekday,ss-ny-05,"Highlands, NJ",1
 211,ss-weekday,ss-ny-06,"Highlands, NJ",1
 211,ss-weekday,ss-ny-07,"Atlantic Highlands, NJ",1
-211,ss-belford-mon-thu,ss-ny-08,"Belford, NJ",1
-211,ss-mon-thu,ss-ny-09,"Highlands, NJ",1
-211,ss-belford,ss-ny-10,"Belford, NJ",1
-211,ss-weekday,ss-ny-11,"Atlantic Highlands, NJ",1
-211,ss-belford-mon-thu,ss-ny-12,"Belford, NJ",1
-211,ss-weekday,ss-ny-13,"Highlands, NJ",1
-211,ss-mon-thu,ss-ny-14,"Atlantic Highlands, NJ",1
-211,ss-belford,ss-ny-15,"Belford, NJ",1
-211,ss-weekday,ss-ny-16,"Atlantic Highlands, NJ",1
-211,ss-belford-mon-thu,ss-ny-17,"Belford, NJ",1
-211,ss-weekday,ss-ny-18,"Highlands, NJ",1
-211,ss-weekday,ss-ny-19,"Atlantic Highlands, NJ",1
-211,ss-weekday,ss-ny-20,"Highlands, NJ",1
-211,ss-weekday,ss-ny-21,"Highlands, NJ",1
-211,ss-weekend,ss-we-nj-01,"East 35th St., NYC",0
+211,ss-weekday,ss-ny-08,"Highlands, NJ",1
+211,ss-weekday,ss-ny-09,"Atlantic Highlands, NJ",1
+211,ss-weekday,ss-ny-10,"Highlands, NJ",1
+211,ss-weekday,ss-ny-11,"Highlands, NJ",1
+211,ss-weekday,ss-ny-12,"Atlantic Highlands, NJ",1
+211,ss-weekday,ss-ny-13,"Atlantic Highlands, NJ",1
+211,ss-weekday,ss-ny-14,"Highlands, NJ",1
+211,ss-weekday,ss-ny-15,"Highlands, NJ",1
+211,ss-mon-wed,ss-ny-16,"Highlands, NJ",1
+211,ss-thu-fri,ss-ny-17,"Atlantic Highlands, NJ",1
+211,ss-weekend,ss-we-nj-01,Battery Maritime Building Slip 5,0
 211,ss-weekend,ss-we-nj-02,Battery Maritime Building Slip 5,0
-211,ss-weekend,ss-we-nj-03,Battery Maritime Building Slip 5,0
-211,ss-weekend,ss-we-nj-04,Battery Maritime Building Slip 5,0
-211,ss-weekend,ss-we-nj-05,Battery Maritime Building Slip 5,0
-211,ss-weekend,ss-we-nj-06,"East 35th St., NYC",0
+211,ss-weekend,ss-we-nj-03,"East 35th St., NYC",0
+211,ss-weekend,ss-we-nj-04,"East 35th St., NYC",0
+211,ss-weekend,ss-we-nj-05,"East 35th St., NYC",0
 211,ss-weekend,ss-we-ny-01,"Highlands, NJ",1
 211,ss-weekend,ss-we-ny-02,"Highlands, NJ",1
 211,ss-weekend,ss-we-ny-03,"Highlands, NJ",1
 211,ss-weekend,ss-we-ny-04,"Highlands, NJ",1
 211,ss-weekend,ss-we-ny-05,"Highlands, NJ",1
-211,ss-weekend,ss-we-ny-06,"Highlands, NJ",1
