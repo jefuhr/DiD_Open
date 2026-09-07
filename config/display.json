@@ -5,6 +5,7 @@
   "departuresShown": 5,
   "routesShown": 4,
   "waterwayEnabled": true,
+  "waterwayBelfordEnabled": true,
   "seastreakEnabled": true,
   "nyuEnabled": true,
   "libertyEnabled": true,

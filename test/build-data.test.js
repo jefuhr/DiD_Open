@@ -280,17 +280,26 @@ test("every bundled feed is still in service, so no operator is silently empty",
   // nothing at all rather than failing loudly. Liberty Landing shipped that way once — a 2019 feed
   // that had expired in 2020 — so this asserts the invariant for every operator at every landing
   // that pulls one in. A failure here means that feed needs regenerating or replacing.
+  //
+  // A feed whose service has not started yet is exempt, and only that: it is a timetable
+  // transcribed ahead of the date it takes effect, which is the point of transcribing it early.
+  // gtfs/waterway-belford/ is bundled that way — NY Waterway takes Belford over on 2026-09-08 —
+  // and the exemption lapses by itself the moment that date arrives, so the guard is not weakened
+  // for any feed for longer than the wait it exists to allow.
   const today = new Date().toISOString().slice(0, 10);
   for (const landingNumber of [8, 16, 25]) {
     const data = await buildDisplayData({ landingNumber });
     const latestEnd = new Map();
+    const earliestStart = new Map();
     const covered = new Set();
     for (const calendar of data.calendars) {
       const operator = calendar.serviceId.includes(":") ? calendar.serviceId.split(":")[0] : "nycf";
       if (!latestEnd.has(operator) || calendar.endDate > latestEnd.get(operator)) latestEnd.set(operator, calendar.endDate);
+      if (!earliestStart.has(operator) || calendar.startDate < earliestStart.get(operator)) earliestStart.set(operator, calendar.startDate);
       if (today >= calendar.startDate && today <= calendar.endDate) covered.add(operator);
     }
     for (const [operator, endDate] of latestEnd) {
+      if (earliestStart.get(operator) > today) continue;
       assert.ok(
         covered.has(operator),
         `landing ${landingNumber}: the "${operator}" feed has no service covering ${today} (latest end ${endDate}); it needs replacing`
@@ -504,15 +513,20 @@ test("Seastreak's terminating boats show as arrivals at both Manhattan piers", a
     assert.ok(arrivals(data).length > 0, "the commuter boats terminate here and must be shown");
     for (const item of arrivals(data)) {
       assert.match(item.destination, /^Arrives from .+/, "an arrival names its origin, not a destination");
-      assert.ok(String(item.routeId).startsWith("sea:"), "only the opted-in feed contributes arrivals");
+      assert.ok(/^(sea|wbf):/.test(String(item.routeId)), "only the opted-in feeds contribute arrivals");
       assert.equal(item.outOfService, false, "an arriving boat is in service and full of passengers");
       assert.equal(item.crewShuttle, false);
     }
   }
 
-  // West 39th St is Pier 79 on this board, and its boats are Belford's.
+  // West 39th St is Pier 79 on this board, and its boats are Belford's — under Seastreak until
+  // 2026-09-04 and under NY Waterway from the 8th. The board carries both feeds across the
+  // handover and lets the calendars decide which is showing, so both sets of arrivals are here.
   assert.equal(pier79.meta.seastreak.enabled, true);
-  assert.ok(arrivals(pier79).some((item) => item.destination === "Arrives from Belford, NJ"));
+  assert.equal(pier79.meta.waterwayBelford.enabled, true);
+  const fromBelford = arrivals(pier79).filter((item) => item.destination === "Arrives from Belford, NJ");
+  assert.ok(fromBelford.some((item) => String(item.routeId).startsWith("sea:")), "Seastreak's Belford arrivals");
+  assert.ok(fromBelford.some((item) => String(item.routeId).startsWith("wbf:")), "NY Waterway's Belford arrivals");
   // The ordinary sailings come with them: the pier gets the whole service, not only the arrivals.
   assert.ok(pier79.departures.some((item) => String(item.routeId).startsWith("sea:") && !item.arrival),
     "Pier 79 must also show the boats leaving for New Jersey");
@@ -1035,8 +1049,10 @@ test("waterway departures name the Manhattan terminals they call at on the way",
     buildDisplayData({ landingNumber: 25, waterwayEnabled: true }),
     buildDisplayData({ landingNumber: 26, waterwayEnabled: true })
   ]);
+  // The Belford feed is configured with the same three terminals and badges its own rows the same
+  // way; it is asserted separately below, so this reads the downloaded feed only.
   const codes = (data) => data.departures
-    .filter((item) => (item.viaTerminals || []).length)
+    .filter((item) => (item.viaTerminals || []).length && String(item.routeId).startsWith("wtr:"))
     .map((item) => `${item.departureTime.slice(0, 5)} ${item.viaTerminals.map((terminal) => terminal.code).join("+")}`)
     .sort();
 
@@ -1060,18 +1076,35 @@ test("waterway departures name the Manhattan terminals they call at on the way",
   const toPier79 = pier11.departures.find((item) => item.departureTime.startsWith("08:35") && item.destination.includes("39th"));
   assert.deepEqual(toPier79.viaTerminals.map((terminal) => terminal.code), ["BPC"]);
 
-  // Nothing outside this route acquires the field's contents.
+  // Nothing outside this route and the Belford one acquires the field's contents.
   for (const data of [pier11, brookfield, pier79]) {
     for (const item of data.departures.filter((row) => (row.viaTerminals || []).length)) {
-      assert.equal(item.routeId, "wtr:77347");
+      assert.ok(item.routeId === "wtr:77347" || item.routeId === "wbf:belford", item.routeId);
     }
   }
 });
 
+// The Belford boat is the second run on the board to thread more than one of the three Manhattan
+// terminals, and it does it every evening: Pier 79, Brookfield Place and Pier 11 in that order on
+// the way to New Jersey. A rider at Brookfield Place asking "does this one stop at Pier 11?" gets
+// the same answer here as on the South Amboy boat, from the same field.
+test("the Belford boat names the terminals it calls at on the way to New Jersey", async () => {
+  const brookfield = await buildDisplayData({ landingNumber: 25 });
+  const belford = brookfield.departures.filter((item) => item.routeId === "wbf:belford" && !item.arrival);
+  assert.ok(belford.length > 0, "Brookfield Place boards the evening Belford boat");
+  for (const item of belford) {
+    assert.deepEqual(item.viaTerminals.map((terminal) => terminal.code), ["PIER 11"]);
+  }
+  // The morning boat is drop-off only here, so it carries no via list to badge.
+  const morning = brookfield.departures.filter((item) => item.routeId === "wbf:belford" && item.arrival);
+  assert.ok(morning.every((item) => (item.viaTerminals || []).length === 0));
+});
+
 // NYC Ferry's own rows never carry the field at all — the client tolerates its absence rather than
 // the build stamping an empty array onto every departure in the system. Partner feeds all carry it
-// because they share one code path, but only the waterway feed is configured with terminals to
-// find, so for the others it is always empty.
+// because they share one code path, but only NY Waterway's two feeds are configured with terminals
+// to find, so for the others it is always empty. Landing 16 boards no Belford boat that goes on to
+// another Manhattan terminal, so nothing from that feed carries a via list here either.
 test("only the waterway feed can produce a via-terminal list", async () => {
   const data = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true, seastreakEnabled: true });
   const own = data.departures.filter((item) => !/^[a-z]+:/.test(String(item.routeId)));

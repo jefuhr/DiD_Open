@@ -32,6 +32,11 @@
 //   timetable never offers a seat from one Manhattan pier to another on them. Modelling those calls
 //   as boardings would invent a service Seastreak does not sell.
 //
+//   BELFORD LEAVES ON 4 SEPTEMBER 2026. NY Waterway takes the route over on the 8th, and its
+//   sheets are transcribed in scripts/build-waterway-belford-gtfs.js. The sailings below are left
+//   in place under their own service ids so the board is right on both sides of that date; they
+//   and those services can be deleted once it has passed.
+//
 //   Times in red do not run on Fridays. Colour does not survive a text extraction, so the red rows
 //   were read out of the PDF's content stream and are carried here as monThuOnly.
 //
@@ -84,6 +89,15 @@ const ROUTE_ID = "211";
 // Monday to Friday, and the Monday-to-Thursday subset the PDF prints in red.
 const SERVICE_WEEKDAY = "ss-weekday";
 const SERVICE_MON_THU = "ss-mon-thu";
+// Belford is NY Waterway's route from 8 September 2026. Seastreak's last Belford sailing is Friday
+// 4 September — the Monday after is Labor Day and the new operator's sheet starts on the Tuesday.
+// Every Belford trip below is a Belford-originating or Belford-terminating run rather than a call
+// on a longer working, so the whole trip stops on that date; the rest of the timetable is
+// untouched, which is why this is a pair of service ids with an earlier end_date rather than a
+// deletion. Delete these two services and the trips that carry them once the date has passed.
+const SERVICE_BELFORD = "ss-belford";
+const SERVICE_BELFORD_MON_THU = "ss-belford-mon-thu";
+const BELFORD_SERVICE_END = "20260904";
 // Saturday and Sunday, off the PDF's second page. The weekend timetable prints one set of times
 // with no Saturday/Sunday split, so both days get the same service.
 const SERVICE_WEEKEND = "ss-weekend";
@@ -200,9 +214,15 @@ function tripRows(table, { boardingSide, directionId, idPrefix, service }) {
     const tripId = `${idPrefix}-${String(index + 1).padStart(2, "0")}`;
     const calls = row.calls.map(([key, time]) => ({ stop: STOPS[key], time: `${time}:00` }));
     const finalStop = calls.at(-1).stop;
+    // A weekday trip that touches Belford runs on the same days as the rest, but only until
+    // Seastreak hands the route over — see BELFORD_SERVICE_END above.
+    const belford = calls.some((call) => call.stop === STOPS.belford);
+    const weekdayService = row.monThuOnly
+      ? (belford ? SERVICE_BELFORD_MON_THU : SERVICE_MON_THU)
+      : (belford ? SERVICE_BELFORD : SERVICE_WEEKDAY);
     trips.push({
       route_id: ROUTE_ID,
-      service_id: service ?? (row.monThuOnly ? SERVICE_MON_THU : SERVICE_WEEKDAY),
+      service_id: service ?? weekdayService,
       trip_id: tripId,
       trip_headsign: finalStop.name,
       direction_id: directionId
@@ -281,6 +301,10 @@ async function main() {
       [{ service_id: SERVICE_WEEKDAY, monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 1, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: SERVICE_END },
        // The red rows. Same week, minus the Friday.
        { service_id: SERVICE_MON_THU, monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 0, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: SERVICE_END },
+       // The Belford runs, on the same days as the two above but ending when NY Waterway takes the
+       // route over. See gtfs/waterway-belford/ for what replaces them.
+       { service_id: SERVICE_BELFORD, monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 1, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: BELFORD_SERVICE_END },
+       { service_id: SERVICE_BELFORD_MON_THU, monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 0, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: BELFORD_SERVICE_END },
        // The weekend page carries the earlier effective date of the two, and it is the one the
        // file is named for. Its own timetable starts when it says it starts.
        { service_id: SERVICE_WEEKEND, monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 1, sunday: 1, start_date: WEEKEND_SERVICE_START, end_date: SERVICE_END }]),
@@ -306,13 +330,15 @@ async function main() {
     if (!Object.hasOwn(files, stale)) await rm(path.join(OUTPUT_DIR, stale), { force: true });
   }
 
-  const monThu = trips.filter((trip) => trip.service_id === SERVICE_MON_THU).length;
+  const monThu = trips.filter((trip) => trip.service_id === SERVICE_MON_THU || trip.service_id === SERVICE_BELFORD_MON_THU).length;
+  const belford = trips.filter((trip) => trip.service_id.startsWith(SERVICE_BELFORD)).length;
   console.log(`Wrote gtfs/seastreak/ from ${SOURCE_URL} as checked on ${SOURCE_CHECKED_ON}.`);
   const weekend = trips.filter((trip) => trip.service_id === SERVICE_WEEKEND).length;
   console.log(`  weekday: ${NEW_JERSEY_DEPARTURES.length} New Jersey departures, ${NEW_YORK_DEPARTURES.length} New York departures`);
   console.log(`  weekend: ${WEEKEND_NEW_JERSEY_DEPARTURES.length} New Jersey departures, ${WEEKEND_NEW_YORK_DEPARTURES.length} New York departures`);
   console.log(`  ${trips.length} trips, ${stopTimes.length} calls, ${monThu} of them Monday-Thursday only`);
   console.log(`  weekdays from ${SERVICE_START}, weekends from ${WEEKEND_SERVICE_START}, both to ${SERVICE_END}`);
+  console.log(`  ${belford} of the trips call at Belford and stop after ${BELFORD_SERVICE_END} — NY Waterway takes the route over`);
   console.log(`  ${weekend} of the trips are Saturday/Sunday`);
 }
 

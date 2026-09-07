@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "NYC Ferry departure board — hardcoded NYC Ferry data",
-    "generatedAt": "2026-08-28T00:23:43.647Z",
+    "generatedAt": "2026-09-02T21:05:29.019Z",
     "generator": "scripts/export-hardcoded-data.js",
     "description": "Every piece of NYC Ferry data this repository carries that did not come from a published GTFS feed. Each section names the file it was read from; edit that file, not this one.",
     "scope": "NYC Ferry only. The partner operators sharing these docks have their own hand-maintained data in this repository — NY Waterway route corrections, transcribed timetables for the Governors Island, IKEA and Liberty Landing boats, and downloads for the Staten Island Ferry and the Statue of Liberty boats — and none of it is included here. Partner stop ids and partner on/off switches are stripped from the config below.",
@@ -21,6 +21,7 @@
     "description": "Every landing the board can show, keyed by the landing number an agent dials. stopIds are NYC Ferry GTFS stops. Landing 27 (Pier C) is virtual — no feed contains the home port — so it carries its own coordinates and a stop id that exists only in this repository. A landing marked nycFerryCalls: false is a real dock that NYC Ferry does not serve: its departures all belong to partner operators, so it has no NYC Ferry stop id and carries its own coordinates.",
     "partnerStopIdsRemoved": [
       "waterwayStopIds",
+      "waterwayBelfordStopIds",
       "seastreakStopIds",
       "nyuStopIds",
       "libertyStopIds",
@@ -260,6 +261,7 @@
     "description": "Which landing a kiosk shows and how much of it. A deployed staff or mobile server answers for every landing and uses landingNumber only as its default. busesEnabled keeps or drops connecting shuttle-bus routes, which for NYC Ferry means the Rockaway shuttles at landing 18.",
     "partnerSwitchesRemoved": [
       "waterwayEnabled",
+      "waterwayBelfordEnabled",
       "seastreakEnabled",
       "nyuEnabled",
       "libertyEnabled",

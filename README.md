@@ -230,6 +230,7 @@ landings that share a dock with another ferry operator can show its departures n
 | operator | feed | id prefix | mark |
 |---|---|---|---|
 | NY Waterway | [`gtfs/waterway/`](./gtfs/waterway) | `wtr:` | [`public/assets/waterway.png`](./public/assets/waterway.png) |
+| NY Waterway — Belford | [`gtfs/waterway-belford/`](./gtfs/waterway-belford) — transcribed, see below | `wbf:` | [`public/assets/waterway.png`](./public/assets/waterway.png) |
 | Seastreak | [`gtfs/seastreak/`](./gtfs/seastreak) — transcribed, see below | `sea:` | [`public/assets/seastreak.png`](./public/assets/seastreak.png) |
 | NYU Langone Ferry | [`gtfs/nyu/`](./gtfs/nyu) — generated, see below | `nyu:` | [`public/assets/nyu.png`](./public/assets/nyu.png) |
 | Liberty Landing Ferry | [`gtfs/liberty/`](./gtfs/liberty) — transcribed, see below | `lib:` | [`public/assets/cityferry.png`](./public/assets/cityferry.png) |
@@ -243,10 +244,10 @@ which landings pull which operator:
 | landing | NYC Ferry stop | partner stop |
 |---|---|---|
 | `8` East 34th Street | `17` East 34th Street | Seastreak `168` East 35th St., NYC · NYU `13138` East 34th Street |
-| `16` Pier 11 / Wall St | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street · IKEA `pier11` Pier 11 / Wall Street |
+| `16` Pier 11 / Wall St | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street, Belford `2439146` the same pier · IKEA `pier11` Pier 11 / Wall Street |
 | `24` Sunset Park / BAT | `118` Sunset Park/BAT | NYU `13139` Brooklyn Army Terminal |
-| `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | NY Waterway `2729332` Brookfield Place/Battery Park City · Liberty Landing `2557122` Brookfield Place Terminal |
-| `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | NY Waterway `2439145` Midtown / W 39th Street · IKEA `midtown` Midtown / W 39th Street |
+| `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | NY Waterway `2729332` Brookfield Place/Battery Park City, Belford `2729332` the same pier · Liberty Landing `2557122` Brookfield Place Terminal |
+| `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | NY Waterway `2439145` Midtown / W 39th Street, Belford `2439145` the same pier · IKEA `midtown` Midtown / W 39th Street |
 | `11` Governors Island / Yankee Pier | `111` Governors Island | Trust `govisland` Governors Island / Yankee Pier |
 | `28` Battery / Whitehall | none — NYC Ferry does not call here | Staten Island Ferry `whitehall` Whitehall Ferry Terminal · Seastreak `170` Battery Maritime Building Slip 5 · Trust `bmb` Battery Maritime Building / Slip 7 |
 | `29` Governors Island / Soissons Landing | none — NYC Ferry does not call here | Trust `soissons` Governors Island / Soissons Landing |
@@ -256,8 +257,8 @@ which landings pull which operator:
 
 each operator has two switches, and either one off means none of its data is read:
 
-- `waterwayEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` / `ikeaEnabled` / `giEnabled` / `siferryEnabled` / `statueEnabled` in `config/display.json` — the whole kiosk.
-- `waterwayStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` / `ikeaStopIds` / `giStopIds` / `siferryStopIds` / `statueStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
+- `waterwayEnabled` / `waterwayBelfordEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` / `ikeaEnabled` / `giEnabled` / `siferryEnabled` / `statueEnabled` in `config/display.json` — the whole kiosk.
+- `waterwayStopIds` / `waterwayBelfordStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` / `ikeaStopIds` / `giStopIds` / `siferryStopIds` / `statueStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
 
 a missing `...Enabled` key means **on**, not off. `config/display.json` is the one file a deploy never overwrites — it holds the box's own `landingNumber` — so a release that adds an operator arrives with its switch absent from the live config, and reading that as off hid the new operator on the very deploy that shipped it, silently. defaulting to on is safe because the switch is not what decides where an operator appears: the per-landing `...StopIds` arrays do, and those live in `config/landings.json`, which every deploy ships. to turn an operator off, say `false` — omitting the key no longer does it.
 
@@ -288,6 +289,16 @@ it is now read from the operator's weekday schedule PDF, currently *Effective Au
 - **times printed in red do not run on Fridays.** colour does not survive a text extraction, so those rows are read out of the PDF's content stream and carried as a second calendar (`ss-mon-thu`). thirteen of the forty-three sailings are Monday-to-Thursday only.
 
 the feed is **weekday-only**, as the download it replaced also was — that feed had no Saturday or Sunday sailing on this route either. Seastreak's Massachusetts routes (New Bedford, Nantucket, Martha's Vineyard) were in the download and are deliberately not here: no landing on this board is within two hundred miles of them. the calendar runs `20260810`–`20271231` and then lapses, so a transcription cannot quietly outlive the timetable it came from.
+
+**Belford leaves Seastreak on 4 September 2026.** NY Waterway takes the route over on the 8th, weekends from the 12th. the Seastreak sailings that call there are still transcribed, under their own `ss-belford` and `ss-belford-mon-thu` calendars ending `20260904`, so the board is right on both sides of the handover; delete those two services and the trips carrying them once the date is well past.
+
+the NY Waterway Belford feed is **transcribed, not downloaded** — regenerate it with `node scripts/build-waterway-belford-gtfs.js`. it sits in its own directory rather than in `gtfs/waterway/` because that one is a Trillium download whose contract is "drop in a fresh copy", and a fresh copy would erase anything hand-written into it. the same reasoning already gives the IKEA boat its own feed. three things about the printed sheets are worth knowing before re-reading them:
+
+- **the `Depart` / `Arrive` column headings are taken literally**, the same way Seastreak's are: an `Arrive` call is drop-off only and never advertises a boarding. the evening table heads its last column `Depart Belford`, but Belford is the end of the run there, so it is an arrival like the rest.
+- **the four rows noted `Pier 79 Via Transfer at Pier 11` are two vessels, not one.** the morning gives it away by the clock — the 05:45 from Belford is printed at Paulus Hook 06:50 and Midtown 06:50, and no boat is in both places at once. the Pier 79 call is dropped on those rows because it is a connection made at Pier 11 onto a boat `gtfs/waterway/` already carries; transcribing it would advertise one sailing twice. the intermediate calls are kept.
+- **two rows do not run all week, and neither runs on a Monday.** the 05:15 from Belford is `Tuesday - Thursday` and the 18:15 from Pier 79 is `Tuesday - Friday`, both transcribed exactly as printed (`wbf-tue-thu`, `wbf-tue-fri`). the notes column sits well right of the times it qualifies and is easy to miss — read it before assuming a row is ordinary weekday service.
+
+the weekday calendar starts `20260908` and the weekend one `20260912`, both printed on the sheets; they run to `20271231` and then lapse. the route calls at Pier 11 rather than the Battery Maritime Building, so landing `16` gains the Belford boats and landing `28` loses them. when NY Waterway puts Belford in the GTFS it publishes, delete this feed and its `waterwayBelfordStopIds` keys — the stop ids here are the operator's own so that day is a deletion, not a migration.
 
 the Statue of Liberty ferry feed is the National Park Service's, published at `https://www.nps.gov/external-resources/gtfs/stli/statue-of-liberty-ferries.zip` and listed on [NPS developer resources](https://www.nps.gov/subjects/developer/gtfs.htm). the bundled copy is feed version `20260601`, and it is **seasonal**: its only calendar runs `20260523`–`20260907`, so its rows stop appearing after that until a fresh copy is dropped in. the badge shows the feed's route id (`NY`, `NJ`, `LIBP`, `EILILSP`) because NPS publishes no route short names and no operator mark ships with this repo — the route's full name sits beside it.
 
@@ -507,7 +518,7 @@ it is served from `/api/changelog`, read off disk per request, so an edit needs 
 
 ## updating the schedule
 
-replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/` and `gtfs/siferry/` — when a new feed is published, then restart. five directories have no upstream file to drop in and are regenerated instead: `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js`, `gtfs/gi/` with `node scripts/build-gi-gtfs.js`, and `gtfs/seastreak/` with `node scripts/build-seastreak-gtfs.js` (re-read the operator's page or PDF first — those last four are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
+replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/` and `gtfs/siferry/` — when a new feed is published, then restart. six directories have no upstream file to drop in and are regenerated instead: `gtfs/waterway-belford/` with `node scripts/build-waterway-belford-gtfs.js`, `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js`, `gtfs/gi/` with `node scripts/build-gi-gtfs.js`, and `gtfs/seastreak/` with `node scripts/build-seastreak-gtfs.js` (re-read the operator's page or PDF first — all but the NYU one are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
 any edit to `public/index.html`, `public/sw.js`, `public/app.js` or `public/styles.css` must bump the shared cache-busting version (currently `57`) in `index.html` and `sw.js` — `test/display-contract.test.js` checks that they agree.
 

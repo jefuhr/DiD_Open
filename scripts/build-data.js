@@ -175,6 +175,18 @@ export const PARTNER_FEEDS = {
     connectingTerminals: WATERWAY_MANHATTAN_TERMINALS,
     // Departures carry the namespaced id by this point, so the prefix comes off first.
     lineOfRoute: (routeId) => WATERWAY_LINE_OF_ROUTE.get(String(routeId).replace(/^wtr:/, "")) },
+  // NY Waterway's Belford route, which it takes over from Seastreak on 8 September 2026 and which
+  // is not in the GTFS it publishes. It rides in its own directory rather than on the waterway
+  // entry above for the reason set out at the top of scripts/build-waterway-belford-gtfs.js: that
+  // directory is a download, and a fresh one would erase anything written into it. Same badge, same
+  // colour, same three Manhattan terminals — to a rider these are NY Waterway rows, and the split
+  // is only about which files a feed refresh is allowed to overwrite.
+  //
+  // showDropOffArrivals, like Seastreak, because the morning boat is drop-off only at all three of
+  // the piers this board watches. Without it the whole morning peak would be invisible at Pier 11,
+  // Brookfield and Pier 79, which is not what those piers showed while Seastreak ran the route.
+  waterwayBelford: { prefix: "wbf:", directory: "gtfs/waterway-belford", label: "NY Waterway", defaultColor: "#00558C", enabledKey: "waterwayBelfordEnabled", stopIdsKey: "waterwayBelfordStopIds",
+    connectingTerminals: WATERWAY_MANHATTAN_TERMINALS, showDropOffArrivals: true },
   seastreak: { prefix: "sea:", directory: "gtfs/seastreak", label: "Seastreak", defaultColor: "#013067", enabledKey: "seastreakEnabled", stopIdsKey: "seastreakStopIds", destinationFromFinalStop: true, showDropOffArrivals: true },
   // NYU publishes no GTFS at all — gtfs/nyu/ is reconstructed from its Passio GO backend by
   // scripts/fetch-nyu-gtfs.js. Once written it is an ordinary static feed, so it needs no special
@@ -832,7 +844,7 @@ export async function buildDisplayData({
       timezone: agency.agency_timezone || "America/New_York", agencyName: agency.agency_name || "NYC Ferry", feedVersion: feed.feed_version,
       feedStartDate: isoDate(feed.feed_start_date), feedEndDate: isoDate(feed.feed_end_date),
       sourceHash: createHash("sha256").update(routesRaw + tripsRaw + timesRaw).digest("hex").slice(0, 16),
-      waterway: partners.waterway, seastreak: partners.seastreak, nyu: partners.nyu, liberty: partners.liberty, ikea: partners.ikea, gi: partners.gi, siferry: partners.siferry, statue: partners.statue
+      waterway: partners.waterway, waterwayBelford: partners.waterwayBelford, seastreak: partners.seastreak, nyu: partners.nyu, liberty: partners.liberty, ikea: partners.ikea, gi: partners.gi, siferry: partners.siferry, statue: partners.statue
     },
     calendars, exceptions,
     // Every stop the board's own trips call at, named and tied to a landing where one serves it.

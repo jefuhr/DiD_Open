@@ -1,0 +1,6 @@
+stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,wheelchair_boarding
+belford,"Belford, NJ","10 Harbor Way, Belford",40.433209,-74.078817,0,1
+2439146,Pier 11 / Wall Street,,40.702800820044,-74.005721223577,0,1
+2729332,Brookfield Place/Battery Park City,,40.714932739104626,-74.0173750458923,0,1
+2439141,Paulus Hook,,40.713718479988,-74.032029165667,0,1
+2439145,Midtown / W 39th Street,,40.76062395229,-74.003851516287,0,1
