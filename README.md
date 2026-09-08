@@ -244,6 +244,7 @@ landings that share a dock with another ferry operator can show its departures n
 | operator | feed | id prefix | mark |
 |---|---|---|---|
 | NY Waterway | [`gtfs/waterway/`](./gtfs/waterway) | `wtr:` | [`public/assets/waterway.png`](./public/assets/waterway.png) |
+| NY Waterway — Belford | [`gtfs/waterway-belford/`](./gtfs/waterway-belford) — transcribed, see below | `wbf:` | [`public/assets/waterway.png`](./public/assets/waterway.png) |
 | Seastreak | [`gtfs/seastreak/`](./gtfs/seastreak) — transcribed, see below | `sea:` | [`public/assets/seastreak.png`](./public/assets/seastreak.png) |
 | NYU Langone Ferry | [`gtfs/nyu/`](./gtfs/nyu) — generated, see below | `nyu:` | [`public/assets/nyu.png`](./public/assets/nyu.png) |
 | Liberty Landing Ferry | [`gtfs/liberty/`](./gtfs/liberty) — transcribed, see below | `lib:` | [`public/assets/cityferry.png`](./public/assets/cityferry.png) |
@@ -257,10 +258,10 @@ which landings pull which operator:
 | landing | NYC Ferry stop | partner stop |
 |---|---|---|
 | `8` East 34th Street | `17` East 34th Street | Seastreak `168` East 35th St., NYC · NYU `13138` East 34th Street |
-| `16` Pier 11 / Wall St | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street · IKEA `pier11` Pier 11 / Wall Street |
+| `16` Pier 11 / Wall St | `87` Wall St/Pier 11 | NY Waterway `2439146` Pier 11 / Wall Street, Belford `2439146` the same pier · IKEA `pier11` Pier 11 / Wall Street |
 | `24` Sunset Park / BAT | `118` Sunset Park/BAT | NYU `13139` Brooklyn Army Terminal |
-| `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | NY Waterway `2729332` Brookfield Place/Battery Park City · Liberty Landing `2557122` Brookfield Place Terminal |
-| `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | NY Waterway `2439145` Midtown / W 39th Street · IKEA `midtown` Midtown / W 39th Street |
+| `25` Battery Park City / Brookfield Place | `136` Battery Park City/Vesey St. | NY Waterway `2729332` Brookfield Place/Battery Park City, Belford `2729332` the same pier · Seastreak `9825` Brookfield Place, NY · Liberty Landing `2557122` Brookfield Place Terminal |
+| `26` Midtown West / Pier 79 | `138` Midtown West/W 39th St-Pier 79 | NY Waterway `2439145` Midtown / W 39th Street, Belford `2439145` the same pier · IKEA `midtown` Midtown / W 39th Street |
 | `11` Governors Island / Yankee Pier | `111` Governors Island | Trust `govisland` Governors Island / Yankee Pier |
 | `28` Battery / Whitehall | none — NYC Ferry does not call here | Staten Island Ferry `whitehall` Whitehall Ferry Terminal · Seastreak `170` Battery Maritime Building Slip 5 · Trust `bmb` Battery Maritime Building / Slip 7 |
 | `29` Governors Island / Soissons Landing | none — NYC Ferry does not call here | Trust `soissons` Governors Island / Soissons Landing |
@@ -270,8 +271,8 @@ which landings pull which operator:
 
 each operator has two switches, and either one off means none of its data is read:
 
-- `waterwayEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` / `ikeaEnabled` / `giEnabled` / `siferryEnabled` / `statueEnabled` in `config/display.json` — the whole kiosk.
-- `waterwayStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` / `ikeaStopIds` / `giStopIds` / `siferryStopIds` / `statueStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
+- `waterwayEnabled` / `waterwayBelfordEnabled` / `seastreakEnabled` / `nyuEnabled` / `libertyEnabled` / `ikeaEnabled` / `giEnabled` / `siferryEnabled` / `statueEnabled` in `config/display.json` — the whole kiosk.
+- `waterwayStopIds` / `waterwayBelfordStopIds` / `seastreakStopIds` / `nyuStopIds` / `libertyStopIds` / `ikeaStopIds` / `giStopIds` / `siferryStopIds` / `statueStopIds` in `config/landings.json` — per landing. only landings with the array populated pull that operator in.
 
 a missing `...Enabled` key means **on**, not off. `config/display.json` is the one file a deploy never overwrites — it holds the box's own `landingNumber` — so a release that adds an operator arrives with its switch absent from the live config, and reading that as off hid the new operator on the very deploy that shipped it, silently. defaulting to on is safe because the switch is not what decides where an operator appears: the per-landing `...StopIds` arrays do, and those live in `config/landings.json`, which every deploy ships. to turn an operator off, say `false` — omitting the key no longer does it.
 
@@ -296,12 +297,25 @@ to add a partner at another landing, find its `stop_id` in that feed's `stops.tx
 
 the Seastreak feed is **transcribed, not downloaded** — regenerate it with `node scripts/build-seastreak-gtfs.js`. it used to be the operator's own GTFS (via [transit.land `f-drk-seastreak`](https://www.transit.land/feeds/f-drk-seastreak), published at `https://seastreak.com/api/transit/google_transit.zip`), which carried a 2020 `feed_start_date`, times that no longer matched the printed schedule, and — because every sailing appears in both of Seastreak's printed tables — the same boat offered as two separate boardings at the same pier at the same minute, eighteen times over at the three piers this board watches.
 
-it is now read from the operator's weekday schedule PDF, currently *Effective August 10, 2026*. two things about that source are worth knowing before re-reading it:
+it is now read from the operator's published sheets — two weekday tables *Effective September 8, 2026* and a weekend one *Effective September 12, 2026*. three things about that source are worth knowing before re-reading it:
 
-- **the tables are headed `Departures` on the boarding side and `Arrivals` on the far side, and that is taken literally.** on a New Jersey departure the Manhattan calls are drop-off only; on a New York departure the New Jersey calls are. this is what stops one boat being advertised as two. it is *not* true that the New York table reprints every Manhattan call the New Jersey table makes — the morning Belford boats run Battery Maritime, Brookfield, Paulus Hook and West 39th in sequence with no return working, and the timetable never offers a seat from one Manhattan pier to another on them.
-- **times printed in red do not run on Fridays.** colour does not survive a text extraction, so those rows are read out of the PDF's content stream and carried as a second calendar (`ss-mon-thu`). thirteen of the forty-three sailings are Monday-to-Thursday only.
+- **the tables are headed `Departures` on the boarding side and `Arrivals` on the far side, and that is taken literally.** on a New Jersey departure the Manhattan calls are drop-off only; on a New York departure the New Jersey calls are. this is what stops one boat being advertised as two. the 06:20 out of Highlands is the clearest case: it is printed in both weekday tables and is one vessel, so Brookfield Place 06:55 boards on the New York row and is a drop-off on the New Jersey one.
+- **the columns are read by clock, not by heading order.** several rows call at the piers in a different order than the headings suggest — the 15:55 out of East 35th reaches Brookfield Place *after* Battery Maritime although Brookfield is printed first, and the 18:15 New Jersey departure boards Atlantic Highlands before Highlands. a stop out of order in the rebuilt feed means a misread column, and the build asserts on it.
+- **times printed in blue run Monday to Wednesday, and times in purple Thursday and Friday.** that is the last boat of the night each way: it leaves at one time for the first half of the week and later for the second. colour does not survive a text extraction, so those four rows are carried as `ss-mon-wed` and `ss-thu-fri`, and the test in [`test/seastreak-gtfs.test.js`](./test/seastreak-gtfs.test.js) is the only record that the colour was read at all. this replaces the August sheet's red *not on Fridays* rows, which are gone.
 
-the feed is **weekday-only**, as the download it replaced also was — that feed had no Saturday or Sunday sailing on this route either. Seastreak's Massachusetts routes (New Bedford, Nantucket, Martha's Vineyard) were in the download and are deliberately not here: no landing on this board is within two hundred miles of them. the calendar runs `20260810`–`20271231` and then lapses, so a transcription cannot quietly outlive the timetable it came from.
+the weekday calendar runs `20260908`–`20271231` and the weekend one `20260912`–`20271231`, both then lapsing, so a transcription cannot quietly outlive the timetable it came from. note the weekday sheet takes effect *before* the weekend one this time; in August it was the other way round. Seastreak's Massachusetts routes (New Bedford, Nantucket, Martha's Vineyard) were in the download this replaced and are deliberately not here: no landing on this board is within two hundred miles of them.
+
+**four piers left the Seastreak feed on 8 September 2026.** Belford, Paulus Hook and West 39th St went with the Belford route — every call at the last two was on a Belford working — and the new weekend sheet drops Sandy Hook Beach as well. the September sheets print no column for any of them, so the stops, the `ss-belford` and `ss-belford-mon-thu` calendars and every trip that used them are deleted rather than given an end date. West 39th is the one with a board consequence: it was Pier 79's Seastreak mapping, so landing `26` no longer names Seastreak at all.
+
+**Brookfield Place is a Seastreak pier now.** it used to be an intermediate call on the Belford runs; the weekday sheet is titled *Brookfield Place, East 35th St & BMB-Slip 5* and it boards in its own right, three times a weekday. landing `25` gained `seastreakStopIds` for the first time.
+
+the NY Waterway Belford feed is **transcribed, not downloaded** — regenerate it with `node scripts/build-waterway-belford-gtfs.js`. it sits in its own directory rather than in `gtfs/waterway/` because that one is a Trillium download whose contract is "drop in a fresh copy", and a fresh copy would erase anything hand-written into it. the same reasoning already gives the IKEA boat its own feed. three things about the printed sheets are worth knowing before re-reading them:
+
+- **the `Depart` / `Arrive` column headings are taken literally**, the same way Seastreak's are: an `Arrive` call is drop-off only and never advertises a boarding. the evening table heads its last column `Depart Belford`, but Belford is the end of the run there, so it is an arrival like the rest.
+- **the four rows noted `Pier 79 Via Transfer at Pier 11` are two vessels, not one.** the morning gives it away by the clock — the 05:45 from Belford is printed at Paulus Hook 06:50 and Midtown 06:50, and no boat is in both places at once. the Pier 79 call is dropped on those rows because it is a connection made at Pier 11 onto a boat `gtfs/waterway/` already carries; transcribing it would advertise one sailing twice. the intermediate calls are kept.
+- **two rows do not run all week, and neither runs on a Monday.** the 05:15 from Belford is `Tuesday - Thursday` and the 18:15 from Pier 79 is `Tuesday - Friday`, both transcribed exactly as printed (`wbf-tue-thu`, `wbf-tue-fri`). the notes column sits well right of the times it qualifies and is easy to miss — read it before assuming a row is ordinary weekday service.
+
+the weekday calendar starts `20260908` and the weekend one `20260912`, both printed on the sheets; they run to `20271231` and then lapse. the route calls at Pier 11 rather than the Battery Maritime Building, so landing `16` gains the Belford boats and landing `28` loses them. when NY Waterway puts Belford in the GTFS it publishes, delete this feed and its `waterwayBelfordStopIds` keys — the stop ids here are the operator's own so that day is a deletion, not a migration.
 
 the Statue of Liberty ferry feed is the National Park Service's, published at `https://www.nps.gov/external-resources/gtfs/stli/statue-of-liberty-ferries.zip` and listed on [NPS developer resources](https://www.nps.gov/subjects/developer/gtfs.htm). the bundled copy is feed version `20260601`, and it is **seasonal**: its only calendar runs `20260523`–`20260907`, so its rows stop appearing after that until a fresh copy is dropped in. the badge shows the feed's route id (`NY`, `NJ`, `LIBP`, `EILILSP`) because NPS publishes no route short names and no operator mark ships with this repo — the route's full name sits beside it.
 
@@ -521,7 +535,7 @@ it is served from `/api/changelog`, read off disk per request, so an edit needs 
 
 ## updating the schedule
 
-replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/` and `gtfs/siferry/` — when a new feed is published, then restart. five directories have no upstream file to drop in and are regenerated instead: `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js`, `gtfs/gi/` with `node scripts/build-gi-gtfs.js`, and `gtfs/seastreak/` with `node scripts/build-seastreak-gtfs.js` (re-read the operator's page or PDF first — those last four are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
+replace the files in [`gtfs/`](./gtfs) — or in a partner's directory, `gtfs/waterway/` and `gtfs/siferry/` — when a new feed is published, then restart. six directories have no upstream file to drop in and are regenerated instead: `gtfs/waterway-belford/` with `node scripts/build-waterway-belford-gtfs.js`, `gtfs/nyu/` with `node scripts/fetch-nyu-gtfs.js`, `gtfs/liberty/` with `node scripts/build-liberty-gtfs.js`, `gtfs/ikea/` with `node scripts/build-ikea-gtfs.js`, `gtfs/gi/` with `node scripts/build-gi-gtfs.js`, and `gtfs/seastreak/` with `node scripts/build-seastreak-gtfs.js` (re-read the operator's page or PDF first — all but the NYU one are transcriptions). the board only ever reads the bundled feed, so deployments stay reproducible and nothing is downloaded at boot.
 
 any edit to `public/index.html`, `public/sw.js`, `public/app.js` or `public/styles.css` must bump the shared cache-busting version (currently `57`) in `index.html` and `sw.js` — `test/display-contract.test.js` checks that they agree.
 

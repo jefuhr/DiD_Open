@@ -1,0 +1,17 @@
+route_id,service_id,trip_id,trip_headsign,direction_id
+belford,wbf-tue-thu,wbf-am-01,Paulus Hook,0
+belford,wbf-weekday,wbf-am-02,Paulus Hook,0
+belford,wbf-weekday,wbf-am-03,Paulus Hook,0
+belford,wbf-weekday,wbf-am-04,Midtown / W 39th Street,0
+belford,wbf-weekday,wbf-am-05,Midtown / W 39th Street,0
+belford,wbf-weekday,wbf-am-06,Midtown / W 39th Street,0
+belford,wbf-weekday,wbf-pm-01,"Belford, NJ",1
+belford,wbf-weekday,wbf-pm-02,"Belford, NJ",1
+belford,wbf-weekday,wbf-pm-03,"Belford, NJ",1
+belford,wbf-weekday,wbf-pm-04,"Belford, NJ",1
+belford,wbf-tue-fri,wbf-pm-05,"Belford, NJ",1
+belford,wbf-weekend,wbf-we-am-01,Midtown / W 39th Street,0
+belford,wbf-weekend,wbf-we-am-02,Midtown / W 39th Street,0
+belford,wbf-weekend,wbf-we-am-03,Midtown / W 39th Street,0
+belford,wbf-weekend,wbf-we-pm-01,"Belford, NJ",1
+belford,wbf-weekend,wbf-we-pm-02,"Belford, NJ",1

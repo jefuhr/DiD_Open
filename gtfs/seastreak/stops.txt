@@ -1,10 +1,6 @@
 stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,wheelchair_boarding
-9819,"Belford, NJ",10 Harbor Way,40.433209,-74.078817,0,1
 176,"Highlands, NJ",326 Shore Drive,40.409395,-73.996238,0,1
 175,"Atlantic Highlands, NJ",Bottom of First Avenue at the Atlantic Highlands Municipal Marina,40.419668,-74.034889,0,1
-sandy-hook-beach,"Sandy Hook Beach, NJ","35 Hartshorne Drive, Sandy Hook",40.46362,-74.00092,0,1
 170,Battery Maritime Building Slip 5,10 South Street,40.700894,-74.011612,0,1
 168,"East 35th St., NYC",East 35th St. and the FDR on the East Side of Manhattan,40.743873,-73.97069,0,1
 9825,"Brookfield Place, NY",Battery Park City Vessey Street on the West Side of Manhattan,40.715161,-74.017695,0,1
-9954,"Paulus Hook, NJ","Paulus Hook, NJ",40.713728,-74.032346,0,1
-8306,"West 39th St., NYC",West 39th St.,40.760279,-74.003587,0,1

@@ -2,6 +2,19 @@
   "_comment": "The board's change log. Newest entry first — the board shows them in the order they appear here and marks the top one as the latest. Add an entry by copying the shape below; 'date' is what the board prints, 'notes' is a list of lines. Nothing here is validated against the code, so it says whatever you write.",
   "entries": [
     {
+      "version": "2026-09-08",
+      "date": "8 September 2026",
+      "title": "What's new",
+      "notes": [
+        "-belford is ny waterway's now, not seastreak's. new times are on the board from the 8th, weekends from the 12th",
+        "-the belford boat calls at pier 11 instead of the battery maritime building, so it shows at pier 11 now",
+        "-seastreak's whole timetable changed too. new weekday times from the 8th, new weekend times from the 12th",
+        "-seastreak stops at brookfield place now, so battery park city shows those boats",
+        "-seastreak no longer calls at pier 79, sandy hook or paulus hook, so those boats are off the board",
+        "-the last seastreak boat of the night leaves earlier mon-wed than it does thu-fri. the board knows which day it is"
+      ]
+    },
+    {
       "version": "2026-08-27",
       "date": "27 August 2026",
       "title": "What's new",

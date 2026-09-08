@@ -3,6 +3,7 @@
   "departureWindowMinutes": 1440,
   "departuresShown": 5,
   "waterwayEnabled": true,
+  "waterwayBelfordEnabled": true,
   "seastreakEnabled": true,
   "nyuEnabled": true,
   "libertyEnabled": true,

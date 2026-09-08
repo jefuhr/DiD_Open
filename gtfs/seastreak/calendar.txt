@@ -1,4 +1,5 @@
 service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
-ss-weekday,1,1,1,1,1,0,0,20260810,20271231
-ss-mon-thu,1,1,1,1,0,0,0,20260810,20271231
-ss-weekend,0,0,0,0,0,1,1,20260808,20271231
+ss-weekday,1,1,1,1,1,0,0,20260908,20271231
+ss-mon-wed,1,1,1,0,0,0,0,20260908,20271231
+ss-thu-fri,0,0,0,1,1,0,0,20260908,20271231
+ss-weekend,0,0,0,0,0,1,1,20260912,20271231

@@ -899,6 +899,9 @@ function departureCell(item) {
 // and NYC Ferry badges are never touched.
 const PARTNER_BADGES = [
   { prefix: "wtr:", src: "/assets/waterway.png", alt: "NY Waterway", useLogo: (shortName) => /^\d+$/.test(shortName) },
+  // The Belford route is NY Waterway's, and rides in its own feed only so that a refresh of the
+  // downloaded one cannot erase it. It carries no short name, so it always shows the wordmark.
+  { prefix: "wbf:", src: "/assets/waterway.png", alt: "NY Waterway", useLogo: () => true },
   { prefix: "sea:", src: "/assets/seastreak.png", alt: "Seastreak", useLogo: () => true },
   { prefix: "nyu:", src: "/assets/nyu.png", alt: "NYU Langone Ferry", useLogo: () => true },
   { prefix: "lib:", src: "/assets/cityferry.png", alt: "Liberty Landing Ferry", useLogo: () => true },

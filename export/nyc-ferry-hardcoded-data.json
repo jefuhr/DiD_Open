@@ -21,6 +21,7 @@
     "description": "Every landing the board can show, keyed by the landing number an agent dials. stopIds are NYC Ferry GTFS stops. Landing 27 (Pier C) is virtual — no feed contains the home port — so it carries its own coordinates and a stop id that exists only in this repository. A landing marked nycFerryCalls: false is a real dock that NYC Ferry does not serve: its departures all belong to partner operators, so it has no NYC Ferry stop id and carries its own coordinates.",
     "partnerStopIdsRemoved": [
       "waterwayStopIds",
+      "waterwayBelfordStopIds",
       "seastreakStopIds",
       "nyuStopIds",
       "libertyStopIds",
@@ -260,6 +261,7 @@
     "description": "Which landing a kiosk shows and how much of it. A deployed staff or mobile server answers for every landing and uses landingNumber only as its default. busesEnabled keeps or drops connecting shuttle-bus routes, which for NYC Ferry means the Rockaway shuttles at landing 18.",
     "partnerSwitchesRemoved": [
       "waterwayEnabled",
+      "waterwayBelfordEnabled",
       "seastreakEnabled",
       "nyuEnabled",
       "libertyEnabled",
