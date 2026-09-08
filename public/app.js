@@ -1317,8 +1317,16 @@ function connectionRow(connection) {
   // "Uptown" is decided in exactly one place.
   const where = [directionLabel(connection.directionId), connection.destination]
     .filter((part) => part && part !== "Direction unavailable").join(" · ");
+  // Same rule as the departure rows: a partner whose GTFS short name is useless to a rider shows
+  // the operator's mark instead. Belford is the case that forced it — NY Waterway publishes the
+  // route with an empty route_short_name, so the fallback to route_id put a lowercase "belford"
+  // on the board where every other row carries a wordmark.
+  const connLogo = partnerBadgeLogo(connection.routeId, connection.shortName);
+  const connBadge = connLogo
+    ? `<img class="trip-conn-badge-logo" src="${connLogo.src}" alt="${escapeHtml(connLogo.alt)}">`
+    : escapeHtml(connection.shortName || connection.routeId);
   return `<li class="trip-conn"${style}>
-    <span class="trip-conn-badge">${escapeHtml(connection.shortName || connection.routeId)}</span>
+    <span class="trip-conn-badge${connLogo ? " trip-conn-badge-image" : ""}">${connBadge}</span>
     <span class="trip-conn-time">${escapeHtml(adjustedTime(connection.departureTime, 0))}</span>
     <span class="trip-conn-where">${escapeHtml(where)}</span>
     ${delayLabel}
@@ -2057,7 +2065,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=96&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=97&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
