@@ -676,11 +676,13 @@ function cancelCameraAnimation() {
   }
 }
 
-function animateTo(target, duration = 320) {
+function animateTo(target, duration = 320, { constrain = true } = {}) {
   if (!view || !base) return;
-  const clamped = clampView(target);
+  const clamped = constrain ? clampView(target) : target;
   if (!hasRaf || reducedMotion?.matches) {
-    setView(clamped);
+    cancelCameraAnimation();
+    view = clamped;
+    scheduleView();
     return;
   }
   cancelCameraAnimation();
@@ -898,7 +900,7 @@ chart.addEventListener("click", (event) => {
     hideDockCard();
     hideBridgeCard();
     hideSeamarkCard();
-    select(pickedBoat.dataset.boat, { recentre: false });
+    select(pickedBoat.dataset.boat);
     return;
   }
   const pickedDock = event.target.closest?.(".dock");
@@ -1158,9 +1160,28 @@ function recentreOn(boat) {
   if (!boat || !view || !base) return;
   const [x, y] = projection.point(boat.latitude, boat.longitude);
   const width = Math.min(view.width, base.width / 5);
-  const target = { x: x - width / 2, y: y - (width * (base.height / base.width)) / 2, width };
-  if (hasRaf) animateTo(target, 360);
-  else setView(target);
+  const height = width * (base.height / base.width);
+  const box = chart.getBoundingClientRect();
+  let offsetX = 0;
+  let offsetY = 0;
+  if (box.width && box.height && vesselCard && !vesselCard.hidden) {
+    const card = vesselCard.getBoundingClientRect();
+    if (card.top < box.bottom && card.bottom > box.top && card.left < box.right && card.right > box.left) {
+      // Pick the larger clear area above or beside the card. SVG's default
+      // xMidYMid meet scaling may letterbox the drawing, so use screen units.
+      const top = 60;
+      const above = { left: 32, top, right: box.width - 32, bottom: Math.max(top, card.top - box.top - 24) };
+      const beside = { left: Math.min(box.width - 32, card.right - box.left + 24), top, right: box.width - 32, bottom: box.height - 32 };
+      const area = (rect) => Math.max(0, rect.right - rect.left) * Math.max(0, rect.bottom - rect.top);
+      const clear = area(beside) > area(above) ? beside : above;
+      const units = Math.max(width / box.width, height / box.height);
+      offsetX = ((clear.left + clear.right) / 2 - box.width / 2) * units;
+      offsetY = ((clear.top + clear.bottom) / 2 - box.height / 2) * units;
+    }
+  }
+  // Allow the camera past the overview bounds to keep edge-of-harbor boats
+  // clear of the card too. Manual pan/zoom still uses its normal limits.
+  animateTo({ x: x - width / 2 - offsetX, y: y - height / 2 - offsetY, width, height }, 360, { constrain: false });
 }
 
 function select(id, { recentre = true } = {}) {
@@ -1298,6 +1319,7 @@ function followWanted() {
   if (!found) return `${wanted} is not reporting a position right now.`;
   wanted = null;
   selectedId = found.id;
+  drawFleet();
   recentreOn(found);
   return "";
 }
