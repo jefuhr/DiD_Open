@@ -383,19 +383,23 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   assert.doesNotMatch(app, /TIMELINE_ROWS/);
   assert.doesNotMatch(app, /\.slice\(0, TIMELINE_ROWS\)/);
 
-  // Three compact lines, with route identity travelling on the row. The destination owns a line
-  // of its own — it is the longest field and the one that reads worst truncated.
+  // Three compact lines, with route identity travelling on the row. The destination owns the middle
+  // line — it is the longest field and the one that reads worst truncated.
   assert.match(app, /<div class="tl-head">/);
   assert.match(app, /class="route-badge\$\{visual\.partnerLogo \? " route-badge-image" : ""\}"/);
-  // The far end, plus the stops on the way for a boat that calls at several.
-  assert.match(app, /<strong class="tl-dest">\$\{escapeHtml\(group\.destination\)\}\$\{group\.via\?\.length/);
+  // The far end, plus the stops on the way for a boat that calls at several, and the turn it makes
+  // when it arrives — all one line, because the turn is taken at the destination beside it.
+  assert.match(app, /<strong class="tl-dest"><span class="tl-dest-name">\$\{escapeHtml\(group\.destination\)\}\$\{group\.via\?\.length/);
+  assert.match(app, /<\/span>\$\{departureLayoverLabel\(departure\)\}<\/strong>/);
   assert.match(app, /<div class="tl-meta">/);
 
   // Countdown and status hug the right edge so both scan as columns down the list.
   assert.match(css, /\.tl-relative\{[^}]*margin-left:auto/);
   assert.match(css, /\.tl-status\{[^}]*margin-left:auto/);
-  // Long destinations must ellipsis rather than spill out of the card.
-  assert.match(css, /\.tl-dest\{[^}]*text-overflow:ellipsis/);
+  // Long destinations must ellipsis rather than spill out of the card, and the name is what gives
+  // way: a layover shown half is worse than a pier name shown half.
+  assert.match(css, /\.tl-dest-name\{[^}]*text-overflow:ellipsis/);
+  assert.match(css, /\.departure-layover\{[^}]*flex:0 0 auto/);
 
   // The vessel name, which only NYC Ferry publishes: rendered when a live vehicle supplies one and
   // omitted outright otherwise, so partner rows carry no empty element or stray separator.
@@ -1440,20 +1444,26 @@ test("a terminating trip shows its scheduled and live layover beside the eta", a
   const view = await board({ payload });
   for (const sort of ["time", "route"]) {
     view.run(`selectSort("${sort}"); render()`);
-    assert.match(view.node("departures").innerHTML, /Layover at East 34th Street: scheduled 5 min/);
+    assert.match(view.node("departures").innerHTML, /Layover scheduled 5 min/);
   }
+  // A turn is taken at the trip's last stop, which is the destination the label sits beside in the
+  // timeline — so the pier is named once, by the destination, and the turn shares its line.
+  view.run(`selectSort("time"); render()`);
+  const timeline = view.node("departures").innerHTML;
+  assert.doesNotMatch(timeline, /Layover at East 34th Street/);
+  assert.match(timeline, /<strong class="tl-dest">.*<small class="departure-layover"[^>]*>Layover scheduled 5 min<\/small><\/strong>/);
   view.run(`realtime = { stale: false, vehicles: [], updates: [
     { tripId: "turning", stopId: "1", delaySeconds: 60 },
     { tripId: "turning", stopId: "2", delaySeconds: 480 },
     { tripId: "return", stopId: "2", delaySeconds: 120 }
   ] }; render()`);
-  assert.match(view.node("departures").innerHTML, /Layover at East 34th Street: 5 → -1 min/);
+  assert.match(view.node("departures").innerHTML, /Layover 5 → -1 min/);
   view.run(`realtime.updates[2].canceled = true; render()`);
-  assert.match(view.node("departures").innerHTML, /Layover at East 34th Street: scheduled 5 min/);
+  assert.match(view.node("departures").innerHTML, /Layover scheduled 5 min/);
   view.run(`realtime.updates[2].canceled = false; realtime.stale = true; render()`);
-  assert.match(view.node("departures").innerHTML, /Layover at East 34th Street: scheduled 5 min/);
+  assert.match(view.node("departures").innerHTML, /Layover scheduled 5 min/);
   view.run(`realtime.stale = false; viewDate = "2026-08-14"; render()`);
-  assert.match(view.node("departures").innerHTML, /Layover at East 34th Street: scheduled 5 min/);
+  assert.match(view.node("departures").innerHTML, /Layover scheduled 5 min/);
   assert.equal(view.run(`departureLayoverLabel({ ...data.departures[0], outOfService: true })`), "");
   assert.equal(view.run(`departureLayoverLabel({ ...data.departures[0], endsShift: "certain" })`), "");
 

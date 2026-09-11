@@ -19,8 +19,8 @@
 :root[data-surface="app"] .tl-head { gap: 12px; }
 :root[data-surface="app"] .tl-head time { font-variant-numeric: tabular-nums; }
 :root[data-surface="app"] .tl-relative { font-size: 14px; }
-:root[data-surface="app"] .tl-dest { font-size: 22px; line-height: 1.2; }
-:root[data-surface="app"] :is(.tl-dest, .destination strong, .via, .route-name, .boat-name, .tl-boat, .tl-context) { white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
+:root[data-surface="app"] .tl-dest { font-size: 22px; line-height: 1.2; flex-wrap: wrap; }
+:root[data-surface="app"] :is(.tl-dest, .tl-dest-name, .departure-layover, .destination strong, .via, .route-name, .boat-name, .tl-boat, .tl-context) { white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
 :root[data-surface="app"] :is(.tl-meta, .tl-status, .departure-last-slot) { flex-wrap: wrap; overflow: visible; white-space: normal; line-height: 1.5; gap: 6px; }
 :root[data-surface="app"] :is(.tl-context, .tl-boat, .boat-name) { font-size: 14px; }
 :root[data-surface="app"] .departure-slot { min-height: 72px; padding: 12px 8px; }
@@ -95,7 +95,7 @@
 :root[data-surface="app"] .timeline-row { gap: 8px; }
 :root[data-surface="app"] .tl-head time { font-size: 1.5rem; }
 :root[data-surface="app"] :is(.tl-dest, .destination strong) { font-size: 1.125rem; line-height: 1.3; }
-:root[data-surface="app"] :is(.tl-relative, .tl-context, .tl-boat, .boat-name, .slot-relative) { font-size: .75rem; }
+:root[data-surface="app"] :is(.tl-relative, .tl-context, .tl-boat, .boat-name, .slot-relative, .departure-layover) { font-size: .75rem; }
 :root[data-surface="app"] .slot-time-row time { font-size: 1.375rem; }
 :root[data-surface="app"] :is(.departure-last-badge, .vessel-delay-badge, .on-time-badge, .scheduled-badge, .boat-assignment, .no-pickup-badge, .arrival-badge, .drop-off-badge, .drop-off-only-badge, .via-terminal-badge) { font-size: .6875rem; }
 :root[data-surface="app"] :is(.sort-option, .date-current, .clock-toggle, .product-nav a) { font-size: .8125rem; }
