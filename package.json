@@ -21,7 +21,9 @@
     "test:mobile-map-drag": "node scripts/check-mobile-map-drag.cjs",
     "test:map-selection": "node scripts/check-map-selection.cjs",
     "test:mobile-route-layout": "node scripts/check-mobile-route-layout.cjs",
-    "test:mobile-viewport": "node scripts/check-mobile-viewport.cjs"
+    "test:mobile-viewport": "node scripts/check-mobile-viewport.cjs",
+    "benchmark:map": "node scripts/benchmark-map.cjs",
+    "test:map-rendering": "node scripts/check-map-rendering.cjs"
   },
   "dependencies": {
     "gtfs-realtime-bindings": "2.1.0",
