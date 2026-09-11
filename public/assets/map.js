@@ -59,6 +59,74 @@ let tilesDrawnFor = "";
 let fleetIsClose = false;
 let detailKind = null;
 
+// Geometry-owned caches are rebuilt with the SVG; fleet caches belong to retained nodes.
+let features = [];
+let streetLabels = [];
+let dockLabels = [];
+let fleetScalers = [];
+let fleetDetails = [];
+let viewport = { width: 360, height: 480 };
+let renderedView = null;
+let layerClose = null;
+let fleetScale = null;
+let forceStreetLayout = true;
+let lastStreetLayout = -Infinity;
+let wheelTimer = null;
+const LABEL_INTERVAL = 100;
+const CULL_MARGIN = 96;
+
+function cacheFeature(nodes, points, scaler = null) {
+  const bounds = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+  for (const [x, y] of points) {
+    bounds.left = Math.min(bounds.left, x);
+    bounds.right = Math.max(bounds.right, x);
+    bounds.top = Math.min(bounds.top, y);
+    bounds.bottom = Math.max(bounds.bottom, y);
+  }
+  const feature = { nodes, bounds, scaler, visible: true, scale: null, padding: 0 };
+  features.push(feature);
+  return feature;
+}
+
+function cachePath(nodes, points) {
+  return cacheFeature(nodes, points.map(point => projection.point(...point)));
+}
+
+function visibleArea(units, margin = 0) {
+  const width = viewport.width * units;
+  const height = viewport.height * units;
+  return { left: view.x + (view.width - width) / 2 - margin * units,
+    top: view.y + (view.height - height) / 2 - margin * units,
+    right: view.x + (view.width + width) / 2 + margin * units,
+    bottom: view.y + (view.height + height) / 2 + margin * units };
+}
+
+function updateFeatures(units, scale) {
+  const area = visibleArea(units, CULL_MARGIN);
+  for (const feature of features) {
+    const b = feature.bounds;
+    const pad = feature.padding * units;
+    const visible = b.right + pad >= area.left && b.left - pad <= area.right &&
+      b.bottom + pad >= area.top && b.top - pad <= area.bottom;
+    // A label returning after an offscreen zoom gets its current scale before it is shown.
+    if (visible && feature.scaler && feature.scale !== scale) {
+      feature.scaler.setAttribute("transform", `scale(${scale})`);
+      feature.scale = scale;
+    }
+    if (visible !== feature.visible) {
+      for (const node of feature.nodes) node.style.display = visible ? "" : "none";
+      feature.visible = visible;
+    }
+  }
+}
+
+function labelVisibility(entry, show, interactive = false) {
+  if (entry.shown === show) return;
+  entry.label.style.opacity = show ? "1" : "0";
+  if (interactive) entry.label.style.pointerEvents = show ? "auto" : "none";
+  entry.shown = show;
+}
+
 const previousFix = new Map();
 const heading = new Map();
 let wanted = new URLSearchParams(location.search).get("boat") || null;
@@ -135,9 +203,9 @@ const MAX_TILE_ZOOM = 16;
 const MAX_TILES = 40;
 
 function tileZoomFor() {
-  const box = chart.getBoundingClientRect();
+  const box = viewport;
   if (!box.width || !view) return MIN_TILE_ZOOM;
-  const unitsPerPixel = view.width / box.width;
+  const unitsPerPixel = Math.max(view.width / box.width, view.height / box.height);
   const worldPerPixel = unitsPerPixel / projection.scale;
   const zoom = Math.log2(1 / (worldPerPixel * TILE_PIXELS));
   return Math.max(MIN_TILE_ZOOM, Math.min(MAX_TILE_ZOOM, Math.round(zoom)));
@@ -194,7 +262,8 @@ function marker(className, latitude, longitude) {
   const outer = svgNode("g", { class: className, transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
   const inner = svgNode("g", { class: "scaler" });
   outer.append(inner);
-  return { outer, inner };
+  const feature = className === "boat" ? null : cacheFeature([outer], [[x, y]], inner);
+  return { outer, inner, feature, x, y };
 }
 
 function drawChartBackdrop(chartData) {
@@ -227,6 +296,7 @@ function drawChartBackdrop(chartData) {
         "vector-effect": "non-scaling-stroke"
       });
       path.dataset.landId = land.id;
+      cachePath([path], land.points);
       landGroup.append(path);
     }
     backdrop.append(landGroup);
@@ -238,6 +308,7 @@ function drawChartBackdrop(chartData) {
     const title = svgNode("title");
     title.textContent = park.name;
     outline.append(title);
+    cachePath([outline], park.points);
     parks.append(outline);
   }
   backdrop.append(parks);
@@ -253,6 +324,7 @@ function drawChartBackdrop(chartData) {
         d,
         "vector-effect": "non-scaling-stroke"
       });
+      cachePath([path], channel.points);
       channelGroup.append(path);
     }
     backdrop.append(channelGroup);
@@ -261,7 +333,7 @@ function drawChartBackdrop(chartData) {
   // 4. Major Streets (arterials and expressways only, no side streets)
   if (chartData.streets) {
     const streetGroup = svgNode("g", { class: "chart-streets" });
-    const streetLabels = svgNode("g", { class: "chart-street-labels" });
+    const streetLabelLayer = svgNode("g", { class: "chart-street-labels" });
     for (const street of chartData.streets) {
       if (!street.points || street.points.length < 2) continue;
       const d = pathData(street.points);
@@ -275,11 +347,12 @@ function drawChartBackdrop(chartData) {
         d,
         "vector-effect": "non-scaling-stroke"
       });
+      cachePath([casing, line], street.points);
       streetGroup.append(casing, line);
       const middle = Math.floor((street.points.length - 1) / 2);
       const [x1, y1] = projection.point(...street.points[middle]);
       const [x2, y2] = projection.point(...street.points[middle + 1]);
-      const { outer, inner } = marker("street-label-anchor", ...street.points[middle]);
+      const { outer, inner, feature } = marker("street-label-anchor", ...street.points[middle]);
       let angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
       if (angle > 90) angle -= 180;
       if (angle < -90) angle += 180;
@@ -290,9 +363,13 @@ function drawChartBackdrop(chartData) {
       outer.dataset.highway = String(street.type === "highway");
       outer.dataset.priority = String(Boolean(street.priority));
       inner.append(label);
-      streetLabels.append(outer);
+      streetLabelLayer.append(outer);
+      const width = label.textContent.length * 5.5 + 8;
+      feature.padding = width;
+      streetLabels.push({ label, feature, x: x1, y: y1, width, name: label.textContent,
+        priority: Boolean(street.priority), highway: street.type === "highway" });
     }
-    backdrop.append(streetGroup, streetLabels);
+    backdrop.append(streetGroup, streetLabelLayer);
   }
 
   // 5. Bridges across waterways (with clearances)
@@ -338,6 +415,7 @@ function drawChartBackdrop(chartData) {
       anchor.append(inner);
       const hit = svgNode("line", { class: "bridge-hit", x1, y1, x2, y2, "vector-effect": "non-scaling-stroke" });
       group.append(hit, casing, deck, anchor);
+      cacheFeature([group], [[x1, y1], [x2, y2]], inner).padding = bridge.name.length * 6;
       bridgeGroup.append(group);
     }
     backdrop.append(bridgeGroup);
@@ -347,7 +425,7 @@ function drawChartBackdrop(chartData) {
   if (chartData.seamarks) {
     const seamarkGroup = svgNode("g", { class: "chart-seamarks" });
     for (const seamark of chartData.seamarks) {
-      const { outer, inner } = marker(
+      const { outer, inner, feature } = marker(
         `seamark seamark-${seamark.type} seamark-${seamark.color}`,
         seamark.latitude,
         seamark.longitude
@@ -374,6 +452,7 @@ function drawChartBackdrop(chartData) {
         label.textContent = seamark.name.replace(/^.*\bBuoy\s+/, "");
         inner.append(buoy, label);
       }
+      feature.padding = outer.textContent.length * 6 + 10;
       seamarkGroup.append(outer);
     }
     backdrop.append(seamarkGroup);
@@ -396,7 +475,8 @@ function drawChartBackdrop(chartData) {
   ];
   const labels = svgNode("g", { class: "place-labels" });
   for (const [name, lat, lon, kind] of places) {
-    const { outer, inner } = marker(`place-label place-${kind}`, lat, lon);
+    const { outer, inner, feature } = marker(`place-label place-${kind}`, lat, lon);
+    feature.padding = name.length * 6;
     const label = svgNode("text", { "text-anchor": "middle" });
     label.textContent = name;
     inner.append(label);
@@ -407,6 +487,15 @@ function drawChartBackdrop(chartData) {
 }
 
 function drawHarbor() {
+  cancelCameraAnimation();
+  features = [];
+  streetLabels = [];
+  dockLabels = [];
+  fleetScalers = [];
+  fleetDetails = [];
+  fleetScale = null;
+  layerClose = null;
+  forceStreetLayout = true;
   chart.textContent = "";
   projection = makeProjection(harbor.bounds);
   base = { x: 0, y: 0, width: projection.width, height: projection.height };
@@ -432,9 +521,11 @@ function drawHarbor() {
   for (const route of harbor.routes) {
     for (const points of route.paths) {
       const d = pathData(points);
-      casings.append(svgNode("path", { class: "route-casing", d, "vector-effect": "non-scaling-stroke" }));
+      const casing = svgNode("path", { class: "route-casing", d, "vector-effect": "non-scaling-stroke" });
+      casings.append(casing);
       const line = svgNode("path", { class: "route-line", d, stroke: route.color, "vector-effect": "non-scaling-stroke" });
       line.dataset.route = route.id;
+      cachePath([casing, line], points);
       lines.append(line);
     }
   }
@@ -443,7 +534,7 @@ function drawHarbor() {
   dockLayer = svgNode("g", { class: "docks" });
   fleetLayer = svgNode("g", { class: "fleet" });
   for (const landing of harbor.landings) {
-    const { outer, inner } = marker("dock", landing.latitude, landing.longitude);
+    const { outer, inner, feature, x, y } = marker("dock", landing.latitude, landing.longitude);
     outer.dataset.dockId = landing.id;
     outer.dataset.latitude = landing.latitude;
     outer.dataset.longitude = landing.longitude;
@@ -454,12 +545,18 @@ function drawHarbor() {
     const label = svgNode("text", { class: "dock-label", x: 7, y: 3.5 });
     label.textContent = landing.displayName || landing.name;
     inner.append(label);
+    feature.padding = label.textContent.length * 5.8 + 19;
+    dockLabels.push({ node: outer, label, feature, x, y, target: false,
+      latitude: landing.latitude, longitude: landing.longitude,
+      width: label.textContent.length * 5.8 + 12,
+      major: /Wall|34th|Rockaway|St. George|Bay Ridge|Astoria|90th/i.test(label.textContent) });
     dockLayer.append(outer);
   }
   chart.append(dockLayer, fleetLayer);
 
   renderRouteFilters();
-  applyView();
+  updateRouteLineStyles();
+  drawFleet();
 }
 
 // ---------------------------------------------------------------- filters & legend
@@ -542,11 +639,12 @@ function drawFleet() {
     if (bearing != null) {
       inner.append(svgNode("path", { class: "boat-heading", d: bow, transform: `rotate(${bearing})` }));
     }
-    const digits = fleetIsClose ? hullDigits(boat.number) : null;
+    const digits = hullDigits(boat.number);
     if (digits) {
       const number = svgNode("text", { class: "boat-number", "text-anchor": "middle", y: 3.2 });
       if (boat.color) number.setAttribute("fill", readableOn(boat.color));
       number.textContent = digits;
+      number.style.display = fleetIsClose ? "" : "none";
       inner.append(number);
     }
     if (boat.id === selectedId) {
@@ -557,19 +655,29 @@ function drawFleet() {
     markers.push(outer);
   }
   reconcile(fleetLayer, markers);
+  // Reconciliation retains old nodes; references to the proposed markers are now stale.
+  fleetScalers = [...fleetLayer.querySelectorAll(".scaler")];
+  fleetDetails = [
+    ["boat-hull", "r", 6, 10.5], ["boat-wake", "r", 6, 10.5],
+    ["boat-halo", "r", 11, 16], ["boat-label", "x", 13, 18],
+    ["boat-heading", "d", "M0,-12 L3.6,-5.6 L-3.6,-5.6 Z", "M0,-17 L4.4,-9.8 L-4.4,-9.8 Z"]
+  ].map(([name, attribute, far, near]) => ({ nodes: [...fleetLayer.querySelectorAll(`.${name}`)], attribute, far, near }));
+  fleetDetails.push({ nodes: [...fleetLayer.querySelectorAll(".boat-number")], attribute: null });
+  fleetScale = null;
   markTargetDock();
   updateVesselCard();
-  applyView();
+  scheduleView();
 }
 
 function markTargetDock() {
   const target = boats.find((boat) => boat.id === selectedId)?.stop;
-  for (const dock of chart.querySelectorAll(".dock")) {
-    const distance = target?.latitude == null ? Infinity : metresBetween(target, {
-      latitude: Number(dock.dataset.latitude),
-      longitude: Number(dock.dataset.longitude)
-    });
-    dock.classList.toggle("is-target", distance < 300);
+  for (const dock of dockLabels) {
+    const distance = target?.latitude == null ? Infinity : metresBetween(target, dock);
+    const next = distance < 300;
+    if (dock.target !== next) {
+      dock.node.classList.toggle("is-target", next);
+      dock.target = next;
+    }
   }
 }
 
@@ -586,68 +694,109 @@ function scheduleView() {
   if (!hasRaf) return applyView();
   if (viewFramePending) return;
   viewFramePending = true;
-  requestAnimationFrame(() => { viewFramePending = false; applyView(); });
+  requestAnimationFrame(renderCameraFrame);
 }
-function applyView() {
-  // Read layout before changing SVG attributes to avoid a forced layout on every camera frame.
-  const box = chart.getBoundingClientRect();
-  chart.setAttribute("viewBox", `${view.x.toFixed(1)} ${view.y.toFixed(1)} ${view.width.toFixed(1)} ${view.height.toFixed(1)}`);
+
+function renderCameraFrame(now) {
+  viewFramePending = false;
+  if (cameraAnimation && !cameraAnimation(now)) {
+    cameraAnimation = null;
+    forceStreetLayout = true;
+  }
+  applyView(now);
+  if (cameraAnimation) scheduleView();
+}
+
+function applyView(now = 0) {
+  if (!view) return;
+  const nextBox = `${view.x.toFixed(1)} ${view.y.toFixed(1)} ${view.width.toFixed(1)} ${view.height.toFixed(1)}`;
+  if (chart.getAttribute("viewBox") !== nextBox) chart.setAttribute("viewBox", nextBox);
+  const [x, y, width, height] = nextBox.split(" ").map(Number);
+  renderedView = { x, y, width, height };
   drawTiles();
-  const unitsPerPixel = Math.max(view.width / (box.width || 360), view.height / (box.height || 480));
-  const scale = unitsPerPixel.toFixed(3);
-  for (const scaler of chart.querySelectorAll(".scaler")) scaler.setAttribute("transform", `scale(${scale})`);
+  const units = Math.max(view.width / viewport.width, view.height / viewport.height);
+  const scale = units.toFixed(3);
+  updateFeatures(units, scale);
+  if (fleetScale !== scale) {
+    for (const scaler of fleetScalers) scaler.setAttribute("transform", `scale(${scale})`);
+    fleetScale = scale;
+  }
   const close = base.width / view.width >= LABEL_ZOOM;
-  if (dockLayer) dockLayer.classList.toggle("is-close", close);
-  if (chartBackdrop) chartBackdrop.classList.toggle("is-close", close);
-  layoutDockLabels(unitsPerPixel, close);
-  layoutStreetLabels(unitsPerPixel, close);
-  if (fleetLayer && close !== fleetIsClose) {
+  if (close !== layerClose) {
+    dockLayer?.classList.toggle("is-close", close);
+    chartBackdrop?.classList.toggle("is-close", close);
+    layerClose = close;
+  }
+  if (close !== fleetIsClose) {
     fleetIsClose = close;
-    drawFleet();
+    for (const detail of fleetDetails) for (const node of detail.nodes) {
+      if (detail.attribute) node.setAttribute(detail.attribute, close ? detail.near : detail.far);
+      else node.style.display = close ? "" : "none";
+    }
+  }
+  layoutDockLabels(units, close);
+  const moving = pointers.size > 0 || cameraAnimation || wheelTimer !== null;
+  if (forceStreetLayout || !moving || now - lastStreetLayout >= LABEL_INTERVAL) {
+    layoutStreetLabels(units, close);
+    lastStreetLayout = now;
+    forceStreetLayout = false;
   }
 }
 
 // Keep names legible at every viewport size; crowded landing labels wait for more room.
 function layoutDockLabels(units, close) {
   const occupied = [];
-  const docks = [...chart.querySelectorAll(".dock")].sort((a, b) =>
-    Number(b.classList.contains("is-target")) - Number(a.classList.contains("is-target")));
+  const area = visibleArea(units);
+  const docks = [...dockLabels].sort((a, b) => Number(b.target) - Number(a.target));
   for (const dock of docks) {
-    const label = dock.querySelectorAll(".dock-label")[0];
-    const [x, y] = projection.point(Number(dock.dataset.latitude), Number(dock.dataset.longitude));
-    const target = dock.classList.contains("is-target");
-    const major = /Wall|34th|Rockaway|St. George|Bay Ridge|Astoria|90th/i.test(label.textContent);
-    const labelWidth = (label.textContent.length * 5.8 + 12) * units;
-    const left = x + 7 * units + labelWidth > view.x + view.width;
-    label.setAttribute("x", left ? -7 : 7);
-    label.setAttribute("text-anchor", left ? "end" : "start");
+    const { label, x, y, target, major } = dock;
+    const labelWidth = dock.width * units;
+    const left = x + 7 * units + labelWidth > area.right;
+    if (dock.left !== left) {
+      label.setAttribute("x", left ? -7 : 7);
+      label.setAttribute("text-anchor", left ? "end" : "start");
+      dock.left = left;
+    }
     const rect = { x: left ? x - 7 * units - labelWidth : x + 7 * units, y: y - 8 * units, w: labelWidth, h: 18 * units };
-    const inside = x >= view.x && x <= view.x + view.width && y >= view.y && y <= view.y + view.height;
+    const inside = x >= area.left && x <= area.right && y >= area.top && y <= area.bottom;
     const collides = occupied.some((r) => rect.x < r.x + r.w && rect.x + rect.w > r.x && rect.y < r.y + r.h && rect.y + rect.h > r.y);
     const show = inside && (target || ((major || close) && !collides));
-    label.style.opacity = show ? "1" : "0";
-    label.style.pointerEvents = show ? "auto" : "none";
+    labelVisibility(dock, show, true);
     if (show) occupied.push(rect);
   }
 }
 
-if (typeof ResizeObserver === "function") new ResizeObserver(() => { if (view) applyView(); }).observe(chart);
+function cacheViewport(box) {
+  if (!box.width || !box.height) return;
+  if (viewport.width === box.width && viewport.height === box.height) return;
+  viewport = { width: box.width, height: box.height };
+  forceStreetLayout = true;
+  if (view) scheduleView();
+}
+cacheViewport(chart.getBoundingClientRect());
+if (typeof ResizeObserver === "function") {
+  new ResizeObserver(entries => cacheViewport(entries[0].contentRect)).observe(chart);
+} else {
+  globalThis.addEventListener?.("resize", () => cacheViewport(chart.getBoundingClientRect()));
+}
 
 function layoutStreetLabels(units, close) {
   const occupied = [];
   const named = new Set();
-  for (const anchor of chart.querySelectorAll(".street-label-anchor")) {
-    const label = anchor.querySelectorAll(".street-label")[0];
-    const [x, y] = projection.point(Number(anchor.dataset.latitude), Number(anchor.dataset.longitude));
-    const priority = anchor.dataset.priority === "true";
-    const width = (label.textContent.length * 5.5 + 8) * units;
+  const area = visibleArea(units);
+  for (const entry of streetLabels) {
+    if (!entry.feature.visible) { labelVisibility(entry, false); continue; }
+    const { x, y, priority, name, highway } = entry;
+    const width = entry.width * units;
     const height = (priority ? 14 : 28) * units;
     const rect = { x: x - width / 2, y: y - 13 * units, width, height };
-    const inside = rect.x > view.x && rect.x + width < view.x + view.width && rect.y > view.y && rect.y + height < view.y + view.height;
-    const collides = occupied.some((r) => rect.x < r.x + r.width && rect.x + width > r.x && rect.y < r.y + r.height && rect.y + height > r.y);
-    const show = inside && !named.has(label.textContent) && !collides && (close || anchor.dataset.highway === "true" || priority);
-    label.style.opacity = show ? "1" : "0";
-    if (show) { named.add(label.textContent); occupied.push(rect); }
+    const inside = rect.x > area.left && rect.x + width < area.right && rect.y > area.top && rect.y + height < area.bottom;
+    // Reject offscreen and duplicate labels before testing collisions.
+    const eligible = inside && !named.has(name) && (close || highway || priority);
+    const collides = eligible && occupied.some((r) => rect.x < r.x + r.width && rect.x + width > r.x && rect.y < r.y + r.height && rect.y + height > r.y);
+    const show = eligible && !collides;
+    labelVisibility(entry, show);
+    if (show) { named.add(name); occupied.push(rect); }
   }
 }
 
@@ -671,8 +820,9 @@ function setView(next) {
 
 function cancelCameraAnimation() {
   if (cameraAnimation) {
-    if (hasRaf) cancelAnimationFrame(cameraAnimation);
     cameraAnimation = null;
+    forceStreetLayout = true;
+    scheduleView();
   }
 }
 
@@ -700,21 +850,20 @@ function animateTo(target, duration = 320, { constrain = true } = {}) {
       width: start.width + (clamped.width - start.width) * ease,
       height: start.height + (clamped.height - start.height) * ease
     };
-    applyView();
-    if (progress < 1) {
-      cameraAnimation = requestAnimationFrame(step);
-    } else {
-      cameraAnimation = null;
-    }
+    return progress < 1;
   }
-  cameraAnimation = requestAnimationFrame(step);
+  cameraAnimation = step;
+  scheduleView();
 }
 
 function toDrawing(clientX, clientY) {
   const matrix = chart.getScreenCTM();
   if (!matrix) return null;
   const point = new DOMPoint(clientX, clientY).matrixTransform(matrix.inverse());
-  return { x: point.x, y: point.y };
+  if (!renderedView) return { x: point.x, y: point.y };
+  const factor = view.width / renderedView.width;
+  return { x: view.x + (point.x - renderedView.x) * factor,
+    y: view.y + (point.y - renderedView.y) * factor };
 }
 
 function zoomBy(factor, clientX, clientY, { animate = false } = {}) {
@@ -735,6 +884,7 @@ let grabbed = null;
 let pinchDistance = 0;
 let gestureView = null;
 let gestureMatrix = null;
+let gestureRenderedView = null;
 let pinchAnchor = null;
 let dragged = false;
 let pointerHistory = [];
@@ -754,12 +904,14 @@ function pinchSpan() {
 function gesturePoint(x, y) {
   if (!gestureMatrix) return null;
   const point = new DOMPoint(x, y).matrixTransform(gestureMatrix);
-  return { x: point.x, y: point.y };
+  const factor = gestureView.width / gestureRenderedView.width;
+  return { x: gestureView.x + (point.x - gestureRenderedView.x) * factor,
+    y: gestureView.y + (point.y - gestureRenderedView.y) * factor };
 }
 function beginGesture() {
-  // Flush a queued camera position before capturing the new gesture's transform.
-  applyView();
+  // Capture once, accounting for a logical camera that is one frame ahead of the SVG.
   gestureView = { ...view };
+  gestureRenderedView = { ...(renderedView || view) };
   gestureMatrix = chart.getScreenCTM()?.inverse() || null;
   pointerHistory = [];
   if (pointers.size === 1) {
@@ -853,18 +1005,19 @@ for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
                 vy *= decay;
                 if (Math.hypot(vx, vy) > 0.005 && view && base) {
                   view = clampView({ x: view.x - vx * elapsed, y: view.y - vy * elapsed, width: view.width });
-                  applyView();
-                  cameraAnimation = requestAnimationFrame(glide);
-                } else {
-                  cameraAnimation = null;
+                  return true;
                 }
+                return false;
               };
-              cameraAnimation = requestAnimationFrame(glide);
+              cameraAnimation = glide;
+              scheduleView();
             }
           }
         }
       }
       grabbed = null;
+      forceStreetLayout = true;
+      scheduleView();
       chart.classList.remove("is-dragging");
     }
   });
@@ -873,6 +1026,12 @@ for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
 chart.addEventListener("wheel", (event) => {
   if (!view || !(event.ctrlKey || event.metaKey)) return;
   event.preventDefault();
+  if (wheelTimer !== null) clearTimeout(wheelTimer);
+  wheelTimer = setTimeout(() => {
+    wheelTimer = null;
+    forceStreetLayout = true;
+    scheduleView();
+  }, LABEL_INTERVAL);
   zoomBy(event.deltaY > 0 ? 1.15 : 1 / 1.15, event.clientX, event.clientY);
 }, { passive: false });
 
@@ -1375,7 +1534,7 @@ async function load() {
     storage.setItem(GEOMETRY_KEY, JSON.stringify(localHarbor(payload)));
     if (!unchanged) {
       drawHarbor();
-      if (previousView) { view = clampView(previousView); applyView(); }
+      if (previousView) { view = clampView(previousView); scheduleView(); }
     }
   });
   const positions = request("/api/boats", { cache: "no-store" }).then(async response => {

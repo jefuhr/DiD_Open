@@ -274,12 +274,12 @@ test("boats are numbered once they are drawn big enough to hold a number", async
   const yellow = { ...BOAT, id: "40", name: "Curiosity", number: "H-118", route: "SB", color: "#FFD100" };
   const view = await page({ boats: [BOAT, yellow] });
 
-  assert.equal(view.find("boat-number").length, 0, "wide out, a boat is a plain dot");
+  assert.equal(view.find("boat-number").filter(node => node.style.display !== "none").length, 0, "wide out, a boat is a plain dot");
   const wideHull = Number(view.find("boat-hull")[0].attrs.r);
 
   for (let press = 0; press < 4; press += 1) view.fire("zoomIn", "click", {});
 
-  const numbers = view.find("boat-number");
+  const numbers = view.find("boat-number").filter(node => node.style.display !== "none");
   assert.equal(numbers.length, 2, "close in, every boat carries its number");
   // The digits alone: every hull in this fleet is H-1xx or H-2xx, so the prefix says nothing.
   assert.deepEqual(numbers.map((node) => node.textContent).sort(), ["118", "204"]);
@@ -291,7 +291,7 @@ test("boats are numbered once they are drawn big enough to hold a number", async
 
   // Zooming back out returns the plain dot.
   for (let press = 0; press < 8; press += 1) view.fire("zoomOut", "click", {});
-  assert.equal(view.find("boat-number").length, 0);
+  assert.equal(view.find("boat-number").filter(node => node.style.display !== "none").length, 0);
   assert.equal(Number(view.find("boat-hull")[0].attrs.r), wideHull);
 });
 
@@ -483,8 +483,8 @@ test("zoom stays inside the harbor, and dock names wait until there is room for 
   assert.ok(close[2] < fitted[2] / 2, "zooming in should narrow the view");
   assert.equal(view.layer("docks").classList.contains("is-close"), true, "close in, the docks are named");
 
-  // Everything on the map is counter-scaled so a boat stays the same size on screen at any zoom.
-  const scaled = view.find("scaler").map((node) => Number(node.attrs.transform.match(/[\d.]+/)[0]));
+  // Visible markers are counter-scaled; culled markers catch up before returning onscreen.
+  const scaled = view.find("scaler").filter(node => node.parent.style.display !== "none").map((node) => Number(node.attrs.transform.match(/[\d.]+/)[0]));
   const unitsPerPixel = Math.max(close[2] / 360, close[3] / 480);
   assert.ok(scaled.every((factor) => Math.abs(factor - unitsPerPixel) < 0.01));
 

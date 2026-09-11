@@ -5,9 +5,9 @@
 // DOM test catches because jsdom has no layout. This drives eight real mouse moves and asserts the
 // camera travels one way, evenly.
 //
-// Needs Chromium and an application server. See docs/mobile-upgrade/README.md.
+// Needs Chromium; uses bundled cartography. See docs/mobile-upgrade/README.md.
 const assert = require("assert");
-const { fromApp, main } = require("./mobile-check-harness.cjs");
+const { main } = require("./mobile-check-harness.cjs");
 
 // One boat, standing still, so the deltas measured below are the camera's and not the fleet's.
 const BOAT = {
@@ -23,12 +23,13 @@ const BOAT = {
 
 main("map drag", {
   api: {
-    "/api/map": () => fromApp("/api/map"),
+    "/api/map": async () => (await require("./map-browser-fixture.cjs")()).harbor,
     "/api/boats": { available: true, boats: [BOAT] }
   }
 }, async ({ page, site, save, shot }) => {
   await page.goto(`${site.origin}/map?boat=Opportunity`);
   await page.waitForSelector(".boat");
+  await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(700);
 
   // Arriving from a departure link opens straight onto the boat, so the sheet has to start

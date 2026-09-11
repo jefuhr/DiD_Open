@@ -1,6 +1,8 @@
 # Mobile console upgrade
 
-Latest follow-up: [the strip under the alert bar on an installed board](installed-viewport-fix.md),
+Map rendering follow-up: [smoother pan and zoom, with a repeatable five-run comparison](map-performance.md).
+
+Earlier follow-up: [the strip under the alert bar on an installed board](installed-viewport-fix.md),
 which replaces the first attempt at that gap, `4fad843`, and carries the regression fixture for it.
 
 Work lives on `jefuhr/mobile-console-upgrade`, based on local `mobile` at `1a97588`. The desktop-based `jefuhr/mobile-perf-animations` branch was left behind. No deployment or server API changes are included.
@@ -31,7 +33,9 @@ Primary fonts use `font-display: swap`. Lossless PNG recompression saves 5,885 b
 
 `npm test` passes all 336 tests (315 before the upgrade). Behavioral coverage uses a standards DOM for node identity, focus/scroll preservation, request races/deduplication/timeouts, saved content before network completion, hidden-page polling, malformed/denied/full storage, modal interruption and reduced motion, map state preservation, and saved API responses. Existing operational schedule and cartography tests retain their guarantees; their small unit-test DOM adapters mock shared primitives, which are separately exercised by the standards-DOM tests.
 
-For browser checks, install Chromium with `npx playwright install chromium` and the system libraries Playwright requires. Start `PORT=8094 node server.js`, then run any of `npm run test:mobile-browser`, `npm run test:mobile-map-drag`, or `npm run test:mobile-route-layout` in another terminal. `MOBILE_TEST_ORIGIN` overrides that server address for all three; they share `scripts/mobile-check-harness.cjs`, which owns the static server, the 390×844 phone context and that origin. The comparison script extracts the immutable baseline revision into a temporary directory, captures API fixtures once, and replays both revisions with the same fixed clock, 500ms API delay, 390×844 viewport, and 4× CPU throttling. Baseline traces were reconstructed from the original revision after missing browser libraries initially prevented tracing; they were not collected before editing began.
+The map drag, rendering, selection, and performance checks now use bundled fixtures and need no application server; see [map performance](map-performance.md).
+
+For the other browser checks, install Chromium with `npx playwright install chromium` and the system libraries Playwright requires. Start `PORT=8094 node server.js`, then run `npm run test:mobile-browser` or `npm run test:mobile-route-layout` in another terminal. `MOBILE_TEST_ORIGIN` overrides that server address for both; they share `scripts/mobile-check-harness.cjs`, which owns the static server, the 390×844 phone context and that origin. The comparison script extracts the immutable baseline revision into a temporary directory, captures API fixtures once, and replays both revisions with the same fixed clock, 500ms API delay, 390×844 viewport, and 4× CPU throttling. Baseline traces were reconstructed from the original revision after missing browser libraries initially prevented tracing; they were not collected before editing began.
 
 The final recorded comparison is:
 
