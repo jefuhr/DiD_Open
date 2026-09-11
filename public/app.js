@@ -1317,11 +1317,12 @@ function departureLayoverLabel(item) {
   const fresh = (update) => update?.delaySeconds != null && Number.isFinite(Number(update.delaySeconds));
   const hasLiveTiming = !arrival?.canceled && !next?.canceled && (fresh(arrival) || fresh(next));
   const delay = (update) => fresh(update) ? Math.max(0, Number(update.delaySeconds)) : 0;
-  return layoverLabel({
-    scheduledSeconds: turn.scheduledLayoverSeconds,
-    estimatedSeconds: turn.scheduledLayoverSeconds - delay(arrival) + delay(next),
-    hasLiveTiming
-  }, "departure-layover", "Layover ");
+  const seconds = hasLiveTiming
+    ? turn.scheduledLayoverSeconds - delay(arrival) + delay(next)
+    : turn.scheduledLayoverSeconds;
+  if (seconds == null || !Number.isFinite(Number(seconds))) return "";
+  const minutes = layoverMinutes(seconds);
+  return `<small class="departure-layover" aria-label="${hasLiveTiming ? "Estimated" : "Scheduled"} layover ${minutes} minutes">${minutes} min</small>`;
 }
 
 function tripStopName(stopId) {
@@ -2098,7 +2099,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=99&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=100&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
