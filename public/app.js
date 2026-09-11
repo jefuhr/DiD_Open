@@ -882,12 +882,14 @@ function sailingKey(item) {
   return escapeHtml(JSON.stringify([serviceDate, item.tripId, item.stopId, item.seconds]));
 }
 
+// This view's destination is the card's, shared by every slot under it, so the layover cannot sit
+// beside it the way the timeline's does. It joins the status line instead, which keeps a turn from
+// costing each slot a line of its own in a column that is already the narrowest thing on the board.
 function departureCell(item) {
   const { delayLabel, onTimeLabel, scheduledLabel, lastLabel, arrivalLabel, assignment, noPickupLabel, dropOffLabel, crewBoats, viaTerminals } = departureStatus(item);
   return `<div class="departure-slot" data-key="${sailingKey(item)}"${tripAttrs(item)}>
     <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta, item.live !== false))}</span></div>
-    <span class="departure-last-slot">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
-    ${departureLayoverLabel(item)}
+    <span class="departure-last-slot">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span>${departureLayoverLabel(item)}</span>
   </div>`;
 }
 
@@ -1077,8 +1079,9 @@ function renderTimeline() {
     // Three lines, each reading left-to-right: when and which boat, then where, then who and how.
     // Time and route anchor the left edge; the countdown and the status badges are pushed to the
     // right, so both columns can be scanned straight down the list without the eye wandering.
-    // The destination gets a line of its own because it is the longest thing on the row and the
-    // one that reads worst truncated.
+    // The destination owns the middle line because it is the longest thing on the row and the one
+    // that reads worst truncated. The turn the boat makes when it gets there rides along at the end
+    // of that line: it is short, it never truncates, and it is the destination it belongs to.
     const notInService = group.outOfService || group.crewShuttle ? " timeline-row-oos" : "";
     return `<article data-key="${sailingKey(departure)}" class="departure timeline-row route-${visual.routeClass}${variantClass}${notInService}"${visual.style}${tripAttrs(departure)}>
       <div class="tl-head">
@@ -1086,13 +1089,12 @@ function renderTimeline() {
         <span class="route-badge${visual.partnerLogo ? " route-badge-image" : ""}">${visual.badgeContent}${variantBadge}</span>
         <span class="tl-relative">${escapeHtml(relativeTime(departure.delta, departure.live !== false))}</span>
       </div>
-      <strong class="tl-dest">${escapeHtml(group.destination)}${group.via?.length ? `<span class="tl-via"> via ${escapeHtml(group.via.map(shortStop).join(", "))}</span>` : ""}</strong>
+      <strong class="tl-dest"><span class="tl-dest-name">${escapeHtml(group.destination)}${group.via?.length ? `<span class="tl-via"> via ${escapeHtml(group.via.map(shortStop).join(", "))}</span>` : ""}</span>${departureLayoverLabel(departure)}</strong>
       <div class="tl-meta">
         <span class="tl-context">${escapeHtml(context)}</span>
         ${boat}
         <span class="tl-status">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}</span>
       </div>
-      ${departureLayoverLabel(departure)}
     </article>`;
   }).join(""));
 }
@@ -1301,6 +1303,9 @@ function layoverLabel(turnaround, className, prefix = "") {
 }
 
 // Read the terminal's timing, not this landing's delay: a boat can recover time along the route.
+//
+// The pier goes unnamed because a turn is always taken at the trip's last stop, which is the
+// destination the label now sits beside — naming it again cost a line and said the same thing twice.
 function departureLayoverLabel(item) {
   if (item.outOfService || item.crewShuttle || item.endsShift) return "";
   const turn = scheduleForDeparture(item)?.turnaround;
@@ -1316,7 +1321,7 @@ function departureLayoverLabel(item) {
     scheduledSeconds: turn.scheduledLayoverSeconds,
     estimatedSeconds: turn.scheduledLayoverSeconds - delay(arrival) + delay(next),
     hasLiveTiming
-  }, "departure-layover", `Layover at ${data?.stops?.[turn.stopId]?.name || item.destination}: `);
+  }, "departure-layover", "Layover ");
 }
 
 function tripStopName(stopId) {
@@ -2093,7 +2098,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=98&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=99&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
