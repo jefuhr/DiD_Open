@@ -34,6 +34,14 @@ const displayDataJson = new Map([...landingData.byLanding].map(([id, data]) => [
 // than whatever the landing on screen happens to carry.
 const OPERATORS = operatorRoster(landingData.byLanding);
 const realtimeStopsByLanding = new Map([...landingData.byLanding].map(([id, data]) => [id, stopIdsForLanding(data)]));
+// The departure board also shows the pause at the far terminal. Keep just the two timing keys
+// needed for each turn, alongside this landing's updates, rather than sending the whole feed.
+const turnaroundKeysByLanding = new Map([...landingData.byLanding].map(([id, data]) => [id,
+  new Set(Object.entries(data.tripSchedules || {}).flatMap(([tripId, schedule]) => {
+    const turn = schedule.turnaround;
+    return turn ? [`${tripId}|${turn.stopId}`, `${turn.nextTripId}|${turn.stopId}`] : [];
+  }))
+]));
 console.log(`Loaded ${landingData.byLanding.size} of ${LANDING_CHOICES.length} landings; realtime covers ${landingData.merged.meta.landing.stopIds.length} stops.`);
 
 // The map page's static half: the route lines, the docks and the bounds that hold them, plus the
@@ -176,7 +184,9 @@ async function handle(request, response) {
     // its landing gets only its own stops, which keeps the payload the size it was before this
     // server covered all 25; omitting landingId returns everything, so an older cached client that
     // does not send it still works.
-    const stops = realtimeStopsByLanding.get(Number(url.searchParams.get("landingId")));
+    const landingId = Number(url.searchParams.get("landingId"));
+    const stops = realtimeStopsByLanding.get(landingId);
+    const turnaroundKeys = turnaroundKeysByLanding.get(landingId);
     const updates = [...(ferry.updates || []), ...(nyu.updates || [])];
     // Where the boats are rides along in the same cached snapshot and is deliberately not forwarded
     // here. No board draws a map, and a coordinate pair per vessel on a payload every board polls
@@ -187,7 +197,7 @@ async function handle(request, response) {
       ...departureData,
       available: ferry.available || nyu.available,
       stale: Boolean(ferry.stale || nyu.stale),
-      updates: stops ? updates.filter((update) => stops.has(String(update.stopId))) : updates,
+      updates: stops ? updates.filter((update) => stops.has(String(update.stopId)) || turnaroundKeys?.has(`${update.tripId}|${update.stopId}`)) : updates,
       nyu: { available: nyu.available, stale: nyu.stale, fetchedAt: nyu.fetchedAt, error: nyu.error }
     };
     // The status code says a payload went out; these say what was in it. A board that answers 200

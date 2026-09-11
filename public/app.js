@@ -849,14 +849,13 @@ function routeVisual(routeId, variant) {
 
 // What makes a row openable, shared by both views so they cannot disagree about which rows are.
 //
-// A row is tappable only if the payload carries the trip's stop list, which is the same thing as
-// asking whether there is anything to show. That single condition also settles every synthetic row
-// without naming one: the home-port runs and crew shuttles are minted after tripSchedules is built
-// (scripts/build-data.js), so their ids are not in it and they stay inert. Deadheads and Seastreak
-// arrivals keep their real feed trip id and do open — "where is this empty boat going" and "where
-// did this arrival come from" are questions with published answers.
+// Home-port runs open the revenue trip they follow; crew shuttles without a stop list stay inert.
+function scheduleForDeparture(item) {
+  return data?.tripSchedules?.[item.liveTripId || item.tripId];
+}
+
 function tripAttrs(item) {
-  const stops = data?.tripSchedules?.[item.tripId]?.stops;
+  const stops = scheduleForDeparture(item)?.stops;
   if (!Array.isArray(stops) || stops.length < 2) return "";
   const label = `${departureLabel(item)} to ${item.destination || "destination unavailable"} — show this trip's stops`;
   // role/tabindex rather than a real <button>: these sit inside a CSS grid and a flex column with
@@ -872,6 +871,7 @@ function departureCell(item) {
   return `<div class="departure-slot"${tripAttrs(item)}>
     <div class="slot-time-row"><time>${departureLabel(item)}</time><span class="slot-relative">${escapeHtml(relativeTime(item.delta, item.live !== false))}</span></div>
     <span class="departure-last-slot">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}<span class="boat-name">${crewBoats || (item.boatName ? escapeHtml(item.boatName) : predictedName(item))}</span></span>
+    ${departureLayoverLabel(item)}
   </div>`;
 }
 
@@ -1055,6 +1055,7 @@ function renderTimeline() {
         ${boat}
         <span class="tl-status">${lastLabel}${arrivalLabel}${noPickupLabel}${delayLabel || onTimeLabel || scheduledLabel}${viaTerminals}${dropOffLabel}${assignment}</span>
       </div>
+      ${departureLayoverLabel(departure)}
     </article>`;
   }).join("");
 }
@@ -1240,15 +1241,38 @@ function turnaroundLabel(stop) {
     ? { scheduledSeconds: tripView.scheduleTurnaround.scheduledLayoverSeconds, hasLiveTiming: false }
     : null;
   const turnaround = tripView?.timings?.get(stop.sequence)?.turnaround || local;
+  return layoverLabel(turnaround, "trip-stop-layover");
+}
+
+function layoverLabel(turnaround, className, prefix = "") {
   const scheduled = Number(turnaround?.scheduledSeconds);
   if (!Number.isFinite(scheduled)) return "";
   const scheduledMinutes = layoverMinutes(scheduled);
   const estimated = Number(turnaround?.estimatedSeconds);
   if (turnaround.hasLiveTiming && Number.isFinite(estimated)) {
     const estimatedMinutes = layoverMinutes(estimated);
-    return `<small class="trip-stop-layover" aria-label="Scheduled layover ${scheduledMinutes} minutes, currently ${estimatedMinutes} minutes">${scheduledMinutes} → ${estimatedMinutes} min</small>`;
+    return `<small class="${className}" aria-label="Scheduled layover ${scheduledMinutes} minutes, currently ${estimatedMinutes} minutes">${escapeHtml(prefix)}${scheduledMinutes} → ${estimatedMinutes} min</small>`;
   }
-  return `<small class="trip-stop-layover" aria-label="Scheduled layover ${scheduledMinutes} minutes">scheduled ${scheduledMinutes} min</small>`;
+  return `<small class="${className}" aria-label="Scheduled layover ${scheduledMinutes} minutes">${escapeHtml(prefix)}scheduled ${scheduledMinutes} min</small>`;
+}
+
+// Read the terminal's timing, not this landing's delay: a boat can recover time along the route.
+function departureLayoverLabel(item) {
+  if (item.outOfService || item.crewShuttle || item.endsShift) return "";
+  const turn = scheduleForDeparture(item)?.turnaround;
+  if (!turn) return "";
+  const live = item.live !== false && !realtime.stale;
+  const updates = live ? realtime.updates || [] : [];
+  const arrival = updates.find((update) => String(update.tripId) === String(item.tripId) && update.stopId === turn.stopId);
+  const next = updates.find((update) => String(update.tripId) === String(turn.nextTripId) && update.stopId === turn.stopId);
+  const fresh = (update) => update?.delaySeconds != null && Number.isFinite(Number(update.delaySeconds));
+  const hasLiveTiming = !arrival?.canceled && !next?.canceled && (fresh(arrival) || fresh(next));
+  const delay = (update) => fresh(update) ? Math.max(0, Number(update.delaySeconds)) : 0;
+  return layoverLabel({
+    scheduledSeconds: turn.scheduledLayoverSeconds,
+    estimatedSeconds: turn.scheduledLayoverSeconds - delay(arrival) + delay(next),
+    hasLiveTiming
+  }, "departure-layover", `Layover at ${data?.stops?.[turn.stopId]?.name || item.destination}: `);
 }
 
 function tripStopName(stopId) {
@@ -1309,9 +1333,9 @@ function connectionsFor(stop) {
 // between two trips resolves to the one that reported last.
 function vesselForTrip(tripId) {
   const vehicles = realtime.vehicles || [];
-  const working = vehicles.find((item) => String(item.tripId) === String(tripId) && item.boatName);
-  if (working) return { name: working.boatName, predicted: false };
   const departure = (data?.departures || []).find((item) => String(item.tripId) === String(tripId));
+  const working = vehicles.find((item) => String(item.tripId) === String(departure?.liveTripId || tripId) && item.boatName);
+  if (working) return { name: working.boatName, predicted: false };
   if (!Number.isInteger(departure?.boatAssignment)) return null;
   const boat = `${departure.routeId}${departure.boatAssignment}`;
   const onTheBoat = vehicles
@@ -1403,24 +1427,28 @@ async function loadTripConnections(tripId) {
 }
 
 function openTripView(tripId, stopId, seconds) {
-  const schedule = data?.tripSchedules?.[tripId];
+  const departure = data?.departures?.find((item) => item.tripId === tripId);
+  const sourceTripId = departure?.liveTripId || tripId;
+  const schedule = data?.tripSchedules?.[sourceTripId];
   if (!schedule?.stops?.length || schedule.stops.length < 2) return;
   const stops = [...schedule.stops].sort((left, right) => left.sequence - right.sequence);
   // Which call was tapped. Time as well as id, because a loop trip calls at the same pier twice.
-  const tapped = stops.find((stop) => stop.stopId === stopId &&
+  const tapped = departure?.outOfService && departure.liveTripId ? stops.at(-1) : stops.find((stop) => stop.stopId === stopId &&
     (stop.departureSeconds === seconds || stop.arrivalSeconds === seconds)) ||
     stops.find((stop) => stop.stopId === stopId);
   const route = data?.routes?.[data?.departures?.find((item) => item.tripId === tripId)?.routeId] || {};
   const destination = tripStopName(stops.at(-1).stopId);
   tripRequest += 1;
   tripView = {
-    tripId, stopId, sequence: tapped?.sequence ?? stops[0].sequence, stops,
+    tripId, sourceTripId, stopId, sequence: tapped?.sequence ?? stops[0].sequence, stops,
     connections: null, note: "Checking…",
     scheduleTurnaround: schedule.turnaround || null, timings: new Map(),
     names: new Map(), landings: new Map(),
     // Says out loud what the times underneath are measured from. Read as "what is leaving now"
     // they would be wrong at every stop the boat has not reached yet.
-    summary: `${route.shortName || ""} ${destination ? `to ${destination}` : ""} · ${stops.length} stops · next boats after each call`.trim()
+    summary: departure?.outOfService && departure.liveTripId
+      ? `${route.shortName || ""} to ${departure.destination} · Out of service · Previous stops before ${tripStopName(stopId)}`.trim()
+      : `${route.shortName || ""} ${destination ? `to ${destination}` : ""} · ${stops.length} stops · next boats after each call`.trim()
   };
   renderTripView();
   setTripOpen(true);
@@ -1431,12 +1459,12 @@ function openTripView(tripId, stopId, seconds) {
     renderTripView();
     return;
   }
-  loadTripConnections(tripId);
+  loadTripConnections(sourceTripId);
 }
 
 function refreshTripConnections() {
   if (!tripView || elements.tripMenu.hidden || !viewFrame(new Date()).live) return;
-  loadTripConnections(tripView.tripId);
+  loadTripConnections(tripView.sourceTripId || tripView.tripId);
 }
 
 function setTripOpen(open) {
@@ -1975,7 +2003,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=87&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=88&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

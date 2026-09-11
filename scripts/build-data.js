@@ -682,6 +682,10 @@ export async function buildDisplayData({
   }
   departures.sort((a, b) => a.seconds - b.seconds || a.routeId.localeCompare(b.routeId));
   const usedTripIds = new Set(departures.map((item) => item.tripId));
+  // Home-port rows open the arriving trip, even at a terminal with no pickup on that trip.
+  for (const run of breaks.tieUps) {
+    if (selectedStops.has(run.endStopId)) usedTripIds.add(run.tripId);
+  }
   const tripSchedules = Object.fromEntries([...usedTripIds].map((tripId) => {
     const turnaround = turnarounds.get(tripId);
     return [tripId, {

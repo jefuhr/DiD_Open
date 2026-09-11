@@ -838,28 +838,28 @@ test("the clock toggle sits beside the date stepper at the foot of the board", a
   assert.match(phone, /\.clock-toggle\{[^}]*min-height:48px/);
 });
 
-test("offline shell includes version 87 display assets", async () => {
+test("offline shell includes version 88 display assets", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.match(index, /styles\.css\?v=87/);
-  assert.match(index, /app\.js\?v=87/);
-  assert.match(worker, /nyc-ferry-did-shell-v87/);
-  assert.match(worker, /styles\.css\?v=87/);
-  assert.match(worker, /app\.js\?v=87/);
+  assert.match(index, /styles\.css\?v=88/);
+  assert.match(index, /app\.js\?v=88/);
+  assert.match(worker, /nyc-ferry-did-shell-v88/);
+  assert.match(worker, /styles\.css\?v=88/);
+  assert.match(worker, /app\.js\?v=88/);
 
   // The app icon, on the same version as everything else. It is what an installed board shows on a
   // home screen, so it has to be in the precache: an icon that only exists online is missing on
   // exactly the phone that installed the board to use it offline. iOS reads the apple-touch-icon
   // link specifically and falls back to a screenshot of the page without one.
-  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=87"/);
-  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=87"/);
-  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=87"/);
+  assert.match(index, /rel="icon" href="\/assets\/app-icon\.png\?v=88"/);
+  assert.match(index, /rel="apple-touch-icon" href="\/assets\/app-icon-180\.png\?v=88"/);
+  assert.match(index, /rel="manifest" href="\/assets\/site\.webmanifest\?v=88"/);
   for (const asset of ["app-icon.png", "app-icon-180.png", "app-icon-192.png", "app-icon-512.png", "app-icon-maskable-512.png"]) {
-    assert.ok(worker.includes(`'/assets/${asset}?v=87'`), `${asset} is missing from the offline shell`);
+    assert.ok(worker.includes(`'/assets/${asset}?v=88'`), `${asset} is missing from the offline shell`);
   }
-  assert.ok(worker.includes("'/assets/site.webmanifest?v=87'"));
+  assert.ok(worker.includes("'/assets/site.webmanifest?v=88'"));
 });
 
 // The Trust's boats are badged with its wordmark, so the logo has to be precached with the rest of
@@ -1398,6 +1398,24 @@ test("a terminating trip shows its scheduled and live layover beside the eta", a
     }
   };
   const view = await board({ payload });
+  for (const sort of ["time", "route"]) {
+    view.run(`selectSort("${sort}"); render()`);
+    assert.match(view.node("departures").innerHTML, /Layover at East 34th Street: scheduled 5 min/);
+  }
+  view.run(`realtime = { stale: false, vehicles: [], updates: [
+    { tripId: "turning", stopId: "1", delaySeconds: 60 },
+    { tripId: "turning", stopId: "2", delaySeconds: 480 },
+    { tripId: "return", stopId: "2", delaySeconds: 120 }
+  ] }; render()`);
+  assert.match(view.node("departures").innerHTML, /Layover at East 34th Street: 5 → -1 min/);
+  view.run(`realtime.updates[2].canceled = true; render()`);
+  assert.match(view.node("departures").innerHTML, /Layover at East 34th Street: scheduled 5 min/);
+  view.run(`realtime.updates[2].canceled = false; realtime.stale = true; render()`);
+  assert.match(view.node("departures").innerHTML, /Layover at East 34th Street: scheduled 5 min/);
+  view.run(`realtime.stale = false; viewDate = "2026-08-14"; render()`);
+  assert.match(view.node("departures").innerHTML, /Layover at East 34th Street: scheduled 5 min/);
+  assert.equal(view.run(`departureLayoverLabel({ ...data.departures[0], outOfService: true })`), "");
+  assert.equal(view.run(`departureLayoverLabel({ ...data.departures[0], endsShift: "certain" })`), "");
 
   // Browsed days intentionally make no realtime request, but the schedule still knows the break.
   view.run(`viewDate = "2026-08-14"; openTripView("turning", "1", 43200)`);
@@ -1421,13 +1439,11 @@ test("a terminating trip shows its scheduled and live layover beside the eta", a
   assert.match(css, /\.trip-stop-layover\{[^}]*white-space|\.trip-stop-timing\{[^}]*white-space:nowrap/);
 });
 
-// A synthetic row -- a home-port run, a crew shuttle -- has no published trip behind it, so there is
-// nothing to open. They are excluded by having no tripSchedules entry rather than by being named,
-// which is what keeps the rule from rotting as new kinds of synthetic row are added.
+// Rows need a published stop list, either their own or the arriving trip behind a home-port run.
 test("only rows with a published trip behind them are openable", async () => {
   const app = await readFile(appPath, "utf8");
   const helper = app.slice(app.indexOf("function tripAttrs"), app.indexOf("function departureCell"));
-  assert.match(helper, /data\?\.tripSchedules\?\.\[item\.tripId\]\?\.stops/);
+  assert.match(helper, /scheduleForDeparture\(item\)\?\.stops/);
   assert.match(helper, /stops\.length < 2/);
   // Both views go through the one helper, so they cannot disagree about which rows open.
   assert.equal((app.match(/\$\{tripAttrs\(/g) || []).length, 2);
@@ -1448,4 +1464,43 @@ test("the trip view is wired into the surfaces that can bury it", async () => {
   assert.match(index, /class="filter-menu trip-menu" id="tripMenu" hidden/);
   assert.match(index, /class="filter-menu-panel trip-panel"/);
   assert.match(css, /\.trip-menu \.filter-menu-panel\{height:100%/);
+});
+
+
+test("Pier C home-port rows open previous stops and map the arriving vessel", async () => {
+  const { buildDisplayData } = await import("../scripts/build-data.js");
+  const payload = await buildDisplayData({ landingNumber: 16 });
+  const row = payload.departures.find((item) => item.tripId.startsWith("oos:") && item.serviceId === "1" && item.seconds > 43200);
+  assert.ok(row);
+  const schedule = payload.tripSchedules[row.liveTripId];
+  assert.ok(schedule?.stops.length >= 2, "the terminal retains the incoming trip's stop list");
+  assert.equal(schedule.stops.at(-1).stopId, row.stopId);
+  for (const stop of schedule.stops) assert.ok(payload.stops[stop.stopId]?.name);
+  const view = await board({ now: "2026-08-27T16:00:00Z", payload });
+  for (const sort of ["time", "route"]) {
+    view.run(`selectSort("${sort}"); render()`);
+    assert.ok(view.node("departures").innerHTML.includes(`data-trip-id="${row.tripId}"`));
+  }
+  view.run(`realtime = { stale: false, updates: [], vehicles: [
+    { tripId: ${JSON.stringify(row.liveTripId)}, boatName: "Ferry & Away" }
+  ] }`);
+  const requested = [];
+  const fetch = view.context.fetch;
+  view.context.fetch = (url) => { requested.push(String(url)); return fetch(url); };
+  view.run(`openTripView(${JSON.stringify(row.tripId)}, ${JSON.stringify(row.stopId)}, ${row.seconds})`);
+  assert.equal(view.node("tripMenu").hidden, false);
+  assert.match(view.node("tripSummary").textContent, /to Pier C · Out of service · Previous stops/);
+  assert.equal((view.node("tripStops").innerHTML.match(/is-past/g) || []).length, schedule.stops.length - 1);
+  assert.equal(view.node("tripMapLink").hidden, false);
+  assert.equal(view.node("tripMapLink").href, "map?boat=Ferry%20%26%20Away");
+  assert.ok(requested.includes(`/api/connections?tripId=${encodeURIComponent(row.liveTripId)}`));
+  view.run("refreshTripConnections()");
+  assert.equal(requested.at(-1), `/api/connections?tripId=${encodeURIComponent(row.liveTripId)}`);
+  view.run(`realtime.vehicles = [{ tripId: "other", boat: "${row.routeId}${row.boatAssignment}", boatName: "Predicted Ferry" }]; renderTripView()`);
+  assert.match(view.node("tripMapLabel").textContent, /Predicted Ferry\?/);
+  view.run(`realtime.vehicles = []; renderTripView()`);
+  assert.equal(view.node("tripMapLink").hidden, true);
+  view.run(`setTripOpen(false)`);
+  assert.equal(view.node("tripMenu").hidden, true);
+  assert.equal(view.run(`tripAttrs({ tripId: "crew:unknown", stopId: "87" })`), "");
 });
