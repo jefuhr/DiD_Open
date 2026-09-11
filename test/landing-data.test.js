@@ -156,8 +156,8 @@ test("the server serves every landing and scopes realtime to the one asked for",
   assert.match(server, /createRealtimeService\({ loadDisplay: async \(\) => landingData\.merged/);
   assert.match(server, /createNyuRealtimeService\({ loadDisplay: async \(\) => landingData\.merged/);
   assert.match(server, /url\.pathname === "\/api\/landings"/);
-  assert.match(server, /realtimeStopsByLanding\.get\(Number\(url\.searchParams\.get\("landingId"\)\)\)/);
-  assert.match(server, /stops \? updates\.filter\(\(update\) => stops\.has\(String\(update\.stopId\)\)\) : updates/);
+  assert.match(server, /realtimeStopsByLanding\.get\(landingId\)/);
+  assert.match(server, /stops \? updates\.filter\(\(update\) => stops\.has\(String\(update\.stopId\)\) \|\| turnaroundKeys\?\.has/);
   // dataPath must not come back as the realtime source: that is the single-landing bug.
   assert.doesNotMatch(server, /createRealtimeService\({ dataPath/);
   assert.doesNotMatch(server, /createNyuRealtimeService\({ dataPath/);

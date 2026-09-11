@@ -305,3 +305,24 @@ test("vehicles carry the boat they are working, so later sailings can be predict
   // is why the boat has to come from the trips, not from the row being displayed.
   assert.equal(boatByTrip([{ tripId: "pierc:weekday:ER1:15:46", routeId: "ER", boatAssignment: 1 }]).get("pierc:weekday:ER1:15:46"), "ER1");
 });
+
+test("a turnaround retains the terminal arrival delay without a departing row there", () => {
+  const feed = { entity: [{ tripUpdate: { trip: { tripId: "inbound" }, stopTimeUpdate: [
+    { stopId: "origin", departure: { delay: 60 } },
+    { stopId: "terminal", arrival: { delay: 480 } }
+  ] } }] };
+  const options = {
+    departures: [{ tripId: "inbound", stopId: "origin", seconds: 43200 }],
+    tripSchedules: { inbound: {
+      stops: [
+        { stopId: "origin", arrivalSeconds: 43200, departureSeconds: 43200 },
+        { stopId: "terminal", arrivalSeconds: 44100, departureSeconds: 44100 }
+      ],
+      turnaround: { stopId: "terminal", nextTripId: "outbound", scheduledLayoverSeconds: 300 }
+    } }
+  };
+  const updates = normalizeTripUpdates(feed, ["origin", "terminal"], options);
+  assert.equal(updates.find((item) => item.stopId === "terminal")?.delaySeconds, 480);
+  assert.equal(updates.find((item) => item.stopId === "origin")?.delaySeconds, 60);
+  assert.equal(normalizeTripUpdates(feed, ["origin"], options).some((item) => item.stopId === "terminal"), false);
+});
