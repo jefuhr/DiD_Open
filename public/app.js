@@ -1322,7 +1322,7 @@ function departureLayoverLabel(item) {
     : turn.scheduledLayoverSeconds;
   if (seconds == null || !Number.isFinite(Number(seconds))) return "";
   const minutes = layoverMinutes(seconds);
-  return `<small class="departure-layover" aria-label="${hasLiveTiming ? "Estimated" : "Scheduled"} layover ${minutes} minutes">${minutes} min</small>`;
+  return `<small class="departure-layover" aria-label="${hasLiveTiming ? "Estimated" : "Scheduled"} layover ${minutes} minutes">${minutes} min Layover</small>`;
 }
 
 function tripStopName(stopId) {
@@ -2099,7 +2099,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=100&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=101&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

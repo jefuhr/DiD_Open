@@ -1444,26 +1444,26 @@ test("a terminating trip shows its scheduled and live layover beside the eta", a
   const view = await board({ payload });
   for (const sort of ["time", "route"]) {
     view.run(`selectSort("${sort}"); render()`);
-    assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min<\/small>/);
+    assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min Layover<\/small>/);
   }
   // A turn is taken at the trip's last stop, which is the destination the label sits beside in the
   // timeline — so the pier is named once, by the destination, and the turn shares its line.
   view.run(`selectSort("time"); render()`);
   const timeline = view.node("departures").innerHTML;
   assert.doesNotMatch(timeline, /Layover at East 34th Street/);
-  assert.match(timeline, /<strong class="tl-dest">.*<small class="departure-layover"[^>]*>5 min<\/small><\/strong>/);
+  assert.match(timeline, /<strong class="tl-dest">.*<small class="departure-layover"[^>]*>5 min Layover<\/small><\/strong>/);
   view.run(`realtime = { stale: false, vehicles: [], updates: [
     { tripId: "turning", stopId: "1", delaySeconds: 60 },
     { tripId: "turning", stopId: "2", delaySeconds: 480 },
     { tripId: "return", stopId: "2", delaySeconds: 120 }
   ] }; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>-1 min<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>-1 min Layover<\/small>/);
   view.run(`realtime.updates[2].canceled = true; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min Layover<\/small>/);
   view.run(`realtime.updates[2].canceled = false; realtime.stale = true; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min Layover<\/small>/);
   view.run(`realtime.stale = false; viewDate = "2026-08-14"; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min Layover<\/small>/);
   assert.equal(view.run(`departureLayoverLabel({ ...data.departures[0], outOfService: true })`), "");
   assert.equal(view.run(`departureLayoverLabel({ ...data.departures[0], endsShift: "certain" })`), "");
 
