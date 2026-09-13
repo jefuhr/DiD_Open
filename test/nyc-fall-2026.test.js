@@ -107,12 +107,39 @@ test('holiday rows cannot acquire live estimates, vessels or through-trip connec
   assert.equal(tripConnections({index,tripId:row.tripId}),null);
 });
 
-test('unconfirmed crew data generates a notice but no operational claims', async () => {
+test('weekend and holiday crew operations remain unconfirmed and absent', async () => {
   for (const landingNumber of [8,16,17,18,22,27]) {
     const data = await buildDisplayData({landingNumber});
     assert.equal(data.meta.crewScheduleStatus.message,'Crew shifts / Pier C shuttles: UNCONFIRMED');
-    assert.equal(data.departures.some(r => r.crewShuttle || r.endsShift || r.tripId.startsWith('oos:') || r.fromHomePort),false);
-    if (landingNumber===27) assert.equal(data.departures.length,0);
+    const local = createConnectionIndex(new Map([[landingNumber,data]]));
+    for (const date of ['2026-09-13','2026-09-19','2026-09-28','2026-10-02','2026-11-02']) {
+      const active = activeServices(local,date);
+      const departures = data.departures.filter(r => active.has(r.serviceId));
+      assert.equal(departures.some(r => r.crewShuttle || r.endsShift || r.tripId.startsWith('oos:') || r.fromHomePort),false,date);
+      if (landingNumber===27) assert.equal(departures.length,0,date);
+    }
+  }
+});
+
+test('fall weekday crew source restores 41 shifts and four shuttles with the AS3 AM conflict isolated', async () => {
+  const crew = JSON.parse(await readFile(new URL('schedules/fall-2026-weekday-crew.json',root),'utf8'));
+  assert.equal(Object.values(crew.shifts.weekday).flat().length,41);
+  assert.deepEqual(crew.rejected.map(r=>r.boat),['AS3','AS3']);
+  assert.equal(crew.shifts.weekday.AS3.some(r=>r.shift==='AM'),false);
+  const pierC = await buildDisplayData({landingNumber:27});
+  const local = createConnectionIndex(new Map([[27,pierC]]));
+  for (const date of ['2026-09-14','2026-09-18','2026-10-05','2026-10-30']) {
+    const services = activeServices(local,date);
+    const departures = pierC.departures.filter(r=>services.has(r.serviceId));
+    assert.equal(departures.filter(r=>r.crewShuttle).length,4);
+    assert.equal(departures.filter(r=>r.fromHomePort && !r.crewShuttle).length,35);
+    assert.ok(departures.filter(r=>r.fromHomePort).every(r=>r.approximate));
+    assert.equal(departures.some(r=>r.routeId==='AS' && r.boatAssignment===3 && r.seconds<43200),false);
+  }
+  for (const [landingNumber,time,boats] of [[16,'12:45:00',['RS1','RS4']],[16,'13:45:00',['RS3','RS6']],[8,'13:30:00',['SB1']],[11,'13:15:00',['SB2']]]) {
+    const data = await buildDisplayData({landingNumber});
+    const row = data.departures.find(r=>r.crewShuttle && r.departureTime===time);
+    assert.deepEqual(row?.crewBoats,boats);
   }
 });
 

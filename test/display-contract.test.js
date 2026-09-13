@@ -1556,15 +1556,20 @@ test("Pier C home-port rows open previous stops and map the arriving vessel", as
   assert.equal(view.run(`tripAttrs({ tripId: "crew:unknown", stopId: "87" })`), "");
 });
 
-test("fall crew notice is visible and unverified times are absent, including Pier C", async () => {
+test("crew confirmation follows the viewed date, including Pier C", async () => {
   const { buildDisplayData } = await import("../scripts/build-data.js");
   for (const landingNumber of [16,27]) {
     const payload = await buildDisplayData({landingNumber});
     const view = await board({now:"2026-09-14T12:00:00Z",payload});
     view.run("renderBoardNote()");
     assert.equal(view.node("boardNote").hidden,false);
-    assert.match(view.node("boardNote").textContent,/Crew shifts \/ Pier C shuttles: UNCONFIRMED/);
-    assert.equal(payload.departures.some(r => r.crewShuttle || r.endsShift || r.fromHomePort),false);
+    assert.match(view.node("boardNote").textContent,/Weekday crew schedule loaded; AS3 AM/);
+    assert.equal(view.run("hasConfirmedWeekdayCrew()"),true);
+    for (const date of ["2026-09-13", "2026-09-19", "2026-09-28", "2026-11-02"]) {
+      view.run(`viewDate = "${date}"; renderBoardNote()`);
+      assert.equal(view.run("hasConfirmedWeekdayCrew()"),false);
+      assert.match(view.node("boardNote").textContent,/Crew shifts \/ Pier C shuttles: UNCONFIRMED/);
+    }
     if (landingNumber === 27) {
       assert.match(view.run("emptyBoard()"), /CREW TIMES UNCONFIRMED/);
       assert.doesNotMatch(view.run("emptyBoard()"), /concluded/);

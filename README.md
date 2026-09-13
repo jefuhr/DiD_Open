@@ -1,6 +1,6 @@
 # nyc ferry did reborn — mobile staff edition
 
-[Fall 2026 NYC Ferry update](docs/schedule-comparison/fall-2026-update.md): official Connexionz service from September 14, dated cruise service, Sukkot departure tables, and an explicit UNCONFIRMED crew notice.
+[Fall 2026 NYC Ferry update](docs/schedule-comparison/fall-2026-update.md): official Connexionz service from September 14, dated cruise service, Sukkot departure tables, and verified weekday crew notes. Weekend/Sukkot crew operations and AS3 AM remain unconfirmed.
 
 an offline-first departure display for NYC Ferry landings. a local Node server builds scheduled departures from the bundled GTFS feed, overlays NYC Ferry GTFS-Realtime trip updates, and keeps working when the internet drops.
 
