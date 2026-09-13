@@ -13,6 +13,7 @@ COPY scripts ./scripts
 COPY config ./config
 COPY content ./content
 COPY gtfs ./gtfs
+COPY schedules/sukkot-2026.json ./schedules/sukkot-2026.json
 COPY public ./public
 RUN mkdir -p state && chown -R node:node /app
 USER node

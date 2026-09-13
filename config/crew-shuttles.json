@@ -122,5 +122,7 @@
         ]
       }
     ]
-  }
+  },
+  "confirmationStatus": "unconfirmed",
+  "confirmationNote": "Fall 2026 crew shifts and Pier C shuttles have not been supplied. Historical times below are retained for reference only; do not use them operationally."
 }

@@ -1,0 +1,1758 @@
+Sheet,Trip number,Change,Landing,Summer,Fall
+ER WKDY OUT,1218,Removed trip,,Wall Street/Pier 11 20:01; DUMBO 20:09; South Williamsburg 20:21; North Williamsburg 20:29; Greenpoint 20:37; Hunters Point South 20:45; E. 34th Street 20:49,
+ER WKDY OUT,1319,Added trip,,,Wall Street/Pier 11 20:01; DUMBO 20:09; South Williamsburg 20:21; North Williamsburg 20:29; Greenpoint 20:37; Hunters Point South 20:45; E. 34th Street 20:49
+ER WKDY OUT,1413,Added trip,,,Wall Street/Pier 11 20:51; DUMBO 20:59; South Williamsburg 21:11; North Williamsburg 21:19; Greenpoint 21:27; Hunters Point South 21:35; E. 34th Street 21:39
+ER WKDY OUT,1513,Removed trip,,Wall Street/Pier 11 21:15; DUMBO 21:23; South Williamsburg 21:35; North Williamsburg 21:43; Greenpoint 21:51; Hunters Point South 21:59; E. 34th Street 22:03,
+ER WKDY OUT,1619,Removed trip,,Wall Street/Pier 11 20:38; DUMBO 20:46; South Williamsburg 20:58; North Williamsburg 21:06; Greenpoint 21:14; Hunters Point South 21:22; E. 34th Street 21:26,
+ER WKDY IN,1219,Removed trip,,E. 34th Street 20:54; Hunters Point South 21:02; Greenpoint 21:10; North Williamsburg 21:18; South Williamsburg 21:27; DUMBO 21:39; Wall Street/Pier 11 21:43,
+ER WKDY IN,1320,Added trip,,,E. 34th Street 20:54; Hunters Point South 21:02; Greenpoint 21:10; North Williamsburg 21:18; South Williamsburg 21:27; DUMBO 21:39; Wall Street/Pier 11 21:43
+ER WKND OUT,1102,Time / stop changed,Wall Street/Pier 11,09:19,09:17
+ER WKND OUT,1102,Time / stop changed,DUMBO,09:28,09:26
+ER WKND OUT,1102,Time / stop changed,South Williamsburg,09:40,09:37
+ER WKND OUT,1102,Time / stop changed,Greenpoint,09:52,09:48
+ER WKND OUT,1102,Time / stop changed,E. 34th Street,09:56,09:52
+ER WKND OUT,1104,Time / stop changed,Wall Street/Pier 11,10:47,10:39
+ER WKND OUT,1104,Time / stop changed,DUMBO,10:56,10:48
+ER WKND OUT,1104,Time / stop changed,North Williamsburg,11:10,11:02
+ER WKND OUT,1104,Time / stop changed,Hunters Point South,11:20,11:12
+ER WKND OUT,1104,Time / stop changed,E. 34th Street,11:23,11:15
+ER WKND OUT,1106,Time / stop changed,Wall Street/Pier 11,12:18,12:03
+ER WKND OUT,1106,Time / stop changed,DUMBO,12:27,12:12
+ER WKND OUT,1106,Time / stop changed,South Williamsburg,12:39,
+ER WKND OUT,1106,Time / stop changed,Greenpoint,12:51,
+ER WKND OUT,1106,Time / stop changed,E. 34th Street,12:55,12:39
+ER WKND OUT,1106,Time / stop changed,North Williamsburg,,12:26
+ER WKND OUT,1106,Time / stop changed,Hunters Point South,,12:36
+ER WKND OUT,1108,Time / stop changed,Wall Street/Pier 11,13:49,13:27
+ER WKND OUT,1108,Time / stop changed,DUMBO,13:58,13:36
+ER WKND OUT,1108,Time / stop changed,North Williamsburg,14:12,13:50
+ER WKND OUT,1108,Time / stop changed,Hunters Point South,14:22,14:00
+ER WKND OUT,1108,Time / stop changed,E. 34th Street,14:25,14:03
+ER WKND OUT,1110,Time / stop changed,Wall Street/Pier 11,15:42,14:51
+ER WKND OUT,1110,Time / stop changed,DUMBO,15:51,15:00
+ER WKND OUT,1110,Time / stop changed,South Williamsburg,16:03,
+ER WKND OUT,1110,Time / stop changed,Greenpoint,16:15,
+ER WKND OUT,1110,Time / stop changed,E. 34th Street,16:19,15:27
+ER WKND OUT,1110,Time / stop changed,North Williamsburg,,15:14
+ER WKND OUT,1110,Time / stop changed,Hunters Point South,,15:24
+ER WKND OUT,1112,Time / stop changed,Wall Street/Pier 11,17:13,16:15
+ER WKND OUT,1112,Time / stop changed,DUMBO,17:22,16:24
+ER WKND OUT,1112,Time / stop changed,North Williamsburg,17:36,16:38
+ER WKND OUT,1112,Time / stop changed,Hunters Point South,17:46,16:48
+ER WKND OUT,1112,Time / stop changed,E. 34th Street,17:49,16:51
+ER WKND OUT,1114,Time / stop changed,Wall Street/Pier 11,18:44,17:39
+ER WKND OUT,1114,Time / stop changed,DUMBO,18:53,17:48
+ER WKND OUT,1114,Time / stop changed,South Williamsburg,19:05,
+ER WKND OUT,1114,Time / stop changed,Greenpoint,19:17,
+ER WKND OUT,1114,Time / stop changed,E. 34th Street,19:21,18:15
+ER WKND OUT,1114,Time / stop changed,North Williamsburg,,18:02
+ER WKND OUT,1114,Time / stop changed,Hunters Point South,,18:12
+ER WKND OUT,1116,Time / stop changed,Wall Street/Pier 11,20:15,19:03
+ER WKND OUT,1116,Time / stop changed,DUMBO,20:24,19:12
+ER WKND OUT,1116,Time / stop changed,North Williamsburg,20:38,19:26
+ER WKND OUT,1116,Time / stop changed,Hunters Point South,20:48,19:36
+ER WKND OUT,1116,Time / stop changed,E. 34th Street,20:51,19:39
+ER WKND OUT,1118,Added trip,,,Wall Street/Pier 11 20:27; DUMBO 20:36; North Williamsburg 20:50; Hunters Point South 21:00; E. 34th Street 21:03
+ER WKND OUT,1202,Time / stop changed,Wall Street/Pier 11,09:49,09:40
+ER WKND OUT,1202,Time / stop changed,DUMBO,09:58,09:49
+ER WKND OUT,1202,Time / stop changed,North Williamsburg,10:12,10:03
+ER WKND OUT,1202,Time / stop changed,Hunters Point South,10:22,10:13
+ER WKND OUT,1202,Time / stop changed,E. 34th Street,10:25,10:16
+ER WKND OUT,1204,Time / stop changed,Wall Street/Pier 11,11:26,11:07
+ER WKND OUT,1204,Time / stop changed,DUMBO,11:35,11:16
+ER WKND OUT,1204,Time / stop changed,South Williamsburg,11:47,
+ER WKND OUT,1204,Time / stop changed,Greenpoint,11:59,
+ER WKND OUT,1204,Time / stop changed,E. 34th Street,12:03,11:43
+ER WKND OUT,1204,Time / stop changed,North Williamsburg,,11:30
+ER WKND OUT,1204,Time / stop changed,Hunters Point South,,11:40
+ER WKND OUT,1206,Time / stop changed,Wall Street/Pier 11,12:57,12:31
+ER WKND OUT,1206,Time / stop changed,DUMBO,13:06,12:40
+ER WKND OUT,1206,Time / stop changed,North Williamsburg,13:20,12:54
+ER WKND OUT,1206,Time / stop changed,Hunters Point South,13:30,13:04
+ER WKND OUT,1206,Time / stop changed,E. 34th Street,13:33,13:07
+ER WKND OUT,1208,Time / stop changed,Wall Street/Pier 11,14:28,13:55
+ER WKND OUT,1208,Time / stop changed,DUMBO,14:37,14:04
+ER WKND OUT,1208,Time / stop changed,South Williamsburg,14:49,
+ER WKND OUT,1208,Time / stop changed,Greenpoint,15:01,
+ER WKND OUT,1208,Time / stop changed,E. 34th Street,15:05,14:31
+ER WKND OUT,1208,Time / stop changed,North Williamsburg,,14:18
+ER WKND OUT,1208,Time / stop changed,Hunters Point South,,14:28
+ER WKND OUT,1210,Time / stop changed,Wall Street/Pier 11,16:21,15:19
+ER WKND OUT,1210,Time / stop changed,DUMBO,16:30,15:28
+ER WKND OUT,1210,Time / stop changed,North Williamsburg,16:44,15:42
+ER WKND OUT,1210,Time / stop changed,Hunters Point South,16:54,15:52
+ER WKND OUT,1210,Time / stop changed,E. 34th Street,16:57,15:55
+ER WKND OUT,1212,Time / stop changed,Wall Street/Pier 11,17:52,16:43
+ER WKND OUT,1212,Time / stop changed,DUMBO,18:01,16:52
+ER WKND OUT,1212,Time / stop changed,South Williamsburg,18:13,
+ER WKND OUT,1212,Time / stop changed,Greenpoint,18:25,
+ER WKND OUT,1212,Time / stop changed,E. 34th Street,18:29,17:19
+ER WKND OUT,1212,Time / stop changed,North Williamsburg,,17:06
+ER WKND OUT,1212,Time / stop changed,Hunters Point South,,17:16
+ER WKND OUT,1214,Time / stop changed,Wall Street/Pier 11,19:23,18:07
+ER WKND OUT,1214,Time / stop changed,DUMBO,19:32,18:16
+ER WKND OUT,1214,Time / stop changed,North Williamsburg,19:46,18:30
+ER WKND OUT,1214,Time / stop changed,Hunters Point South,19:56,18:40
+ER WKND OUT,1214,Time / stop changed,E. 34th Street,19:59,18:43
+ER WKND OUT,1216,Time / stop changed,Wall Street/Pier 11,20:54,19:31
+ER WKND OUT,1216,Time / stop changed,DUMBO,21:03,19:40
+ER WKND OUT,1216,Time / stop changed,South Williamsburg,21:15,
+ER WKND OUT,1216,Time / stop changed,Greenpoint,21:27,
+ER WKND OUT,1216,Time / stop changed,E. 34th Street,21:31,20:07
+ER WKND OUT,1216,Time / stop changed,North Williamsburg,,19:54
+ER WKND OUT,1216,Time / stop changed,Hunters Point South,,20:04
+ER WKND OUT,1301,Time / stop changed,Wall Street/Pier 11,08:47,08:46
+ER WKND OUT,1301,Time / stop changed,DUMBO,08:56,08:55
+ER WKND OUT,1301,Time / stop changed,North Williamsburg,09:10,09:09
+ER WKND OUT,1301,Time / stop changed,Hunters Point South,09:20,09:19
+ER WKND OUT,1301,Time / stop changed,E. 34th Street,09:23,09:22
+ER WKND OUT,1303,Time / stop changed,Wall Street/Pier 11,10:19,10:10
+ER WKND OUT,1303,Time / stop changed,DUMBO,10:28,10:19
+ER WKND OUT,1303,Time / stop changed,North Williamsburg,10:42,10:33
+ER WKND OUT,1303,Time / stop changed,Hunters Point South,10:52,10:43
+ER WKND OUT,1303,Time / stop changed,E. 34th Street,10:55,10:46
+ER WKND OUT,1305,Time / stop changed,Wall Street/Pier 11,11:52,11:35
+ER WKND OUT,1305,Time / stop changed,DUMBO,12:01,11:44
+ER WKND OUT,1305,Time / stop changed,South Williamsburg,12:13,
+ER WKND OUT,1305,Time / stop changed,Greenpoint,12:25,
+ER WKND OUT,1305,Time / stop changed,E. 34th Street,12:29,12:11
+ER WKND OUT,1305,Time / stop changed,North Williamsburg,,11:58
+ER WKND OUT,1305,Time / stop changed,Hunters Point South,,12:08
+ER WKND OUT,1307,Time / stop changed,Wall Street/Pier 11,13:23,12:59
+ER WKND OUT,1307,Time / stop changed,DUMBO,13:32,13:08
+ER WKND OUT,1307,Time / stop changed,North Williamsburg,13:46,13:22
+ER WKND OUT,1307,Time / stop changed,Hunters Point South,13:56,13:32
+ER WKND OUT,1307,Time / stop changed,E. 34th Street,13:59,13:35
+ER WKND OUT,1309,Time / stop changed,Wall Street/Pier 11,15:05,14:23
+ER WKND OUT,1309,Time / stop changed,DUMBO,15:14,14:32
+ER WKND OUT,1309,Time / stop changed,South Williamsburg,15:26,
+ER WKND OUT,1309,Time / stop changed,Greenpoint,15:38,
+ER WKND OUT,1309,Time / stop changed,E. 34th Street,15:42,14:59
+ER WKND OUT,1309,Time / stop changed,North Williamsburg,,14:46
+ER WKND OUT,1309,Time / stop changed,Hunters Point South,,14:56
+ER WKND OUT,1311,Time / stop changed,Wall Street/Pier 11,16:47,15:47
+ER WKND OUT,1311,Time / stop changed,DUMBO,16:56,15:56
+ER WKND OUT,1311,Time / stop changed,North Williamsburg,17:10,16:10
+ER WKND OUT,1311,Time / stop changed,Hunters Point South,17:20,16:20
+ER WKND OUT,1311,Time / stop changed,E. 34th Street,17:23,16:23
+ER WKND OUT,1313,Time / stop changed,Wall Street/Pier 11,18:18,17:11
+ER WKND OUT,1313,Time / stop changed,DUMBO,18:27,17:20
+ER WKND OUT,1313,Time / stop changed,South Williamsburg,18:39,
+ER WKND OUT,1313,Time / stop changed,Greenpoint,18:51,
+ER WKND OUT,1313,Time / stop changed,E. 34th Street,18:55,17:47
+ER WKND OUT,1313,Time / stop changed,North Williamsburg,,17:34
+ER WKND OUT,1313,Time / stop changed,Hunters Point South,,17:44
+ER WKND OUT,1315,Time / stop changed,Wall Street/Pier 11,19:49,18:35
+ER WKND OUT,1315,Time / stop changed,DUMBO,19:58,18:44
+ER WKND OUT,1315,Time / stop changed,North Williamsburg,20:12,18:58
+ER WKND OUT,1315,Time / stop changed,Hunters Point South,20:22,19:08
+ER WKND OUT,1315,Time / stop changed,E. 34th Street,20:25,19:11
+ER WKND OUT,1317,Time / stop changed,Wall Street/Pier 11,21:17,19:59
+ER WKND OUT,1317,Time / stop changed,DUMBO,21:26,20:08
+ER WKND OUT,1317,Time / stop changed,North Williamsburg,21:40,20:22
+ER WKND OUT,1317,Time / stop changed,Hunters Point South,21:50,20:32
+ER WKND OUT,1317,Time / stop changed,E. 34th Street,21:53,20:35
+ER WKND OUT,1402,Time / stop changed,Wall Street/Pier 11,11:39,11:22
+ER WKND OUT,1402,Time / stop changed,DUMBO,11:48,11:31
+ER WKND OUT,1402,Time / stop changed,North Williamsburg,12:02,
+ER WKND OUT,1402,Time / stop changed,Hunters Point South,12:12,
+ER WKND OUT,1402,Time / stop changed,E. 34th Street,12:15,11:57
+ER WKND OUT,1402,Time / stop changed,South Williamsburg,,11:42
+ER WKND OUT,1402,Time / stop changed,Greenpoint,,11:53
+ER WKND OUT,1404,Time / stop changed,Wall Street/Pier 11,13:10,12:46
+ER WKND OUT,1404,Time / stop changed,DUMBO,13:19,12:55
+ER WKND OUT,1404,Time / stop changed,South Williamsburg,13:31,13:06
+ER WKND OUT,1404,Time / stop changed,Greenpoint,13:43,13:17
+ER WKND OUT,1404,Time / stop changed,E. 34th Street,13:47,13:21
+ER WKND OUT,1406,Time / stop changed,Wall Street/Pier 11,14:41,14:10
+ER WKND OUT,1406,Time / stop changed,DUMBO,14:50,14:19
+ER WKND OUT,1406,Time / stop changed,North Williamsburg,15:04,
+ER WKND OUT,1406,Time / stop changed,Hunters Point South,15:14,
+ER WKND OUT,1406,Time / stop changed,E. 34th Street,15:17,14:45
+ER WKND OUT,1406,Time / stop changed,South Williamsburg,,14:30
+ER WKND OUT,1406,Time / stop changed,Greenpoint,,14:41
+ER WKND OUT,1408,Time / stop changed,Wall Street/Pier 11,16:34,15:34
+ER WKND OUT,1408,Time / stop changed,DUMBO,16:43,15:43
+ER WKND OUT,1408,Time / stop changed,South Williamsburg,16:55,15:54
+ER WKND OUT,1408,Time / stop changed,Greenpoint,17:07,16:05
+ER WKND OUT,1408,Time / stop changed,E. 34th Street,17:11,16:09
+ER WKND OUT,1410,Time / stop changed,Wall Street/Pier 11,18:05,16:58
+ER WKND OUT,1410,Time / stop changed,DUMBO,18:14,17:07
+ER WKND OUT,1410,Time / stop changed,North Williamsburg,18:28,
+ER WKND OUT,1410,Time / stop changed,Hunters Point South,18:38,
+ER WKND OUT,1410,Time / stop changed,E. 34th Street,18:41,17:33
+ER WKND OUT,1410,Time / stop changed,South Williamsburg,,17:18
+ER WKND OUT,1410,Time / stop changed,Greenpoint,,17:29
+ER WKND OUT,1412,Time / stop changed,Wall Street/Pier 11,19:36,18:22
+ER WKND OUT,1412,Time / stop changed,DUMBO,19:45,18:31
+ER WKND OUT,1412,Time / stop changed,South Williamsburg,19:57,18:42
+ER WKND OUT,1412,Time / stop changed,Greenpoint,20:09,18:53
+ER WKND OUT,1412,Time / stop changed,E. 34th Street,20:13,18:57
+ER WKND OUT,1414,Added trip,,,Wall Street/Pier 11 19:46; DUMBO 19:55; South Williamsburg 20:06; Greenpoint 20:17; E. 34th Street 20:21
+ER WKND OUT,1501,Time / stop changed,Wall Street/Pier 11,10:32,10:25
+ER WKND OUT,1501,Time / stop changed,DUMBO,10:41,10:34
+ER WKND OUT,1501,Time / stop changed,South Williamsburg,10:53,10:45
+ER WKND OUT,1501,Time / stop changed,Greenpoint,11:05,10:56
+ER WKND OUT,1501,Time / stop changed,E. 34th Street,11:09,11:00
+ER WKND OUT,1503,Time / stop changed,Wall Street/Pier 11,12:05,11:50
+ER WKND OUT,1503,Time / stop changed,DUMBO,12:14,11:59
+ER WKND OUT,1503,Time / stop changed,North Williamsburg,12:28,
+ER WKND OUT,1503,Time / stop changed,Hunters Point South,12:38,
+ER WKND OUT,1503,Time / stop changed,E. 34th Street,12:41,12:25
+ER WKND OUT,1503,Time / stop changed,South Williamsburg,,12:10
+ER WKND OUT,1503,Time / stop changed,Greenpoint,,12:21
+ER WKND OUT,1505,Time / stop changed,Wall Street/Pier 11,13:36,13:14
+ER WKND OUT,1505,Time / stop changed,DUMBO,13:45,13:23
+ER WKND OUT,1505,Time / stop changed,South Williamsburg,13:57,13:34
+ER WKND OUT,1505,Time / stop changed,Greenpoint,14:09,13:45
+ER WKND OUT,1505,Time / stop changed,E. 34th Street,14:13,13:49
+ER WKND OUT,1507,Time / stop changed,Wall Street/Pier 11,15:29,14:38
+ER WKND OUT,1507,Time / stop changed,DUMBO,15:38,14:47
+ER WKND OUT,1507,Time / stop changed,North Williamsburg,15:52,
+ER WKND OUT,1507,Time / stop changed,Hunters Point South,16:02,
+ER WKND OUT,1507,Time / stop changed,E. 34th Street,16:05,15:13
+ER WKND OUT,1507,Time / stop changed,South Williamsburg,,14:58
+ER WKND OUT,1507,Time / stop changed,Greenpoint,,15:09
+ER WKND OUT,1509,Time / stop changed,Wall Street/Pier 11,17:00,16:02
+ER WKND OUT,1509,Time / stop changed,DUMBO,17:09,16:11
+ER WKND OUT,1509,Time / stop changed,South Williamsburg,17:21,16:22
+ER WKND OUT,1509,Time / stop changed,Greenpoint,17:33,16:33
+ER WKND OUT,1509,Time / stop changed,E. 34th Street,17:37,16:37
+ER WKND OUT,1511,Time / stop changed,Wall Street/Pier 11,18:31,17:26
+ER WKND OUT,1511,Time / stop changed,DUMBO,18:40,17:35
+ER WKND OUT,1511,Time / stop changed,North Williamsburg,18:54,
+ER WKND OUT,1511,Time / stop changed,Hunters Point South,19:04,
+ER WKND OUT,1511,Time / stop changed,E. 34th Street,19:07,18:01
+ER WKND OUT,1511,Time / stop changed,South Williamsburg,,17:46
+ER WKND OUT,1511,Time / stop changed,Greenpoint,,17:57
+ER WKND OUT,1513,Time / stop changed,Wall Street/Pier 11,20:02,18:50
+ER WKND OUT,1513,Time / stop changed,DUMBO,20:11,18:59
+ER WKND OUT,1513,Time / stop changed,South Williamsburg,20:23,19:10
+ER WKND OUT,1513,Time / stop changed,Greenpoint,20:35,19:21
+ER WKND OUT,1513,Time / stop changed,E. 34th Street,20:39,19:25
+ER WKND OUT,1515,Added trip,,,Wall Street/Pier 11 20:14; DUMBO 20:23; South Williamsburg 20:34; Greenpoint 20:45; E. 34th Street 20:49
+ER WKND OUT,1601,Time / stop changed,Wall Street/Pier 11,11:00,10:54
+ER WKND OUT,1601,Time / stop changed,DUMBO,11:09,11:03
+ER WKND OUT,1601,Time / stop changed,South Williamsburg,11:21,11:14
+ER WKND OUT,1601,Time / stop changed,Greenpoint,11:33,11:25
+ER WKND OUT,1601,Time / stop changed,E. 34th Street,11:37,11:29
+ER WKND OUT,1603,Time / stop changed,Wall Street/Pier 11,12:31,12:18
+ER WKND OUT,1603,Time / stop changed,DUMBO,12:40,12:27
+ER WKND OUT,1603,Time / stop changed,North Williamsburg,12:54,
+ER WKND OUT,1603,Time / stop changed,Hunters Point South,13:04,
+ER WKND OUT,1603,Time / stop changed,E. 34th Street,13:07,12:53
+ER WKND OUT,1603,Time / stop changed,South Williamsburg,,12:38
+ER WKND OUT,1603,Time / stop changed,Greenpoint,,12:49
+ER WKND OUT,1605,Time / stop changed,Wall Street/Pier 11,14:02,13:42
+ER WKND OUT,1605,Time / stop changed,DUMBO,14:11,13:51
+ER WKND OUT,1605,Time / stop changed,South Williamsburg,14:23,14:02
+ER WKND OUT,1605,Time / stop changed,Greenpoint,14:35,14:13
+ER WKND OUT,1605,Time / stop changed,E. 34th Street,14:39,14:17
+ER WKND OUT,1607,Time / stop changed,Wall Street/Pier 11,15:55,15:06
+ER WKND OUT,1607,Time / stop changed,DUMBO,16:04,15:15
+ER WKND OUT,1607,Time / stop changed,North Williamsburg,16:18,
+ER WKND OUT,1607,Time / stop changed,Hunters Point South,16:28,
+ER WKND OUT,1607,Time / stop changed,E. 34th Street,16:31,15:41
+ER WKND OUT,1607,Time / stop changed,South Williamsburg,,15:26
+ER WKND OUT,1607,Time / stop changed,Greenpoint,,15:37
+ER WKND OUT,1609,Time / stop changed,Wall Street/Pier 11,17:26,16:30
+ER WKND OUT,1609,Time / stop changed,DUMBO,17:35,16:39
+ER WKND OUT,1609,Time / stop changed,South Williamsburg,17:47,16:50
+ER WKND OUT,1609,Time / stop changed,Greenpoint,17:59,17:01
+ER WKND OUT,1609,Time / stop changed,E. 34th Street,18:03,17:05
+ER WKND OUT,1611,Time / stop changed,Wall Street/Pier 11,18:57,17:54
+ER WKND OUT,1611,Time / stop changed,DUMBO,19:06,18:03
+ER WKND OUT,1611,Time / stop changed,North Williamsburg,19:20,
+ER WKND OUT,1611,Time / stop changed,Hunters Point South,19:30,
+ER WKND OUT,1611,Time / stop changed,E. 34th Street,19:33,18:29
+ER WKND OUT,1611,Time / stop changed,South Williamsburg,,18:14
+ER WKND OUT,1611,Time / stop changed,Greenpoint,,18:25
+ER WKND OUT,1613,Time / stop changed,Wall Street/Pier 11,20:28,19:18
+ER WKND OUT,1613,Time / stop changed,DUMBO,20:37,19:27
+ER WKND OUT,1613,Time / stop changed,South Williamsburg,20:49,19:38
+ER WKND OUT,1613,Time / stop changed,Greenpoint,21:01,19:49
+ER WKND OUT,1613,Time / stop changed,E. 34th Street,21:05,19:53
+ER WKND OUT,1615,Added trip,,,Wall Street/Pier 11 20:42; DUMBO 20:51; South Williamsburg 21:02; Greenpoint 21:13; E. 34th Street 21:17
+ER WKND OUT,1701,Removed trip,,Wall Street/Pier 11 11:13; DUMBO 11:22; North Williamsburg 11:36; Hunters Point South 11:46; E. 34th Street 11:49,
+ER WKND OUT,1703,Removed trip,,Wall Street/Pier 11 12:44; DUMBO 12:53; South Williamsburg 13:05; Greenpoint 13:17; E. 34th Street 13:21,
+ER WKND OUT,1705,Removed trip,,Wall Street/Pier 11 14:15; DUMBO 14:24; North Williamsburg 14:38; Hunters Point South 14:48; E. 34th Street 14:51,
+ER WKND OUT,1707,Removed trip,,Wall Street/Pier 11 16:08; DUMBO 16:17; South Williamsburg 16:29; Greenpoint 16:41; E. 34th Street 16:45,
+ER WKND OUT,1709,Removed trip,,Wall Street/Pier 11 17:39; DUMBO 17:48; North Williamsburg 18:02; Hunters Point South 18:12; E. 34th Street 18:15,
+ER WKND OUT,1711,Removed trip,,Wall Street/Pier 11 19:10; DUMBO 19:19; South Williamsburg 19:31; Greenpoint 19:43; E. 34th Street 19:47,
+ER WKND OUT,1713,Removed trip,,Wall Street/Pier 11 20:41; DUMBO 20:50; North Williamsburg 21:04; Hunters Point South 21:14; E. 34th Street 21:17,
+ER WKND IN,1101,Time / stop changed,E. 34th Street,08:35,08:33
+ER WKND IN,1101,Time / stop changed,Greenpoint,08:44,
+ER WKND IN,1101,Time / stop changed,South Williamsburg,08:55,
+ER WKND IN,1101,Time / stop changed,DUMBO,09:07,09:05
+ER WKND IN,1101,Time / stop changed,Wall Street/Pier 11,09:11,09:09
+ER WKND IN,1101,Time / stop changed,Hunters Point South,,08:40
+ER WKND IN,1101,Time / stop changed,North Williamsburg,,08:51
+ER WKND IN,1103,Time / stop changed,E. 34th Street,10:03,09:57
+ER WKND IN,1103,Time / stop changed,Hunters Point South,10:11,
+ER WKND IN,1103,Time / stop changed,North Williamsburg,10:21,
+ER WKND IN,1103,Time / stop changed,DUMBO,10:35,10:28
+ER WKND IN,1103,Time / stop changed,Wall Street/Pier 11,10:39,10:32
+ER WKND IN,1103,Time / stop changed,Greenpoint,,10:05
+ER WKND IN,1103,Time / stop changed,South Williamsburg,,10:16
+ER WKND IN,1105,Time / stop changed,E. 34th Street,11:30,11:20
+ER WKND IN,1105,Time / stop changed,Greenpoint,11:39,
+ER WKND IN,1105,Time / stop changed,South Williamsburg,11:50,
+ER WKND IN,1105,Time / stop changed,DUMBO,12:02,11:52
+ER WKND IN,1105,Time / stop changed,Wall Street/Pier 11,12:06,11:56
+ER WKND IN,1105,Time / stop changed,Hunters Point South,,11:27
+ER WKND IN,1105,Time / stop changed,North Williamsburg,,11:38
+ER WKND IN,1107,Time / stop changed,E. 34th Street,13:02,12:44
+ER WKND IN,1107,Time / stop changed,Hunters Point South,13:10,12:51
+ER WKND IN,1107,Time / stop changed,North Williamsburg,13:20,13:02
+ER WKND IN,1107,Time / stop changed,DUMBO,13:34,13:16
+ER WKND IN,1107,Time / stop changed,Wall Street/Pier 11,13:38,13:20
+ER WKND IN,1109,Time / stop changed,E. 34th Street,14:32,14:08
+ER WKND IN,1109,Time / stop changed,Greenpoint,14:41,
+ER WKND IN,1109,Time / stop changed,South Williamsburg,14:52,
+ER WKND IN,1109,Time / stop changed,DUMBO,15:04,14:40
+ER WKND IN,1109,Time / stop changed,Wall Street/Pier 11,15:08,14:44
+ER WKND IN,1109,Time / stop changed,Hunters Point South,,14:15
+ER WKND IN,1109,Time / stop changed,North Williamsburg,,14:26
+ER WKND IN,1111,Time / stop changed,E. 34th Street,16:26,15:32
+ER WKND IN,1111,Time / stop changed,Hunters Point South,16:34,15:39
+ER WKND IN,1111,Time / stop changed,North Williamsburg,16:44,15:50
+ER WKND IN,1111,Time / stop changed,DUMBO,16:58,16:04
+ER WKND IN,1111,Time / stop changed,Wall Street/Pier 11,17:02,16:08
+ER WKND IN,1113,Time / stop changed,E. 34th Street,17:56,16:56
+ER WKND IN,1113,Time / stop changed,Greenpoint,18:05,
+ER WKND IN,1113,Time / stop changed,South Williamsburg,18:16,
+ER WKND IN,1113,Time / stop changed,DUMBO,18:28,17:28
+ER WKND IN,1113,Time / stop changed,Wall Street/Pier 11,18:32,17:32
+ER WKND IN,1113,Time / stop changed,Hunters Point South,,17:03
+ER WKND IN,1113,Time / stop changed,North Williamsburg,,17:14
+ER WKND IN,1115,Time / stop changed,E. 34th Street,19:28,18:20
+ER WKND IN,1115,Time / stop changed,Hunters Point South,19:36,18:27
+ER WKND IN,1115,Time / stop changed,North Williamsburg,19:46,18:38
+ER WKND IN,1115,Time / stop changed,DUMBO,20:00,18:52
+ER WKND IN,1115,Time / stop changed,Wall Street/Pier 11,20:04,18:56
+ER WKND IN,1117,Time / stop changed,E. 34th Street,20:58,19:44
+ER WKND IN,1117,Time / stop changed,Hunters Point South,21:06,19:51
+ER WKND IN,1117,Time / stop changed,North Williamsburg,21:16,20:02
+ER WKND IN,1117,Time / stop changed,DUMBO,21:30,20:16
+ER WKND IN,1117,Time / stop changed,Wall Street/Pier 11,21:34,20:20
+ER WKND IN,1201,Time / stop changed,E. 34th Street,09:05,08:58
+ER WKND IN,1201,Time / stop changed,Hunters Point South,09:13,
+ER WKND IN,1201,Time / stop changed,North Williamsburg,09:23,
+ER WKND IN,1201,Time / stop changed,DUMBO,09:37,09:29
+ER WKND IN,1201,Time / stop changed,Wall Street/Pier 11,09:41,09:33
+ER WKND IN,1201,Time / stop changed,Greenpoint,,09:06
+ER WKND IN,1201,Time / stop changed,South Williamsburg,,09:17
+ER WKND IN,1203,Time / stop changed,E. 34th Street,10:32,10:21
+ER WKND IN,1203,Time / stop changed,Greenpoint,10:41,
+ER WKND IN,1203,Time / stop changed,South Williamsburg,10:52,
+ER WKND IN,1203,Time / stop changed,DUMBO,11:04,10:53
+ER WKND IN,1203,Time / stop changed,Wall Street/Pier 11,11:08,10:57
+ER WKND IN,1203,Time / stop changed,Hunters Point South,,10:28
+ER WKND IN,1203,Time / stop changed,North Williamsburg,,10:39
+ER WKND IN,1205,Time / stop changed,E. 34th Street,12:10,11:48
+ER WKND IN,1205,Time / stop changed,Hunters Point South,12:18,11:55
+ER WKND IN,1205,Time / stop changed,North Williamsburg,12:28,12:06
+ER WKND IN,1205,Time / stop changed,DUMBO,12:42,12:20
+ER WKND IN,1205,Time / stop changed,Wall Street/Pier 11,12:46,12:24
+ER WKND IN,1207,Time / stop changed,E. 34th Street,13:40,13:12
+ER WKND IN,1207,Time / stop changed,Greenpoint,13:49,
+ER WKND IN,1207,Time / stop changed,South Williamsburg,14:00,
+ER WKND IN,1207,Time / stop changed,DUMBO,14:12,13:44
+ER WKND IN,1207,Time / stop changed,Wall Street/Pier 11,14:16,13:48
+ER WKND IN,1207,Time / stop changed,Hunters Point South,,13:19
+ER WKND IN,1207,Time / stop changed,North Williamsburg,,13:30
+ER WKND IN,1209,Time / stop changed,E. 34th Street,15:12,14:36
+ER WKND IN,1209,Time / stop changed,Hunters Point South,15:20,14:43
+ER WKND IN,1209,Time / stop changed,North Williamsburg,15:30,14:54
+ER WKND IN,1209,Time / stop changed,DUMBO,15:44,15:08
+ER WKND IN,1209,Time / stop changed,Wall Street/Pier 11,15:48,15:12
+ER WKND IN,1211,Time / stop changed,E. 34th Street,17:04,16:00
+ER WKND IN,1211,Time / stop changed,Greenpoint,17:13,
+ER WKND IN,1211,Time / stop changed,South Williamsburg,17:24,
+ER WKND IN,1211,Time / stop changed,DUMBO,17:36,16:32
+ER WKND IN,1211,Time / stop changed,Wall Street/Pier 11,17:40,16:36
+ER WKND IN,1211,Time / stop changed,Hunters Point South,,16:07
+ER WKND IN,1211,Time / stop changed,North Williamsburg,,16:18
+ER WKND IN,1213,Time / stop changed,E. 34th Street,18:36,17:24
+ER WKND IN,1213,Time / stop changed,Hunters Point South,18:44,17:31
+ER WKND IN,1213,Time / stop changed,North Williamsburg,18:54,17:42
+ER WKND IN,1213,Time / stop changed,DUMBO,19:08,17:56
+ER WKND IN,1213,Time / stop changed,Wall Street/Pier 11,19:12,18:00
+ER WKND IN,1215,Time / stop changed,E. 34th Street,20:06,18:48
+ER WKND IN,1215,Time / stop changed,Greenpoint,20:15,
+ER WKND IN,1215,Time / stop changed,South Williamsburg,20:26,
+ER WKND IN,1215,Time / stop changed,DUMBO,20:38,19:20
+ER WKND IN,1215,Time / stop changed,Wall Street/Pier 11,20:42,19:24
+ER WKND IN,1215,Time / stop changed,Hunters Point South,,18:55
+ER WKND IN,1215,Time / stop changed,North Williamsburg,,19:06
+ER WKND IN,1217,Time / stop changed,E. 34th Street,21:38,20:12
+ER WKND IN,1217,Time / stop changed,Greenpoint,21:47,
+ER WKND IN,1217,Time / stop changed,South Williamsburg,21:58,
+ER WKND IN,1217,Time / stop changed,DUMBO,22:10,20:44
+ER WKND IN,1217,Time / stop changed,Wall Street/Pier 11,22:14,20:48
+ER WKND IN,1217,Time / stop changed,Hunters Point South,,20:19
+ER WKND IN,1217,Time / stop changed,North Williamsburg,,20:30
+ER WKND IN,1302,Time / stop changed,E. 34th Street,09:30,09:27
+ER WKND IN,1302,Time / stop changed,Greenpoint,09:39,
+ER WKND IN,1302,Time / stop changed,South Williamsburg,09:50,
+ER WKND IN,1302,Time / stop changed,DUMBO,10:02,09:59
+ER WKND IN,1302,Time / stop changed,Wall Street/Pier 11,10:06,10:03
+ER WKND IN,1302,Time / stop changed,Hunters Point South,,09:34
+ER WKND IN,1302,Time / stop changed,North Williamsburg,,09:45
+ER WKND IN,1304,Time / stop changed,E. 34th Street,11:02,10:51
+ER WKND IN,1304,Time / stop changed,Greenpoint,11:11,
+ER WKND IN,1304,Time / stop changed,South Williamsburg,11:22,
+ER WKND IN,1304,Time / stop changed,DUMBO,11:34,11:23
+ER WKND IN,1304,Time / stop changed,Wall Street/Pier 11,11:38,11:27
+ER WKND IN,1304,Time / stop changed,Hunters Point South,,10:58
+ER WKND IN,1304,Time / stop changed,North Williamsburg,,11:09
+ER WKND IN,1306,Time / stop changed,E. 34th Street,12:36,12:16
+ER WKND IN,1306,Time / stop changed,Hunters Point South,12:44,12:23
+ER WKND IN,1306,Time / stop changed,North Williamsburg,12:54,12:34
+ER WKND IN,1306,Time / stop changed,DUMBO,13:08,12:48
+ER WKND IN,1306,Time / stop changed,Wall Street/Pier 11,13:12,12:52
+ER WKND IN,1308,Time / stop changed,E. 34th Street,14:06,13:40
+ER WKND IN,1308,Time / stop changed,Greenpoint,14:15,
+ER WKND IN,1308,Time / stop changed,South Williamsburg,14:26,
+ER WKND IN,1308,Time / stop changed,DUMBO,14:38,14:12
+ER WKND IN,1308,Time / stop changed,Wall Street/Pier 11,14:42,14:16
+ER WKND IN,1308,Time / stop changed,Hunters Point South,,13:47
+ER WKND IN,1308,Time / stop changed,North Williamsburg,,13:58
+ER WKND IN,1310,Time / stop changed,E. 34th Street,15:49,15:04
+ER WKND IN,1310,Time / stop changed,Hunters Point South,15:57,15:11
+ER WKND IN,1310,Time / stop changed,North Williamsburg,16:07,15:22
+ER WKND IN,1310,Time / stop changed,DUMBO,16:21,15:36
+ER WKND IN,1310,Time / stop changed,Wall Street/Pier 11,16:25,15:40
+ER WKND IN,1312,Time / stop changed,E. 34th Street,17:30,16:28
+ER WKND IN,1312,Time / stop changed,Greenpoint,17:39,
+ER WKND IN,1312,Time / stop changed,South Williamsburg,17:50,
+ER WKND IN,1312,Time / stop changed,DUMBO,18:02,17:00
+ER WKND IN,1312,Time / stop changed,Wall Street/Pier 11,18:06,17:04
+ER WKND IN,1312,Time / stop changed,Hunters Point South,,16:35
+ER WKND IN,1312,Time / stop changed,North Williamsburg,,16:46
+ER WKND IN,1314,Time / stop changed,E. 34th Street,19:02,17:52
+ER WKND IN,1314,Time / stop changed,Hunters Point South,19:10,17:59
+ER WKND IN,1314,Time / stop changed,North Williamsburg,19:20,18:10
+ER WKND IN,1314,Time / stop changed,DUMBO,19:34,18:24
+ER WKND IN,1314,Time / stop changed,Wall Street/Pier 11,19:38,18:28
+ER WKND IN,1316,Time / stop changed,E. 34th Street,20:32,19:16
+ER WKND IN,1316,Time / stop changed,Greenpoint,20:41,
+ER WKND IN,1316,Time / stop changed,South Williamsburg,20:52,
+ER WKND IN,1316,Time / stop changed,DUMBO,21:04,19:48
+ER WKND IN,1316,Time / stop changed,Wall Street/Pier 11,21:08,19:52
+ER WKND IN,1316,Time / stop changed,Hunters Point South,,19:23
+ER WKND IN,1316,Time / stop changed,North Williamsburg,,19:34
+ER WKND IN,1318,Added trip,,,E. 34th Street 20:40; Hunters Point South 20:47; North Williamsburg 20:58; DUMBO 21:12; Wall Street/Pier 11 21:16
+ER WKND IN,1401,Time / stop changed,E. 34th Street,10:43,10:35
+ER WKND IN,1401,Time / stop changed,Hunters Point South,10:51,
+ER WKND IN,1401,Time / stop changed,North Williamsburg,11:01,
+ER WKND IN,1401,Time / stop changed,DUMBO,11:15,11:06
+ER WKND IN,1401,Time / stop changed,Wall Street/Pier 11,11:19,11:10
+ER WKND IN,1401,Time / stop changed,Greenpoint,,10:43
+ER WKND IN,1401,Time / stop changed,South Williamsburg,,10:54
+ER WKND IN,1403,Time / stop changed,E. 34th Street,12:22,12:02
+ER WKND IN,1403,Time / stop changed,Greenpoint,12:31,12:10
+ER WKND IN,1403,Time / stop changed,South Williamsburg,12:42,12:21
+ER WKND IN,1403,Time / stop changed,DUMBO,12:54,12:33
+ER WKND IN,1403,Time / stop changed,Wall Street/Pier 11,12:58,12:37
+ER WKND IN,1405,Time / stop changed,E. 34th Street,13:54,13:26
+ER WKND IN,1405,Time / stop changed,Hunters Point South,14:02,
+ER WKND IN,1405,Time / stop changed,North Williamsburg,14:12,
+ER WKND IN,1405,Time / stop changed,DUMBO,14:26,13:57
+ER WKND IN,1405,Time / stop changed,Wall Street/Pier 11,14:30,14:01
+ER WKND IN,1405,Time / stop changed,Greenpoint,,13:34
+ER WKND IN,1405,Time / stop changed,South Williamsburg,,13:45
+ER WKND IN,1407,Time / stop changed,E. 34th Street,15:24,14:50
+ER WKND IN,1407,Time / stop changed,Greenpoint,15:33,14:58
+ER WKND IN,1407,Time / stop changed,South Williamsburg,15:44,15:09
+ER WKND IN,1407,Time / stop changed,DUMBO,15:56,15:21
+ER WKND IN,1407,Time / stop changed,Wall Street/Pier 11,16:00,15:25
+ER WKND IN,1409,Time / stop changed,E. 34th Street,17:18,16:14
+ER WKND IN,1409,Time / stop changed,Hunters Point South,17:26,
+ER WKND IN,1409,Time / stop changed,North Williamsburg,17:36,
+ER WKND IN,1409,Time / stop changed,DUMBO,17:50,16:45
+ER WKND IN,1409,Time / stop changed,Wall Street/Pier 11,17:54,16:49
+ER WKND IN,1409,Time / stop changed,Greenpoint,,16:22
+ER WKND IN,1409,Time / stop changed,South Williamsburg,,16:33
+ER WKND IN,1411,Time / stop changed,E. 34th Street,18:48,17:38
+ER WKND IN,1411,Time / stop changed,Greenpoint,18:57,17:46
+ER WKND IN,1411,Time / stop changed,South Williamsburg,19:08,17:57
+ER WKND IN,1411,Time / stop changed,DUMBO,19:20,18:09
+ER WKND IN,1411,Time / stop changed,Wall Street/Pier 11,19:24,18:13
+ER WKND IN,1413,Time / stop changed,E. 34th Street,20:20,19:02
+ER WKND IN,1413,Time / stop changed,Hunters Point South,20:28,
+ER WKND IN,1413,Time / stop changed,North Williamsburg,20:38,
+ER WKND IN,1413,Time / stop changed,DUMBO,20:52,19:33
+ER WKND IN,1413,Time / stop changed,Wall Street/Pier 11,20:56,19:37
+ER WKND IN,1413,Time / stop changed,Greenpoint,,19:10
+ER WKND IN,1413,Time / stop changed,South Williamsburg,,19:21
+ER WKND IN,1415,Added trip,,,E. 34th Street 20:26; Greenpoint 20:34; South Williamsburg 20:45; DUMBO 20:57; Wall Street/Pier 11 21:01
+ER WKND IN,1502,Time / stop changed,E. 34th Street,11:16,11:05
+ER WKND IN,1502,Time / stop changed,Hunters Point South,11:24,
+ER WKND IN,1502,Time / stop changed,North Williamsburg,11:34,
+ER WKND IN,1502,Time / stop changed,DUMBO,11:48,11:36
+ER WKND IN,1502,Time / stop changed,Wall Street/Pier 11,11:52,11:40
+ER WKND IN,1502,Time / stop changed,Greenpoint,,11:13
+ER WKND IN,1502,Time / stop changed,South Williamsburg,,11:24
+ER WKND IN,1504,Time / stop changed,E. 34th Street,12:48,12:30
+ER WKND IN,1504,Time / stop changed,Greenpoint,12:57,12:38
+ER WKND IN,1504,Time / stop changed,South Williamsburg,13:08,12:49
+ER WKND IN,1504,Time / stop changed,DUMBO,13:20,13:01
+ER WKND IN,1504,Time / stop changed,Wall Street/Pier 11,13:24,13:05
+ER WKND IN,1506,Time / stop changed,E. 34th Street,14:20,13:54
+ER WKND IN,1506,Time / stop changed,Hunters Point South,14:28,
+ER WKND IN,1506,Time / stop changed,North Williamsburg,14:38,
+ER WKND IN,1506,Time / stop changed,DUMBO,14:52,14:25
+ER WKND IN,1506,Time / stop changed,Wall Street/Pier 11,14:56,14:29
+ER WKND IN,1506,Time / stop changed,Greenpoint,,14:02
+ER WKND IN,1506,Time / stop changed,South Williamsburg,,14:13
+ER WKND IN,1508,Time / stop changed,E. 34th Street,16:12,15:18
+ER WKND IN,1508,Time / stop changed,Greenpoint,16:21,15:26
+ER WKND IN,1508,Time / stop changed,South Williamsburg,16:32,15:37
+ER WKND IN,1508,Time / stop changed,DUMBO,16:44,15:49
+ER WKND IN,1508,Time / stop changed,Wall Street/Pier 11,16:48,15:53
+ER WKND IN,1510,Time / stop changed,E. 34th Street,17:44,16:42
+ER WKND IN,1510,Time / stop changed,Hunters Point South,17:52,
+ER WKND IN,1510,Time / stop changed,North Williamsburg,18:02,
+ER WKND IN,1510,Time / stop changed,DUMBO,18:16,17:13
+ER WKND IN,1510,Time / stop changed,Wall Street/Pier 11,18:20,17:17
+ER WKND IN,1510,Time / stop changed,Greenpoint,,16:50
+ER WKND IN,1510,Time / stop changed,South Williamsburg,,17:01
+ER WKND IN,1512,Time / stop changed,E. 34th Street,19:14,18:06
+ER WKND IN,1512,Time / stop changed,Greenpoint,19:23,18:14
+ER WKND IN,1512,Time / stop changed,South Williamsburg,19:34,18:25
+ER WKND IN,1512,Time / stop changed,DUMBO,19:46,18:37
+ER WKND IN,1512,Time / stop changed,Wall Street/Pier 11,19:50,18:41
+ER WKND IN,1514,Added trip,,,E. 34th Street 19:30; Greenpoint 19:38; South Williamsburg 19:49; DUMBO 20:01; Wall Street/Pier 11 20:05
+ER WKND IN,1602,Time / stop changed,E. 34th Street,11:44,11:34
+ER WKND IN,1602,Time / stop changed,Hunters Point South,11:52,
+ER WKND IN,1602,Time / stop changed,North Williamsburg,12:02,
+ER WKND IN,1602,Time / stop changed,DUMBO,12:16,12:05
+ER WKND IN,1602,Time / stop changed,Wall Street/Pier 11,12:20,12:09
+ER WKND IN,1602,Time / stop changed,Greenpoint,,11:42
+ER WKND IN,1602,Time / stop changed,South Williamsburg,,11:53
+ER WKND IN,1604,Time / stop changed,E. 34th Street,13:14,12:58
+ER WKND IN,1604,Time / stop changed,Greenpoint,13:23,13:06
+ER WKND IN,1604,Time / stop changed,South Williamsburg,13:34,13:17
+ER WKND IN,1604,Time / stop changed,DUMBO,13:46,13:29
+ER WKND IN,1604,Time / stop changed,Wall Street/Pier 11,13:50,13:33
+ER WKND IN,1606,Time / stop changed,E. 34th Street,14:46,14:22
+ER WKND IN,1606,Time / stop changed,Hunters Point South,14:54,
+ER WKND IN,1606,Time / stop changed,North Williamsburg,15:04,
+ER WKND IN,1606,Time / stop changed,DUMBO,15:18,14:53
+ER WKND IN,1606,Time / stop changed,Wall Street/Pier 11,15:22,14:57
+ER WKND IN,1606,Time / stop changed,Greenpoint,,14:30
+ER WKND IN,1606,Time / stop changed,South Williamsburg,,14:41
+ER WKND IN,1608,Time / stop changed,E. 34th Street,16:38,15:46
+ER WKND IN,1608,Time / stop changed,Greenpoint,16:47,15:54
+ER WKND IN,1608,Time / stop changed,South Williamsburg,16:58,16:05
+ER WKND IN,1608,Time / stop changed,DUMBO,17:10,16:17
+ER WKND IN,1608,Time / stop changed,Wall Street/Pier 11,17:14,16:21
+ER WKND IN,1610,Time / stop changed,E. 34th Street,18:10,17:10
+ER WKND IN,1610,Time / stop changed,Hunters Point South,18:18,
+ER WKND IN,1610,Time / stop changed,North Williamsburg,18:28,
+ER WKND IN,1610,Time / stop changed,DUMBO,18:42,17:41
+ER WKND IN,1610,Time / stop changed,Wall Street/Pier 11,18:46,17:45
+ER WKND IN,1610,Time / stop changed,Greenpoint,,17:18
+ER WKND IN,1610,Time / stop changed,South Williamsburg,,17:29
+ER WKND IN,1612,Time / stop changed,E. 34th Street,19:40,18:34
+ER WKND IN,1612,Time / stop changed,Greenpoint,19:49,18:42
+ER WKND IN,1612,Time / stop changed,South Williamsburg,20:00,18:53
+ER WKND IN,1612,Time / stop changed,DUMBO,20:12,19:05
+ER WKND IN,1612,Time / stop changed,Wall Street/Pier 11,20:16,19:09
+ER WKND IN,1614,Added trip,,,E. 34th Street 19:58; Greenpoint 20:06; South Williamsburg 20:17; DUMBO 20:29; Wall Street/Pier 11 20:33
+ER WKND IN,1702,Removed trip,,E. 34th Street 11:56; Greenpoint 12:05; South Williamsburg 12:16; DUMBO 12:28; Wall Street/Pier 11 12:32,
+ER WKND IN,1704,Removed trip,,E. 34th Street 13:28; Hunters Point South 13:36; North Williamsburg 13:46; DUMBO 14:00; Wall Street/Pier 11 14:04,
+ER WKND IN,1706,Removed trip,,E. 34th Street 14:58; Greenpoint 15:07; South Williamsburg 15:18; DUMBO 15:30; Wall Street/Pier 11 15:34,
+ER WKND IN,1708,Removed trip,,E. 34th Street 16:52; Hunters Point South 17:00; North Williamsburg 17:10; DUMBO 17:24; Wall Street/Pier 11 17:28,
+ER WKND IN,1710,Removed trip,,E. 34th Street 18:22; Greenpoint 18:31; South Williamsburg 18:42; DUMBO 18:54; Wall Street/Pier 11 18:58,
+ER WKND IN,1712,Removed trip,,E. 34th Street 19:54; Hunters Point South 20:02; North Williamsburg 20:12; DUMBO 20:26; Wall Street/Pier 11 20:30,
+RW-SV WKDY OUT,2206,Time / stop changed,Wall Street/Pier 11,21:40,21:32
+RW-SV WKDY OUT,2607,Time / stop changed,Wall Street/Pier 11,20:56,20:48
+RW-SV WKDY IN,2307,Time / stop changed,Wall Street/Pier 11,20:57,20:47
+RW-SV WKDY IN,2505,Time / stop changed,Wall Street/Pier 11,21:38,21:28
+RW-SV WKND OUT,2102,Time / stop changed,Rockaway,10:27,11:10
+RW-SV WKND OUT,2102,Time / stop changed,Sunset Park,11:13,11:54
+RW-SV WKND OUT,2102,Time / stop changed,Wall Street/Pier 11,11:35,12:15
+RW-SV WKND OUT,2102,Time / stop changed,Stuyvesant Cove,11:49,12:29
+RW-SV WKND OUT,2102,Time / stop changed,E. 34th Street,12:00,12:38
+RW-SV WKND OUT,2102,Time / stop changed,E. 90th Street,12:15,12:50
+RW-SV WKND OUT,2102,Time / stop changed,Soundview,12:34,13:09
+RW-SV WKND OUT,2102,Time / stop changed,Ferry Point Park,12:37,13:12
+RW-SV WKND OUT,2104,Time / stop changed,Rockaway,15:27,15:35
+RW-SV WKND OUT,2104,Time / stop changed,Sunset Park,16:13,16:19
+RW-SV WKND OUT,2104,Time / stop changed,Wall Street/Pier 11,16:35,16:40
+RW-SV WKND OUT,2104,Time / stop changed,Stuyvesant Cove,16:49,16:54
+RW-SV WKND OUT,2104,Time / stop changed,E. 34th Street,17:00,17:03
+RW-SV WKND OUT,2106,Time / stop changed,Rockaway,20:27,20:00
+RW-SV WKND OUT,2106,Time / stop changed,Sunset Park,21:13,20:44
+RW-SV WKND OUT,2106,Time / stop changed,Wall Street/Pier 11,21:35,20:57
+RW-SV WKND OUT,2202,Time / stop changed,Rockaway,11:17,10:11
+RW-SV WKND OUT,2202,Time / stop changed,Sunset Park,12:03,10:55
+RW-SV WKND OUT,2202,Time / stop changed,Wall Street/Pier 11,12:25,11:16
+RW-SV WKND OUT,2202,Time / stop changed,Stuyvesant Cove,12:39,11:30
+RW-SV WKND OUT,2202,Time / stop changed,E. 34th Street,12:50,11:39
+RW-SV WKND OUT,2202,Time / stop changed,E. 90th Street,13:05,11:51
+RW-SV WKND OUT,2202,Time / stop changed,Soundview,13:24,12:10
+RW-SV WKND OUT,2202,Time / stop changed,Ferry Point Park,13:27,12:13
+RW-SV WKND OUT,2204,Time / stop changed,Rockaway,16:17,14:42
+RW-SV WKND OUT,2204,Time / stop changed,Sunset Park,17:03,15:26
+RW-SV WKND OUT,2204,Time / stop changed,Wall Street/Pier 11,17:25,15:47
+RW-SV WKND OUT,2204,Time / stop changed,Stuyvesant Cove,17:39,16:01
+RW-SV WKND OUT,2204,Time / stop changed,E. 34th Street,17:50,16:10
+RW-SV WKND OUT,2204,Time / stop changed,E. 90th Street,18:05,16:22
+RW-SV WKND OUT,2204,Time / stop changed,Soundview,18:24,16:41
+RW-SV WKND OUT,2204,Time / stop changed,Ferry Point Park,18:27,16:44
+RW-SV WKND OUT,2206,Time / stop changed,Rockaway,21:17,19:07
+RW-SV WKND OUT,2206,Time / stop changed,Sunset Park,22:03,19:51
+RW-SV WKND OUT,2206,Time / stop changed,Wall Street/Pier 11,22:25,20:12
+RW-SV WKND OUT,2206,Time / stop changed,Stuyvesant Cove,,20:26
+RW-SV WKND OUT,2206,Time / stop changed,E. 34th Street,,20:35
+RW-SV WKND OUT,2206,Time / stop changed,E. 90th Street,,20:47
+RW-SV WKND OUT,2206,Time / stop changed,Soundview,,21:06
+RW-SV WKND OUT,2206,Time / stop changed,Ferry Point Park,,21:09
+RW-SV WKND OUT,2302,Time / stop changed,Rockaway,12:07,12:03
+RW-SV WKND OUT,2302,Time / stop changed,Sunset Park,12:53,12:47
+RW-SV WKND OUT,2302,Time / stop changed,Wall Street/Pier 11,13:15,13:08
+RW-SV WKND OUT,2302,Time / stop changed,Stuyvesant Cove,13:29,13:22
+RW-SV WKND OUT,2302,Time / stop changed,E. 34th Street,13:40,13:31
+RW-SV WKND OUT,2302,Time / stop changed,E. 90th Street,13:55,13:43
+RW-SV WKND OUT,2302,Time / stop changed,Soundview,14:14,14:02
+RW-SV WKND OUT,2302,Time / stop changed,Ferry Point Park,14:17,14:05
+RW-SV WKND OUT,2304,Time / stop changed,Rockaway,17:07,16:28
+RW-SV WKND OUT,2304,Time / stop changed,Sunset Park,17:53,17:12
+RW-SV WKND OUT,2304,Time / stop changed,Wall Street/Pier 11,18:15,17:33
+RW-SV WKND OUT,2304,Time / stop changed,Stuyvesant Cove,18:29,17:47
+RW-SV WKND OUT,2304,Time / stop changed,E. 34th Street,18:40,17:56
+RW-SV WKND OUT,2304,Time / stop changed,E. 90th Street,18:55,18:08
+RW-SV WKND OUT,2304,Time / stop changed,Soundview,19:14,18:27
+RW-SV WKND OUT,2304,Time / stop changed,Ferry Point Park,19:17,18:30
+RW-SV WKND OUT,2401,Time / stop changed,Wall Street/Pier 11,09:05,09:36
+RW-SV WKND OUT,2401,Time / stop changed,Stuyvesant Cove,09:19,09:50
+RW-SV WKND OUT,2401,Time / stop changed,E. 34th Street,09:30,09:59
+RW-SV WKND OUT,2401,Time / stop changed,E. 90th Street,09:45,10:11
+RW-SV WKND OUT,2401,Time / stop changed,Soundview,10:04,10:30
+RW-SV WKND OUT,2401,Time / stop changed,Ferry Point Park,10:07,10:33
+RW-SV WKND OUT,2403,Time / stop changed,Rockaway,12:57,12:56
+RW-SV WKND OUT,2403,Time / stop changed,Sunset Park,13:43,13:40
+RW-SV WKND OUT,2403,Time / stop changed,Wall Street/Pier 11,14:05,14:01
+RW-SV WKND OUT,2403,Time / stop changed,Stuyvesant Cove,14:19,14:15
+RW-SV WKND OUT,2403,Time / stop changed,E. 34th Street,14:30,14:24
+RW-SV WKND OUT,2403,Time / stop changed,E. 90th Street,14:45,14:36
+RW-SV WKND OUT,2403,Time / stop changed,Soundview,15:04,14:55
+RW-SV WKND OUT,2403,Time / stop changed,Ferry Point Park,15:07,14:58
+RW-SV WKND OUT,2405,Time / stop changed,Rockaway,17:57,17:21
+RW-SV WKND OUT,2405,Time / stop changed,Sunset Park,18:43,18:05
+RW-SV WKND OUT,2405,Time / stop changed,Wall Street/Pier 11,19:05,18:26
+RW-SV WKND OUT,2405,Time / stop changed,Stuyvesant Cove,19:19,18:40
+RW-SV WKND OUT,2405,Time / stop changed,E. 34th Street,19:30,18:49
+RW-SV WKND OUT,2405,Time / stop changed,E. 90th Street,19:45,19:01
+RW-SV WKND OUT,2405,Time / stop changed,Soundview,20:04,19:20
+RW-SV WKND OUT,2405,Time / stop changed,Ferry Point Park,20:07,19:23
+RW-SV WKND OUT,2501,Time / stop changed,Rockaway,08:47,09:11
+RW-SV WKND OUT,2501,Time / stop changed,Sunset Park,09:33,09:55
+RW-SV WKND OUT,2501,Time / stop changed,Wall Street/Pier 11,09:55,10:16
+RW-SV WKND OUT,2501,Time / stop changed,Stuyvesant Cove,10:09,10:30
+RW-SV WKND OUT,2501,Time / stop changed,E. 34th Street,10:20,10:39
+RW-SV WKND OUT,2501,Time / stop changed,E. 90th Street,10:35,10:51
+RW-SV WKND OUT,2501,Time / stop changed,Soundview,10:54,11:10
+RW-SV WKND OUT,2501,Time / stop changed,Ferry Point Park,10:57,11:13
+RW-SV WKND OUT,2503,Time / stop changed,Rockaway,13:47,13:49
+RW-SV WKND OUT,2503,Time / stop changed,Wall Street/Pier 11,14:55,14:54
+RW-SV WKND OUT,2503,Time / stop changed,Stuyvesant Cove,15:09,15:08
+RW-SV WKND OUT,2503,Time / stop changed,E. 34th Street,15:20,15:17
+RW-SV WKND OUT,2503,Time / stop changed,E. 90th Street,15:35,15:29
+RW-SV WKND OUT,2503,Time / stop changed,Soundview,15:54,15:48
+RW-SV WKND OUT,2503,Time / stop changed,Ferry Point Park,15:57,15:51
+RW-SV WKND OUT,2505,Time / stop changed,Rockaway,18:47,18:14
+RW-SV WKND OUT,2505,Time / stop changed,Sunset Park,19:33,18:58
+RW-SV WKND OUT,2505,Time / stop changed,Wall Street/Pier 11,19:55,19:19
+RW-SV WKND OUT,2505,Time / stop changed,Stuyvesant Cove,20:09,19:33
+RW-SV WKND OUT,2505,Time / stop changed,E. 34th Street,20:20,19:42
+RW-SV WKND OUT,2505,Time / stop changed,E. 90th Street,20:35,19:54
+RW-SV WKND OUT,2505,Time / stop changed,Soundview,20:54,20:13
+RW-SV WKND OUT,2505,Time / stop changed,Ferry Point Park,20:57,20:16
+RW-SV WKND OUT,2601,Removed trip,,Rockaway 09:37; Sunset Park 10:23; Wall Street/Pier 11 10:45; Stuyvesant Cove 10:59; E. 34th Street 11:10; E. 90th Street 11:25; Soundview 11:44; Ferry Point Park 11:47,
+RW-SV WKND OUT,2603,Removed trip,,Rockaway 14:37; Sunset Park 15:23; Wall Street/Pier 11 15:45; Stuyvesant Cove 15:59; E. 34th Street 16:10; E. 90th Street 16:25; Soundview 16:44; Ferry Point Park 16:47,
+RW-SV WKND OUT,2605,Removed trip,,Rockaway 19:37; Sunset Park 20:23; Wall Street/Pier 11 20:45; Stuyvesant Cove 20:59; E. 34th Street 21:10; E. 90th Street 21:25; Soundview 21:44; Ferry Point Park 21:47,
+RW-SV WKND OUT,2702,Removed trip,,Rockaway 12:31; Sunset Park 13:16; Wall Street/Pier 11 13:36,
+RW-SV WKND OUT,2704,Removed trip,,Rockaway 15:02; Sunset Park 15:47; Wall Street/Pier 11 16:07,
+RW-SV WKND OUT,2708,Removed trip,,Rockaway 17:33; Sunset Park 18:18; Wall Street/Pier 11 18:38,
+RW-SV WKND OUT,2710,Removed trip,,Rockaway 20:04; Sunset Park 20:49; Wall Street/Pier 11 21:09,
+RW-SV WKND OUT,2802,Removed trip,,Rockaway 10:52; Sunset Park 11:37; Wall Street/Pier 11 11:57,
+RW-SV WKND OUT,2804,Removed trip,,Rockaway 13:23; Sunset Park 14:08; Wall Street/Pier 11 14:28,
+RW-SV WKND OUT,2806,Removed trip,,Rockaway 15:54; Sunset Park 16:39; Wall Street/Pier 11 16:59,
+RW-SV WKND OUT,2808,Removed trip,,Rockaway 18:25; Sunset Park 19:10; Wall Street/Pier 11 19:30,
+RW-SV WKND OUT,2902,Removed trip,,Rockaway 11:42; Sunset Park 12:27; Wall Street/Pier 11 12:47,
+RW-SV WKND OUT,2904,Removed trip,,Rockaway 14:13; Sunset Park 14:58; Wall Street/Pier 11 15:18,
+RW-SV WKND OUT,2907,Removed trip,,Rockaway 16:44; Sunset Park 17:29; Wall Street/Pier 11 17:49,
+RW-SV WKND OUT,2909,Removed trip,,Rockaway 19:15; Sunset Park 20:00; Wall Street/Pier 11 20:20,
+RW-SV WKND IN,2101,Time / stop changed,Ferry Point Park,07:52,08:53
+RW-SV WKND IN,2101,Time / stop changed,Soundview,08:00,09:01
+RW-SV WKND IN,2101,Time / stop changed,E. 90th Street,08:24,09:20
+RW-SV WKND IN,2101,Time / stop changed,E. 34th Street,08:42,09:34
+RW-SV WKND IN,2101,Time / stop changed,Stuyvesant Cove,08:49,09:41
+RW-SV WKND IN,2101,Time / stop changed,Wall Street/Pier 11,09:10,10:00
+RW-SV WKND IN,2101,Time / stop changed,Sunset Park,09:28,10:19
+RW-SV WKND IN,2101,Time / stop changed,Rockaway,10:11,10:59
+RW-SV WKND IN,2103,Time / stop changed,Ferry Point Park,12:52,13:18
+RW-SV WKND IN,2103,Time / stop changed,Soundview,13:00,13:26
+RW-SV WKND IN,2103,Time / stop changed,E. 90th Street,13:24,13:45
+RW-SV WKND IN,2103,Time / stop changed,E. 34th Street,13:42,13:59
+RW-SV WKND IN,2103,Time / stop changed,Stuyvesant Cove,13:49,14:06
+RW-SV WKND IN,2103,Time / stop changed,Wall Street/Pier 11,14:10,14:25
+RW-SV WKND IN,2103,Time / stop changed,Sunset Park,14:28,14:44
+RW-SV WKND IN,2103,Time / stop changed,Rockaway,15:11,15:24
+RW-SV WKND IN,2105,Time / stop changed,Ferry Point Park,17:52,17:43
+RW-SV WKND IN,2105,Time / stop changed,Soundview,18:00,17:51
+RW-SV WKND IN,2105,Time / stop changed,E. 90th Street,18:24,18:10
+RW-SV WKND IN,2105,Time / stop changed,E. 34th Street,18:42,18:24
+RW-SV WKND IN,2105,Time / stop changed,Stuyvesant Cove,18:49,18:31
+RW-SV WKND IN,2105,Time / stop changed,Wall Street/Pier 11,19:10,18:50
+RW-SV WKND IN,2105,Time / stop changed,Sunset Park,19:28,19:09
+RW-SV WKND IN,2105,Time / stop changed,Rockaway,20:11,19:49
+RW-SV WKND IN,2201,Time / stop changed,Ferry Point Park,08:42,
+RW-SV WKND IN,2201,Time / stop changed,Soundview,08:50,
+RW-SV WKND IN,2201,Time / stop changed,E. 90th Street,09:14,
+RW-SV WKND IN,2201,Time / stop changed,E. 34th Street,09:32,
+RW-SV WKND IN,2201,Time / stop changed,Stuyvesant Cove,09:39,
+RW-SV WKND IN,2201,Time / stop changed,Wall Street/Pier 11,10:00,09:01
+RW-SV WKND IN,2201,Time / stop changed,Sunset Park,10:18,09:20
+RW-SV WKND IN,2201,Time / stop changed,Rockaway,11:01,10:00
+RW-SV WKND IN,2203,Time / stop changed,Ferry Point Park,13:42,12:19
+RW-SV WKND IN,2203,Time / stop changed,Soundview,13:50,12:27
+RW-SV WKND IN,2203,Time / stop changed,E. 90th Street,14:14,12:46
+RW-SV WKND IN,2203,Time / stop changed,E. 34th Street,14:32,13:00
+RW-SV WKND IN,2203,Time / stop changed,Stuyvesant Cove,14:39,13:07
+RW-SV WKND IN,2203,Time / stop changed,Wall Street/Pier 11,15:00,13:26
+RW-SV WKND IN,2203,Time / stop changed,Sunset Park,15:18,13:45
+RW-SV WKND IN,2203,Time / stop changed,Rockaway,16:01,14:25
+RW-SV WKND IN,2205,Time / stop changed,Ferry Point Park,18:42,16:50
+RW-SV WKND IN,2205,Time / stop changed,Soundview,18:50,16:58
+RW-SV WKND IN,2205,Time / stop changed,E. 90th Street,19:14,17:17
+RW-SV WKND IN,2205,Time / stop changed,E. 34th Street,19:32,17:31
+RW-SV WKND IN,2205,Time / stop changed,Stuyvesant Cove,19:39,17:38
+RW-SV WKND IN,2205,Time / stop changed,Wall Street/Pier 11,20:00,17:57
+RW-SV WKND IN,2205,Time / stop changed,Sunset Park,20:18,18:16
+RW-SV WKND IN,2205,Time / stop changed,Rockaway,21:01,18:56
+RW-SV WKND IN,2301,Time / stop changed,Ferry Point Park,09:32,09:46
+RW-SV WKND IN,2301,Time / stop changed,Soundview,09:40,09:54
+RW-SV WKND IN,2301,Time / stop changed,E. 90th Street,10:04,10:13
+RW-SV WKND IN,2301,Time / stop changed,E. 34th Street,10:22,10:27
+RW-SV WKND IN,2301,Time / stop changed,Stuyvesant Cove,10:29,10:34
+RW-SV WKND IN,2301,Time / stop changed,Wall Street/Pier 11,10:50,10:53
+RW-SV WKND IN,2301,Time / stop changed,Sunset Park,11:08,11:12
+RW-SV WKND IN,2301,Time / stop changed,Rockaway,11:51,11:52
+RW-SV WKND IN,2303,Time / stop changed,Ferry Point Park,14:32,14:11
+RW-SV WKND IN,2303,Time / stop changed,Soundview,14:40,14:19
+RW-SV WKND IN,2303,Time / stop changed,E. 90th Street,15:04,14:38
+RW-SV WKND IN,2303,Time / stop changed,E. 34th Street,15:22,14:52
+RW-SV WKND IN,2303,Time / stop changed,Stuyvesant Cove,15:29,14:59
+RW-SV WKND IN,2303,Time / stop changed,Wall Street/Pier 11,15:50,15:18
+RW-SV WKND IN,2303,Time / stop changed,Sunset Park,16:08,15:37
+RW-SV WKND IN,2303,Time / stop changed,Rockaway,16:51,16:17
+RW-SV WKND IN,2305,Time / stop changed,Ferry Point Park,19:32,18:36
+RW-SV WKND IN,2305,Time / stop changed,Soundview,19:40,18:44
+RW-SV WKND IN,2305,Time / stop changed,E. 90th Street,20:04,19:03
+RW-SV WKND IN,2305,Time / stop changed,E. 34th Street,20:22,19:17
+RW-SV WKND IN,2305,Time / stop changed,Stuyvesant Cove,20:29,19:24
+RW-SV WKND IN,2305,Time / stop changed,Wall Street/Pier 11,20:50,19:43
+RW-SV WKND IN,2305,Time / stop changed,Sunset Park,21:08,20:02
+RW-SV WKND IN,2305,Time / stop changed,Rockaway,21:51,20:42
+RW-SV WKND IN,2402,Time / stop changed,Ferry Point Park,10:22,10:39
+RW-SV WKND IN,2402,Time / stop changed,Soundview,10:30,10:47
+RW-SV WKND IN,2402,Time / stop changed,E. 90th Street,10:54,11:06
+RW-SV WKND IN,2402,Time / stop changed,E. 34th Street,11:12,11:20
+RW-SV WKND IN,2402,Time / stop changed,Stuyvesant Cove,11:19,11:27
+RW-SV WKND IN,2402,Time / stop changed,Wall Street/Pier 11,11:40,11:46
+RW-SV WKND IN,2402,Time / stop changed,Sunset Park,11:58,12:05
+RW-SV WKND IN,2402,Time / stop changed,Rockaway,12:41,12:45
+RW-SV WKND IN,2404,Time / stop changed,Ferry Point Park,15:22,15:04
+RW-SV WKND IN,2404,Time / stop changed,Soundview,15:30,15:12
+RW-SV WKND IN,2404,Time / stop changed,E. 90th Street,15:54,15:31
+RW-SV WKND IN,2404,Time / stop changed,E. 34th Street,16:12,15:45
+RW-SV WKND IN,2404,Time / stop changed,Stuyvesant Cove,16:19,15:52
+RW-SV WKND IN,2404,Time / stop changed,Wall Street/Pier 11,16:40,16:11
+RW-SV WKND IN,2404,Time / stop changed,Sunset Park,16:58,16:30
+RW-SV WKND IN,2404,Time / stop changed,Rockaway,17:41,17:10
+RW-SV WKND IN,2406,Time / stop changed,Ferry Point Park,20:22,19:29
+RW-SV WKND IN,2406,Time / stop changed,Soundview,20:30,19:37
+RW-SV WKND IN,2406,Time / stop changed,E. 90th Street,20:54,19:56
+RW-SV WKND IN,2406,Time / stop changed,E. 34th Street,21:12,20:10
+RW-SV WKND IN,2406,Time / stop changed,Stuyvesant Cove,21:19,20:17
+RW-SV WKND IN,2406,Time / stop changed,Wall Street/Pier 11,21:40,20:36
+RW-SV WKND IN,2406,Time / stop changed,Sunset Park,,20:55
+RW-SV WKND IN,2406,Time / stop changed,Rockaway,,21:35
+RW-SV WKND IN,2502,Time / stop changed,Ferry Point Park,11:12,11:19
+RW-SV WKND IN,2502,Time / stop changed,Soundview,11:20,11:27
+RW-SV WKND IN,2502,Time / stop changed,E. 90th Street,11:44,11:46
+RW-SV WKND IN,2502,Time / stop changed,E. 34th Street,12:02,12:00
+RW-SV WKND IN,2502,Time / stop changed,Stuyvesant Cove,12:09,12:07
+RW-SV WKND IN,2502,Time / stop changed,Wall Street/Pier 11,12:30,12:26
+RW-SV WKND IN,2502,Time / stop changed,Sunset Park,12:48,12:45
+RW-SV WKND IN,2502,Time / stop changed,Rockaway,13:31,13:25
+RW-SV WKND IN,2504,Time / stop changed,Ferry Point Park,16:12,15:57
+RW-SV WKND IN,2504,Time / stop changed,Soundview,16:20,16:05
+RW-SV WKND IN,2504,Time / stop changed,E. 90th Street,16:44,16:24
+RW-SV WKND IN,2504,Time / stop changed,E. 34th Street,17:02,16:38
+RW-SV WKND IN,2504,Time / stop changed,Stuyvesant Cove,17:09,16:45
+RW-SV WKND IN,2504,Time / stop changed,Wall Street/Pier 11,17:30,17:04
+RW-SV WKND IN,2504,Time / stop changed,Sunset Park,17:48,17:23
+RW-SV WKND IN,2504,Time / stop changed,Rockaway,18:31,18:03
+RW-SV WKND IN,2506,Added trip,,,Ferry Point Park 20:22; Soundview 20:30; E. 90th Street 20:49; E. 34th Street 21:03; Stuyvesant Cove 21:10; Wall Street/Pier 11 21:21
+RW-SV WKND IN,2602,Removed trip,,Ferry Point Park 12:02; Soundview 12:10; E. 90th Street 12:34; E. 34th Street 12:52; Stuyvesant Cove 12:59; Wall Street/Pier 11 13:20; Sunset Park 13:38; Rockaway 14:21,
+RW-SV WKND IN,2604,Removed trip,,Ferry Point Park 17:02; Soundview 17:10; E. 90th Street 17:34; E. 34th Street 17:52; Stuyvesant Cove 17:59; Wall Street/Pier 11 18:20; Sunset Park 18:38; Rockaway 19:21,
+RW-SV WKND IN,2701,Removed trip,,Wall Street/Pier 11 11:15; Sunset Park 11:33; Rockaway 12:16,
+RW-SV WKND IN,2703,Removed trip,,Wall Street/Pier 11 13:46; Sunset Park 14:04; Rockaway 14:47,
+RW-SV WKND IN,2705,Removed trip,,Wall Street/Pier 11 16:17; Sunset Park 16:35; Rockaway 17:18,
+RW-SV WKND IN,2709,Removed trip,,Wall Street/Pier 11 18:48; Sunset Park 19:06; Rockaway 19:49,
+RW-SV WKND IN,2801,Removed trip,,Wall Street/Pier 11 09:36; Sunset Park 09:54; Rockaway 10:37,
+RW-SV WKND IN,2803,Removed trip,,Wall Street/Pier 11 12:07; Sunset Park 12:25; Rockaway 13:08,
+RW-SV WKND IN,2805,Removed trip,,Wall Street/Pier 11 14:38; Sunset Park 14:56; Rockaway 15:39,
+RW-SV WKND IN,2807,Removed trip,,Wall Street/Pier 11 17:09; Sunset Park 17:27; Rockaway 18:10,
+RW-SV WKND IN,2901,Removed trip,,Wall Street/Pier 11 10:26; Sunset Park 10:44; Rockaway 11:27,
+RW-SV WKND IN,2903,Removed trip,,Wall Street/Pier 11 12:57; Sunset Park 13:15; Rockaway 13:58,
+RW-SV WKND IN,2905,Removed trip,,Wall Street/Pier 11 15:28; Sunset Park 15:46; Rockaway 16:29,
+RW-SV WKND IN,2908,Removed trip,,Wall Street/Pier 11 17:59; Sunset Park 18:17; Rockaway 19:00,
+SB WKDY OUT,3106,Time / stop changed,Red Hook,10:56,10:57
+SB WKDY OUT,3106,Time / stop changed,Governors Island,11:00,11:01
+SB WKDY OUT,3108,Time / stop changed,Red Hook,12:32,12:33
+SB WKDY OUT,3108,Time / stop changed,Governors Island,12:36,12:37
+SB WKDY OUT,3110,Time / stop changed,Red Hook,14:29,14:30
+SB WKDY OUT,3110,Time / stop changed,Governors Island,14:33,14:34
+SB WKDY OUT,3112,Time / stop changed,Red Hook,16:07,16:08
+SB WKDY OUT,3112,Time / stop changed,Governors Island,16:11,16:12
+SB WKDY OUT,3116,Time / stop changed,Red Hook,19:21,19:18
+SB WKDY OUT,3118,Time / stop changed,Red Hook,20:59,20:57
+SB WKDY OUT,3207,Time / stop changed,Red Hook,11:44,11:45
+SB WKDY OUT,3207,Time / stop changed,Governors Island,11:48,11:49
+SB WKDY OUT,3209,Time / stop changed,Red Hook,13:20,13:21
+SB WKDY OUT,3209,Time / stop changed,Governors Island,13:24,13:25
+SB WKDY OUT,3211,Time / stop changed,Red Hook,15:19,15:20
+SB WKDY OUT,3211,Time / stop changed,Governors Island,15:23,15:24
+SB WKDY OUT,3215,Time / stop changed,Red Hook,18:32,18:29
+SB WKDY OUT,3217,Time / stop changed,Red Hook,20:10,20:08
+SB WKDY OUT,3219,Time / stop changed,Red Hook,21:36,21:34
+SB WKDY IN,3107,Time / stop changed,Governors Island,11:05,11:06
+SB WKDY IN,3107,Time / stop changed,Red Hook,11:12,11:13
+SB WKDY IN,3107,Time / stop changed,Atlantic Avenue/BBP Pier 6,11:21,11:22
+SB WKDY IN,3107,Time / stop changed,Wall Street/Pier 11,11:30,11:31
+SB WKDY IN,3107,Time / stop changed,Corlears Hook,11:38,11:39
+SB WKDY IN,3107,Time / stop changed,E. 34th Street,11:47,11:48
+SB WKDY IN,3111,Time / stop changed,Governors Island,14:38,14:39
+SB WKDY IN,3111,Time / stop changed,Red Hook,14:45,14:46
+SB WKDY IN,3111,Time / stop changed,Atlantic Avenue/BBP Pier 6,14:54,14:55
+SB WKDY IN,3111,Time / stop changed,Wall Street/Pier 11,15:03,15:04
+SB WKDY IN,3111,Time / stop changed,Corlears Hook,15:11,15:12
+SB WKDY IN,3111,Time / stop changed,E. 34th Street,15:20,15:21
+SB WKDY IN,3113,Time / stop changed,Governors Island,16:16,16:17
+SB WKDY IN,3113,Time / stop changed,Red Hook,16:23,16:24
+SB WKDY IN,3113,Time / stop changed,Atlantic Avenue/BBP Pier 6,16:32,16:33
+SB WKDY IN,3113,Time / stop changed,Wall Street/Pier 11,16:41,16:42
+SB WKDY IN,3113,Time / stop changed,Corlears Hook,16:49,16:50
+SB WKDY IN,3113,Time / stop changed,E. 34th Street,16:58,16:59
+SB WKDY IN,3119,Time / stop changed,Red Hook,21:06,21:07
+SB WKDY IN,3119,Time / stop changed,Atlantic Avenue/BBP Pier 6,21:15,21:16
+SB WKDY IN,3119,Time / stop changed,Wall Street/Pier 11,21:24,21:25
+SB WKDY IN,3119,Time / stop changed,Corlears Hook,21:32,21:33
+SB WKDY IN,3119,Time / stop changed,E. 34th Street,21:41,21:42
+SB WKDY IN,3208,Time / stop changed,Governors Island,11:53,11:54
+SB WKDY IN,3208,Time / stop changed,Red Hook,12:00,12:01
+SB WKDY IN,3208,Time / stop changed,Atlantic Avenue/BBP Pier 6,12:09,12:10
+SB WKDY IN,3208,Time / stop changed,Wall Street/Pier 11,12:18,12:19
+SB WKDY IN,3208,Time / stop changed,Corlears Hook,12:26,12:27
+SB WKDY IN,3208,Time / stop changed,E. 34th Street,12:35,12:36
+SB WKDY IN,3212,Time / stop changed,Governors Island,15:28,15:29
+SB WKDY IN,3212,Time / stop changed,Red Hook,15:35,15:36
+SB WKDY IN,3212,Time / stop changed,Atlantic Avenue/BBP Pier 6,15:44,15:45
+SB WKDY IN,3212,Time / stop changed,Wall Street/Pier 11,15:53,15:54
+SB WKDY IN,3212,Time / stop changed,Corlears Hook,16:01,16:02
+SB WKDY IN,3212,Time / stop changed,E. 34th Street,16:10,16:11
+SB WKDY IN,3218,Time / stop changed,Red Hook,20:17,20:18
+SB WKDY IN,3218,Time / stop changed,Atlantic Avenue/BBP Pier 6,20:26,20:27
+SB WKDY IN,3218,Time / stop changed,Wall Street/Pier 11,20:35,20:36
+SB WKDY IN,3218,Time / stop changed,Corlears Hook,20:43,20:44
+SB WKDY IN,3218,Time / stop changed,E. 34th Street,20:52,20:53
+SB WKND OUT,3102,Time / stop changed,E. 34th Street,09:30,10:06
+SB WKND OUT,3102,Time / stop changed,Corlears Hook,09:42,10:18
+SB WKND OUT,3102,Time / stop changed,Wall Street/Pier 11,09:53,10:29
+SB WKND OUT,3102,Time / stop changed,Atlantic Avenue/BBP Pier 6,10:01,10:37
+SB WKND OUT,3102,Time / stop changed,Red Hook,10:11,10:47
+SB WKND OUT,3102,Time / stop changed,Sunset Park,10:26,
+SB WKND OUT,3102,Time / stop changed,Bay Ridge,10:31,
+SB WKND OUT,3102,Time / stop changed,Governors Island,,10:53
+SB WKND OUT,3104,Time / stop changed,E. 34th Street,11:44,11:49
+SB WKND OUT,3104,Time / stop changed,Corlears Hook,11:56,12:01
+SB WKND OUT,3104,Time / stop changed,Wall Street/Pier 11,12:07,12:12
+SB WKND OUT,3104,Time / stop changed,Atlantic Avenue/BBP Pier 6,12:15,12:20
+SB WKND OUT,3104,Time / stop changed,Red Hook,12:25,12:30
+SB WKND OUT,3104,Time / stop changed,Sunset Park,12:40,
+SB WKND OUT,3104,Time / stop changed,Bay Ridge,12:45,
+SB WKND OUT,3104,Time / stop changed,Governors Island,,12:36
+SB WKND OUT,3106,Time / stop changed,E. 34th Street,13:58,13:32
+SB WKND OUT,3106,Time / stop changed,Corlears Hook,14:10,13:44
+SB WKND OUT,3106,Time / stop changed,Wall Street/Pier 11,14:21,13:55
+SB WKND OUT,3106,Time / stop changed,Atlantic Avenue/BBP Pier 6,14:29,14:03
+SB WKND OUT,3106,Time / stop changed,Red Hook,14:39,14:13
+SB WKND OUT,3106,Time / stop changed,Sunset Park,14:54,
+SB WKND OUT,3106,Time / stop changed,Bay Ridge,14:59,
+SB WKND OUT,3106,Time / stop changed,Governors Island,,14:19
+SB WKND OUT,3108,Time / stop changed,E. 34th Street,16:12,15:15
+SB WKND OUT,3108,Time / stop changed,Corlears Hook,16:24,15:27
+SB WKND OUT,3108,Time / stop changed,Wall Street/Pier 11,16:35,15:38
+SB WKND OUT,3108,Time / stop changed,Atlantic Avenue/BBP Pier 6,16:43,15:46
+SB WKND OUT,3108,Time / stop changed,Red Hook,16:53,15:56
+SB WKND OUT,3108,Time / stop changed,Sunset Park,17:08,
+SB WKND OUT,3108,Time / stop changed,Bay Ridge,17:13,
+SB WKND OUT,3108,Time / stop changed,Governors Island,,16:02
+SB WKND OUT,3110,Time / stop changed,E. 34th Street,18:52,16:58
+SB WKND OUT,3110,Time / stop changed,Corlears Hook,19:04,17:10
+SB WKND OUT,3110,Time / stop changed,Wall Street/Pier 11,19:15,17:21
+SB WKND OUT,3110,Time / stop changed,Atlantic Avenue/BBP Pier 6,19:23,17:29
+SB WKND OUT,3110,Time / stop changed,Red Hook,19:33,17:39
+SB WKND OUT,3110,Time / stop changed,Sunset Park,19:48,
+SB WKND OUT,3110,Time / stop changed,Bay Ridge,19:53,
+SB WKND OUT,3110,Time / stop changed,Governors Island,,17:45
+SB WKND OUT,3112,Time / stop changed,E. 34th Street,21:06,18:41
+SB WKND OUT,3112,Time / stop changed,Corlears Hook,21:18,18:53
+SB WKND OUT,3112,Time / stop changed,Wall Street/Pier 11,21:29,19:04
+SB WKND OUT,3112,Time / stop changed,Atlantic Avenue/BBP Pier 6,21:37,19:12
+SB WKND OUT,3112,Time / stop changed,Red Hook,21:47,19:18
+SB WKND OUT,3112,Time / stop changed,Sunset Park,22:02,
+SB WKND OUT,3112,Time / stop changed,Bay Ridge,22:07,
+SB WKND OUT,3114,Added trip,,,E. 34th Street 20:13; Corlears Hook 20:25; Wall Street/Pier 11 20:36; Atlantic Avenue/BBP Pier 6 20:44; Red Hook 20:50
+SB WKND OUT,3201,Time / stop changed,E. 34th Street,08:21,09:14
+SB WKND OUT,3201,Time / stop changed,Corlears Hook,08:33,09:26
+SB WKND OUT,3201,Time / stop changed,Wall Street/Pier 11,08:44,09:37
+SB WKND OUT,3201,Time / stop changed,Atlantic Avenue/BBP Pier 6,08:52,09:45
+SB WKND OUT,3201,Time / stop changed,Red Hook,09:02,09:55
+SB WKND OUT,3201,Time / stop changed,Sunset Park,09:17,
+SB WKND OUT,3201,Time / stop changed,Bay Ridge,09:22,
+SB WKND OUT,3201,Time / stop changed,Governors Island,,10:01
+SB WKND OUT,3203,Time / stop changed,E. 34th Street,10:35,10:57
+SB WKND OUT,3203,Time / stop changed,Corlears Hook,10:47,11:09
+SB WKND OUT,3203,Time / stop changed,Wall Street/Pier 11,10:58,11:20
+SB WKND OUT,3203,Time / stop changed,Atlantic Avenue/BBP Pier 6,11:06,11:28
+SB WKND OUT,3203,Time / stop changed,Red Hook,11:16,11:38
+SB WKND OUT,3203,Time / stop changed,Sunset Park,11:31,
+SB WKND OUT,3203,Time / stop changed,Bay Ridge,11:36,
+SB WKND OUT,3203,Time / stop changed,Governors Island,,11:44
+SB WKND OUT,3205,Time / stop changed,E. 34th Street,12:52,12:40
+SB WKND OUT,3205,Time / stop changed,Corlears Hook,13:04,12:52
+SB WKND OUT,3205,Time / stop changed,Wall Street/Pier 11,13:15,13:03
+SB WKND OUT,3205,Time / stop changed,Atlantic Avenue/BBP Pier 6,13:23,13:11
+SB WKND OUT,3205,Time / stop changed,Red Hook,13:33,13:21
+SB WKND OUT,3205,Time / stop changed,Sunset Park,13:48,
+SB WKND OUT,3205,Time / stop changed,Bay Ridge,13:53,
+SB WKND OUT,3205,Time / stop changed,Governors Island,,13:27
+SB WKND OUT,3207,Time / stop changed,E. 34th Street,15:06,14:23
+SB WKND OUT,3207,Time / stop changed,Corlears Hook,15:18,14:35
+SB WKND OUT,3207,Time / stop changed,Wall Street/Pier 11,15:29,14:46
+SB WKND OUT,3207,Time / stop changed,Atlantic Avenue/BBP Pier 6,15:37,14:54
+SB WKND OUT,3207,Time / stop changed,Red Hook,15:47,15:04
+SB WKND OUT,3207,Time / stop changed,Sunset Park,16:02,
+SB WKND OUT,3207,Time / stop changed,Bay Ridge,16:07,
+SB WKND OUT,3207,Time / stop changed,Governors Island,,15:10
+SB WKND OUT,3209,Time / stop changed,E. 34th Street,17:46,16:06
+SB WKND OUT,3209,Time / stop changed,Corlears Hook,17:58,16:18
+SB WKND OUT,3209,Time / stop changed,Wall Street/Pier 11,18:09,16:29
+SB WKND OUT,3209,Time / stop changed,Atlantic Avenue/BBP Pier 6,18:17,16:37
+SB WKND OUT,3209,Time / stop changed,Red Hook,18:27,16:47
+SB WKND OUT,3209,Time / stop changed,Sunset Park,18:42,
+SB WKND OUT,3209,Time / stop changed,Bay Ridge,18:47,
+SB WKND OUT,3209,Time / stop changed,Governors Island,,16:53
+SB WKND OUT,3211,Time / stop changed,E. 34th Street,20:00,17:49
+SB WKND OUT,3211,Time / stop changed,Corlears Hook,20:12,18:01
+SB WKND OUT,3211,Time / stop changed,Wall Street/Pier 11,20:23,18:12
+SB WKND OUT,3211,Time / stop changed,Atlantic Avenue/BBP Pier 6,20:31,18:20
+SB WKND OUT,3211,Time / stop changed,Red Hook,20:41,18:26
+SB WKND OUT,3211,Time / stop changed,Sunset Park,20:56,
+SB WKND OUT,3211,Time / stop changed,Bay Ridge,21:01,
+SB WKND OUT,3213,Added trip,,,E. 34th Street 19:21; Corlears Hook 19:33; Wall Street/Pier 11 19:44; Atlantic Avenue/BBP Pier 6 19:52; Red Hook 19:58
+SB WKND OUT,3215,Added trip,,,E. 34th Street 20:53; Corlears Hook 21:05; Wall Street/Pier 11 21:16; Atlantic Avenue/BBP Pier 6 21:24; Red Hook 21:30
+SB WKND OUT,3302,Removed trip,,E. 34th Street 12:18; Corlears Hook 12:30; Wall Street/Pier 11 12:41; Atlantic Avenue/BBP Pier 6 12:49; Red Hook 12:59; Sunset Park 13:14; Bay Ridge 13:19,
+SB WKND OUT,3304,Removed trip,,E. 34th Street 14:32; Corlears Hook 14:44; Wall Street/Pier 11 14:55; Atlantic Avenue/BBP Pier 6 15:03; Red Hook 15:13; Sunset Park 15:28; Bay Ridge 15:33,
+SB WKND OUT,3306,Removed trip,,E. 34th Street 17:12; Corlears Hook 17:24; Wall Street/Pier 11 17:35; Atlantic Avenue/BBP Pier 6 17:43; Red Hook 17:53; Sunset Park 18:08; Bay Ridge 18:13,
+SB WKND OUT,3308,Removed trip,,E. 34th Street 19:26; Corlears Hook 19:38; Wall Street/Pier 11 19:49; Atlantic Avenue/BBP Pier 6 19:57; Red Hook 20:07; Sunset Park 20:22; Bay Ridge 20:27,
+SB WKND OUT,3401,Removed trip,,E. 34th Street 11:05; Corlears Hook 11:17; Wall Street/Pier 11 11:28; Atlantic Avenue/BBP Pier 6 11:36; Red Hook 11:46; Sunset Park 12:01; Bay Ridge 12:06,
+SB WKND OUT,3403,Removed trip,,E. 34th Street 13:20; Corlears Hook 13:32; Wall Street/Pier 11 13:43; Atlantic Avenue/BBP Pier 6 13:51; Red Hook 14:01; Sunset Park 14:16; Bay Ridge 14:21,
+SB WKND OUT,3405,Removed trip,,E. 34th Street 15:34; Corlears Hook 15:46; Wall Street/Pier 11 15:57; Atlantic Avenue/BBP Pier 6 16:05; Red Hook 16:15; Sunset Park 16:30; Bay Ridge 16:35,
+SB WKND OUT,3407,Removed trip,,E. 34th Street 18:12; Corlears Hook 18:24; Wall Street/Pier 11 18:35; Atlantic Avenue/BBP Pier 6 18:43; Red Hook 18:53; Sunset Park 19:08; Bay Ridge 19:13,
+SB WKND OUT,3409,Removed trip,,E. 34th Street 20:26; Corlears Hook 20:38; Wall Street/Pier 11 20:49; Atlantic Avenue/BBP Pier 6 20:57; Red Hook 21:07; Sunset Park 21:22; Bay Ridge 21:27,
+SB WKND IN,3101,Time / stop changed,Bay Ridge,08:23,
+SB WKND IN,3101,Time / stop changed,Sunset Park,08:31,
+SB WKND IN,3101,Time / stop changed,Red Hook,08:47,09:23
+SB WKND IN,3101,Time / stop changed,Atlantic Avenue/BBP Pier 6,08:57,09:33
+SB WKND IN,3101,Time / stop changed,Wall Street/Pier 11,09:07,09:43
+SB WKND IN,3101,Time / stop changed,Corlears Hook,09:15,09:51
+SB WKND IN,3101,Time / stop changed,E. 34th Street,09:24,10:00
+SB WKND IN,3101,Time / stop changed,Governors Island,,09:15
+SB WKND IN,3103,Time / stop changed,Bay Ridge,10:37,
+SB WKND IN,3103,Time / stop changed,Sunset Park,10:45,
+SB WKND IN,3103,Time / stop changed,Red Hook,11:01,11:06
+SB WKND IN,3103,Time / stop changed,Atlantic Avenue/BBP Pier 6,11:11,11:16
+SB WKND IN,3103,Time / stop changed,Wall Street/Pier 11,11:21,11:26
+SB WKND IN,3103,Time / stop changed,Corlears Hook,11:29,11:34
+SB WKND IN,3103,Time / stop changed,E. 34th Street,11:38,11:43
+SB WKND IN,3103,Time / stop changed,Governors Island,,10:58
+SB WKND IN,3105,Time / stop changed,Bay Ridge,12:51,
+SB WKND IN,3105,Time / stop changed,Sunset Park,12:59,
+SB WKND IN,3105,Time / stop changed,Red Hook,13:15,12:49
+SB WKND IN,3105,Time / stop changed,Atlantic Avenue/BBP Pier 6,13:25,12:59
+SB WKND IN,3105,Time / stop changed,Wall Street/Pier 11,13:35,13:09
+SB WKND IN,3105,Time / stop changed,Corlears Hook,13:43,13:17
+SB WKND IN,3105,Time / stop changed,E. 34th Street,13:52,13:26
+SB WKND IN,3105,Time / stop changed,Governors Island,,12:41
+SB WKND IN,3107,Time / stop changed,Bay Ridge,15:05,
+SB WKND IN,3107,Time / stop changed,Sunset Park,15:13,
+SB WKND IN,3107,Time / stop changed,Red Hook,15:29,14:32
+SB WKND IN,3107,Time / stop changed,Atlantic Avenue/BBP Pier 6,15:39,14:42
+SB WKND IN,3107,Time / stop changed,Wall Street/Pier 11,15:49,14:52
+SB WKND IN,3107,Time / stop changed,Corlears Hook,15:57,15:00
+SB WKND IN,3107,Time / stop changed,E. 34th Street,16:06,15:09
+SB WKND IN,3107,Time / stop changed,Governors Island,,14:24
+SB WKND IN,3109,Time / stop changed,Bay Ridge,17:45,
+SB WKND IN,3109,Time / stop changed,Sunset Park,17:53,
+SB WKND IN,3109,Time / stop changed,Red Hook,18:09,16:15
+SB WKND IN,3109,Time / stop changed,Atlantic Avenue/BBP Pier 6,18:19,16:25
+SB WKND IN,3109,Time / stop changed,Wall Street/Pier 11,18:29,16:35
+SB WKND IN,3109,Time / stop changed,Corlears Hook,18:37,16:43
+SB WKND IN,3109,Time / stop changed,E. 34th Street,18:46,16:52
+SB WKND IN,3109,Time / stop changed,Governors Island,,16:07
+SB WKND IN,3111,Time / stop changed,Bay Ridge,19:59,
+SB WKND IN,3111,Time / stop changed,Sunset Park,20:07,
+SB WKND IN,3111,Time / stop changed,Red Hook,20:23,17:58
+SB WKND IN,3111,Time / stop changed,Atlantic Avenue/BBP Pier 6,20:33,18:08
+SB WKND IN,3111,Time / stop changed,Wall Street/Pier 11,20:43,18:18
+SB WKND IN,3111,Time / stop changed,Corlears Hook,20:51,18:26
+SB WKND IN,3111,Time / stop changed,E. 34th Street,21:00,18:35
+SB WKND IN,3111,Time / stop changed,Governors Island,,17:50
+SB WKND IN,3113,Added trip,,,Red Hook 19:30; Atlantic Avenue/BBP Pier 6 19:40; Wall Street/Pier 11 19:50; Corlears Hook 19:58; E. 34th Street 20:07
+SB WKND IN,3115,Added trip,,,Red Hook 21:02; Atlantic Avenue/BBP Pier 6 21:12; Wall Street/Pier 11 21:22; Corlears Hook 21:30; E. 34th Street 21:39
+SB WKND IN,3202,Time / stop changed,Bay Ridge,09:28,
+SB WKND IN,3202,Time / stop changed,Sunset Park,09:36,
+SB WKND IN,3202,Time / stop changed,Red Hook,09:52,10:14
+SB WKND IN,3202,Time / stop changed,Atlantic Avenue/BBP Pier 6,10:02,10:24
+SB WKND IN,3202,Time / stop changed,Wall Street/Pier 11,10:12,10:34
+SB WKND IN,3202,Time / stop changed,Corlears Hook,10:20,10:42
+SB WKND IN,3202,Time / stop changed,E. 34th Street,10:29,10:51
+SB WKND IN,3202,Time / stop changed,Governors Island,,10:06
+SB WKND IN,3204,Time / stop changed,Bay Ridge,11:42,
+SB WKND IN,3204,Time / stop changed,Sunset Park,11:50,
+SB WKND IN,3204,Time / stop changed,Red Hook,12:06,11:57
+SB WKND IN,3204,Time / stop changed,Atlantic Avenue/BBP Pier 6,12:16,12:07
+SB WKND IN,3204,Time / stop changed,Wall Street/Pier 11,12:26,12:17
+SB WKND IN,3204,Time / stop changed,Corlears Hook,12:34,12:25
+SB WKND IN,3204,Time / stop changed,E. 34th Street,12:43,12:34
+SB WKND IN,3204,Time / stop changed,Governors Island,,11:49
+SB WKND IN,3206,Time / stop changed,Bay Ridge,13:59,
+SB WKND IN,3206,Time / stop changed,Sunset Park,14:07,
+SB WKND IN,3206,Time / stop changed,Red Hook,14:23,13:40
+SB WKND IN,3206,Time / stop changed,Atlantic Avenue/BBP Pier 6,14:33,13:50
+SB WKND IN,3206,Time / stop changed,Wall Street/Pier 11,14:43,14:00
+SB WKND IN,3206,Time / stop changed,Corlears Hook,14:51,14:08
+SB WKND IN,3206,Time / stop changed,E. 34th Street,15:00,14:17
+SB WKND IN,3206,Time / stop changed,Governors Island,,13:32
+SB WKND IN,3208,Time / stop changed,Bay Ridge,16:39,
+SB WKND IN,3208,Time / stop changed,Sunset Park,16:47,
+SB WKND IN,3208,Time / stop changed,Red Hook,17:03,15:23
+SB WKND IN,3208,Time / stop changed,Atlantic Avenue/BBP Pier 6,17:13,15:33
+SB WKND IN,3208,Time / stop changed,Wall Street/Pier 11,17:23,15:43
+SB WKND IN,3208,Time / stop changed,Corlears Hook,17:31,15:51
+SB WKND IN,3208,Time / stop changed,E. 34th Street,17:40,16:00
+SB WKND IN,3208,Time / stop changed,Governors Island,,15:15
+SB WKND IN,3210,Time / stop changed,Bay Ridge,18:53,
+SB WKND IN,3210,Time / stop changed,Sunset Park,19:01,
+SB WKND IN,3210,Time / stop changed,Red Hook,19:17,17:06
+SB WKND IN,3210,Time / stop changed,Atlantic Avenue/BBP Pier 6,19:27,17:16
+SB WKND IN,3210,Time / stop changed,Wall Street/Pier 11,19:37,17:26
+SB WKND IN,3210,Time / stop changed,Corlears Hook,19:45,17:34
+SB WKND IN,3210,Time / stop changed,E. 34th Street,19:54,17:43
+SB WKND IN,3210,Time / stop changed,Governors Island,,16:58
+SB WKND IN,3212,Time / stop changed,Bay Ridge,21:07,
+SB WKND IN,3212,Time / stop changed,Sunset Park,21:15,
+SB WKND IN,3212,Time / stop changed,Red Hook,21:31,18:38
+SB WKND IN,3212,Time / stop changed,Atlantic Avenue/BBP Pier 6,21:41,18:48
+SB WKND IN,3212,Time / stop changed,Wall Street/Pier 11,21:51,18:58
+SB WKND IN,3212,Time / stop changed,Corlears Hook,21:59,19:06
+SB WKND IN,3212,Time / stop changed,E. 34th Street,22:08,19:15
+SB WKND IN,3214,Added trip,,,Red Hook 20:10; Atlantic Avenue/BBP Pier 6 20:20; Wall Street/Pier 11 20:30; Corlears Hook 20:38; E. 34th Street 20:47
+SB WKND IN,3301,Removed trip,,Bay Ridge 11:11; Sunset Park 11:19; Red Hook 11:35; Atlantic Avenue/BBP Pier 6 11:45; Wall Street/Pier 11 11:55; Corlears Hook 12:03; E. 34th Street 12:12,
+SB WKND IN,3303,Removed trip,,Bay Ridge 13:25; Sunset Park 13:33; Red Hook 13:49; Atlantic Avenue/BBP Pier 6 13:59; Wall Street/Pier 11 14:09; Corlears Hook 14:17; E. 34th Street 14:26,
+SB WKND IN,3305,Removed trip,,Bay Ridge 16:05; Sunset Park 16:13; Red Hook 16:29; Atlantic Avenue/BBP Pier 6 16:39; Wall Street/Pier 11 16:49; Corlears Hook 16:57; E. 34th Street 17:06,
+SB WKND IN,3307,Removed trip,,Bay Ridge 18:19; Sunset Park 18:27; Red Hook 18:43; Atlantic Avenue/BBP Pier 6 18:53; Wall Street/Pier 11 19:03; Corlears Hook 19:11; E. 34th Street 19:20,
+SB WKND IN,3402,Removed trip,,Bay Ridge 12:12; Sunset Park 12:20; Red Hook 12:36; Atlantic Avenue/BBP Pier 6 12:46; Wall Street/Pier 11 12:56; Corlears Hook 13:04; E. 34th Street 13:13,
+SB WKND IN,3404,Removed trip,,Bay Ridge 14:27; Sunset Park 14:35; Red Hook 14:51; Atlantic Avenue/BBP Pier 6 15:01; Wall Street/Pier 11 15:11; Corlears Hook 15:19; E. 34th Street 15:28,
+SB WKND IN,3406,Removed trip,,Bay Ridge 17:05; Sunset Park 17:13; Red Hook 17:29; Atlantic Avenue/BBP Pier 6 17:39; Wall Street/Pier 11 17:49; Corlears Hook 17:57; E. 34th Street 18:06,
+SB WKND IN,3408,Removed trip,,Bay Ridge 19:19; Sunset Park 19:27; Red Hook 19:43; Atlantic Avenue/BBP Pier 6 19:53; Wall Street/Pier 11 20:03; Corlears Hook 20:11; E. 34th Street 20:20,
+SB MOD OUT,3102,Time / stop changed,E. 34th Street,09:30,10:06
+SB MOD OUT,3102,Time / stop changed,Corlears Hook,09:42,10:18
+SB MOD OUT,3102,Time / stop changed,Wall Street/Pier 11,09:53,10:29
+SB MOD OUT,3102,Time / stop changed,Atlantic Avenue/BBP Pier 6,10:01,10:37
+SB MOD OUT,3102,Time / stop changed,Red Hook,10:11,10:47
+SB MOD OUT,3102,Time / stop changed,Sunset Park,10:26,
+SB MOD OUT,3102,Time / stop changed,Bay Ridge,10:31,
+SB MOD OUT,3102,Time / stop changed,Governors Island,,10:53
+SB MOD OUT,3104,Time / stop changed,E. 34th Street,11:44,11:49
+SB MOD OUT,3104,Time / stop changed,Corlears Hook,11:56,12:01
+SB MOD OUT,3104,Time / stop changed,Wall Street/Pier 11,12:07,12:12
+SB MOD OUT,3104,Time / stop changed,Atlantic Avenue/BBP Pier 6,12:15,12:20
+SB MOD OUT,3104,Time / stop changed,Red Hook,12:25,12:30
+SB MOD OUT,3104,Time / stop changed,Sunset Park,12:40,
+SB MOD OUT,3104,Time / stop changed,Bay Ridge,12:45,
+SB MOD OUT,3104,Time / stop changed,Governors Island,,12:36
+SB MOD OUT,3106,Time / stop changed,E. 34th Street,13:58,13:32
+SB MOD OUT,3106,Time / stop changed,Corlears Hook,14:10,13:44
+SB MOD OUT,3106,Time / stop changed,Wall Street/Pier 11,14:21,13:55
+SB MOD OUT,3106,Time / stop changed,Atlantic Avenue/BBP Pier 6,14:29,14:03
+SB MOD OUT,3106,Time / stop changed,Red Hook,14:39,14:13
+SB MOD OUT,3106,Time / stop changed,Sunset Park,14:54,
+SB MOD OUT,3106,Time / stop changed,Bay Ridge,14:59,
+SB MOD OUT,3106,Time / stop changed,Governors Island,,14:19
+SB MOD OUT,3108,Time / stop changed,E. 34th Street,16:12,15:15
+SB MOD OUT,3108,Time / stop changed,Corlears Hook,16:24,15:27
+SB MOD OUT,3108,Time / stop changed,Wall Street/Pier 11,16:35,15:38
+SB MOD OUT,3108,Time / stop changed,Atlantic Avenue/BBP Pier 6,16:43,15:46
+SB MOD OUT,3108,Time / stop changed,Red Hook,16:53,15:56
+SB MOD OUT,3108,Time / stop changed,Sunset Park,17:08,
+SB MOD OUT,3108,Time / stop changed,Bay Ridge,17:13,
+SB MOD OUT,3108,Time / stop changed,Governors Island,,16:02
+SB MOD OUT,3110,Time / stop changed,E. 34th Street,18:52,16:58
+SB MOD OUT,3110,Time / stop changed,Corlears Hook,19:04,17:10
+SB MOD OUT,3110,Time / stop changed,Wall Street/Pier 11,19:15,17:21
+SB MOD OUT,3110,Time / stop changed,Atlantic Avenue/BBP Pier 6,19:23,17:29
+SB MOD OUT,3110,Time / stop changed,Red Hook,19:33,17:39
+SB MOD OUT,3110,Time / stop changed,Sunset Park,19:48,
+SB MOD OUT,3110,Time / stop changed,Bay Ridge,19:53,
+SB MOD OUT,3110,Time / stop changed,Governors Island,,17:45
+SB MOD OUT,3112,Time / stop changed,E. 34th Street,21:06,18:41
+SB MOD OUT,3112,Time / stop changed,Corlears Hook,21:18,18:53
+SB MOD OUT,3112,Time / stop changed,Wall Street/Pier 11,21:29,19:04
+SB MOD OUT,3112,Time / stop changed,Atlantic Avenue/BBP Pier 6,21:37,19:12
+SB MOD OUT,3112,Time / stop changed,Red Hook,21:47,19:18
+SB MOD OUT,3112,Time / stop changed,Sunset Park,22:02,
+SB MOD OUT,3112,Time / stop changed,Bay Ridge,22:07,
+SB MOD OUT,3114,Added trip,,,E. 34th Street 20:13; Corlears Hook 20:25; Wall Street/Pier 11 20:36; Atlantic Avenue/BBP Pier 6 20:44; Red Hook 20:50
+SB MOD OUT,3201,Time / stop changed,E. 34th Street,08:21,09:14
+SB MOD OUT,3201,Time / stop changed,Corlears Hook,08:33,09:26
+SB MOD OUT,3201,Time / stop changed,Wall Street/Pier 11,08:44,09:37
+SB MOD OUT,3201,Time / stop changed,Atlantic Avenue/BBP Pier 6,08:52,09:45
+SB MOD OUT,3201,Time / stop changed,Red Hook,09:02,09:55
+SB MOD OUT,3201,Time / stop changed,Sunset Park,09:17,
+SB MOD OUT,3201,Time / stop changed,Bay Ridge,09:22,
+SB MOD OUT,3201,Time / stop changed,Governors Island,,10:01
+SB MOD OUT,3203,Time / stop changed,E. 34th Street,10:35,10:57
+SB MOD OUT,3203,Time / stop changed,Corlears Hook,10:47,11:09
+SB MOD OUT,3203,Time / stop changed,Wall Street/Pier 11,10:58,11:20
+SB MOD OUT,3203,Time / stop changed,Atlantic Avenue/BBP Pier 6,11:06,11:28
+SB MOD OUT,3203,Time / stop changed,Red Hook,11:16,11:38
+SB MOD OUT,3203,Time / stop changed,Sunset Park,11:31,
+SB MOD OUT,3203,Time / stop changed,Bay Ridge,11:36,
+SB MOD OUT,3203,Time / stop changed,Governors Island,,11:44
+SB MOD OUT,3205,Time / stop changed,E. 34th Street,12:52,12:40
+SB MOD OUT,3205,Time / stop changed,Corlears Hook,13:04,12:52
+SB MOD OUT,3205,Time / stop changed,Wall Street/Pier 11,13:15,13:03
+SB MOD OUT,3205,Time / stop changed,Atlantic Avenue/BBP Pier 6,13:23,13:11
+SB MOD OUT,3205,Time / stop changed,Red Hook,13:33,13:21
+SB MOD OUT,3205,Time / stop changed,Sunset Park,13:48,
+SB MOD OUT,3205,Time / stop changed,Bay Ridge,13:53,
+SB MOD OUT,3205,Time / stop changed,Governors Island,,13:27
+SB MOD OUT,3207,Time / stop changed,E. 34th Street,15:06,14:23
+SB MOD OUT,3207,Time / stop changed,Corlears Hook,15:18,14:35
+SB MOD OUT,3207,Time / stop changed,Wall Street/Pier 11,15:29,14:46
+SB MOD OUT,3207,Time / stop changed,Atlantic Avenue/BBP Pier 6,15:37,14:54
+SB MOD OUT,3207,Time / stop changed,Red Hook,15:47,15:04
+SB MOD OUT,3207,Time / stop changed,Sunset Park,16:02,
+SB MOD OUT,3207,Time / stop changed,Bay Ridge,16:07,
+SB MOD OUT,3207,Time / stop changed,Governors Island,,15:10
+SB MOD OUT,3209,Time / stop changed,E. 34th Street,17:46,16:06
+SB MOD OUT,3209,Time / stop changed,Corlears Hook,17:58,16:18
+SB MOD OUT,3209,Time / stop changed,Wall Street/Pier 11,18:09,16:29
+SB MOD OUT,3209,Time / stop changed,Atlantic Avenue/BBP Pier 6,18:17,16:37
+SB MOD OUT,3209,Time / stop changed,Red Hook,18:27,16:47
+SB MOD OUT,3209,Time / stop changed,Sunset Park,18:42,
+SB MOD OUT,3209,Time / stop changed,Bay Ridge,18:47,
+SB MOD OUT,3209,Time / stop changed,Governors Island,,16:53
+SB MOD OUT,3211,Time / stop changed,E. 34th Street,20:00,17:49
+SB MOD OUT,3211,Time / stop changed,Corlears Hook,20:12,18:01
+SB MOD OUT,3211,Time / stop changed,Wall Street/Pier 11,20:23,18:12
+SB MOD OUT,3211,Time / stop changed,Atlantic Avenue/BBP Pier 6,20:31,18:20
+SB MOD OUT,3211,Time / stop changed,Red Hook,20:41,18:26
+SB MOD OUT,3211,Time / stop changed,Sunset Park,20:56,
+SB MOD OUT,3211,Time / stop changed,Bay Ridge,21:01,
+SB MOD OUT,3213,Added trip,,,E. 34th Street 19:21; Corlears Hook 19:33; Wall Street/Pier 11 19:44; Atlantic Avenue/BBP Pier 6 19:52; Red Hook 19:58
+SB MOD OUT,3215,Added trip,,,E. 34th Street 20:53; Corlears Hook 21:05; Wall Street/Pier 11 21:16; Atlantic Avenue/BBP Pier 6 21:24; Red Hook 21:30
+SB MOD OUT,3302,Time / stop changed,E. 34th Street,12:18,
+SB MOD OUT,3302,Time / stop changed,Corlears Hook,12:30,
+SB MOD OUT,3302,Time / stop changed,Wall Street/Pier 11,12:41,07:36
+SB MOD OUT,3302,Time / stop changed,Atlantic Avenue/BBP Pier 6,12:49,
+SB MOD OUT,3302,Time / stop changed,Red Hook,12:59,07:46
+SB MOD OUT,3302,Time / stop changed,Sunset Park,13:14,
+SB MOD OUT,3302,Time / stop changed,Bay Ridge,13:19,
+SB MOD OUT,3304,Time / stop changed,E. 34th Street,14:32,
+SB MOD OUT,3304,Time / stop changed,Corlears Hook,14:44,
+SB MOD OUT,3304,Time / stop changed,Wall Street/Pier 11,14:55,08:06
+SB MOD OUT,3304,Time / stop changed,Atlantic Avenue/BBP Pier 6,15:03,
+SB MOD OUT,3304,Time / stop changed,Red Hook,15:13,08:16
+SB MOD OUT,3304,Time / stop changed,Sunset Park,15:28,
+SB MOD OUT,3304,Time / stop changed,Bay Ridge,15:33,
+SB MOD OUT,3306,Time / stop changed,E. 34th Street,17:12,
+SB MOD OUT,3306,Time / stop changed,Corlears Hook,17:24,
+SB MOD OUT,3306,Time / stop changed,Wall Street/Pier 11,17:35,08:36
+SB MOD OUT,3306,Time / stop changed,Atlantic Avenue/BBP Pier 6,17:43,
+SB MOD OUT,3306,Time / stop changed,Red Hook,17:53,08:46
+SB MOD OUT,3306,Time / stop changed,Sunset Park,18:08,
+SB MOD OUT,3306,Time / stop changed,Bay Ridge,18:13,
+SB MOD OUT,3308,Time / stop changed,E. 34th Street,19:26,
+SB MOD OUT,3308,Time / stop changed,Corlears Hook,19:38,
+SB MOD OUT,3308,Time / stop changed,Wall Street/Pier 11,19:49,09:06
+SB MOD OUT,3308,Time / stop changed,Atlantic Avenue/BBP Pier 6,19:57,
+SB MOD OUT,3308,Time / stop changed,Red Hook,20:07,09:16
+SB MOD OUT,3308,Time / stop changed,Sunset Park,20:22,
+SB MOD OUT,3308,Time / stop changed,Bay Ridge,20:27,
+SB MOD OUT,3310,Added trip,,,Wall Street/Pier 11 09:36; Red Hook 09:46
+SB MOD OUT,3312,Added trip,,,Wall Street/Pier 11 10:06; Red Hook 10:16
+SB MOD OUT,3314,Added trip,,,Wall Street/Pier 11 10:36; Red Hook 10:46
+SB MOD OUT,3316,Added trip,,,Wall Street/Pier 11 11:06; Red Hook 11:16
+SB MOD OUT,3318,Added trip,,,Wall Street/Pier 11 11:36; Red Hook 11:46
+SB MOD OUT,3320,Added trip,,,Wall Street/Pier 11 12:06; Red Hook 12:16
+SB MOD OUT,3401,Removed trip,,E. 34th Street 11:05; Corlears Hook 11:17; Wall Street/Pier 11 11:28; Atlantic Avenue/BBP Pier 6 11:36; Red Hook 11:46; Sunset Park 12:01; Bay Ridge 12:06,
+SB MOD OUT,3403,Removed trip,,E. 34th Street 13:20; Corlears Hook 13:32; Wall Street/Pier 11 13:43; Atlantic Avenue/BBP Pier 6 13:51; Red Hook 14:01; Sunset Park 14:16; Bay Ridge 14:21,
+SB MOD OUT,3405,Removed trip,,E. 34th Street 15:34; Corlears Hook 15:46; Wall Street/Pier 11 15:57; Atlantic Avenue/BBP Pier 6 16:05; Red Hook 16:15; Sunset Park 16:30; Bay Ridge 16:35,
+SB MOD OUT,3407,Removed trip,,E. 34th Street 18:12; Corlears Hook 18:24; Wall Street/Pier 11 18:35; Atlantic Avenue/BBP Pier 6 18:43; Red Hook 18:53; Sunset Park 19:08; Bay Ridge 19:13,
+SB MOD OUT,3409,Removed trip,,E. 34th Street 20:26; Corlears Hook 20:38; Wall Street/Pier 11 20:49; Atlantic Avenue/BBP Pier 6 20:57; Red Hook 21:07; Sunset Park 21:22; Bay Ridge 21:27,
+SB MOD OUT,3502,Removed trip,,Wall Street/Pier 11 07:36; Red Hook 07:49,
+SB MOD OUT,3504,Removed trip,,Wall Street/Pier 11 08:06; Red Hook 08:19,
+SB MOD OUT,3506,Removed trip,,Wall Street/Pier 11 08:36; Red Hook 08:49,
+SB MOD OUT,3508,Removed trip,,Wall Street/Pier 11 09:06; Red Hook 09:19,
+SB MOD OUT,3510,Removed trip,,Wall Street/Pier 11 09:36; Red Hook 09:49,
+SB MOD OUT,3512,Removed trip,,Wall Street/Pier 11 10:06; Red Hook 10:19,
+SB MOD OUT,3514,Removed trip,,Wall Street/Pier 11 10:36; Red Hook 10:49,
+SB MOD OUT,3516,Removed trip,,Wall Street/Pier 11 11:06; Red Hook 11:19,
+SB MOD OUT,3518,Removed trip,,Wall Street/Pier 11 11:36; Red Hook 11:49,
+SB MOD OUT,3520,Removed trip,,Wall Street/Pier 11 12:06; Red Hook 12:19,
+SB MOD IN,3101,Time / stop changed,Bay Ridge,08:23,
+SB MOD IN,3101,Time / stop changed,Sunset Park,08:31,
+SB MOD IN,3101,Time / stop changed,Red Hook,08:47,09:23
+SB MOD IN,3101,Time / stop changed,Atlantic Avenue/BBP Pier 6,08:57,09:33
+SB MOD IN,3101,Time / stop changed,Pier 11,09:07,
+SB MOD IN,3101,Time / stop changed,Corlears Hook,09:15,09:51
+SB MOD IN,3101,Time / stop changed,East 34th St,09:24,10:00
+SB MOD IN,3101,Time / stop changed,Governors Island,,09:15
+SB MOD IN,3101,Time / stop changed,Wall Street/Pier 11,,09:43
+SB MOD IN,3103,Time / stop changed,Bay Ridge,10:37,
+SB MOD IN,3103,Time / stop changed,Sunset Park,10:45,
+SB MOD IN,3103,Time / stop changed,Red Hook,11:01,11:06
+SB MOD IN,3103,Time / stop changed,Atlantic Avenue/BBP Pier 6,11:11,11:16
+SB MOD IN,3103,Time / stop changed,Pier 11,11:21,
+SB MOD IN,3103,Time / stop changed,Corlears Hook,11:29,11:34
+SB MOD IN,3103,Time / stop changed,East 34th St,11:38,11:43
+SB MOD IN,3103,Time / stop changed,Governors Island,,10:58
+SB MOD IN,3103,Time / stop changed,Wall Street/Pier 11,,11:26
+SB MOD IN,3105,Time / stop changed,Bay Ridge,12:51,
+SB MOD IN,3105,Time / stop changed,Sunset Park,12:59,
+SB MOD IN,3105,Time / stop changed,Red Hook,13:15,12:49
+SB MOD IN,3105,Time / stop changed,Atlantic Avenue/BBP Pier 6,13:25,12:59
+SB MOD IN,3105,Time / stop changed,Pier 11,13:35,
+SB MOD IN,3105,Time / stop changed,Corlears Hook,13:43,13:17
+SB MOD IN,3105,Time / stop changed,East 34th St,13:52,13:26
+SB MOD IN,3105,Time / stop changed,Governors Island,,12:41
+SB MOD IN,3105,Time / stop changed,Wall Street/Pier 11,,13:09
+SB MOD IN,3107,Time / stop changed,Bay Ridge,15:05,
+SB MOD IN,3107,Time / stop changed,Sunset Park,15:13,
+SB MOD IN,3107,Time / stop changed,Red Hook,15:29,14:32
+SB MOD IN,3107,Time / stop changed,Atlantic Avenue/BBP Pier 6,15:39,14:42
+SB MOD IN,3107,Time / stop changed,Pier 11,15:49,
+SB MOD IN,3107,Time / stop changed,Corlears Hook,15:57,15:00
+SB MOD IN,3107,Time / stop changed,East 34th St,16:06,15:09
+SB MOD IN,3107,Time / stop changed,Governors Island,,14:24
+SB MOD IN,3107,Time / stop changed,Wall Street/Pier 11,,14:52
+SB MOD IN,3109,Time / stop changed,Bay Ridge,17:45,
+SB MOD IN,3109,Time / stop changed,Sunset Park,17:53,
+SB MOD IN,3109,Time / stop changed,Red Hook,18:09,16:15
+SB MOD IN,3109,Time / stop changed,Atlantic Avenue/BBP Pier 6,18:19,16:25
+SB MOD IN,3109,Time / stop changed,Pier 11,18:29,
+SB MOD IN,3109,Time / stop changed,Corlears Hook,18:37,16:43
+SB MOD IN,3109,Time / stop changed,East 34th St,18:46,16:52
+SB MOD IN,3109,Time / stop changed,Governors Island,,16:07
+SB MOD IN,3109,Time / stop changed,Wall Street/Pier 11,,16:35
+SB MOD IN,3111,Time / stop changed,Bay Ridge,19:59,
+SB MOD IN,3111,Time / stop changed,Sunset Park,20:07,
+SB MOD IN,3111,Time / stop changed,Red Hook,20:23,17:58
+SB MOD IN,3111,Time / stop changed,Atlantic Avenue/BBP Pier 6,20:33,18:08
+SB MOD IN,3111,Time / stop changed,Pier 11,20:43,
+SB MOD IN,3111,Time / stop changed,Corlears Hook,20:51,18:26
+SB MOD IN,3111,Time / stop changed,East 34th St,21:00,18:35
+SB MOD IN,3111,Time / stop changed,Governors Island,,17:50
+SB MOD IN,3111,Time / stop changed,Wall Street/Pier 11,,18:18
+SB MOD IN,3113,Added trip,,,Red Hook 19:30; Atlantic Avenue/BBP Pier 6 19:40; Wall Street/Pier 11 19:50; Corlears Hook 19:58; East 34th St 20:07
+SB MOD IN,3115,Added trip,,,Red Hook 21:02; Atlantic Avenue/BBP Pier 6 21:12; Wall Street/Pier 11 21:22; Corlears Hook 21:30; East 34th St 21:39
+SB MOD IN,3202,Time / stop changed,Bay Ridge,09:28,
+SB MOD IN,3202,Time / stop changed,Sunset Park,09:36,
+SB MOD IN,3202,Time / stop changed,Red Hook,09:52,10:14
+SB MOD IN,3202,Time / stop changed,Atlantic Avenue/BBP Pier 6,10:02,10:24
+SB MOD IN,3202,Time / stop changed,Pier 11,10:12,
+SB MOD IN,3202,Time / stop changed,Corlears Hook,10:20,10:42
+SB MOD IN,3202,Time / stop changed,East 34th St,10:29,10:51
+SB MOD IN,3202,Time / stop changed,Governors Island,,10:06
+SB MOD IN,3202,Time / stop changed,Wall Street/Pier 11,,10:34
+SB MOD IN,3204,Time / stop changed,Bay Ridge,11:42,
+SB MOD IN,3204,Time / stop changed,Sunset Park,11:50,
+SB MOD IN,3204,Time / stop changed,Red Hook,12:06,11:57
+SB MOD IN,3204,Time / stop changed,Atlantic Avenue/BBP Pier 6,12:16,12:07
+SB MOD IN,3204,Time / stop changed,Pier 11,12:26,
+SB MOD IN,3204,Time / stop changed,Corlears Hook,12:34,12:25
+SB MOD IN,3204,Time / stop changed,East 34th St,12:43,12:34
+SB MOD IN,3204,Time / stop changed,Governors Island,,11:49
+SB MOD IN,3204,Time / stop changed,Wall Street/Pier 11,,12:17
+SB MOD IN,3206,Time / stop changed,Bay Ridge,13:59,
+SB MOD IN,3206,Time / stop changed,Sunset Park,14:07,
+SB MOD IN,3206,Time / stop changed,Red Hook,14:23,13:40
+SB MOD IN,3206,Time / stop changed,Atlantic Avenue/BBP Pier 6,14:33,13:50
+SB MOD IN,3206,Time / stop changed,Pier 11,14:43,
+SB MOD IN,3206,Time / stop changed,Corlears Hook,14:51,14:08
+SB MOD IN,3206,Time / stop changed,East 34th St,15:00,14:17
+SB MOD IN,3206,Time / stop changed,Governors Island,,13:32
+SB MOD IN,3206,Time / stop changed,Wall Street/Pier 11,,14:00
+SB MOD IN,3208,Time / stop changed,Bay Ridge,16:39,
+SB MOD IN,3208,Time / stop changed,Sunset Park,16:47,
+SB MOD IN,3208,Time / stop changed,Red Hook,17:03,15:23
+SB MOD IN,3208,Time / stop changed,Atlantic Avenue/BBP Pier 6,17:13,15:33
+SB MOD IN,3208,Time / stop changed,Pier 11,17:23,
+SB MOD IN,3208,Time / stop changed,Corlears Hook,17:31,15:51
+SB MOD IN,3208,Time / stop changed,East 34th St,17:40,16:00
+SB MOD IN,3208,Time / stop changed,Governors Island,,15:15
+SB MOD IN,3208,Time / stop changed,Wall Street/Pier 11,,15:43
+SB MOD IN,3210,Time / stop changed,Bay Ridge,18:53,
+SB MOD IN,3210,Time / stop changed,Sunset Park,19:01,
+SB MOD IN,3210,Time / stop changed,Red Hook,19:17,17:06
+SB MOD IN,3210,Time / stop changed,Atlantic Avenue/BBP Pier 6,19:27,17:16
+SB MOD IN,3210,Time / stop changed,Pier 11,19:37,
+SB MOD IN,3210,Time / stop changed,Corlears Hook,19:45,17:34
+SB MOD IN,3210,Time / stop changed,East 34th St,19:54,17:43
+SB MOD IN,3210,Time / stop changed,Governors Island,,16:58
+SB MOD IN,3210,Time / stop changed,Wall Street/Pier 11,,17:26
+SB MOD IN,3212,Time / stop changed,Bay Ridge,21:07,
+SB MOD IN,3212,Time / stop changed,Sunset Park,21:15,
+SB MOD IN,3212,Time / stop changed,Red Hook,21:31,18:38
+SB MOD IN,3212,Time / stop changed,Atlantic Avenue/BBP Pier 6,21:41,18:48
+SB MOD IN,3212,Time / stop changed,Pier 11,21:51,
+SB MOD IN,3212,Time / stop changed,Corlears Hook,21:59,19:06
+SB MOD IN,3212,Time / stop changed,East 34th St,22:08,19:15
+SB MOD IN,3212,Time / stop changed,Wall Street/Pier 11,,18:58
+SB MOD IN,3214,Added trip,,,Red Hook 20:10; Atlantic Avenue/BBP Pier 6 20:20; Wall Street/Pier 11 20:30; Corlears Hook 20:38; East 34th St 20:47
+SB MOD IN,3301,Time / stop changed,Bay Ridge,11:11,
+SB MOD IN,3301,Time / stop changed,Sunset Park,11:19,
+SB MOD IN,3301,Time / stop changed,Red Hook,11:35,07:22
+SB MOD IN,3301,Time / stop changed,Atlantic Avenue/BBP Pier 6,11:45,
+SB MOD IN,3301,Time / stop changed,Pier 11,11:55,
+SB MOD IN,3301,Time / stop changed,Corlears Hook,12:03,
+SB MOD IN,3301,Time / stop changed,East 34th St,12:12,
+SB MOD IN,3301,Time / stop changed,Wall Street/Pier 11,,07:32
+SB MOD IN,3303,Time / stop changed,Bay Ridge,13:25,
+SB MOD IN,3303,Time / stop changed,Sunset Park,13:33,
+SB MOD IN,3303,Time / stop changed,Red Hook,13:49,07:52
+SB MOD IN,3303,Time / stop changed,Atlantic Avenue/BBP Pier 6,13:59,
+SB MOD IN,3303,Time / stop changed,Pier 11,14:09,
+SB MOD IN,3303,Time / stop changed,Corlears Hook,14:17,
+SB MOD IN,3303,Time / stop changed,East 34th St,14:26,
+SB MOD IN,3303,Time / stop changed,Wall Street/Pier 11,,08:02
+SB MOD IN,3305,Time / stop changed,Bay Ridge,16:05,
+SB MOD IN,3305,Time / stop changed,Sunset Park,16:13,
+SB MOD IN,3305,Time / stop changed,Red Hook,16:29,08:22
+SB MOD IN,3305,Time / stop changed,Atlantic Avenue/BBP Pier 6,16:39,
+SB MOD IN,3305,Time / stop changed,Pier 11,16:49,
+SB MOD IN,3305,Time / stop changed,Corlears Hook,16:57,
+SB MOD IN,3305,Time / stop changed,East 34th St,17:06,
+SB MOD IN,3305,Time / stop changed,Wall Street/Pier 11,,08:32
+SB MOD IN,3307,Time / stop changed,Bay Ridge,18:19,
+SB MOD IN,3307,Time / stop changed,Sunset Park,18:27,
+SB MOD IN,3307,Time / stop changed,Red Hook,18:43,08:52
+SB MOD IN,3307,Time / stop changed,Atlantic Avenue/BBP Pier 6,18:53,
+SB MOD IN,3307,Time / stop changed,Pier 11,19:03,
+SB MOD IN,3307,Time / stop changed,Corlears Hook,19:11,
+SB MOD IN,3307,Time / stop changed,East 34th St,19:20,
+SB MOD IN,3307,Time / stop changed,Wall Street/Pier 11,,09:02
+SB MOD IN,3309,Added trip,,,Red Hook 09:22; Wall Street/Pier 11 09:32
+SB MOD IN,3311,Added trip,,,Red Hook 09:52; Wall Street/Pier 11 10:02
+SB MOD IN,3313,Added trip,,,Red Hook 10:22; Wall Street/Pier 11 10:32
+SB MOD IN,3315,Added trip,,,Red Hook 10:52; Wall Street/Pier 11 11:02
+SB MOD IN,3317,Added trip,,,Red Hook 11:22; Wall Street/Pier 11 11:32
+SB MOD IN,3319,Added trip,,,Red Hook 11:52; Wall Street/Pier 11 12:02
+SB MOD IN,3321,Added trip,,,Red Hook 12:22; Wall Street/Pier 11 12:32
+SB MOD IN,3402,Removed trip,,Bay Ridge 12:12; Sunset Park 12:20; Red Hook 12:36; Atlantic Avenue/BBP Pier 6 12:46; Pier 11 12:56; Corlears Hook 13:04; East 34th St 13:13,
+SB MOD IN,3404,Removed trip,,Bay Ridge 14:27; Sunset Park 14:35; Red Hook 14:51; Atlantic Avenue/BBP Pier 6 15:01; Pier 11 15:11; Corlears Hook 15:19; East 34th St 15:28,
+SB MOD IN,3406,Removed trip,,Bay Ridge 17:05; Sunset Park 17:13; Red Hook 17:29; Atlantic Avenue/BBP Pier 6 17:39; Pier 11 17:49; Corlears Hook 17:57; East 34th St 18:06,
+SB MOD IN,3408,Removed trip,,Bay Ridge 19:19; Sunset Park 19:27; Red Hook 19:43; Atlantic Avenue/BBP Pier 6 19:53; Pier 11 20:03; Corlears Hook 20:11; East 34th St 20:20,
+SB MOD IN,3501,Removed trip,,Red Hook 07:22; Pier 11 07:34,
+SB MOD IN,3503,Removed trip,,Red Hook 07:52; Pier 11 08:04,
+SB MOD IN,3505,Removed trip,,Red Hook 08:22; Pier 11 08:34,
+SB MOD IN,3507,Removed trip,,Red Hook 08:52; Pier 11 09:04,
+SB MOD IN,3509,Removed trip,,Red Hook 09:22; Pier 11 09:34,
+SB MOD IN,3511,Removed trip,,Red Hook 09:52; Pier 11 10:04,
+SB MOD IN,3513,Removed trip,,Red Hook 10:22; Pier 11 10:34,
+SB MOD IN,3515,Removed trip,,Red Hook 10:52; Pier 11 11:04,
+SB MOD IN,3517,Removed trip,,Red Hook 11:22; Pier 11 11:34,
+SB MOD IN,3519,Removed trip,,Red Hook 11:52; Pier 11 12:04,
+SB MOD IN,3521,Removed trip,,Red Hook 12:22; Pier 11 12:34,
+STG WKND OUT,8102,Time / stop changed,Pier 79,10:33,10:30
+STG WKND OUT,8102,Time / stop changed,Battery Park City,10:48,10:45
+STG WKND OUT,8102,Time / stop changed,St. George,11:11,11:07
+STG WKND OUT,8102,Time / stop changed,Bay Ridge,11:22,11:18
+STG WKND OUT,8102,Time / stop changed,Atlantic Avenue/BBP Pier 6,11:39,11:35
+STG WKND OUT,8102,Time / stop changed,Wall Street/Pier 11,11:43,11:39
+STG WKND OUT,8104,Time / stop changed,Pier 79,13:05,13:02
+STG WKND OUT,8104,Time / stop changed,Battery Park City,13:20,13:17
+STG WKND OUT,8104,Time / stop changed,St. George,13:43,13:39
+STG WKND OUT,8104,Time / stop changed,Bay Ridge,13:54,13:50
+STG WKND OUT,8104,Time / stop changed,Atlantic Avenue/BBP Pier 6,14:11,14:07
+STG WKND OUT,8104,Time / stop changed,Wall Street/Pier 11,14:15,14:11
+STG WKND OUT,8106,Time / stop changed,Pier 79,15:49,15:34
+STG WKND OUT,8106,Time / stop changed,Battery Park City,16:04,15:49
+STG WKND OUT,8106,Time / stop changed,St. George,16:27,16:11
+STG WKND OUT,8106,Time / stop changed,Bay Ridge,16:38,16:22
+STG WKND OUT,8106,Time / stop changed,Atlantic Avenue/BBP Pier 6,16:55,16:39
+STG WKND OUT,8106,Time / stop changed,Wall Street/Pier 11,16:59,16:43
+STG WKND OUT,8108,Time / stop changed,Pier 79,18:33,18:06
+STG WKND OUT,8108,Time / stop changed,Battery Park City,18:48,18:21
+STG WKND OUT,8108,Time / stop changed,St. George,19:11,18:43
+STG WKND OUT,8108,Time / stop changed,Bay Ridge,19:22,18:54
+STG WKND OUT,8108,Time / stop changed,Atlantic Avenue/BBP Pier 6,19:39,19:11
+STG WKND OUT,8108,Time / stop changed,Wall Street/Pier 11,19:43,19:15
+STG WKND OUT,8110,Time / stop changed,Pier 79,21:05,20:36
+STG WKND OUT,8110,Time / stop changed,Battery Park City,21:20,20:51
+STG WKND OUT,8110,Time / stop changed,St. George,21:43,21:13
+STG WKND OUT,8110,Time / stop changed,Bay Ridge,21:54,21:24
+STG WKND OUT,8110,Time / stop changed,Atlantic Avenue/BBP Pier 6,22:11,21:41
+STG WKND OUT,8110,Time / stop changed,Wall Street/Pier 11,22:15,21:45
+STG WKND OUT,8201,Time / stop changed,St. George,09:42,09:41
+STG WKND OUT,8201,Time / stop changed,Bay Ridge,09:53,09:52
+STG WKND OUT,8201,Time / stop changed,Atlantic Avenue/BBP Pier 6,10:10,10:09
+STG WKND OUT,8201,Time / stop changed,Wall Street/Pier 11,10:14,10:13
+STG WKND OUT,8203,Time / stop changed,Pier 79,11:36,11:46
+STG WKND OUT,8203,Time / stop changed,Battery Park City,11:51,12:01
+STG WKND OUT,8203,Time / stop changed,St. George,12:14,12:23
+STG WKND OUT,8203,Time / stop changed,Bay Ridge,12:25,12:34
+STG WKND OUT,8203,Time / stop changed,Atlantic Avenue/BBP Pier 6,12:42,12:51
+STG WKND OUT,8203,Time / stop changed,Wall Street/Pier 11,12:46,12:55
+STG WKND OUT,8205,Time / stop changed,Pier 79,14:21,14:18
+STG WKND OUT,8205,Time / stop changed,Battery Park City,14:36,14:33
+STG WKND OUT,8205,Time / stop changed,St. George,14:59,14:55
+STG WKND OUT,8205,Time / stop changed,Bay Ridge,15:10,15:06
+STG WKND OUT,8205,Time / stop changed,Atlantic Avenue/BBP Pier 6,15:27,15:23
+STG WKND OUT,8205,Time / stop changed,Wall Street/Pier 11,15:31,15:27
+STG WKND OUT,8207,Time / stop changed,Pier 79,17:17,16:50
+STG WKND OUT,8207,Time / stop changed,Battery Park City,17:32,17:05
+STG WKND OUT,8207,Time / stop changed,St. George,17:55,17:27
+STG WKND OUT,8207,Time / stop changed,Bay Ridge,18:06,17:38
+STG WKND OUT,8207,Time / stop changed,Atlantic Avenue/BBP Pier 6,18:23,17:55
+STG WKND OUT,8207,Time / stop changed,Wall Street/Pier 11,18:27,17:59
+STG WKND OUT,8209,Time / stop changed,Pier 79,19:49,19:22
+STG WKND OUT,8209,Time / stop changed,Battery Park City,20:04,19:37
+STG WKND OUT,8209,Time / stop changed,St. George,20:27,19:59
+STG WKND OUT,8209,Time / stop changed,Bay Ridge,20:38,20:10
+STG WKND OUT,8209,Time / stop changed,Atlantic Avenue/BBP Pier 6,20:55,20:27
+STG WKND OUT,8209,Time / stop changed,Wall Street/Pier 11,20:59,20:31
+STG WKND OUT,8301,Time / stop changed,Pier 79,09:55,09:54
+STG WKND OUT,8301,Time / stop changed,Battery Park City,10:10,10:09
+STG WKND OUT,8301,Time / stop changed,St. George,10:33,10:31
+STG WKND OUT,8301,Time / stop changed,Bay Ridge,10:44,10:42
+STG WKND OUT,8301,Time / stop changed,Atlantic Avenue/BBP Pier 6,11:01,10:59
+STG WKND OUT,8301,Time / stop changed,Wall Street/Pier 11,11:05,11:03
+STG WKND OUT,8303,Time / stop changed,Pier 79,12:27,12:24
+STG WKND OUT,8303,Time / stop changed,Battery Park City,12:42,12:39
+STG WKND OUT,8303,Time / stop changed,St. George,13:05,13:01
+STG WKND OUT,8303,Time / stop changed,Bay Ridge,13:16,13:12
+STG WKND OUT,8303,Time / stop changed,Atlantic Avenue/BBP Pier 6,13:33,13:29
+STG WKND OUT,8303,Time / stop changed,Wall Street/Pier 11,13:37,13:33
+STG WKND OUT,8305,Time / stop changed,Pier 79,14:59,14:56
+STG WKND OUT,8305,Time / stop changed,Battery Park City,15:14,15:11
+STG WKND OUT,8305,Time / stop changed,St. George,15:37,15:33
+STG WKND OUT,8305,Time / stop changed,Bay Ridge,15:48,15:44
+STG WKND OUT,8305,Time / stop changed,Atlantic Avenue/BBP Pier 6,16:05,16:01
+STG WKND OUT,8305,Time / stop changed,Wall Street/Pier 11,16:09,16:05
+STG WKND OUT,8307,Time / stop changed,Pier 79,17:55,17:28
+STG WKND OUT,8307,Time / stop changed,Battery Park City,18:10,17:43
+STG WKND OUT,8307,Time / stop changed,St. George,18:33,18:05
+STG WKND OUT,8307,Time / stop changed,Bay Ridge,18:44,18:16
+STG WKND OUT,8307,Time / stop changed,Atlantic Avenue/BBP Pier 6,19:01,18:33
+STG WKND OUT,8307,Time / stop changed,Wall Street/Pier 11,19:05,18:37
+STG WKND OUT,8309,Time / stop changed,Pier 79,20:27,20:00
+STG WKND OUT,8309,Time / stop changed,Battery Park City,20:42,20:15
+STG WKND OUT,8309,Time / stop changed,St. George,21:05,20:37
+STG WKND OUT,8309,Time / stop changed,Bay Ridge,21:16,20:48
+STG WKND OUT,8309,Time / stop changed,Atlantic Avenue/BBP Pier 6,21:33,21:05
+STG WKND OUT,8309,Time / stop changed,Wall Street/Pier 11,21:37,21:09
+STG WKND OUT,8401,Time / stop changed,Pier 79,11:04,11:08
+STG WKND OUT,8401,Time / stop changed,Battery Park City,11:19,11:23
+STG WKND OUT,8401,Time / stop changed,St. George,11:42,11:45
+STG WKND OUT,8401,Time / stop changed,Bay Ridge,11:53,11:56
+STG WKND OUT,8401,Time / stop changed,Atlantic Avenue/BBP Pier 6,12:10,12:13
+STG WKND OUT,8401,Time / stop changed,Wall Street/Pier 11,12:14,12:17
+STG WKND OUT,8403,Time / stop changed,Pier 79,13:43,13:40
+STG WKND OUT,8403,Time / stop changed,Battery Park City,13:58,13:55
+STG WKND OUT,8403,Time / stop changed,St. George,14:21,14:17
+STG WKND OUT,8403,Time / stop changed,Bay Ridge,14:32,14:28
+STG WKND OUT,8403,Time / stop changed,Atlantic Avenue/BBP Pier 6,14:49,14:45
+STG WKND OUT,8403,Time / stop changed,Wall Street/Pier 11,14:53,14:49
+STG WKND OUT,8405,Time / stop changed,Pier 79,16:39,16:12
+STG WKND OUT,8405,Time / stop changed,Battery Park City,16:54,16:27
+STG WKND OUT,8405,Time / stop changed,St. George,17:17,16:49
+STG WKND OUT,8405,Time / stop changed,Bay Ridge,17:28,17:00
+STG WKND OUT,8405,Time / stop changed,Atlantic Avenue/BBP Pier 6,17:45,17:17
+STG WKND OUT,8405,Time / stop changed,Wall Street/Pier 11,17:49,17:21
+STG WKND OUT,8407,Time / stop changed,Pier 79,19:11,18:44
+STG WKND OUT,8407,Time / stop changed,Battery Park City,19:26,18:59
+STG WKND OUT,8407,Time / stop changed,St. George,19:49,19:21
+STG WKND OUT,8407,Time / stop changed,Bay Ridge,20:00,19:32
+STG WKND OUT,8407,Time / stop changed,Atlantic Avenue/BBP Pier 6,20:17,19:49
+STG WKND OUT,8407,Time / stop changed,Wall Street/Pier 11,20:21,19:53
+STG WKND IN,8101,Time / stop changed,Wall Street/Pier 11,09:17,08:53
+STG WKND IN,8101,Time / stop changed,Atlantic Avenue/BBP Pier 6,09:24,09:00
+STG WKND IN,8101,Time / stop changed,Bay Ridge,09:41,09:17
+STG WKND IN,8101,Time / stop changed,St. George,09:54,09:30
+STG WKND IN,8101,Time / stop changed,Battery Park City,10:15,09:50
+STG WKND IN,8101,Time / stop changed,Pier 79,10:27,10:02
+STG WKND IN,8103,Time / stop changed,Wall Street/Pier 11,11:49,11:45
+STG WKND IN,8103,Time / stop changed,Atlantic Avenue/BBP Pier 6,11:56,11:52
+STG WKND IN,8103,Time / stop changed,Bay Ridge,12:13,12:09
+STG WKND IN,8103,Time / stop changed,St. George,12:26,12:22
+STG WKND IN,8103,Time / stop changed,Battery Park City,12:47,12:42
+STG WKND IN,8103,Time / stop changed,Pier 79,12:59,12:54
+STG WKND IN,8105,Time / stop changed,Wall Street/Pier 11,14:21,14:17
+STG WKND IN,8105,Time / stop changed,Atlantic Avenue/BBP Pier 6,14:28,14:24
+STG WKND IN,8105,Time / stop changed,Bay Ridge,14:45,14:41
+STG WKND IN,8105,Time / stop changed,St. George,14:58,14:54
+STG WKND IN,8105,Time / stop changed,Battery Park City,15:19,15:14
+STG WKND IN,8105,Time / stop changed,Pier 79,15:31,15:26
+STG WKND IN,8107,Time / stop changed,Wall Street/Pier 11,17:05,16:49
+STG WKND IN,8107,Time / stop changed,Atlantic Avenue/BBP Pier 6,17:12,16:56
+STG WKND IN,8107,Time / stop changed,Bay Ridge,17:29,17:13
+STG WKND IN,8107,Time / stop changed,St. George,17:42,17:26
+STG WKND IN,8107,Time / stop changed,Battery Park City,18:03,17:46
+STG WKND IN,8107,Time / stop changed,Pier 79,18:15,17:58
+STG WKND IN,8109,Time / stop changed,Wall Street/Pier 11,19:49,19:21
+STG WKND IN,8109,Time / stop changed,Atlantic Avenue/BBP Pier 6,19:56,19:28
+STG WKND IN,8109,Time / stop changed,Bay Ridge,20:13,19:45
+STG WKND IN,8109,Time / stop changed,St. George,20:26,19:58
+STG WKND IN,8109,Time / stop changed,Battery Park City,20:47,20:18
+STG WKND IN,8109,Time / stop changed,Pier 79,20:59,20:30
+STG WKND IN,8202,Time / stop changed,Wall Street/Pier 11,10:20,10:19
+STG WKND IN,8202,Time / stop changed,Atlantic Avenue/BBP Pier 6,10:27,10:26
+STG WKND IN,8202,Time / stop changed,Bay Ridge,10:44,10:43
+STG WKND IN,8202,Time / stop changed,St. George,10:57,10:56
+STG WKND IN,8202,Time / stop changed,Battery Park City,11:18,11:16
+STG WKND IN,8202,Time / stop changed,Pier 79,11:30,11:28
+STG WKND IN,8204,Time / stop changed,Wall Street/Pier 11,12:52,13:01
+STG WKND IN,8204,Time / stop changed,Atlantic Avenue/BBP Pier 6,12:59,13:08
+STG WKND IN,8204,Time / stop changed,Bay Ridge,13:16,13:25
+STG WKND IN,8204,Time / stop changed,St. George,13:29,13:38
+STG WKND IN,8204,Time / stop changed,Battery Park City,13:50,13:58
+STG WKND IN,8204,Time / stop changed,Pier 79,14:02,14:10
+STG WKND IN,8206,Time / stop changed,Wall Street/Pier 11,15:37,15:33
+STG WKND IN,8206,Time / stop changed,Atlantic Avenue/BBP Pier 6,15:44,15:40
+STG WKND IN,8206,Time / stop changed,Bay Ridge,16:01,15:57
+STG WKND IN,8206,Time / stop changed,St. George,16:14,16:10
+STG WKND IN,8206,Time / stop changed,Battery Park City,16:35,16:30
+STG WKND IN,8206,Time / stop changed,Pier 79,16:47,16:42
+STG WKND IN,8208,Time / stop changed,Wall Street/Pier 11,18:33,18:05
+STG WKND IN,8208,Time / stop changed,Atlantic Avenue/BBP Pier 6,18:40,18:12
+STG WKND IN,8208,Time / stop changed,Bay Ridge,18:57,18:29
+STG WKND IN,8208,Time / stop changed,St. George,19:10,18:42
+STG WKND IN,8208,Time / stop changed,Battery Park City,19:31,19:02
+STG WKND IN,8208,Time / stop changed,Pier 79,19:43,19:14
+STG WKND IN,8210,Time / stop changed,Wall Street/Pier 11,21:05,20:37
+STG WKND IN,8210,Time / stop changed,Atlantic Avenue/BBP Pier 6,21:12,20:44
+STG WKND IN,8210,Time / stop changed,Bay Ridge,21:29,21:01
+STG WKND IN,8210,Time / stop changed,St. George,21:42,21:14
+STG WKND IN,8210,Time / stop changed,Battery Park City,22:03,21:34
+STG WKND IN,8210,Time / stop changed,Pier 79,22:15,21:46
+STG WKND IN,8302,Time / stop changed,Wall Street/Pier 11,11:11,11:09
+STG WKND IN,8302,Time / stop changed,Atlantic Avenue/BBP Pier 6,11:18,11:16
+STG WKND IN,8302,Time / stop changed,Bay Ridge,11:35,11:33
+STG WKND IN,8302,Time / stop changed,St. George,11:48,11:46
+STG WKND IN,8302,Time / stop changed,Battery Park City,12:09,12:06
+STG WKND IN,8302,Time / stop changed,Pier 79,12:21,12:18
+STG WKND IN,8304,Time / stop changed,Wall Street/Pier 11,13:43,13:39
+STG WKND IN,8304,Time / stop changed,Atlantic Avenue/BBP Pier 6,13:50,13:46
+STG WKND IN,8304,Time / stop changed,Bay Ridge,14:07,14:03
+STG WKND IN,8304,Time / stop changed,St. George,14:20,14:16
+STG WKND IN,8304,Time / stop changed,Battery Park City,14:41,14:36
+STG WKND IN,8304,Time / stop changed,Pier 79,14:53,14:48
+STG WKND IN,8306,Time / stop changed,Wall Street/Pier 11,16:15,16:11
+STG WKND IN,8306,Time / stop changed,Atlantic Avenue/BBP Pier 6,16:22,16:18
+STG WKND IN,8306,Time / stop changed,Bay Ridge,16:39,16:35
+STG WKND IN,8306,Time / stop changed,St. George,16:52,16:48
+STG WKND IN,8306,Time / stop changed,Battery Park City,17:13,17:08
+STG WKND IN,8306,Time / stop changed,Pier 79,17:25,17:20
+STG WKND IN,8308,Time / stop changed,Wall Street/Pier 11,19:11,18:43
+STG WKND IN,8308,Time / stop changed,Atlantic Avenue/BBP Pier 6,19:18,18:50
+STG WKND IN,8308,Time / stop changed,Bay Ridge,19:35,19:07
+STG WKND IN,8308,Time / stop changed,St. George,19:48,19:20
+STG WKND IN,8308,Time / stop changed,Battery Park City,20:09,19:40
+STG WKND IN,8308,Time / stop changed,Pier 79,20:21,19:52
+STG WKND IN,8402,Time / stop changed,Wall Street/Pier 11,12:20,12:23
+STG WKND IN,8402,Time / stop changed,Atlantic Avenue/BBP Pier 6,12:27,12:30
+STG WKND IN,8402,Time / stop changed,Bay Ridge,12:44,12:47
+STG WKND IN,8402,Time / stop changed,St. George,12:57,13:00
+STG WKND IN,8402,Time / stop changed,Battery Park City,13:18,13:20
+STG WKND IN,8402,Time / stop changed,Pier 79,13:30,13:32
+STG WKND IN,8404,Time / stop changed,Wall Street/Pier 11,14:59,14:55
+STG WKND IN,8404,Time / stop changed,Atlantic Avenue/BBP Pier 6,15:06,15:02
+STG WKND IN,8404,Time / stop changed,Bay Ridge,15:23,15:19
+STG WKND IN,8404,Time / stop changed,St. George,15:36,15:32
+STG WKND IN,8404,Time / stop changed,Battery Park City,15:57,15:52
+STG WKND IN,8404,Time / stop changed,Pier 79,16:09,16:04
+STG WKND IN,8406,Time / stop changed,Wall Street/Pier 11,17:55,17:27
+STG WKND IN,8406,Time / stop changed,Atlantic Avenue/BBP Pier 6,18:02,17:34
+STG WKND IN,8406,Time / stop changed,Bay Ridge,18:19,17:51
+STG WKND IN,8406,Time / stop changed,St. George,18:32,18:04
+STG WKND IN,8406,Time / stop changed,Battery Park City,18:53,18:24
+STG WKND IN,8406,Time / stop changed,Pier 79,19:05,18:36
+STG WKND IN,8408,Time / stop changed,Wall Street/Pier 11,20:27,19:59
+STG WKND IN,8408,Time / stop changed,Atlantic Avenue/BBP Pier 6,20:34,20:06
+STG WKND IN,8408,Time / stop changed,Bay Ridge,20:51,20:23
+STG WKND IN,8408,Time / stop changed,St. George,21:04,20:36
+STG WKND IN,8408,Time / stop changed,Battery Park City,21:25,20:56
+STG WKND IN,8408,Time / stop changed,Pier 79,21:37,21:08
+GI WKND,7101,Sheet absent in fall (not proof of cancellation),,Depart 10:19,
+GI WKND,7103,Sheet absent in fall (not proof of cancellation),,Depart 10:49,
+GI WKND,7105,Sheet absent in fall (not proof of cancellation),,Depart 11:19,
+GI WKND,7107,Sheet absent in fall (not proof of cancellation),,Depart 11:49,
+GI WKND,7109,Sheet absent in fall (not proof of cancellation),,Depart 12:19,
+GI WKND,7111,Sheet absent in fall (not proof of cancellation),,Depart 12:49,
+GI WKND,7113,Sheet absent in fall (not proof of cancellation),,Depart 13:19,
+GI WKND,7115,Sheet absent in fall (not proof of cancellation),,Depart 13:49,
+GI WKND,7117,Sheet absent in fall (not proof of cancellation),,Depart 14:19,
+GI WKND,7119,Sheet absent in fall (not proof of cancellation),,Depart 14:49,
+GI WKND,7121,Sheet absent in fall (not proof of cancellation),,Depart 15:19,
+GI WKND,7123,Sheet absent in fall (not proof of cancellation),,Depart 15:49,
+GI WKND,7125,Sheet absent in fall (not proof of cancellation),,Depart 16:19,
+GI WKND,7127,Sheet absent in fall (not proof of cancellation),,Depart 16:49,
+GI WKND,7129,Sheet absent in fall (not proof of cancellation),,Depart 17:19,
+GI WKND,7131,Sheet absent in fall (not proof of cancellation),,Depart 17:49,
+RR OUT,9101,Sheet absent in fall (not proof of cancellation),,Long Island City 09:30; Greenpoint 09:41; Rockaway 10:46,
+RR OUT,9103,Sheet absent in fall (not proof of cancellation),,Long Island City 12:30; Greenpoint 12:41; Rockaway 13:46,
+RR OUT,9105,Sheet absent in fall (not proof of cancellation),,Long Island City 16:00; Greenpoint 16:11; Rockaway 17:16,
+RR IN,9102,Sheet absent in fall (not proof of cancellation),,Rockaway 11:00; Greenpoint 12:12; Long Island City 12:16,
+RR IN,9104,Sheet absent in fall (not proof of cancellation),,Rockaway 14:30; Greenpoint 15:42; Long Island City 15:46,
+RR IN,9106,Sheet absent in fall (not proof of cancellation),,Rockaway 17:30; Greenpoint 18:42; Long Island City 18:46,
+SB WKDY OUT P101,3102,New sheet / variant,,,E. 34th Street 07:18; Corlears Hook 07:30; Wall Street/Pier 11 07:30; Atlantic Avenue/BBP Pier 6 07:46; Red Hook 07:54; Governors Island - PIER 101 07:59
+SB WKDY OUT P101,3104,New sheet / variant,,,E. 34th Street 08:50; Corlears Hook 09:02; Wall Street/Pier 11 09:02; Atlantic Avenue/BBP Pier 6 09:18; Red Hook 09:26; Governors Island - PIER 101 09:31
+SB WKDY OUT P101,3106,New sheet / variant,,,E. 34th Street 10:22; Corlears Hook 10:34; Wall Street/Pier 11 10:34; Atlantic Avenue/BBP Pier 6 10:52; Red Hook 11:00; Governors Island - PIER 101 11:05
+SB WKDY OUT P101,3108,New sheet / variant,,,E. 34th Street 11:59; Corlears Hook 12:11; Wall Street/Pier 11 12:11; Atlantic Avenue/BBP Pier 6 12:29; Red Hook 12:37; Governors Island - PIER 101 12:42
+SB WKDY OUT P101,3110,New sheet / variant,,,E. 34th Street 13:36; Corlears Hook 13:48; Wall Street/Pier 11 13:48; Atlantic Avenue/BBP Pier 6 14:06; Red Hook 14:14; Governors Island - PIER 101 14:19
+SB WKDY OUT P101,3112,New sheet / variant,,,E. 34th Street 15:13; Corlears Hook 15:25; Wall Street/Pier 11 15:25; Atlantic Avenue/BBP Pier 6 15:43; Red Hook 15:51; Governors Island - PIER 101 15:56
+SB WKDY OUT P101,3114,New sheet / variant,,,E. 34th Street 16:50; Corlears Hook 17:02; Wall Street/Pier 11 17:02; Atlantic Avenue/BBP Pier 6 17:20; Red Hook 17:28; Governors Island - PIER 101 17:33
+SB WKDY OUT P101,3116,New sheet / variant,,,E. 34th Street 18:29; Corlears Hook 18:41; Wall Street/Pier 11 18:41; Atlantic Avenue/BBP Pier 6 18:59; Red Hook 19:04
+SB WKDY OUT P101,3118,New sheet / variant,,,E. 34th Street 19:57; Corlears Hook 20:09; Wall Street/Pier 11 20:09; Atlantic Avenue/BBP Pier 6 20:27; Red Hook 20:32
+SB WKDY OUT P101,3201,New sheet / variant,,,E. 34th Street 06:33; Corlears Hook 06:45; Wall Street/Pier 11 06:54; Atlantic Avenue/BBP Pier 6 07:01; Red Hook 07:09; Governors Island - PIER 101 07:14
+SB WKDY OUT P101,3203,New sheet / variant,,,E. 34th Street 08:05; Corlears Hook 08:17; Wall Street/Pier 11 08:17; Atlantic Avenue/BBP Pier 6 08:33; Red Hook 08:41; Governors Island - PIER 101 08:46
+SB WKDY OUT P101,3205,New sheet / variant,,,E. 34th Street 09:37; Corlears Hook 09:49; Wall Street/Pier 11 09:49; Atlantic Avenue/BBP Pier 6 10:05; Red Hook 10:13; Governors Island - PIER 101 10:18
+SB WKDY OUT P101,3207,New sheet / variant,,,E. 34th Street 11:09; Corlears Hook 11:21; Wall Street/Pier 11 11:21; Atlantic Avenue/BBP Pier 6 11:39; Red Hook 11:47; Governors Island - PIER 101 11:52
+SB WKDY OUT P101,3209,New sheet / variant,,,E. 34th Street 12:46; Corlears Hook 12:58; Wall Street/Pier 11 12:58; Atlantic Avenue/BBP Pier 6 13:16; Red Hook 13:24; Governors Island - PIER 101 13:29
+SB WKDY OUT P101,3211,New sheet / variant,,,E. 34th Street 14:23; Corlears Hook 14:35; Wall Street/Pier 11 14:35; Atlantic Avenue/BBP Pier 6 14:53; Red Hook 15:01; Governors Island - PIER 101 15:06
+SB WKDY OUT P101,3213,New sheet / variant,,,E. 34th Street 16:00; Corlears Hook 16:12; Wall Street/Pier 11 16:12; Atlantic Avenue/BBP Pier 6 16:30; Red Hook 16:38; Governors Island - PIER 101 16:43
+SB WKDY OUT P101,3215,New sheet / variant,,,E. 34th Street 17:37; Corlears Hook 17:49; Wall Street/Pier 11 17:49; Atlantic Avenue/BBP Pier 6 18:07; Red Hook 18:12
+SB WKDY OUT P101,3217,New sheet / variant,,,E. 34th Street 19:05; Corlears Hook 19:17; Wall Street/Pier 11 19:17; Atlantic Avenue/BBP Pier 6 19:35; Red Hook 19:40
+SB WKDY OUT P101,3219,New sheet / variant,,,E. 34th Street 20:32; Corlears Hook 20:44; Wall Street/Pier 11 20:44; Atlantic Avenue/BBP Pier 6 21:02; Red Hook 21:07
+SB WKDY IN P101,3101,New sheet / variant,,,Red Hook 06:40; Atlantic Avenue/BBP Pier 6 06:48; Wall Street/Pier 11 06:56; Corlears Hook 07:03; E. 34th Street 07:12
+SB WKDY IN P101,3103,New sheet / variant,,,Governors Island - Pier 101 08:04; Red Hook 08:12; Atlantic Avenue/BBP Pier 6 08:20; Wall Street/Pier 11 08:28; Corlears Hook 08:35; E. 34th Street 08:44
+SB WKDY IN P101,3105,New sheet / variant,,,Governors Island - Pier 101 09:36; Red Hook 09:44; Atlantic Avenue/BBP Pier 6 09:52; Wall Street/Pier 11 10:00; Corlears Hook 10:07; E. 34th Street 10:16
+SB WKDY IN P101,3107,New sheet / variant,,,Governors Island - Pier 101 11:10; Red Hook 11:18; Atlantic Avenue/BBP Pier 6 11:27; Wall Street/Pier 11 11:36; Corlears Hook 11:44; E. 34th Street 11:53
+SB WKDY IN P101,3109,New sheet / variant,,,Governors Island - Pier 101 12:47; Red Hook 12:55; Atlantic Avenue/BBP Pier 6 13:04; Wall Street/Pier 11 13:13; Corlears Hook 13:21; E. 34th Street 13:30
+SB WKDY IN P101,3111,New sheet / variant,,,Governors Island - Pier 101 14:24; Red Hook 14:32; Atlantic Avenue/BBP Pier 6 14:41; Wall Street/Pier 11 14:50; Corlears Hook 14:58; E. 34th Street 15:07
+SB WKDY IN P101,3113,New sheet / variant,,,Governors Island - Pier 101 16:01; Red Hook 16:09; Atlantic Avenue/BBP Pier 6 16:18; Wall Street/Pier 11 16:27; Corlears Hook 16:35; E. 34th Street 16:44
+SB WKDY IN P101,3115,New sheet / variant,,,Governors Island - Pier 101 17:39; Red Hook 17:48; Atlantic Avenue/BBP Pier 6 17:57; Wall Street/Pier 11 18:06; Corlears Hook 18:14; E. 34th Street 18:23
+SB WKDY IN P101,3117,New sheet / variant,,,Red Hook 19:16; Atlantic Avenue/BBP Pier 6 19:25; Wall Street/Pier 11 19:34; Corlears Hook 19:42; E. 34th Street 19:51
+SB WKDY IN P101,3119,New sheet / variant,,,Red Hook 20:43; Atlantic Avenue/BBP Pier 6 20:52; Wall Street/Pier 11 21:01; Corlears Hook 21:09; E. 34th Street 21:18
+SB WKDY IN P101,3202,New sheet / variant,,,Governors Island - Pier 101 07:19; Red Hook 07:27; Atlantic Avenue/BBP Pier 6 07:35; Wall Street/Pier 11 07:43; Corlears Hook 07:50; E. 34th Street 07:59
+SB WKDY IN P101,3204,New sheet / variant,,,Governors Island - Pier 101 08:51; Red Hook 08:59; Atlantic Avenue/BBP Pier 6 09:07; Wall Street/Pier 11 09:15; Corlears Hook 09:22; E. 34th Street 09:31
+SB WKDY IN P101,3206,New sheet / variant,,,Governors Island - Pier 101 10:23; Red Hook 10:31; Atlantic Avenue/BBP Pier 6 10:39; Wall Street/Pier 11 10:47; Corlears Hook 10:54; E. 34th Street 11:03
+SB WKDY IN P101,3208,New sheet / variant,,,Governors Island - Pier 101 11:57; Red Hook 12:05; Atlantic Avenue/BBP Pier 6 12:14; Wall Street/Pier 11 12:23; Corlears Hook 12:31; E. 34th Street 12:40
+SB WKDY IN P101,3210,New sheet / variant,,,Governors Island - Pier 101 13:34; Red Hook 13:42; Atlantic Avenue/BBP Pier 6 13:51; Wall Street/Pier 11 14:00; Corlears Hook 14:08; E. 34th Street 14:17
+SB WKDY IN P101,3212,New sheet / variant,,,Governors Island - Pier 101 15:11; Red Hook 15:19; Atlantic Avenue/BBP Pier 6 15:28; Wall Street/Pier 11 15:37; Corlears Hook 15:45; E. 34th Street 15:54
+SB WKDY IN P101,3214,New sheet / variant,,,Governors Island - Pier 101 16:48; Red Hook 16:56; Atlantic Avenue/BBP Pier 6 17:05; Wall Street/Pier 11 17:14; Corlears Hook 17:22; E. 34th Street 17:31
+SB WKDY IN P101,3216,New sheet / variant,,,Red Hook 18:24; Atlantic Avenue/BBP Pier 6 18:33; Wall Street/Pier 11 18:42; Corlears Hook 18:50; E. 34th Street 18:59
+SB WKDY IN P101,3218,New sheet / variant,,,Red Hook 19:51; Atlantic Avenue/BBP Pier 6 20:00; Wall Street/Pier 11 20:09; Corlears Hook 20:17; E. 34th Street 20:26
+SB WKND OUT P101,3102,New sheet / variant,,,E. 34th Street 10:07; Corlears Hook 10:19; Wall Street/Pier 11 10:30; Atlantic Avenue/BBP Pier 6 10:38; Red Hook 10:48; Governors Island - Pier 101 10:54
+SB WKND OUT P101,3104,New sheet / variant,,,E. 34th Street 11:51; Corlears Hook 12:03; Wall Street/Pier 11 12:14; Atlantic Avenue/BBP Pier 6 12:22; Red Hook 12:32; Governors Island - Pier 101 12:38
+SB WKND OUT P101,3106,New sheet / variant,,,E. 34th Street 13:35; Corlears Hook 13:47; Wall Street/Pier 11 13:58; Atlantic Avenue/BBP Pier 6 14:06; Red Hook 14:16; Governors Island - Pier 101 14:22
+SB WKND OUT P101,3108,New sheet / variant,,,E. 34th Street 15:19; Corlears Hook 15:31; Wall Street/Pier 11 15:42; Atlantic Avenue/BBP Pier 6 15:50; Red Hook 16:00; Governors Island - Pier 101 16:06
+SB WKND OUT P101,3110,New sheet / variant,,,E. 34th Street 17:03; Corlears Hook 17:15; Wall Street/Pier 11 17:26; Atlantic Avenue/BBP Pier 6 17:34; Red Hook 17:40
+SB WKND OUT P101,3112,New sheet / variant,,,E. 34th Street 18:36; Corlears Hook 18:48; Wall Street/Pier 11 18:59; Atlantic Avenue/BBP Pier 6 19:07; Red Hook 19:13
+SB WKND OUT P101,3114,New sheet / variant,,,E. 34th Street 20:09; Corlears Hook 20:21; Wall Street/Pier 11 20:32; Atlantic Avenue/BBP Pier 6 20:40; Red Hook 20:46
+SB WKND OUT P101,3201,New sheet / variant,,,E. 34th Street 09:14; Corlears Hook 09:26; Wall Street/Pier 11 09:37; Atlantic Avenue/BBP Pier 6 09:45; Red Hook 09:55; Governors Island - Pier 101 10:01
+SB WKND OUT P101,3203,New sheet / variant,,,E. 34th Street 10:58; Corlears Hook 11:10; Wall Street/Pier 11 11:21; Atlantic Avenue/BBP Pier 6 11:29; Red Hook 11:39; Governors Island - Pier 101 11:45
+SB WKND OUT P101,3205,New sheet / variant,,,E. 34th Street 12:42; Corlears Hook 12:54; Wall Street/Pier 11 13:05; Atlantic Avenue/BBP Pier 6 13:13; Red Hook 13:23; Governors Island - Pier 101 13:29
+SB WKND OUT P101,3207,New sheet / variant,,,E. 34th Street 14:26; Corlears Hook 14:38; Wall Street/Pier 11 14:49; Atlantic Avenue/BBP Pier 6 14:57; Red Hook 15:07; Governors Island - Pier 101 15:13
+SB WKND OUT P101,3209,New sheet / variant,,,E. 34th Street 16:10; Corlears Hook 16:22; Wall Street/Pier 11 16:33; Atlantic Avenue/BBP Pier 6 16:41; Red Hook 16:51; Governors Island - Pier 101 16:57
+SB WKND OUT P101,3211,New sheet / variant,,,E. 34th Street 17:54; Corlears Hook 18:06; Wall Street/Pier 11 18:17; Atlantic Avenue/BBP Pier 6 18:25; Red Hook 18:31
+SB WKND OUT P101,3213,New sheet / variant,,,E. 34th Street 19:27; Corlears Hook 19:39; Wall Street/Pier 11 19:50; Atlantic Avenue/BBP Pier 6 19:58; Red Hook 20:04
+SB WKND OUT P101,3215,New sheet / variant,,,E. 34th Street 21:00; Corlears Hook 21:12; Wall Street/Pier 11 21:23; Atlantic Avenue/BBP Pier 6 21:31; Red Hook 21:37
+SB WKND IN P101,3101,New sheet / variant,,,Governors Island - Pier 101 09:15; Red Hook 09:24; Atlantic Avenue/BBP Pier 6 09:34; Wall Street/Pier 11 09:44; Corlears Hook 09:52; E. 34th Street 10:04
+SB WKND IN P101,3103,New sheet / variant,,,Governors Island - Pier 101 10:59; Red Hook 11:08; Atlantic Avenue/BBP Pier 6 11:18; Wall Street/Pier 11 11:28; Corlears Hook 11:36; E. 34th Street 11:48
+SB WKND IN P101,3105,New sheet / variant,,,Governors Island - Pier 101 12:43; Red Hook 12:52; Atlantic Avenue/BBP Pier 6 13:02; Wall Street/Pier 11 13:12; Corlears Hook 13:20; E. 34th Street 13:32
+SB WKND IN P101,3107,New sheet / variant,,,Governors Island - Pier 101 14:27; Red Hook 14:36; Atlantic Avenue/BBP Pier 6 14:46; Wall Street/Pier 11 14:56; Corlears Hook 15:04; E. 34th Street 15:16
+SB WKND IN P101,3109,New sheet / variant,,,Governors Island - Pier 101 16:11; Red Hook 16:20; Atlantic Avenue/BBP Pier 6 16:30; Wall Street/Pier 11 16:40; Corlears Hook 16:48; E. 34th Street 17:00
+SB WKND IN P101,3111,New sheet / variant,,,Red Hook 17:53; Atlantic Avenue/BBP Pier 6 18:03; Wall Street/Pier 11 18:13; Corlears Hook 18:21; E. 34th Street 18:33
+SB WKND IN P101,3113,New sheet / variant,,,Red Hook 19:26; Atlantic Avenue/BBP Pier 6 19:36; Wall Street/Pier 11 19:46; Corlears Hook 19:54; E. 34th Street 20:06
+SB WKND IN P101,3115,New sheet / variant,,,Red Hook 20:59; Atlantic Avenue/BBP Pier 6 21:09; Wall Street/Pier 11 21:19; Corlears Hook 21:27; E. 34th Street 21:39
+SB WKND IN P101,3202,New sheet / variant,,,Governors Island - Pier 101 10:06; Red Hook 10:15; Atlantic Avenue/BBP Pier 6 10:25; Wall Street/Pier 11 10:35; Corlears Hook 10:43; E. 34th Street 10:55
+SB WKND IN P101,3204,New sheet / variant,,,Governors Island - Pier 101 11:50; Red Hook 11:59; Atlantic Avenue/BBP Pier 6 12:09; Wall Street/Pier 11 12:19; Corlears Hook 12:27; E. 34th Street 12:39
+SB WKND IN P101,3206,New sheet / variant,,,Governors Island - Pier 101 13:34; Red Hook 13:43; Atlantic Avenue/BBP Pier 6 13:53; Wall Street/Pier 11 14:03; Corlears Hook 14:11; E. 34th Street 14:23
+SB WKND IN P101,3208,New sheet / variant,,,Governors Island - Pier 101 15:18; Red Hook 15:27; Atlantic Avenue/BBP Pier 6 15:37; Wall Street/Pier 11 15:47; Corlears Hook 15:55; E. 34th Street 16:07
+SB WKND IN P101,3210,New sheet / variant,,,Governors Island - Pier 101 17:02; Red Hook 17:11; Atlantic Avenue/BBP Pier 6 17:21; Wall Street/Pier 11 17:31; Corlears Hook 17:39; E. 34th Street 17:51
+SB WKND IN P101,3212,New sheet / variant,,,Red Hook 18:44; Atlantic Avenue/BBP Pier 6 18:54; Wall Street/Pier 11 19:04; Corlears Hook 19:12; E. 34th Street 19:24
+SB WKND IN P101,3214,New sheet / variant,,,Red Hook 20:17; Atlantic Avenue/BBP Pier 6 20:27; Wall Street/Pier 11 20:37; Corlears Hook 20:45; E. 34th Street 20:57
+SB MOD OUT P101,3102,New sheet / variant,,,E. 34th Street 10:07; Corlears Hook 10:19; Wall Street/Pier 11 10:30; Atlantic Avenue/BBP Pier 6 10:38; Red Hook 10:48; Governors Island - Pier 101 10:54
+SB MOD OUT P101,3104,New sheet / variant,,,E. 34th Street 11:51; Corlears Hook 12:03; Wall Street/Pier 11 12:14; Atlantic Avenue/BBP Pier 6 12:22; Red Hook 12:32; Governors Island - Pier 101 12:38
+SB MOD OUT P101,3106,New sheet / variant,,,E. 34th Street 13:35; Corlears Hook 13:47; Wall Street/Pier 11 13:58; Atlantic Avenue/BBP Pier 6 14:06; Red Hook 14:16; Governors Island - Pier 101 14:22
+SB MOD OUT P101,3108,New sheet / variant,,,E. 34th Street 15:19; Corlears Hook 15:31; Wall Street/Pier 11 15:42; Atlantic Avenue/BBP Pier 6 15:50; Red Hook 16:00; Governors Island - Pier 101 16:06
+SB MOD OUT P101,3110,New sheet / variant,,,E. 34th Street 17:03; Corlears Hook 17:15; Wall Street/Pier 11 17:26; Atlantic Avenue/BBP Pier 6 17:34; Red Hook 17:44
+SB MOD OUT P101,3112,New sheet / variant,,,E. 34th Street 18:36; Corlears Hook 18:48; Wall Street/Pier 11 18:59; Atlantic Avenue/BBP Pier 6 19:07; Red Hook 19:17
+SB MOD OUT P101,3114,New sheet / variant,,,E. 34th Street 20:09; Corlears Hook 20:21; Wall Street/Pier 11 20:32; Atlantic Avenue/BBP Pier 6 20:40; Red Hook 20:50
+SB MOD OUT P101,3201,New sheet / variant,,,E. 34th Street 09:14; Corlears Hook 09:26; Wall Street/Pier 11 09:37; Atlantic Avenue/BBP Pier 6 09:45; Red Hook 09:55; Governors Island - Pier 101 10:01
+SB MOD OUT P101,3203,New sheet / variant,,,E. 34th Street 10:58; Corlears Hook 11:10; Wall Street/Pier 11 11:21; Atlantic Avenue/BBP Pier 6 11:29; Red Hook 11:39; Governors Island - Pier 101 11:45
+SB MOD OUT P101,3205,New sheet / variant,,,E. 34th Street 12:42; Corlears Hook 12:54; Wall Street/Pier 11 13:05; Atlantic Avenue/BBP Pier 6 13:13; Red Hook 13:23; Governors Island - Pier 101 13:29
+SB MOD OUT P101,3207,New sheet / variant,,,E. 34th Street 14:26; Corlears Hook 14:38; Wall Street/Pier 11 14:49; Atlantic Avenue/BBP Pier 6 14:57; Red Hook 15:07; Governors Island - Pier 101 15:13
+SB MOD OUT P101,3209,New sheet / variant,,,E. 34th Street 16:10; Corlears Hook 16:22; Wall Street/Pier 11 16:33; Atlantic Avenue/BBP Pier 6 16:41; Red Hook 16:51; Governors Island - Pier 101 16:57
+SB MOD OUT P101,3211,New sheet / variant,,,E. 34th Street 17:54; Corlears Hook 18:06; Wall Street/Pier 11 18:17; Atlantic Avenue/BBP Pier 6 18:25; Red Hook 18:35
+SB MOD OUT P101,3213,New sheet / variant,,,E. 34th Street 19:27; Corlears Hook 19:39; Wall Street/Pier 11 19:50; Atlantic Avenue/BBP Pier 6 19:58; Red Hook 20:08
+SB MOD OUT P101,3215,New sheet / variant,,,E. 34th Street 21:00; Corlears Hook 21:12; Wall Street/Pier 11 21:23; Atlantic Avenue/BBP Pier 6 21:31; Red Hook 21:41
+SB MOD OUT P101,3302,New sheet / variant,,,Wall Street/Pier 11 07:36; Red Hook 07:46
+SB MOD OUT P101,3304,New sheet / variant,,,Wall Street/Pier 11 08:06; Red Hook 08:16
+SB MOD OUT P101,3306,New sheet / variant,,,Wall Street/Pier 11 08:36; Red Hook 08:46
+SB MOD OUT P101,3308,New sheet / variant,,,Wall Street/Pier 11 09:06; Red Hook 09:16
+SB MOD OUT P101,3310,New sheet / variant,,,Wall Street/Pier 11 09:36; Red Hook 09:46
+SB MOD OUT P101,3312,New sheet / variant,,,Wall Street/Pier 11 10:06; Red Hook 10:16
+SB MOD OUT P101,3314,New sheet / variant,,,Wall Street/Pier 11 10:36; Red Hook 10:46
+SB MOD OUT P101,3316,New sheet / variant,,,Wall Street/Pier 11 11:06; Red Hook 11:16
+SB MOD OUT P101,3318,New sheet / variant,,,Wall Street/Pier 11 11:36; Red Hook 11:46
+SB MOD OUT P101,3320,New sheet / variant,,,Wall Street/Pier 11 12:06; Red Hook 12:16
+SB MOD IN P101,3101,New sheet / variant,,,Governors Island - Pier 101 09:15; Red Hook 09:24; Atlantic Avenue/BBP Pier 6 09:34; Wall Street/Pier 11 09:44; Corlears Hook 09:52; East 34th St 10:01
+SB MOD IN P101,3103,New sheet / variant,,,Governors Island - Pier 101 10:59; Red Hook 11:08; Atlantic Avenue/BBP Pier 6 11:18; Wall Street/Pier 11 11:28; Corlears Hook 11:36; East 34th St 11:45
+SB MOD IN P101,3105,New sheet / variant,,,Governors Island - Pier 101 12:43; Red Hook 12:52; Atlantic Avenue/BBP Pier 6 13:02; Wall Street/Pier 11 13:12; Corlears Hook 13:20; East 34th St 13:29
+SB MOD IN P101,3107,New sheet / variant,,,Governors Island - Pier 101 14:27; Red Hook 14:36; Atlantic Avenue/BBP Pier 6 14:46; Wall Street/Pier 11 14:56; Corlears Hook 15:04; East 34th St 15:13
+SB MOD IN P101,3109,New sheet / variant,,,Governors Island - Pier 101 16:11; Red Hook 16:20; Atlantic Avenue/BBP Pier 6 16:30; Wall Street/Pier 11 16:40; Corlears Hook 16:48; East 34th St 16:57
+SB MOD IN P101,3111,New sheet / variant,,,Red Hook 17:53; Atlantic Avenue/BBP Pier 6 18:03; Wall Street/Pier 11 18:13; Corlears Hook 18:21; East 34th St 18:30
+SB MOD IN P101,3113,New sheet / variant,,,Red Hook 19:26; Atlantic Avenue/BBP Pier 6 19:36; Wall Street/Pier 11 19:46; Corlears Hook 19:54; East 34th St 20:03
+SB MOD IN P101,3115,New sheet / variant,,,Red Hook 20:59; Atlantic Avenue/BBP Pier 6 21:09; Wall Street/Pier 11 21:19; Corlears Hook 21:27; East 34th St 21:36
+SB MOD IN P101,3202,New sheet / variant,,,Governors Island - Pier 101 10:06; Red Hook 10:15; Atlantic Avenue/BBP Pier 6 10:25; Wall Street/Pier 11 10:35; Corlears Hook 10:43; East 34th St 10:52
+SB MOD IN P101,3204,New sheet / variant,,,Governors Island - Pier 101 11:50; Red Hook 11:59; Atlantic Avenue/BBP Pier 6 12:09; Wall Street/Pier 11 12:19; Corlears Hook 12:27; East 34th St 12:36
+SB MOD IN P101,3206,New sheet / variant,,,Governors Island - Pier 101 13:34; Red Hook 13:43; Atlantic Avenue/BBP Pier 6 13:53; Wall Street/Pier 11 14:03; Corlears Hook 14:11; East 34th St 14:20
+SB MOD IN P101,3208,New sheet / variant,,,Governors Island - Pier 101 15:18; Red Hook 15:27; Atlantic Avenue/BBP Pier 6 15:37; Wall Street/Pier 11 15:47; Corlears Hook 15:55; East 34th St 16:04
+SB MOD IN P101,3210,New sheet / variant,,,Governors Island - Pier 101 17:02; Red Hook 17:11; Atlantic Avenue/BBP Pier 6 17:21; Wall Street/Pier 11 17:31; Corlears Hook 17:39; East 34th St 17:48
+SB MOD IN P101,3212,New sheet / variant,,,Red Hook 18:44; Atlantic Avenue/BBP Pier 6 18:54; Wall Street/Pier 11 19:04; Corlears Hook 19:12; East 34th St 19:21
+SB MOD IN P101,3214,New sheet / variant,,,Red Hook 20:17; Atlantic Avenue/BBP Pier 6 20:27; Wall Street/Pier 11 20:37; Corlears Hook 20:45; East 34th St 20:54
+SB MOD IN P101,3301,New sheet / variant,,,Red Hook 07:22; Wall Street/Pier 11 07:34
+SB MOD IN P101,3303,New sheet / variant,,,Red Hook 07:52; Wall Street/Pier 11 08:04
+SB MOD IN P101,3305,New sheet / variant,,,Red Hook 08:22; Wall Street/Pier 11 08:34
+SB MOD IN P101,3307,New sheet / variant,,,Red Hook 08:52; Wall Street/Pier 11 09:04
+SB MOD IN P101,3309,New sheet / variant,,,Red Hook 09:22; Wall Street/Pier 11 09:34
+SB MOD IN P101,3311,New sheet / variant,,,Red Hook 09:52; Wall Street/Pier 11 10:04
+SB MOD IN P101,3313,New sheet / variant,,,Red Hook 10:22; Wall Street/Pier 11 10:34
+SB MOD IN P101,3315,New sheet / variant,,,Red Hook 10:52; Wall Street/Pier 11 11:04
+SB MOD IN P101,3317,New sheet / variant,,,Red Hook 11:22; Wall Street/Pier 11 11:34
+SB MOD IN P101,3319,New sheet / variant,,,Red Hook 11:52; Wall Street/Pier 11 12:04
+SB MOD IN P101,3321,New sheet / variant,,,Red Hook 12:22; Wall Street/Pier 11 12:34

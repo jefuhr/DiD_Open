@@ -23,7 +23,9 @@
     "test:mobile-route-layout": "node scripts/check-mobile-route-layout.cjs",
     "test:mobile-viewport": "node scripts/check-mobile-viewport.cjs",
     "benchmark:map": "node scripts/benchmark-map.cjs",
-    "test:map-rendering": "node scripts/check-map-rendering.cjs"
+    "test:map-rendering": "node scripts/check-map-rendering.cjs",
+    "build:nyc-fall": "python3 scripts/build-nyc-fall-2026.py",
+    "check:nyc-fall": "python3 scripts/check-nyc-fall-2026.py"
   },
   "dependencies": {
     "gtfs-realtime-bindings": "2.1.0",

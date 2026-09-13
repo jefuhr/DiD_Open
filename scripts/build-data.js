@@ -2,10 +2,11 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CREW_UNCONFIRMED, HOLIDAY_SERVICE, holidayDepartures } from "./nyc-fall-2026.js";
 import {
   CREW_ROUTE, CREW_ROUTE_ID, HOME_PORT_STOP_ID, boatDeparturesByDay, boatRuns, crewCalendars,
   crewShuttleRows, crewSwapIndex, homePortCrewShuttles, homePortDepartures, homePortRows,
-  serviceBreaks, turnaroundLayovers
+  serviceBreaks, calendarTurnaroundLayovers
 } from "./out-of-service.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -129,6 +130,8 @@ const NYC_FERRY_NON_REVENUE_RUNS = [
 export function applyNonRevenueRuns({ trips, timesByTrip, dayTypeOf, warn = console.warn }) {
   const nonRevenue = new Set();
   for (const correction of NYC_FERRY_NON_REVENUE_RUNS) {
+    // The seasonal route may be absent entirely (Rockaway Rocket in fall 2026).
+    if (!trips.some((trip) => trip.route_id === correction.routeId)) continue;
     const candidates = trips.filter((trip) =>
       trip.route_id === correction.routeId &&
       String(trip.trip_short_name || "").trim() === correction.run &&
@@ -555,14 +558,25 @@ export async function buildDisplayData({
   // Home port and crew shuttles. Optional in the same way and for the same reason: neither the
   // feed nor the workbook describes a boat's movements once it stops carrying passengers, so a
   // board without this file simply shows no out-of-service rows.
-  const crewConfig = await readFile(path.join(root, "config/crew-shuttles.json"), "utf8")
+  const storedCrewConfig = await readFile(path.join(root, "config/crew-shuttles.json"), "utf8")
     .then((raw) => JSON.parse(raw))
     .catch(() => ({}));
+  const crewUnconfirmed = storedCrewConfig.confirmationStatus === "unconfirmed";
+  const crewConfig = crewUnconfirmed ? { homePort: storedCrewConfig.homePort } : storedCrewConfig;
   // Published crew shift boundaries, imported from the workbook's cell notes by
   // scripts/import-boat-shifts.py. Optional: without it every shift end is inferred from gaps.
-  const boatShifts = await readFile(path.join(root, "content/boat-shifts.json"), "utf8")
+  const storedBoatShifts = await readFile(path.join(root, "content/boat-shifts.json"), "utf8")
     .then((raw) => JSON.parse(raw).shifts || {})
     .catch(() => ({}));
+  const boatShifts = crewUnconfirmed ? {} : storedBoatShifts;
+  const holidaySource = await readFile(path.join(root, "schedules/sukkot-2026.json"), "utf8")
+    .then(JSON.parse).catch((error) => { if (error.code === "ENOENT") return null; throw error; });
+  if (holidaySource && parseCsv(feedRaw)[0]?.feed_version !== "20260913") {
+    throw new Error("Sukkot 2026 supplement must be reviewed against the replacement NYC Ferry feed.");
+  }
+  if (!holidaySource && parseCsv(feedRaw)[0]?.feed_version === "20260913") {
+    throw new Error("Missing schedules/sukkot-2026.json: the fall feed excludes ordinary service on the holiday dates.");
+  }
   const display = JSON.parse(displayRaw);
   const landings = JSON.parse(landingsRaw);
   const landingNumber = Number(landingOverride ?? display.landingNumber);
@@ -649,14 +663,15 @@ export async function buildDisplayData({
   // stop a shuttled boat being called out of service, and once to stop its next shift being counted
   // as a fresh departure from Pier C.
   const crewSwaps = crewSwapIndex({ shuttles: crewConfig.shuttles, landings });
-  const breaks = serviceBreaks({
+  const breaks = crewUnconfirmed ? { certainty: new Map(), tieUps: [] } : serviceBreaks({
     runs, dayTypeOf, shifts: boatShifts,
     stopName: (stopId) => stopsById.get(stopId)?.stop_name || null,
     gapMinutes: Number(crewConfig.outOfService?.gapMinutes) || 60,
     certainAfterMinutes: Number(crewConfig.outOfService?.certainAfterMinutes) || 180,
     crewSwaps
   });
-  const turnarounds = turnaroundLayovers({ runs, endsShift: breaks.certainty });
+  const turnarounds = calendarTurnaroundLayovers({ runs, endsShift: breaks.certainty,
+    calendars: [...calendarByService.values()], exceptions: parseCsv(datesRaw) });
 
   let departures = [];
   for (const [tripId, times] of timesByTrip) {
@@ -693,6 +708,9 @@ export async function buildDisplayData({
     }
   }
   departures.sort((a, b) => a.seconds - b.seconds || a.routeId.localeCompare(b.routeId));
+  const holidayRows = holidayDepartures({ source: holidaySource, selectedStops, stopsById,
+    agency: agency.agency_name || "NYC Ferry", busesEnabled });
+  departures.push(...holidayRows);
   const usedTripIds = new Set(departures.map((item) => item.tripId));
   // Home-port rows open the arriving trip, even at a terminal with no pickup on that trip.
   for (const run of breaks.tieUps) {
@@ -710,6 +728,10 @@ export async function buildDisplayData({
       ...(turnaround ? { turnaround } : {})
     }];
   }));
+  for (const row of holidayRows) {
+    tripSchedules[row.tripId] = { timetableOnly: true, stops: [{ stopId: row.stopId, sequence: 1,
+      arrivalSeconds: null, departureSeconds: row.seconds }] };
+  }
   const landingIndex = stopLandingIndex(landings);
   const stopsDirectory = stopDirectory({
     tripSchedules,
@@ -728,6 +750,11 @@ export async function buildDisplayData({
   const feed = parseCsv(feedRaw)[0] || {};
   let calendars = parseCsv(calendarRaw).map((item) => ({ serviceId: item.service_id, weekdays: [item.sunday,item.monday,item.tuesday,item.wednesday,item.thursday,item.friday,item.saturday].map((v) => v === "1"), startDate: isoDate(item.start_date), endDate: isoDate(item.end_date) }));
   let exceptions = parseCsv(datesRaw).map((item) => ({ serviceId: item.service_id, date: isoDate(item.date), added: item.exception_type === "1" }));
+  if (holidaySource) {
+    calendars.push({ serviceId: HOLIDAY_SERVICE, weekdays: Array(7).fill(false),
+      startDate: holidaySource.dates[0], endDate: holidaySource.dates.at(-1) });
+    exceptions.push(...holidaySource.dates.map((date) => ({ serviceId: HOLIDAY_SERVICE, date, added: true })));
+  }
 
   // The moves a boat makes with no passengers aboard: the run to the home port after its last
   // revenue trip, and the crew shuttles that swap a crew mid-day without ending the boat's service.
@@ -735,7 +762,7 @@ export async function buildDisplayData({
   // published departure time is changed by any of this.
   const operatorName = agency.agency_name || "NYC Ferry";
   const homePort = crewConfig.homePort || "Pier C";
-  if (isVirtual) {
+  if (isVirtual && !crewUnconfirmed) {
     const serviceOfDay = (kind) => {
       for (const [serviceId, row] of calendarByService) if (dayTypeOf(serviceId) === kind) return serviceId;
       return null;
@@ -831,19 +858,21 @@ export async function buildDisplayData({
     console.warn(`NOTE: dropped ${departures.length - deduped.length} duplicate departure(s) at landing ${landingNumber} — the feed lists the same sailing under more than one trip id.`);
   }
   departures = deduped;
-  if (Object.values(partners).some((item) => item.enabled)) {
-    departures.sort((a, b) => a.seconds - b.seconds || a.routeId.localeCompare(b.routeId));
-  }
+  departures.sort((a, b) => a.seconds - b.seconds || a.routeId.localeCompare(b.routeId));
 
   return {
     meta: {
       schemaVersion: 11, generatedAt: new Date().toISOString(), landingNumber, departureWindowMinutes,
       departuresShown, busesEnabled,
+      crewScheduleStatus: crewUnconfirmed ? { status: "unconfirmed", message: CREW_UNCONFIRMED } : null,
+      holidaySchedule: holidaySource ? { dates: holidaySource.dates,
+        message: "Sukkot: published departure times only; trip connections unavailable." } : null,
       landing: { name: landingConfig.name, displayName: landingConfig.displayName || landingConfig.name, stopIds,
         latitude: Number(stopDetails[0].stop_lat), longitude: Number(stopDetails[0].stop_lon) },
       timezone: agency.agency_timezone || "America/New_York", agencyName: agency.agency_name || "NYC Ferry", feedVersion: feed.feed_version,
       feedStartDate: isoDate(feed.feed_start_date), feedEndDate: isoDate(feed.feed_end_date),
-      sourceHash: createHash("sha256").update(routesRaw + tripsRaw + timesRaw).digest("hex").slice(0, 16),
+      sourceHash: createHash("sha256").update(routesRaw + tripsRaw + timesRaw + calendarRaw + datesRaw +
+        JSON.stringify(holidaySource) + JSON.stringify(boatAssignments) + JSON.stringify(storedCrewConfig)).digest("hex").slice(0, 16),
       waterway: partners.waterway, waterwayBelford: partners.waterwayBelford, seastreak: partners.seastreak, nyu: partners.nyu, liberty: partners.liberty, ikea: partners.ikea, gi: partners.gi, siferry: partners.siferry, statue: partners.statue
     },
     calendars, exceptions,

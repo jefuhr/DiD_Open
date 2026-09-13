@@ -1,5 +1,7 @@
 # Ferry Boat Assignment Guide
 
+Current release: [Fall 2026 schedule and validation](docs/schedule-comparison/fall-2026-update.md). The September 14 feed contains multiple service periods; use the importer’s `--date YYYY-MM-DD` option to measure active assignment coverage. Fall crew shifts and Pier C shuttle times are **UNCONFIRMED** and are not used operationally.
+
 This document explains how the numbered boat assignment on the staff board — the `ER5` badge next
 to each vessel name — is matched from the published crew schedule to the GTFS feed, and what has to
 be redone every time a new schedule takes effect.

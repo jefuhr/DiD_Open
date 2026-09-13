@@ -1,0 +1,29 @@
+{
+  "feed": "https://nycferry.connexionz.net/rtt/public/resource/gtfs.zip",
+  "pdfs": {
+    "ER": "https://images.ferry.nyc/wp-content/uploads/2026/08/08091248/091426_Sukkot_Schedule_Web_ER.pdf",
+    "SB": "https://images.ferry.nyc/wp-content/uploads/2026/08/08091251/091426_Sukkot_Schedule_Web_SBK.pdf",
+    "RS": "https://images.ferry.nyc/wp-content/uploads/2026/08/08091250/091426_Sukkot_Schedule_Web_RWS.pdf",
+    "AS": "https://images.ferry.nyc/wp-content/uploads/2026/08/08091246/091426_Sukkot_Schedule_Web_AST.pdf",
+    "SG": "https://images.ferry.nyc/wp-content/uploads/2026/08/08091252/091426_Sukkot_Schedule_Web_STG.pdf",
+    "GI": "https://images.ferry.nyc/wp-content/uploads/2026/08/08091248/091426_Sukkot_Schedule_Web_GI.pdf",
+    "RES": "https://images.ferry.nyc/wp-content/uploads/2026/08/11164341/091426_Sukkot_RWE-Shuttle.pdf",
+    "RWS": "https://images.ferry.nyc/wp-content/uploads/2026/08/11164342/091426_Sukkot_RWW-Shuttle.pdf",
+    "SB-fall": "https://images.ferry.nyc/wp-content/uploads/2026/08/13085143/091426_Fall_Schedule_Web_SBK-1.pdf"
+  },
+  "timetables": "https://nycferry.connexionz.net/rtt/public/Schedule.aspx",
+  "serviceCalendar": "https://nycferry.connexionz.net/rtt/public/ServiceCalendar.aspx",
+  "checkedDate": "2026-09-13",
+  "sha256": {
+    "AS.pdf": "7ae11a3ccde7ceb995aa7bc73ff653a743bf925fce9d2ed2cdff8195c28934fd",
+    "ER.pdf": "4314cf2296b46473af83d64604568cdff96d104ecc4a0dd991334649e5e4013b",
+    "GI.pdf": "367637cc5435d045732d31932258cf90aa70ac579e91fdd1218a2bf88f3a119d",
+    "RES.pdf": "0e58c48063dbca2b75f4bad43260f2710468fb8b068e040cd2a2363f3c97afdc",
+    "RS.pdf": "87448ebedfc411d32117d94b2546ab1fba66ebaa16090f9d7a4f9a3888cb2030",
+    "RWS.pdf": "f81eeb5173e6e53b0818c5a59e60ff58b87e939c8f670e39debedd440d617d28",
+    "SB-fall.pdf": "48ec383155e7bcc5bbe5bc8c88b8c3b06d949b14635346458b1a938f658e7e91",
+    "SB.pdf": "96d363ed5e2f45db307c54a9cad5ba86711c539974afc8b260b3cc47568aa592",
+    "SG.pdf": "998d730cf06fe11c0a2466bdef36c1bff9e863f775c7a0f29111f2ebe837fbfb",
+    "nycferry-20260913.zip": "f92a79b63f66d703a9393caa77abc972f9827ce21a0958c1a2b640a3201d9004"
+  }
+}

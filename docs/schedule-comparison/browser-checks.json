@@ -1,0 +1,26 @@
+[
+  {
+    "scenario": "fall-desktop",
+    "note": "Crew shifts / Pier C shuttles: UNCONFIRMED",
+    "rows": 188,
+    "overflow": false
+  },
+  {
+    "scenario": "fall-mobile",
+    "note": "Crew shifts / Pier C shuttles: UNCONFIRMED",
+    "rows": 188,
+    "overflow": false
+  },
+  {
+    "scenario": "sukkot-mobile",
+    "note": "Crew shifts / Pier C shuttles: UNCONFIRMED · Sukkot: published departure times only; trip connections unavailable.",
+    "rows": 175,
+    "overflow": false
+  },
+  {
+    "scenario": "pier-c-mobile",
+    "note": "Crew shifts / Pier C shuttles: UNCONFIRMED",
+    "rows": 0,
+    "overflow": false
+  }
+]
