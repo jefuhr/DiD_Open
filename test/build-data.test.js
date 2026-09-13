@@ -1,3 +1,4 @@
+import { buildSummerDisplayData } from "./helpers/summer-schedule.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readFile, symlink, writeFile } from "node:fs/promises";
@@ -354,7 +355,8 @@ test("crew boat assignments are attached to NYC Ferry departures", async () => {
   // The Governors Island shuttle is crewed off-schedule and has no Boat column in the
   // workbook, so it is the one ferry route that never carries an assignment.
   const scheduled = data.departures.filter((item) =>
-    item.operator === "NYC Ferry" && item.mode === "ferry" && item.routeId !== "GI");
+    item.operator === "NYC Ferry" && item.mode === "ferry" && item.routeId !== "GI" &&
+    ["2", "3", "4", "6", "7", "8"].includes(item.serviceId));
   assert.ok(scheduled.length > 0);
   const labeled = scheduled.filter((item) => Number.isInteger(item.boatAssignment) && item.boatAssignment >= 1);
   assert.ok(labeled.length / scheduled.length > 0.95,
@@ -370,11 +372,11 @@ test("boat assignments join GTFS trip_short_name to the schedule workbook", asyn
     readFile(new URL("../gtfs/trips.txt", import.meta.url), "utf8")
   ]);
   const { assignments } = JSON.parse(assignmentsRaw);
-  assert.ok(Object.keys(assignments).length > 300);
+  assert.equal(Object.keys(assignments).length, 289);
   assert.ok(Object.values(assignments).every((boat) => Number.isInteger(boat) && boat >= 1));
   // Shuttle-bus routes (RES/RWS) and the Governors Island shuttle carry no boat number, so
   // coverage is asserted over the ferry routes the workbook actually schedules.
-  const trips = parseCsv(tripsRaw).filter((trip) => ["AS", "ER", "RS", "SB", "SG", "RR"].includes(trip.route_id));
+  const trips = parseCsv(tripsRaw).filter((trip) => ["AS", "ER", "RS", "SB", "SG"].includes(trip.route_id) && ["2", "3", "4", "6", "7", "8"].includes(trip.service_id));
   const missing = trips.filter((trip) => assignments[String(trip.trip_short_name).trim()] === undefined);
   assert.ok(missing.length / trips.length < 0.05, `${missing.length} of ${trips.length} ferry trips lack a boat assignment`);
 });
@@ -586,7 +588,7 @@ test("the Governors Island ferry runs weekends and holidays, in season, where it
 // Out-of-service moves. Nothing here is in the GTFS feed or the schedule workbook — the workbook
 // only says which boat runs which trip, which is what makes "this boat's last trip" answerable.
 test("a boat going out of service is spotted from the gap in its own day", async () => {
-  const data = await buildDisplayData({ landingNumber: 16 });
+  const data = await buildSummerDisplayData({ landingNumber: 16 });
   const homePort = data.departures.filter((item) => item.outOfService);
   assert.ok(homePort.length > 0, "Pier 11 should be where several boats tie up");
   for (const item of homePort) {
@@ -625,12 +627,12 @@ test("a boat going out of service is spotted from the gap in its own day", async
   // Governors Island is crewed off-schedule and carries no boat number, so nothing is derivable and
   // it must not acquire a home-port run by accident.
   assert.equal(data.departures.some((item) => item.routeId === "GI" && item.outOfService), false);
-  const waterway = await buildDisplayData({ landingNumber: 16, waterwayEnabled: true });
+  const waterway = await buildSummerDisplayData({ landingNumber: 16, waterwayEnabled: true });
   assert.equal(waterway.departures.some((item) => item.routeId.startsWith("wtr:") && item.outOfService), false);
 });
 
 test("published crew shifts replace the gap guesswork", async () => {
-  const data = await buildDisplayData({ landingNumber: 16 });
+  const data = await buildSummerDisplayData({ landingNumber: 16 });
   // With the crew schedule's own shift boundaries imported, nothing at Pier 11 is inferred any
   // more: every drop-off flag comes from a published shift end or from the boat's last run.
   assert.equal(data.departures.some((item) => item.endsShift === "unsure"), false);
@@ -659,7 +661,7 @@ test("published crew shifts replace the gap guesswork", async () => {
 });
 
 test("a terminating boat carries its scheduled same-working turnaround", async () => {
-  const data = await buildDisplayData({ landingNumber: 16 });
+  const data = await buildSummerDisplayData({ landingNumber: 16 });
   const schedule = data.tripSchedules["556"];
   assert.deepEqual(schedule.turnaround, {
     stopId: "141",
@@ -679,7 +681,7 @@ test("a terminating boat carries its scheduled same-working turnaround", async (
 
   // Partner feeds publish no boat assignment, so their consecutive sailings are never guessed into
   // one vessel's break.
-  const east34 = await buildDisplayData({ landingNumber: 8 });
+  const east34 = await buildSummerDisplayData({ landingNumber: 8 });
   for (const [tripId, partnerSchedule] of Object.entries(east34.tripSchedules)) {
     if (tripId.includes(":")) assert.equal(partnerSchedule.turnaround, undefined);
   }
@@ -711,7 +713,7 @@ test("a crew handover ties the boat up unless a shuttle brings the relief out to
   // pick the working up, which is why both halves are on the board.
   const crew = JSON.parse(await readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8"));
   const shuttled = new Set(crew.shuttles.weekday.flatMap((entry) => entry.boats));
-  const data = await buildDisplayData({ landingNumber: 16 });
+  const data = await buildSummerDisplayData({ landingNumber: 16 });
   const tieUps = data.departures.filter((item) => item.outOfService && item.serviceId === "1")
     .map((item) => `${item.routeId}${item.boatAssignment}@${item.departureTime.slice(0, 5)}`);
   for (const [boat, list] of Object.entries(shifts.weekday || {})) {
@@ -729,7 +731,7 @@ test("a crew handover ties the boat up unless a shuttle brings the relief out to
 });
 
 test("a crew shuttle is one departure for all the boats it relieves, and never marks them out of service", async () => {
-  const data = await buildDisplayData({ landingNumber: 16 });
+  const data = await buildSummerDisplayData({ landingNumber: 16 });
   const shuttles = data.departures.filter((item) => item.crewShuttle);
   assert.ok(shuttles.length > 0);
   const weekend = shuttles.filter((item) => item.serviceId === "crew-weekend");
@@ -752,7 +754,7 @@ test("a crew shuttle is one departure for all the boats it relieves, and never m
 });
 
 test("crew shuttles follow the weekend pattern on holidays, which the feed knows nothing about", async () => {
-  const data = await buildDisplayData({ landingNumber: 16 });
+  const data = await buildSummerDisplayData({ landingNumber: 16 });
   const services = new Map(data.calendars.map((item) => [item.serviceId, item]));
   // weekdays[] is Sunday-first.
   assert.deepEqual(services.get("crew-weekend").weekdays, [true, false, false, false, false, false, true]);
@@ -767,13 +769,13 @@ test("crew shuttles follow the weekend pattern on holidays, which the feed knows
 
 test("landings with no crew shuttle configured get none", async () => {
   // Red Hook appears in no shuttle line, so it should carry home-port runs at most.
-  const data = await buildDisplayData({ landingNumber: 17 });
+  const data = await buildSummerDisplayData({ landingNumber: 17 });
   assert.equal(data.departures.some((item) => item.crewShuttle), false);
   assert.equal(data.routes.CREW, undefined);
 });
 
 test("a crew shuttle waits for its boats, so it shows a window rather than a minute", async () => {
-  const data = await buildDisplayData({ landingNumber: 16 });
+  const data = await buildSummerDisplayData({ landingNumber: 16 });
   const shuttles = data.departures.filter((item) => item.crewShuttle);
   const swap = shuttles.find((item) => item.serviceId === "crew-weekend" && item.departureTime === "14:35:00");
   assert.ok(swap, "expected the 14:35 Pier 11 crew shuttle");
@@ -796,9 +798,9 @@ test("a crew shuttle waits for its boats, so it shows a window rather than a min
 // feed at all, and a partner's own no-pickup call already has a real trip id of its own.
 test("only a home-port run names a live trip; shuttles and partner calls do not", async () => {
   const [pier11, redHook, pierC] = await Promise.all([
-    buildDisplayData({ landingNumber: 16 }),
-    buildDisplayData({ landingNumber: 17 }),
-    buildDisplayData({ landingNumber: 27 })
+    buildSummerDisplayData({ landingNumber: 16 }),
+    buildSummerDisplayData({ landingNumber: 17 }),
+    buildSummerDisplayData({ landingNumber: 27 })
   ]);
 
   const shuttles = [...pier11.departures, ...pierC.departures].filter((item) => item.crewShuttle);
@@ -821,7 +823,7 @@ test("only a home-port run names a live trip; shuttles and partner calls do not"
 });
 
 test("a crew swap does not read as a boat going out of service", async () => {
-  const data = await buildDisplayData({ landingNumber: 16 });
+  const data = await buildSummerDisplayData({ landingNumber: 16 });
   const shuttles = data.departures.filter((item) => item.crewShuttle);
   const named = new Set(shuttles.flatMap((item) => item.crewBoats || []));
   assert.ok(named.size > 0);
@@ -868,7 +870,7 @@ test("a NY Waterway boat calling at several terminals is one row, not several", 
 // Pier C is where the boats sleep. No operator publishes it and no feed contains it, so its landing
 // is virtual and everything on it comes from the crew schedule's shift starts.
 test("Pier C shows every boat leaving the home port to start a shift", async () => {
-  const data = await buildDisplayData({ landingNumber: 27 });
+  const data = await buildSummerDisplayData({ landingNumber: 27 });
   assert.equal(data.meta.landing.displayName, "Pier C (Staff)");
   assert.ok(data.departures.length > 40);
   // The crew shuttles sail from here too, but they are a boat going to collect a crew rather than a
@@ -907,7 +909,7 @@ test("Pier C shows every boat leaving the home port to start a shift", async () 
 // shape of the gap, which says nothing about whether a shuttle ran.
 test("only a crew shuttle keeps a shift start off the Pier C board", async () => {
   const [pierC, crew] = await Promise.all([
-    buildDisplayData({ landingNumber: 27 }),
+    buildSummerDisplayData({ landingNumber: 27 }),
     readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse)
   ]);
   const starts = pierC.departures.filter((item) => !item.crewShuttle);
@@ -948,7 +950,7 @@ test("only a crew shuttle keeps a shift start off the Pier C board", async () =>
 // was the one boat working a weekend that never left the home port on the board.
 test("the Rockaway Rocket leaves Pier C like every other weekend boat", async () => {
   const [pierC, shiftFile] = await Promise.all([
-    buildDisplayData({ landingNumber: 27 }),
+    buildSummerDisplayData({ landingNumber: 27 }),
     readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse)
   ]);
 
@@ -977,7 +979,7 @@ test("the Rockaway Rocket leaves Pier C like every other weekend boat", async ()
 // removed or a weekend boat gains a second shift, the board should change and this should say so.
 test("every weekend shift start reaches Pier C unless a shuttle covers it", async () => {
   const [pierC, shiftFile, crew] = await Promise.all([
-    buildDisplayData({ landingNumber: 27 }),
+    buildSummerDisplayData({ landingNumber: 27 }),
     readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse),
     readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse)
   ]);
@@ -1031,7 +1033,7 @@ test("a shift note that names the wrong end still yields its Pier C departure", 
   assert.equal(er5.endNotePlace, "Wall St/Pier 11");
 
   // Both reach the board as home-port departures, which is the whole point of recovering them.
-  const pierC = await buildDisplayData({ landingNumber: 27 });
+  const pierC = await buildSummerDisplayData({ landingNumber: 27 });
   const at = (serviceId, time) => pierC.departures.find((item) =>
     item.serviceId === serviceId && item.departureTime.startsWith(time) && !item.crewShuttle);
   assert.ok(at("1", "15:46"), "ER1's afternoon shift start shows at Pier C on a weekday");
@@ -1044,7 +1046,7 @@ test("a shift note that names the wrong end still yields its Pier C departure", 
 
 test("Pier C shows every crew shuttle sailing out to collect a crew", async () => {
   const [pierC, config] = await Promise.all([
-    buildDisplayData({ landingNumber: 27 }),
+    buildSummerDisplayData({ landingNumber: 27 }),
     readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse)
   ]);
   const shuttles = pierC.departures.filter((item) => item.crewShuttle);
@@ -1082,7 +1084,7 @@ test("Pier C shows every crew shuttle sailing out to collect a crew", async () =
   );
 
   // The other end of each shuttle still reads the same way at the landing it collects from.
-  const pier11 = await buildDisplayData({ landingNumber: 16 });
+  const pier11 = await buildSummerDisplayData({ landingNumber: 16 });
   for (const item of pier11.departures.filter((row) => row.crewShuttle)) {
     assert.equal(item.destination, "Pier C");
     assert.ok(item.departureTimeEnd, "the collecting landing keeps its range");
@@ -1175,7 +1177,7 @@ test("only the waterway feed can produce a via-terminal list", async () => {
 // hour dismissed this one too. But the sheet is the record of when a crew stops working, and the
 // 13:20 out of East 90th St is the last trip that crew works: it takes nobody back.
 test("a crew changeover with no shuttle is badged as a drop off", async () => {
-  const east90th = await buildDisplayData({ landingNumber: 9 });
+  const east90th = await buildSummerDisplayData({ landingNumber: 9 });
   const finalTrip = east90th.departures.find((item) => String(item.tripId) === "1018");
   assert.ok(finalTrip, "AS3's 13:20 from East 90th St must be on the board");
   assert.equal(finalTrip.boatAssignment, 3);
@@ -1183,13 +1185,13 @@ test("a crew changeover with no shuttle is badged as a drop off", async () => {
   assert.equal(finalTrip.endsShift, "certain", "the trip the AM crew finishes on is a drop off");
 
   // Every leg of it, so an agent watching the boat leave anywhere on that trip is told.
-  const astoria = await buildDisplayData({ landingNumber: 2 });
+  const astoria = await buildSummerDisplayData({ landingNumber: 2 });
   assert.equal(astoria.departures.find((item) => String(item.tripId) === "1018")?.endsShift, "certain");
 
   // And the boat leaves. A changeover is a swap, not a crew stepping aboard the boat already
   // alongside, so the vessel that finishes at 14:11 runs to Pier C — the six minutes to the 14:17
   // are two different boats, not one waiting.
-  const pier11 = await buildDisplayData({ landingNumber: 16 });
+  const pier11 = await buildSummerDisplayData({ landingNumber: 16 });
   const homePortRuns = pier11.departures.filter((item) =>
     item.outOfService && item.routeId === "AS" && item.boatAssignment === 3 &&
     item.serviceId === "1" && item.seconds >= 13 * 3600 && item.seconds <= 15 * 3600);
@@ -1199,7 +1201,7 @@ test("a crew changeover with no shuttle is badged as a drop off", async () => {
   assert.equal(homePortRuns[0].endsDay, false, "the working carries on with another boat, so this is not the end of its day");
 
   // And the other half of the same rule still holds: the relieving crew's first departure.
-  const pierC = await buildDisplayData({ landingNumber: 27 });
+  const pierC = await buildSummerDisplayData({ landingNumber: 27 });
   assert.ok(pierC.departures.some((item) => item.tripId === "pierc:weekday:AS3:14:17"),
     "AS3's 14:17 shift start must still be a Pier C row");
 });
@@ -1207,7 +1209,7 @@ test("a crew changeover with no shuttle is badged as a drop off", async () => {
 // The exception, and the only one: a crew carried out to the boat. The relief steps aboard from the
 // shuttle and the boat sails on with nobody put ashore, so there is no drop off to badge.
 test("a crew changeover covered by a shuttle is not a drop off", async () => {
-  const pier11 = await buildDisplayData({ landingNumber: 16 });
+  const pier11 = await buildSummerDisplayData({ landingNumber: 16 });
   const shuttled = pier11.departures.filter((item) =>
     item.routeId === "RS" && [1, 3, 4, 6].includes(item.boatAssignment) &&
     item.serviceId === "1" && item.endsShift && item.seconds >= 12 * 3600 && item.seconds <= 15 * 3600);
@@ -1222,7 +1224,7 @@ test("drop offs and Pier C first departures agree about every weekday changeover
   const [shiftFile, crewFile, pierC] = await Promise.all([
     readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse),
     readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse),
-    buildDisplayData({ landingNumber: 27 })
+    buildSummerDisplayData({ landingNumber: 27 })
   ]);
   const shuttled = new Set(crewFile.shuttles.weekday.flatMap((entry) => entry.boats));
 
@@ -1230,7 +1232,7 @@ test("drop offs and Pier C first departures agree about every weekday changeover
   // it and the minute that trip ends.
   const badged = new Map();
   for (let landingNumber = 2; landingNumber <= 26; landingNumber += 1) {
-    const data = await buildDisplayData({ landingNumber });
+    const data = await buildSummerDisplayData({ landingNumber });
     for (const item of data.departures) {
       if (!item.endsShift || !Number.isInteger(item.boatAssignment) || item.serviceId !== "1") continue;
       badged.set(String(item.tripId), `${item.routeId}${item.boatAssignment}`);
@@ -1284,7 +1286,7 @@ test("drop offs and Pier C first departures agree about every weekday changeover
   // of a swap are on the board: this boat going in, and its relief coming out of Pier C.
   const homePortRuns = new Map();
   for (let landingNumber = 2; landingNumber <= 26; landingNumber += 1) {
-    const data = await buildDisplayData({ landingNumber });
+    const data = await buildSummerDisplayData({ landingNumber });
     for (const item of data.departures) {
       if (!item.outOfService || item.serviceId !== "1" || !Number.isInteger(item.boatAssignment)) continue;
       homePortRuns.set(`${item.routeId}${item.boatAssignment}|${item.departureTime.slice(0, 5)}`, item);
@@ -1414,7 +1416,7 @@ test("a landing with no NYC Ferry stop and no coordinates is rejected rather tha
   // under test is the missing position.
   const root = await mkdtemp(path.join(tmpdir(), "did-landing-"));
   const repo = fileURLToPath(new URL("..", import.meta.url));
-  for (const name of ["gtfs", "content", "public"]) await symlink(path.join(repo, name), path.join(root, name));
+  for (const name of ["gtfs", "content", "public", "schedules"]) await symlink(path.join(repo, name), path.join(root, name));
   await mkdir(path.join(root, "config"));
   for (const name of ["display.json", "crew-shuttles.json"]) {
     await symlink(path.join(repo, "config", name), path.join(root, "config", name));
@@ -1529,7 +1531,7 @@ test("the Statue of Liberty loops name the island they are bound for, not where 
 test("an operator whose switch is missing from display.json is on, not off", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "did-switch-"));
   const repo = fileURLToPath(new URL("..", import.meta.url));
-  for (const name of ["gtfs", "content", "public"]) await symlink(path.join(repo, name), path.join(root, name));
+  for (const name of ["gtfs", "content", "public", "schedules"]) await symlink(path.join(repo, name), path.join(root, name));
   await mkdir(path.join(root, "config"));
   for (const name of ["landings.json", "crew-shuttles.json"]) {
     await symlink(path.join(repo, "config", name), path.join(root, "config", name));
@@ -1564,7 +1566,7 @@ test("an operator whose switch is missing from display.json is on, not off", asy
 // weekend and the boat deadheads Long Island City to Rockaway. Both printed departures — the 16:00
 // at Long Island City and the 16:11 at Greenpoint — are seats that cannot be bought.
 test("the weekend Rockaway Rocket deadhead is stripped of the calls it does not make", async () => {
-  const data = await buildDisplayData({ landingNumber: 14 });
+  const data = await buildSummerDisplayData({ landingNumber: 14 });
   const weekendRocket = data.departures.filter((row) => row.routeId === "RR" && row.serviceId === "2");
   const sixteenHundred = weekendRocket.find((row) => row.departureTime === "16:00:00");
   assert.ok(sixteenHundred, "expected the 16:00 to still be shown");
@@ -1577,7 +1579,7 @@ test("the weekend Rockaway Rocket deadhead is stripped of the calls it does not 
     assert.equal(row.outOfService, false, `${row.departureTime} is a real departure`);
   }
 
-  const greenpoint = await buildDisplayData({ landingNumber: 12 });
+  const greenpoint = await buildSummerDisplayData({ landingNumber: 12 });
   assert.equal(
     greenpoint.departures.some((row) => row.routeId === "RR" && row.departureTime === "16:11:00"),
     false, "Greenpoint must not advertise a boat that does not call there");

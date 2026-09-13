@@ -586,7 +586,7 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
       // live, so it names the revenue trip it follows out instead — the boat going to Pier C is the
       // boat that just got in, and it ties up as late as that trip ran. Crew shuttles carry no such
       // trip and keep their published times.
-      const update = updates.get(`${departure.liveTripId || departure.tripId}|${departure.stopId}`);
+      const update = departure.scheduleOnly ? null : updates.get(`${departure.liveTripId || departure.tripId}|${departure.stopId}`);
       if (update?.canceled) continue;
       const liveDelay = Number(update?.delaySeconds);
       const hasLiveTiming = !realtime.stale && update?.delaySeconds != null && Number.isFinite(liveDelay);
@@ -626,12 +626,12 @@ function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("de
         delta,
         live: frame.live,
         hasLiveTiming,
-        boatName: vehicles.get(String(departure.tripId))?.boatName || null,
+        boatName: departure.scheduleOnly ? null : vehicles.get(String(departure.tripId))?.boatName || null,
         // Failing a vessel of its own, the one currently working this boat — by way of the trip a
         // home-port row is about to pick up, or simply by the boat the workbook puts on this
         // sailing. A guess either way, and labelled as one: the vessel on a working changes at
         // short notice, which is exactly why the board says "McShane?" rather than "McShane".
-        predictedBoatName: vehicles.get(String(departure.tripId))?.boatName
+        predictedBoatName: departure.scheduleOnly || vehicles.get(String(departure.tripId))?.boatName
           ? null
           : (departure.predictTripId ? vehicles.get(String(departure.predictTripId))?.boatName : null)
             || (Number.isInteger(departure.boatAssignment)
@@ -866,9 +866,10 @@ function scheduleForDeparture(item) {
 }
 
 function tripAttrs(item) {
-  const stops = scheduleForDeparture(item)?.stops;
-  if (!Array.isArray(stops) || stops.length < 2) return "";
-  const label = `${departureLabel(item)} to ${item.destination || "destination unavailable"} — show this trip's stops`;
+  const schedule = scheduleForDeparture(item);
+  const stops = schedule?.stops;
+  if (!Array.isArray(stops) || (stops.length < 2 && !schedule.timetableOnly)) return "";
+  const label = `${departureLabel(item)} to ${item.destination || "destination unavailable"} — ${schedule.timetableOnly ? "show published departure details" : "show this trip's stops"}`;
   // role/tabindex rather than a real <button>: these sit inside a CSS grid and a flex column with
   // overflow and route-colour custom properties on them, and a button's own layout rules are not
   // worth the regression for an affordance the delegated listener provides either way.
@@ -975,6 +976,10 @@ function showToday() {
 // An empty live board means the boats have finished; an empty browsed one means that day was never
 // going to have any. Saying "concluded for the day" about next Sunday would read as a cancellation.
 function emptyBoard() {
+  if (data?.meta?.crewScheduleStatus?.status === "unconfirmed" &&
+      (data?.meta?.landing?.stopIds || []).includes("home-port")) {
+    return `<div class="empty"><div><strong>CREW TIMES UNCONFIRMED</strong><span>Pier C departures will appear when the crew schedule is confirmed.</span></div></div>`;
+  }
   const frame = viewFrame();
   return frame.live
     ? `<div class="empty"><div><strong>NO MORE BOATS!</strong><span>NYC Ferry service has concluded for the day.</span></div></div>`
@@ -993,8 +998,14 @@ const HOME_PORT_NOTE =
 // silently take the note away.
 function renderBoardNote() {
   const homePort = (data?.meta?.landing?.stopIds || []).includes("home-port");
-  elements.boardNote.hidden = !homePort;
-  if (homePort) elements.boardNote.textContent = HOME_PORT_NOTE;
+  const crew = data?.meta?.crewScheduleStatus;
+  const holiday = data?.meta?.holidaySchedule;
+  const notes = [];
+  if (crew?.status === "unconfirmed") notes.push(crew.message);
+  else if (homePort) notes.push(HOME_PORT_NOTE);
+  if (holiday?.dates.includes(viewFrame().dateKey)) notes.push(holiday.message);
+  elements.boardNote.hidden = notes.length === 0;
+  elements.boardNote.textContent = notes.join(" · ");
 }
 
 let renderFrame = null;
@@ -1392,6 +1403,7 @@ function connectionsFor(stop) {
 function vesselForTrip(tripId) {
   const vehicles = realtime.vehicles || [];
   const departure = (data?.departures || []).find((item) => String(item.tripId) === String(tripId));
+  if (departure?.scheduleOnly) return null;
   const working = vehicles.find((item) => String(item.tripId) === String(departure?.liveTripId || tripId) && item.boatName);
   if (working) return { name: working.boatName, predicted: false };
   if (!Number.isInteger(departure?.boatAssignment)) return null;
@@ -1488,7 +1500,7 @@ function openTripView(tripId, stopId, seconds) {
   const departure = data?.departures?.find((item) => item.tripId === tripId);
   const sourceTripId = departure?.liveTripId || tripId;
   const schedule = data?.tripSchedules?.[sourceTripId];
-  if (!schedule?.stops?.length || schedule.stops.length < 2) return;
+  if (!schedule?.stops?.length || (schedule.stops.length < 2 && !schedule.timetableOnly)) return;
   const stops = [...schedule.stops].sort((left, right) => left.sequence - right.sequence);
   // Which call was tapped. Time as well as id, because a loop trip calls at the same pier twice.
   const tapped = departure?.outOfService && departure.liveTripId ? stops.at(-1) : stops.find((stop) => stop.stopId === stopId &&
@@ -1508,6 +1520,13 @@ function openTripView(tripId, stopId, seconds) {
       ? `${route.shortName || ""} to ${departure.destination} · Out of service · Previous stops before ${tripStopName(stopId)}`.trim()
       : `${route.shortName || ""} ${destination ? `to ${destination}` : ""} · ${stops.length} stops · next boats after each call`.trim()
   };
+  if (schedule.timetableOnly) {
+    tripView.summary = `${route.shortName || ""} to ${departure.destination} · Published departure`;
+    tripView.note = "Published holiday departure time only. Trip connections and arrival estimates are unavailable.";
+    renderTripView();
+    setTripOpen(true);
+    return;
+  }
   renderTripView();
   setTripOpen(true);
   // The endpoint answers for now. On a browsed day that answer would be about the wrong date, and a
@@ -2099,7 +2118,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=101&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=102&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

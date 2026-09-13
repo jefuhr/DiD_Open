@@ -15,6 +15,8 @@ Requires openpyxl; the Node app and the kiosk never import Python.
 """
 
 import csv
+import argparse
+import datetime
 import json
 import sys
 from pathlib import Path
@@ -86,7 +88,7 @@ def read_assignments(workbook_path):
     return assignments, conflicts, skipped_sheets
 
 
-def coverage_report(assignments):
+def coverage_report(assignments, service_date=None):
     """Compare the imported assignments against the bundled GTFS feed, per route.
 
     This is the check that catches a workbook and a feed from different seasons: the
@@ -96,6 +98,18 @@ def coverage_report(assignments):
         return [], None
     with TRIPS.open(encoding="utf8") as handle:
         trips = list(csv.DictReader(handle))
+    if service_date:
+        date = datetime.date.fromisoformat(service_date)
+        key = date.strftime("%Y%m%d")
+        with (ROOT / "gtfs/calendar.txt").open() as handle:
+            active = {r["service_id"] for r in csv.DictReader(handle)
+                      if r["start_date"] <= key <= r["end_date"] and r[date.strftime("%A").lower()] == "1"}
+        with (ROOT / "gtfs/calendar_dates.txt").open() as handle:
+            for row in csv.DictReader(handle):
+                if row["date"] == key:
+                    if row["exception_type"] == "1": active.add(row["service_id"])
+                    else: active.discard(row["service_id"])
+        trips = [trip for trip in trips if trip["service_id"] in active]
     rows = []
     worst = None
     for route in sorted({trip["route_id"] for trip in trips}):
@@ -110,9 +124,13 @@ def coverage_report(assignments):
 
 
 def main():
-    if len(sys.argv) < 2:
-        sys.exit(f"usage: {sys.argv[0]} <schedule.xlsx>")
-    workbook_path = Path(sys.argv[1])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("workbook", type=Path)
+    parser.add_argument("--date", help="Report only trips active on this YYYY-MM-DD service date")
+    args = parser.parse_args()
+    if args.date:
+        datetime.date.fromisoformat(args.date)
+    workbook_path = args.workbook
     if not workbook_path.is_file():
         sys.exit(f"No such workbook: {workbook_path}")
 
@@ -136,11 +154,11 @@ def main():
     if skipped:
         print(f"Sheets with no boat column (expected for shuttles): {', '.join(skipped)}")
 
-    rows, worst = coverage_report(assignments)
+    rows, worst = coverage_report(assignments, args.date)
     if not rows:
         print(f"\nNo {TRIPS.relative_to(ROOT)} to check against; skipping the coverage report.")
         return
-    print("\nCoverage against the bundled GTFS feed:")
+    print(f"\nCoverage against the bundled GTFS feed{f' on {args.date}' if args.date else ' (all service periods)'}:")
     for route, matched, total, percent, expected in rows:
         note = "" if expected else "  (no boat number expected)"
         print(f"  {route:5s} {matched:4d}/{total:4d}  {percent:5.1f}%{note}")

@@ -42,7 +42,7 @@ stop_id,stop_code,stop_name,stop_lat,stop_lon,wheelchair_boarding
 120,"2319875","Brooklyn Navy Yard",40.701792,-73.973576,1
 136,"2319890","Battery Park City/Vesey St.",40.715029,-74.017775,1
 137,"2319891","St. George",40.646072,-74.074231,1
-138,"2319892","Midtown West/W 39th St-Pier 79",40.760323,-74.004075,1
+138,"2319892","Midtown West 39th St-Pier 79",40.760323,-74.004075,1
 141,"2319894","Ferry Point Park",40.805455,-73.837305,1
 142,"2319895","Rockaway Beach Boulevard & Beach 102nd Street",40.583830,-73.823620,1
 145,"2319897","Rockaway Beach Boulevard & Beach 118th Street",40.579155,-73.839088,1

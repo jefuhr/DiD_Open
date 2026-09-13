@@ -93,6 +93,50 @@ export function turnaroundLayovers({ runs, endsShift = new Map() }) {
   return byTrip;
 }
 
+// A feed may split one boat's day between several simultaneously active services.
+// Combine those services before finding the next trip, and retain only links that
+// are identical on EVERY date the source trip operates. A weekend-only alternative
+// cannot become a weekday turnaround, nor can a fragment look like a complete day.
+export function calendarTurnaroundLayovers({ runs, calendars, exceptions = [], endsShift = new Map() }) {
+  const dates = calendars.flatMap((c) => [c.start_date, c.end_date]).filter(Boolean).sort();
+  if (!dates.length) return new Map();
+  const dateValue = (key) => new Date(`${key.slice(0, 4)}-${key.slice(4, 6)}-${key.slice(6, 8)}T00:00:00Z`);
+  const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const patterns = new Map();
+  for (let date = dateValue(dates[0]); date <= dateValue(dates.at(-1)); date.setUTCDate(date.getUTCDate() + 1)) {
+    const key = date.toISOString().slice(0, 10).replaceAll("-", "");
+    const active = new Set(calendars.filter((c) => c.start_date <= key && c.end_date >= key && c[weekdays[date.getUTCDay()]] === "1").map((c) => c.service_id));
+    for (const exception of exceptions) {
+      if (exception.date !== key) continue;
+      if (exception.exception_type === "1") active.add(exception.service_id);
+      else active.delete(exception.service_id);
+    }
+    patterns.set([...active].sort().join(","), active);
+  }
+  const stable = new Map();
+  for (const active of patterns.values()) {
+    const merged = new Map();
+    for (const list of runs.values()) {
+      for (const run of list) {
+        if (!active.has(run.serviceId)) continue;
+        const key = `${run.routeId}|${run.boat}`;
+        if (!merged.has(key)) merged.set(key, []);
+        merged.get(key).push(run);
+      }
+    }
+    for (const list of merged.values()) list.sort((a, b) => a.startSeconds - b.startSeconds);
+    const links = turnaroundLayovers({ runs: merged, endsShift });
+    for (const list of merged.values()) {
+      for (const run of list) {
+        const candidate = links.get(run.tripId) || null;
+        if (!stable.has(run.tripId)) stable.set(run.tripId, candidate);
+        else if (JSON.stringify(stable.get(run.tripId)) !== JSON.stringify(candidate)) stable.set(run.tripId, null);
+      }
+    }
+  }
+  return new Map([...stable].filter(([, link]) => link));
+}
+
 // Where a boat stops working, and how sure we are about it.
 //
 // A boat that finishes for the day is obvious: nothing follows. A boat that finishes a shift

@@ -2,6 +2,17 @@
   "_comment": "The board's change log. Newest entry first — the board shows them in the order they appear here and marks the top one as the latest. Add an entry by copying the shape below; 'date' is what the board prints, 'notes' is a list of lines. Nothing here is validated against the code, so it says whatever you write.",
   "entries": [
     {
+      "version": "2026-09-14",
+      "date": "14 September 2026",
+      "title": "Fall ferry schedule",
+      "notes": [
+        "Fall trip times and boat assignments take effect September 14.",
+        "South Brooklyn cruise-day service appears on the published dates.",
+        "Sukkot departure times are included for September 28–October 2 as schedule-only; holiday trip connections are unavailable.",
+        "Crew shifts / Pier C shuttles: UNCONFIRMED. Unverified crew times are hidden."
+      ]
+    },
+    {
       "version": "2026-09-08",
       "date": "8 September 2026",
       "title": "What's new",
