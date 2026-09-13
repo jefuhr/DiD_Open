@@ -2,6 +2,16 @@
   "_comment": "The board's change log. Newest entry first — the board shows them in the order they appear here and marks the top one as the latest. Add an entry by copying the shape below; 'date' is what the board prints, 'notes' is a list of lines. Nothing here is validated against the code, so it says whatever you write.",
   "entries": [
     {
+      "version": "2026-09-13",
+      "date": "13 September 2026",
+      "title": "NYC Ferry schedule update",
+      "notes": [
+        "Updated the NYC Ferry timetable for the new fall times.",
+        "Boat assignments may be off while I collect data from Marine.",
+        "Crew shuttles, deadheads to Pier C, and layovers may not be accurate. I expect to fix this on Tuesday."
+      ]
+    },
+    {
       "version": "2026-09-14",
       "date": "14 September 2026",
       "title": "Fall ferry schedule",
