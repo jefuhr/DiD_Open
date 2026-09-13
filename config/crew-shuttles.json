@@ -124,5 +124,5 @@
     ]
   },
   "confirmationStatus": "unconfirmed",
-  "confirmationNote": "Fall 2026 crew shifts and Pier C shuttles have not been supplied. Historical times below are retained for reference only; do not use them operationally."
+  "confirmationNote": "These historical times remain unconfirmed. Verified ordinary fall weekday operations are supplied separately by schedules/fall-2026-weekday-crew.json. Weekend and Sukkot crew data remain unconfirmed."
 }

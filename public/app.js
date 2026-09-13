@@ -976,7 +976,7 @@ function showToday() {
 // An empty live board means the boats have finished; an empty browsed one means that day was never
 // going to have any. Saying "concluded for the day" about next Sunday would read as a cancellation.
 function emptyBoard() {
-  if (data?.meta?.crewScheduleStatus?.status === "unconfirmed" &&
+  if (data?.meta?.crewScheduleStatus?.status === "unconfirmed" && !hasConfirmedWeekdayCrew() &&
       (data?.meta?.landing?.stopIds || []).includes("home-port")) {
     return `<div class="empty"><div><strong>CREW TIMES UNCONFIRMED</strong><span>Pier C departures will appear when the crew schedule is confirmed.</span></div></div>`;
   }
@@ -993,6 +993,13 @@ function emptyBoard() {
 const HOME_PORT_NOTE =
   "*actual departure times at discretion of the captain, listed time is the first pickup time";
 
+function hasConfirmedWeekdayCrew() {
+  const coverage = data?.meta?.crewScheduleStatus?.confirmedWeekdays;
+  const date = viewFrame().dateKey;
+  return Boolean(coverage && date >= coverage.startDate && date <= coverage.endDate &&
+    !coverage.excludedDates.includes(date) && ![0,6].includes(new Date(`${date}T12:00:00Z`).getUTCDay()));
+}
+
 // The home port is the one landing with no real stop behind it; it is keyed off the stop id the
 // build already puts in the payload rather than off landing 27, so renumbering the landings cannot
 // silently take the note away.
@@ -1001,7 +1008,10 @@ function renderBoardNote() {
   const crew = data?.meta?.crewScheduleStatus;
   const holiday = data?.meta?.holidaySchedule;
   const notes = [];
-  if (crew?.status === "unconfirmed") notes.push(crew.message);
+  if (hasConfirmedWeekdayCrew()) {
+    notes.push(crew.confirmedWeekdays.message);
+    if (homePort) notes.push(HOME_PORT_NOTE);
+  } else if (crew?.status === "unconfirmed") notes.push(crew.message);
   else if (homePort) notes.push(HOME_PORT_NOTE);
   if (holiday?.dates.includes(viewFrame().dateKey)) notes.push(holiday.message);
   elements.boardNote.hidden = notes.length === 0;
@@ -2118,7 +2128,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=102&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=103&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

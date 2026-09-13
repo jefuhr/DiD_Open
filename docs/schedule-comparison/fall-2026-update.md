@@ -8,8 +8,20 @@ The ordinary timetable comes from [Connexionz Timetables](https://nycferry.conne
 - A point-to-point shuttle between Red Hook/Atlantic Basin and Wall St./Pier 11 serves cruise demand approximately 7:30 a.m.–1 p.m. on September 19, 26, 27; October 3, 10, 11, 17, 24, 31; November 1. The raw feed's service 8 runs every weekend from September 26. The generator replaces that broad recurrence with the exact dates in [NYC Ferry's fall announcement](https://www.ferry.nyc/blog/fall-schedule-changes-beginning-september-14th/) and its South Brooklyn PDF. Service 7 already supplies September 19.
 - The official feed retains its native trip/stop/shape IDs. The captain workbook supplies 289 trip-number-to-boat assignments, covering **100% of active fall ferry trips**. Old summer-only trips in the transition feed need not match the fall assignments; coverage must be checked by service date.
 - The workbook's Pier 101 alternatives remain archived and inactive. Connexionz uses Yankee Pier; no Pier 101 activation dates were supplied.
-- Crew shifts / Pier C shuttles: **UNCONFIRMED**. Historical summer crew records remain stored, but the app generates no unverified shuttle times, Pier C movements, or crew-derived final/drop-off labels. Explicit GTFS restrictions remain effective.
+- Ordinary weekday crew operations are verified from the supplied vessel assignment board as described below. Weekend and Sukkot crew operations remain **UNCONFIRMED**, with no crew-derived shuttle times, Pier C movements, or final/drop-off labels on those dates. Explicit GTFS restrictions remain effective.
 - Turnarounds are derived from complete simultaneously active service sets, not individual calendar fragments. Only a link that is the same on every applicable date is retained.
+
+## Ordinary weekday crew notes
+
+The supplied `NYC Ferry Vessel Assignment Board (2).xlsx` has the actual sheet name `FALL WKDY 26`. The source file remains in `.orca/drops`; its operational labels, 42 comments, and shuttle cells are preserved in `schedules/fall-2026-weekday-crew.json`, excluding personnel names. Run `python3 scripts/import-fall-crew.py "path/to/workbook.xlsx"` to reproduce this extraction and validation.
+
+41 shifts match the active fall weekday timetable. The four Rockaway AM handovers preserve the noted Pier 11 arrival while matching the feed's departure 8–10 minutes later. Pier 79's current GTFS stop name is normalized. The remaining note, AST3 AM at I2, describes 06:33 East 34th to 13:24 Governors Island and conflicts with that working. Its AM pickup/drop-off is not asserted; the board displays this remaining uncertainty.
+
+The four crew shuttles are 12:45 Pier 11 (RS1/RS4), 13:30 East 34th (SB1), 13:15 Governors Island (SB2), and 13:45 Pier 11 (RS3/RS6), from N3:P6. Q3:Q6 carrier notes remain attached to the source records. Crew relief suppresses six corresponding vessel-change movements. The Pier C board has 35 verified shift-start entries plus four shuttle entries on ordinary weekdays; their displayed times describe the first pickup at the destination, not an exact departure from Pier C.
+
+Crew calculations merge the simultaneous weekday GTFS service fragments before identifying final trips and layovers. All ordinary weekday crew additions are restricted to September 14–November 1 and excluded September 28–October 2. Weekend notes will be supplied separately.
+
+The reusable local skill is `~/.codex/skills/nyc-ferry-vessel-assignments/SKILL.md`.
 
 ## Sukkot source limits
 
@@ -48,6 +60,6 @@ To confirm a weekend assignment set, use `--date 2026-09-19` or `--date 2026-09-
 
 ## Release
 
-Asset version **102** updates the installed shell and data caches while retaining user preferences. Rebuild and restart the deployed app with all changed files together; the calendar then switches dates without a midnight restart. This workspace's local validation server does not deploy the production instance. After the fall period ends, NYC Ferry departures expire until a new verified schedule is installed.
+Asset version **103** updates the installed shell and data caches while retaining user preferences. Rebuild and restart the deployed app with all changed files together; the calendar then switches dates without a midnight restart. This workspace's local validation server does not deploy the production instance. After the fall period ends, NYC Ferry departures expire until a new verified schedule is installed.
 
-The browser check is `FALL_TEST_ORIGIN=http://127.0.0.1:8096 node scripts/check-fall-browser.cjs` against a local running server with Chromium available. It exercises the desktop and mobile fall board, Sukkot details, and the empty Pier C board with its UNCONFIRMED notice. Screenshots and results are alongside this document.
+The browser check is `FALL_TEST_ORIGIN=http://127.0.0.1:8097 node scripts/check-fall-browser.cjs` against a local running server with Chromium available. It exercises the desktop and mobile fall board, Sukkot details, weekday Pier C pickups, and the empty weekend Pier C board with its UNCONFIRMED notice. Screenshots and results are alongside this document.

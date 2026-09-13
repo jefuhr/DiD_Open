@@ -1,0 +1,680 @@
+{
+  "source": {
+    "sheet": "FALL WKDY 26",
+    "assignments": [
+      {
+        "cell": "A26",
+        "label": "TRN|ERF 1 PM (T) ",
+        "note": "ERF 1 PM\nFirst departure 15:46 at Pier 11\n\nLast drop 20:02 at Pier 11 "
+      },
+      {
+        "cell": "B26",
+        "label": "TRN|ERF 2 PM (T)",
+        "note": "ERF 2 PM\nFirst departure 14:40 at Pier 11\n\nLast drop off 19:34 at Pier 11"
+      },
+      {
+        "cell": "C26",
+        "label": "ERF 3 PM (T)",
+        "note": "ERF 3 PM\nFirst departure 14:19 at East 34th St.\n\nLast drop off  21:43 at pier 11."
+      },
+      {
+        "cell": "D26",
+        "label": "DRL|ERF 4 PM (T)\n",
+        "note": "ERF 4 PM\nFirst departure 16:16 at Pier 11\n\nLast drop off 21:39 at 34th St."
+      },
+      {
+        "cell": "E26",
+        "label": "DRL|ERF 5 PM (T)\n",
+        "note": "ERF 5 PM\nFirst departure 16:31 at Pier 11\n\nLast drop off 21:06 at Pier 11"
+      },
+      {
+        "cell": "F26",
+        "label": "ERF 6 PM (T)",
+        "note": "ERF 5 PM\nFirst departure 14:03 at Pier 11\n\n Last drop off 20:14 at Pier 11\n"
+      },
+      {
+        "cell": "G26",
+        "label": "STG 1 PM (T)",
+        "note": "STG-BK 1 PM\nFirst departure 13:24 at Pier 11  \n\nLast drop 21:20 at Pier 11\n"
+      },
+      {
+        "cell": "H26",
+        "label": "STG 2 PM (T)",
+        "note": "STG-BK 2 PM\nFirst pickup 14:14 at Pier 11, \n\nLast drop 22:08 at P11"
+      },
+      {
+        "cell": "A18",
+        "label": "ERF 1 AM|DRL (T) ",
+        "note": "ERF 1 AM\nFirst departure 06:06 at HPS\n\nLast drop 10:28 at Pier 11"
+      },
+      {
+        "cell": "I26",
+        "label": "DRL/STG 3 PM (T)",
+        "note": "STG-BK 3 PM\nFirst Pickup is 16:54 ar P79, \n\nLast drop is 21:49 at P79\n"
+      },
+      {
+        "cell": "B18",
+        "label": "ERF 2 AM (T)",
+        "note": "ERF 2 AM\nFirst departure 06:26 at E 34th St\n\nLast drop 14:31 at Pier 11"
+      },
+      {
+        "cell": "J26",
+        "label": "STG 4 PM (T)",
+        "note": "STG-BK 4 PM\n First pickup 13:50 at Pier 79  \n\nLast drop 21:12 at Pier 79\n"
+      },
+      {
+        "cell": "C18",
+        "label": "ERF 3 AM (T)",
+        "note": "ERF 3 AM\nFirst departure 06:31 at HPS\n\nLast drop off 14:14 at E 34th St"
+      },
+      {
+        "cell": "D18",
+        "label": "ERF 4 AM (T)\nTraining",
+        "note": "ERF 4 AM\nFirst departure 06:51 at E 34th St\nLast drop off 10:28 at E 34th St"
+      },
+      {
+        "cell": "E18",
+        "label": "ERF 5 AM (T)\nTraining",
+        "note": "ERF 5 AM\nFirst departure 06:27 at Pier 11\n\nLast drop 10:04 at Pier 11"
+      },
+      {
+        "cell": "F18",
+        "label": "ERF 6 AM (T)\n",
+        "note": "ERF 5 AM\nFirst departure 06:39 at P11,\n\n Last drop 13:54 at Pier 11"
+      },
+      {
+        "cell": "G18",
+        "label": "STG 1 AM (T)",
+        "note": "STG-BK 1 AM\nFirst pickup 06:16 at STG  \n\nLast drop 13:18 at Pier 11"
+      },
+      {
+        "cell": "H18",
+        "label": "STG 2 AM (T)",
+        "note": "STG-BK 2 AM\nFirst pickup 06:15 at Pier 11 \n\nLast drop 14:08 at Pier 11"
+      },
+      {
+        "cell": "A10",
+        "label": "RWSV 1 PM (K-150)",
+        "note": "RWSV 1 PM\nFirst departure is 13:13 from Pier 11  \n\nLast drop off is 21:08 at RWY"
+      },
+      {
+        "cell": "I18",
+        "label": "STG 3 AM (T) DRL",
+        "note": "STG-BK 3 AM\nFirst pickup 06:21 at STG  \n\nLast drop 10:37 at Pier 79"
+      },
+      {
+        "cell": "B10",
+        "label": "RWSV 2 PM (K-299)",
+        "note": "RWSV 2 PM\n First departure is 16:12 at RWY, \n\nLast drop off is 21:32 at P11"
+      },
+      {
+        "cell": "J18",
+        "label": "STG 4 AM (T)",
+        "note": "STG-BK 4 AM\nFirst pickup 06:22 at Pier 79  \n\nLast drop 13:43 at Pier 79"
+      },
+      {
+        "cell": "C10",
+        "label": "RWSV 3 PM (K-150)",
+        "note": "RWSV 3 PM\nFirst departure is 14:19 from Pier 11 \n\nLast drop off is 20:47 at P11"
+      },
+      {
+        "cell": "D10",
+        "label": "RWSV 4 PM (K-299)",
+        "note": "RWSV 2 PM\nFirst departure is 13:09 from Pier 11, \n\nLast drop off is 21:07 at FPP"
+      },
+      {
+        "cell": "E10",
+        "label": "RWSV 5 PM (K-299)",
+        "note": "RWSV 5 PM\nFirst departure is 16:06 at FPP \n\nLast drop off is 21:28 at P11"
+      },
+      {
+        "cell": "F10",
+        "label": "RWSV 6 PM (K-299)",
+        "note": "RWSV 2 PM\nFirst departure is 14:19 from Pier 11 \n\nLast drop off is 20:48 at P11"
+      },
+      {
+        "cell": "G10",
+        "label": "AST 1 PM (K-299)\nDrills\n",
+        "note": "AST 1 PM\nDrills from 14:15-15:30\nFirst pickup 16:52 at Pier 11\n\nLast drop 20:42 at Pier 11\n"
+      },
+      {
+        "cell": "H10",
+        "label": "AST 2 PM (K-299)",
+        "note": "AST 2 PM\nFirst departure 13:20 at Pier 11\n\nLast drop 21:16 at Pier 11"
+      },
+      {
+        "cell": "A2",
+        "label": "RWSV 1 AM (K-150)",
+        "note": "RWSV 1 AM\nFirst pickup 05:03 at FPP.   \n\nLast drop off 13:05 at Pier 11\n\n\n\n"
+      },
+      {
+        "cell": "I10",
+        "label": "AST 3 PM (K-299)",
+        "note": "AST 3 PM\nFirst departure 14:17 at Pier 11.\n\nLast drop off 20:59 at E. 90th\n"
+      },
+      {
+        "cell": "B2",
+        "label": "RWSV 2 AM (K-299)",
+        "note": "RWSV 2 AM\nFirst pickup 05:47 at FPP \n\nLast drop off 12:10 at RWY\n\n\n"
+      },
+      {
+        "cell": "J10",
+        "label": "SBK 1 PM (T)",
+        "note": "SBK 1 PM\nFirst pickup 13:51 at E 34th St, \n\nLast drop 21:42 at 34th St."
+      },
+      {
+        "cell": "C2",
+        "label": "RWSV 3 AM (K-150)",
+        "note": "RWSV 3 AM\nFirst pickup 06:31 at FPP \n\nLast drop off 14:11 at P11\n\n\n"
+      },
+      {
+        "cell": "K10",
+        "label": "SBK 2 PM (T)",
+        "note": "SBK 2 PM\nFirst pickup 13:53 at G.I., \n\nLast drop 21:34 at Redhook"
+      },
+      {
+        "cell": "D2",
+        "label": "RWSV 4 AM (K-299)",
+        "note": "RWSV 4 AM\n First pickup 05:05 at RWY \n\nLast drop off 12:59 at P11\n\n\n"
+      },
+      {
+        "cell": "E2",
+        "label": "RWSV 5 AM (K-299)",
+        "note": "RWSV 4 AM\nFirst pickup 05:49 at RWY. \n\nLast drop off 10:00 at RWY\n\n\n"
+      },
+      {
+        "cell": "F2",
+        "label": "RWSV 6 AM (K-299)",
+        "note": "RWSV 4 AM\nFirst pickup 06:33 RWY \n\nLast drop off 14:09 at P11\n\n\n"
+      },
+      {
+        "cell": "G2",
+        "label": "AST 1 AM (K-299)\nDrills",
+        "note": "AST 1 AM\nFirst pickup 06:03 at 90th\n\nLast drop 10:42 at Pier 11\n\n"
+      },
+      {
+        "cell": "H2",
+        "label": "AST 2 AM (K-299)",
+        "note": "AST 2 AM\nFirst departure 06:41 90th St.\n\nLast drop 13:14 at Pier 11"
+      },
+      {
+        "cell": "I2",
+        "label": "AST 3 AM (K-299)",
+        "note": "AST 3 AM\nFirst departure 06:33 at East 34th St. \n\nLast drop 13:24 at G.I."
+      },
+      {
+        "cell": "J2",
+        "label": "SBK 1 AM (T)",
+        "note": "SBK 1 AM\nFirst pickup 06:40 at Red Hook \n\nLast drop 13:45 at E 34th St."
+      },
+      {
+        "cell": "K2",
+        "label": "SBK 2 AM (T)",
+        "note": "SBK 2 AM\nFirst departure 06:33 at E 34th.\n\nLast drop 13:25 at GI"
+      }
+    ],
+    "shuttleCells": {
+      "N3": "RWSV 1, RWSV 4",
+      "O3": null,
+      "P3": "0.53125",
+      "Q3": "RWY 5 AM Boat",
+      "N4": "SBK 1 PM E 34th ST",
+      "O4": null,
+      "P4": "0.5625",
+      "Q4": "RWY 5 AM Boat",
+      "N5": "SBK 2 PM GI",
+      "O5": null,
+      "P5": "0.5520833333333334",
+      "Q5": null,
+      "N6": "RWSV 3, RWSV 6",
+      "O6": null,
+      "P6": "0.5729166666666666",
+      "Q6": "RWY 2 AM Boat "
+    }
+  },
+  "workbookSha256": "da55d3143155b92ea7e7a70bc0014b75a616c740dcf00a79bb873b13ddafa2ed",
+  "startDate": "2026-09-14",
+  "endDate": "2026-11-01",
+  "serviceIds": [
+    "2",
+    "3"
+  ],
+  "shifts": {
+    "weekday": {
+      "AS1": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!G2",
+          "startTime": "06:03",
+          "startPlace": "East 90th St",
+          "endTime": "10:42",
+          "endPlace": "Wall St/Pier 11"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!G10",
+          "startTime": "16:52",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "20:42",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "AS2": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!H2",
+          "startTime": "06:41",
+          "startPlace": "East 90th St",
+          "endTime": "13:14",
+          "endPlace": "Wall St/Pier 11"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!H10",
+          "startTime": "13:20",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "21:16",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "AS3": [
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!I10",
+          "startTime": "14:17",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "20:59",
+          "endPlace": "East 90th St"
+        }
+      ],
+      "ER1": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!A18",
+          "startTime": "06:06",
+          "startPlace": "Hunters Point South",
+          "endTime": "10:28",
+          "endPlace": "Wall St/Pier 11"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!A26",
+          "startTime": "15:46",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "20:02",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "ER2": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!B18",
+          "startTime": "06:26",
+          "startPlace": "East 34th Street",
+          "endTime": "14:31",
+          "endPlace": "Wall St/Pier 11"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!B26",
+          "startTime": "14:40",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "19:34",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "ER3": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!C18",
+          "startTime": "06:31",
+          "startPlace": "Hunters Point South",
+          "endTime": "14:14",
+          "endPlace": "East 34th Street"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!C26",
+          "startTime": "14:19",
+          "startPlace": "East 34th Street",
+          "endTime": "21:43",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "ER4": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!D18",
+          "startTime": "06:51",
+          "startPlace": "East 34th Street",
+          "endTime": "10:28",
+          "endPlace": "East 34th Street"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!D26",
+          "startTime": "16:16",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "21:39",
+          "endPlace": "East 34th Street"
+        }
+      ],
+      "ER5": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!E18",
+          "startTime": "06:27",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "10:04",
+          "endPlace": "Wall St/Pier 11"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!E26",
+          "startTime": "16:31",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "21:06",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "ER6": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!F18",
+          "startTime": "06:39",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "13:54",
+          "endPlace": "Wall St/Pier 11"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!F26",
+          "startTime": "14:03",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "20:14",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "RS1": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!A2",
+          "startTime": "05:03",
+          "startPlace": "Ferry Point Park",
+          "endTime": "13:13",
+          "endPlace": "Wall St/Pier 11",
+          "endNoteTime": "13:05"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!A10",
+          "startTime": "13:13",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "21:08",
+          "endPlace": "Rockaway"
+        }
+      ],
+      "RS2": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!B2",
+          "startTime": "05:47",
+          "startPlace": "Ferry Point Park",
+          "endTime": "12:10",
+          "endPlace": "Rockaway"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!B10",
+          "startTime": "16:12",
+          "startPlace": "Rockaway",
+          "endTime": "21:32",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "RS3": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!C2",
+          "startTime": "06:31",
+          "startPlace": "Ferry Point Park",
+          "endTime": "14:19",
+          "endPlace": "Wall St/Pier 11",
+          "endNoteTime": "14:11"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!C10",
+          "startTime": "14:19",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "20:47",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "RS4": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!D2",
+          "startTime": "05:05",
+          "startPlace": "Rockaway",
+          "endTime": "13:09",
+          "endPlace": "Wall St/Pier 11",
+          "endNoteTime": "12:59"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!D10",
+          "startTime": "13:09",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "21:07",
+          "endPlace": "Ferry Point Park"
+        }
+      ],
+      "RS5": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!E2",
+          "startTime": "05:49",
+          "startPlace": "Rockaway",
+          "endTime": "10:00",
+          "endPlace": "Rockaway"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!E10",
+          "startTime": "16:06",
+          "startPlace": "Ferry Point Park",
+          "endTime": "21:28",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "RS6": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!F2",
+          "startTime": "06:33",
+          "startPlace": "Rockaway",
+          "endTime": "14:19",
+          "endPlace": "Wall St/Pier 11",
+          "endNoteTime": "14:09"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!F10",
+          "startTime": "14:19",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "20:48",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "SB1": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!J2",
+          "startTime": "06:40",
+          "startPlace": "Red Hook/Atlantic Basin",
+          "endTime": "13:45",
+          "endPlace": "East 34th Street"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!J10",
+          "startTime": "13:51",
+          "startPlace": "East 34th Street",
+          "endTime": "21:42",
+          "endPlace": "East 34th Street"
+        }
+      ],
+      "SB2": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!K2",
+          "startTime": "06:33",
+          "startPlace": "East 34th Street",
+          "endTime": "13:25",
+          "endPlace": "Gov. Island/Yankee Pier"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!K10",
+          "startTime": "13:53",
+          "startPlace": "Gov. Island/Yankee Pier",
+          "endTime": "21:34",
+          "endPlace": "Red Hook/Atlantic Basin"
+        }
+      ],
+      "SG1": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!G18",
+          "startTime": "06:16",
+          "startPlace": "St. George",
+          "endTime": "13:18",
+          "endPlace": "Wall St/Pier 11"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!G26",
+          "startTime": "13:24",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "21:20",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "SG2": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!H18",
+          "startTime": "06:15",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "14:08",
+          "endPlace": "Wall St/Pier 11"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!H26",
+          "startTime": "14:14",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "22:08",
+          "endPlace": "Wall St/Pier 11"
+        }
+      ],
+      "SG3": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!I18",
+          "startTime": "06:21",
+          "startPlace": "St. George",
+          "endTime": "10:37",
+          "endPlace": "Midtown West 39th St-Pier 79"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!I26",
+          "startTime": "16:54",
+          "startPlace": "Midtown West 39th St-Pier 79",
+          "endTime": "21:49",
+          "endPlace": "Midtown West 39th St-Pier 79"
+        }
+      ],
+      "SG4": [
+        {
+          "shift": "AM",
+          "source": "FALL WKDY 26!J18",
+          "startTime": "06:22",
+          "startPlace": "Midtown West 39th St-Pier 79",
+          "endTime": "13:43",
+          "endPlace": "Midtown West 39th St-Pier 79"
+        },
+        {
+          "shift": "PM",
+          "source": "FALL WKDY 26!J26",
+          "startTime": "13:50",
+          "startPlace": "Midtown West 39th St-Pier 79",
+          "endTime": "21:12",
+          "endPlace": "Midtown West 39th St-Pier 79"
+        }
+      ]
+    }
+  },
+  "shuttles": {
+    "weekday": [
+      {
+        "landing": 16,
+        "time": "12:45",
+        "boats": [
+          "RS1",
+          "RS4"
+        ],
+        "source": "FALL WKDY 26!N3:Q3",
+        "carrierNote": "RWY 5 AM Boat"
+      },
+      {
+        "landing": 8,
+        "time": "13:30",
+        "boats": [
+          "SB1"
+        ],
+        "source": "FALL WKDY 26!N4:Q4",
+        "carrierNote": "RWY 5 AM Boat"
+      },
+      {
+        "landing": 11,
+        "time": "13:15",
+        "boats": [
+          "SB2"
+        ],
+        "source": "FALL WKDY 26!N5:Q5",
+        "carrierNote": null
+      },
+      {
+        "landing": 16,
+        "time": "13:45",
+        "boats": [
+          "RS3",
+          "RS6"
+        ],
+        "source": "FALL WKDY 26!N6:Q6",
+        "carrierNote": "RWY 2 AM Boat "
+      }
+    ]
+  },
+  "rejected": [
+    {
+      "source": "FALL WKDY 26!I2",
+      "boat": "AS3",
+      "field": "start",
+      "time": "06:33",
+      "place": "East 34th Street",
+      "reason": "no matching fall weekday event"
+    },
+    {
+      "source": "FALL WKDY 26!I2",
+      "boat": "AS3",
+      "field": "end",
+      "time": "13:24",
+      "place": "Gov. Island/Yankee Pier",
+      "reason": "no matching fall weekday event"
+    }
+  ]
+}
