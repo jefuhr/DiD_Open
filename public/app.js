@@ -1329,8 +1329,18 @@ function layoverLabel(turnaround, className, prefix = "") {
 // destination the label now sits beside — naming it again cost a line and said the same thing twice.
 function departureLayoverLabel(item) {
   if (item.outOfService || item.crewShuttle || item.endsShift) return "";
-  const turn = scheduleForDeparture(item)?.turnaround;
-  if (!turn) return "";
+  const schedule = scheduleForDeparture(item);
+  const stop = schedule?.stops?.find((stop) => String(stop.stopId) === String(item.stopId));
+  const dwellSeconds = stop?.arrivalSeconds != null && stop?.departureSeconds != null
+    ? Number(stop.departureSeconds) - Number(stop.arrivalSeconds) : NaN;
+  const dwellMinutes = Number.isFinite(dwellSeconds) && dwellSeconds >= 0
+    ? layoverMinutes(dwellSeconds) : null;
+  const dwellText = dwellMinutes == null ? "" : `Dwell ${dwellMinutes}m`;
+  const dwellAria = dwellMinutes == null ? "" : `Estimated dwell ${dwellMinutes} minutes`;
+  const dwellOnly = dwellText
+    ? `<small class="departure-layover" aria-label="${dwellAria}">${dwellText}</small>` : "";
+  const turn = schedule?.turnaround;
+  if (!turn) return dwellOnly;
   const live = item.live !== false && !realtime.stale;
   const updates = live ? realtime.updates || [] : [];
   const arrival = updates.find((update) => String(update.tripId) === String(item.tripId) && update.stopId === turn.stopId);
@@ -1341,9 +1351,9 @@ function departureLayoverLabel(item) {
   const seconds = hasLiveTiming
     ? turn.scheduledLayoverSeconds - delay(arrival) + delay(next)
     : turn.scheduledLayoverSeconds;
-  if (seconds == null || !Number.isFinite(Number(seconds))) return "";
+  if (seconds == null || !Number.isFinite(Number(seconds))) return dwellOnly;
   const minutes = layoverMinutes(seconds);
-  return `<small class="departure-layover" aria-label="${hasLiveTiming ? "Estimated" : "Scheduled"} layover ${minutes} minutes">${minutes} min Layover</small>`;
+  return `<small class="departure-layover" aria-label="${dwellAria ? `${dwellAria}, ` : ""}${hasLiveTiming ? "Estimated" : "Scheduled"} layover ${minutes} minutes">${dwellText ? `${dwellText} ` : ""}Layover ${minutes}m</small>`;
 }
 
 function tripStopName(stopId) {
