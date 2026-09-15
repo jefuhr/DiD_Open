@@ -27,3 +27,7 @@ The website also contains two additional three-stop tables. Their applicability 
 ## Validation
 
 `node --test test/display-contract.test.js` — 64 passed, 0 failed.
+
+## Integration into mobile
+
+The local `mobile` branch already contains the newer `20260913` feed. The comparison above records the original audit checkout, not the newer mobile feed. On mobile, the same 15:04 trip uses service `2`; the regression test resolves active services by date instead of assuming a fixed service ID. All 66 display-contract tests pass after integration.
