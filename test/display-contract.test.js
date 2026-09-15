@@ -597,6 +597,18 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = 
   };
 }
 
+test("Pier 11 renders the bundled weekday STG 15:04 departure before boarding", async () => {
+  const { buildDisplayData } = await import("../scripts/build-data.js");
+  const payload = await buildDisplayData({ root: new URL("..", import.meta.url).pathname, landingNumber: 16 });
+  const departure = payload.departures.find(item => item.routeId === "SG" && item.serviceId === "1" && item.departureTime === "15:04:00");
+  assert.ok(departure, "the published 15:04 sailing must survive the build");
+  assert.equal(departure.outOfService, false);
+  const view = await board({ now: "2026-09-15T18:59:00Z", payload, query: "?landing=16" });
+  assert.ok(view.times().includes("15:04"), "the live board must render 15:04 at 14:59 Eastern without realtime");
+  const groups = view.run("routeDirectionGroups()");
+  assert.ok(groups.some(group => group.routeId === "SG" && group.departures.some(item => item.tripId === departure.tripId)));
+});
+
 test("a landing link overrides the saved board once, then allows another selection", async () => {
   const view = await board({ query: "?landing=27", stored: { "nyc-ferry-did-selected-landing": "16" } });
   assert.ok(view.requested.includes("/api/display-data?landingId=27"));
