@@ -279,6 +279,23 @@
       ],
       "AS3": [
         {
+          "shift": "AM",
+          "source": "FALL WKDY 26!I2",
+          "correction": {
+            "source": "FALL WKDY 26!I2",
+            "boat": "AS3",
+            "shift": "AM",
+            "confirmedBy": "User correction, 2026-09-17",
+            "note": "AST 3 AM\nFirst departure 06:22 at Pier 11.\nLast drop 14:12 at Pier 11.",
+            "endTimetableTime": "14:11"
+          },
+          "startTime": "06:22",
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "14:11",
+          "endPlace": "Wall St/Pier 11",
+          "endNoteTime": "14:12"
+        },
+        {
           "shift": "PM",
           "source": "FALL WKDY 26!I10",
           "startTime": "14:17",
@@ -659,22 +676,5 @@
       }
     ]
   },
-  "rejected": [
-    {
-      "source": "FALL WKDY 26!I2",
-      "boat": "AS3",
-      "field": "start",
-      "time": "06:33",
-      "place": "East 34th Street",
-      "reason": "no matching fall weekday event"
-    },
-    {
-      "source": "FALL WKDY 26!I2",
-      "boat": "AS3",
-      "field": "end",
-      "time": "13:24",
-      "place": "Gov. Island/Yankee Pier",
-      "reason": "no matching fall weekday event"
-    }
-  ]
+  "rejected": []
 }

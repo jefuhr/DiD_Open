@@ -121,20 +121,25 @@ test('weekend and holiday crew operations remain unconfirmed and absent', async 
   }
 });
 
-test('fall weekday crew source restores 41 shifts and four shuttles with the AS3 AM conflict isolated', async () => {
+test('fall weekday crew source restores 42 shifts and four shuttles with the corrected AS3 AM boundary', async () => {
   const crew = JSON.parse(await readFile(new URL('schedules/fall-2026-weekday-crew.json',root),'utf8'));
-  assert.equal(Object.values(crew.shifts.weekday).flat().length,41);
-  assert.deepEqual(crew.rejected.map(r=>r.boat),['AS3','AS3']);
-  assert.equal(crew.shifts.weekday.AS3.some(r=>r.shift==='AM'),false);
+  assert.equal(Object.values(crew.shifts.weekday).flat().length,42);
+  assert.deepEqual(crew.rejected,[]);
+  const ast = crew.shifts.weekday.AS3.find(r=>r.shift==='AM');
+  assert.equal(ast.startTime,'06:22');
+  assert.equal(ast.endTime,'14:11');
+  assert.equal(ast.endNoteTime,'14:12');
+  assert.equal(ast.startPlace,'Wall St/Pier 11');
+  assert.equal(ast.endPlace,ast.startPlace);
   const pierC = await buildDisplayData({landingNumber:27});
   const local = createConnectionIndex(new Map([[27,pierC]]));
   for (const date of ['2026-09-14','2026-09-18','2026-10-05','2026-10-30']) {
     const services = activeServices(local,date);
     const departures = pierC.departures.filter(r=>services.has(r.serviceId));
     assert.equal(departures.filter(r=>r.crewShuttle).length,4);
-    assert.equal(departures.filter(r=>r.fromHomePort && !r.crewShuttle).length,35);
+    assert.equal(departures.filter(r=>r.fromHomePort && !r.crewShuttle).length,36);
     assert.ok(departures.filter(r=>r.fromHomePort).every(r=>r.approximate));
-    assert.equal(departures.some(r=>r.routeId==='AS' && r.boatAssignment===3 && r.seconds<43200),false);
+    assert.equal(departures.some(r=>r.routeId==='AS' && r.boatAssignment===3 && r.seconds===6*3600+22*60),true);
   }
   for (const [landingNumber,time,boats] of [[16,'12:45:00',['RS1','RS4']],[16,'13:45:00',['RS3','RS6']],[8,'13:30:00',['SB1']],[11,'13:15:00',['SB2']]]) {
     const data = await buildDisplayData({landingNumber});
