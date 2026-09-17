@@ -884,7 +884,7 @@ export async function buildDisplayData({
       departuresShown, busesEnabled,
       crewScheduleStatus: fallCrew ? { status: "unconfirmed", message: CREW_UNCONFIRMED,
         confirmedWeekdays: { startDate: fallCrew.startDate, endDate: fallCrew.endDate,
-          excludedDates: holidaySource?.dates || [], message: "Weekday crew schedule loaded; AS3 AM pickup/drop-off remains unconfirmed." } }
+          excludedDates: holidaySource?.dates || [] } }
         : crewUnconfirmed ? { status: "unconfirmed", message: CREW_UNCONFIRMED } : null,
       holidaySchedule: holidaySource ? { dates: holidaySource.dates,
         message: "Sukkot: published departure times only; trip connections unavailable." } : null,

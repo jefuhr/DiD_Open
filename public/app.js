@@ -1009,7 +1009,6 @@ function renderBoardNote() {
   const holiday = data?.meta?.holidaySchedule;
   const notes = [];
   if (hasConfirmedWeekdayCrew()) {
-    notes.push(crew.confirmedWeekdays.message);
     if (homePort) notes.push(HOME_PORT_NOTE);
   } else if (crew?.status === "unconfirmed") notes.push(crew.message);
   else if (homePort) notes.push(HOME_PORT_NOTE);
@@ -2138,7 +2137,7 @@ if ("serviceWorker" in navigator) {
   // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
   const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=105&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=106&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

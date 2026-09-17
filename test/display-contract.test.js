@@ -1575,8 +1575,8 @@ test("crew confirmation follows the viewed date, including Pier C", async () => 
     const payload = await buildDisplayData({landingNumber});
     const view = await board({now:"2026-09-14T12:00:00Z",payload});
     view.run("renderBoardNote()");
-    assert.equal(view.node("boardNote").hidden,false);
-    assert.match(view.node("boardNote").textContent,/Weekday crew schedule loaded; AS3 AM/);
+    assert.equal(view.node("boardNote").hidden,landingNumber !== 27);
+    assert.doesNotMatch(view.node("boardNote").textContent,/Weekday crew schedule loaded|AS3 AM|unconfirmed/i);
     assert.equal(view.run("hasConfirmedWeekdayCrew()"),true);
     for (const date of ["2026-09-13", "2026-09-19", "2026-09-28", "2026-11-02"]) {
       view.run(`viewDate = "${date}"; renderBoardNote()`);
