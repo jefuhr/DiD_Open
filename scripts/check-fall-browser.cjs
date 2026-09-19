@@ -26,7 +26,7 @@ const origin = process.env.FALL_TEST_ORIGIN || 'http://127.0.0.1:8090';
       await page.route('**/api/realtime*',route=>route.fulfill({json:{available:true,stale:true,updates:[],vehicles:[]}}));
       await page.route('**/api/alerts*',route=>route.fulfill({json:{available:true,alerts:[]}}));
       await page.goto(`${origin}/?landing=${scenario.landing}`);
-      await page.waitForFunction(() => /unconfirmed/i.test(document.querySelector('#boardNote').textContent));
+      await page.waitForFunction(() => /September/.test(document.querySelector('#dateCurrent').getAttribute('aria-label') || ''));
       if (scenario.landing !== 27) await page.waitForSelector('#departures [data-trip-id]');
       const state=await page.evaluate(() => ({
         note:document.querySelector('#boardNote').textContent,
@@ -40,7 +40,7 @@ const origin = process.env.FALL_TEST_ORIGIN || 'http://127.0.0.1:8090';
         assert.equal(state.hasFinal,false,scenario.name);
         assert.match(state.note,/Crew shifts \/ Pier C shuttles: UNCONFIRMED/);
       } else if (scenario.weekend) assert.match(state.note,/Weekend crew schedule loaded/);
-      else assert.match(state.note,/Weekday crew schedule loaded; AS3 AM/);
+      else assert.doesNotMatch(state.note,/Weekday crew schedule loaded|AS3 AM|unconfirmed/i);
       if (scenario.unconfirmed) {
         assert.equal(state.rows,0);
         assert.match(state.text,/CREW TIMES UNCONFIRMED/);

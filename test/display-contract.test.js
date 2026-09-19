@@ -597,6 +597,19 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = 
   };
 }
 
+test("Pier 11 renders the bundled weekday STG 15:04 departure before boarding", async () => {
+  const { buildDisplayData } = await import("../scripts/build-data.js");
+  const payload = await buildDisplayData({ root: new URL("..", import.meta.url).pathname, landingNumber: 16 });
+  const view = await board({ now: "2026-09-15T18:59:00Z", payload, query: "?landing=16" });
+  const active = view.run('activeServices("2026-09-15")');
+  const departure = payload.departures.find(item => item.routeId === "SG" && active.has(item.serviceId) && item.departureTime === "15:04:00");
+  assert.ok(departure, "the published 15:04 sailing must survive the build");
+  assert.equal(departure.outOfService, false);
+  assert.ok(view.times().includes("15:04"), "the live board must render 15:04 at 14:59 Eastern without realtime");
+  const groups = view.run("routeDirectionGroups()");
+  assert.ok(groups.some(group => group.routeId === "SG" && group.departures.some(item => item.tripId === departure.tripId)));
+});
+
 test("a landing link overrides the saved board once, then allows another selection", async () => {
   const view = await board({ query: "?landing=27", stored: { "nyc-ferry-did-selected-landing": "16" } });
   assert.ok(view.requested.includes("/api/display-data?landingId=27"));
@@ -1433,7 +1446,7 @@ test("a terminating trip shows its scheduled and live layover beside the eta", a
   payload.tripSchedules = {
     turning: {
       stops: [
-        { stopId: "1", sequence: 1, arrivalSeconds: 43200, departureSeconds: 43200 },
+        { stopId: "1", sequence: 1, arrivalSeconds: 43080, departureSeconds: 43200 },
         { stopId: "2", sequence: 2, arrivalSeconds: 44100, departureSeconds: 44100 }
       ],
       turnaround: {
@@ -1445,26 +1458,26 @@ test("a terminating trip shows its scheduled and live layover beside the eta", a
   const view = await board({ payload });
   for (const sort of ["time", "route"]) {
     view.run(`selectSort("${sort}"); render()`);
-    assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min Layover<\/small>/);
+    assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small>/);
   }
   // A turn is taken at the trip's last stop, which is the destination the label sits beside in the
   // timeline — so the pier is named once, by the destination, and the turn shares its line.
   view.run(`selectSort("time"); render()`);
   const timeline = view.node("departures").innerHTML;
   assert.doesNotMatch(timeline, /Layover at East 34th Street/);
-  assert.match(timeline, /<strong class="tl-dest">.*<small class="departure-layover"[^>]*>5 min Layover<\/small><\/strong>/);
+  assert.match(timeline, /<strong class="tl-dest">.*<small class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small><\/strong>/);
   view.run(`realtime = { stale: false, vehicles: [], updates: [
     { tripId: "turning", stopId: "1", delaySeconds: 60 },
     { tripId: "turning", stopId: "2", delaySeconds: 480 },
     { tripId: "return", stopId: "2", delaySeconds: 120 }
   ] }; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>-1 min Layover<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover -1m<\/small>/);
   view.run(`realtime.updates[2].canceled = true; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min Layover<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small>/);
   view.run(`realtime.updates[2].canceled = false; realtime.stale = true; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min Layover<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small>/);
   view.run(`realtime.stale = false; viewDate = "2026-08-14"; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>5 min Layover<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small>/);
   assert.equal(view.run(`departureLayoverLabel({ ...data.departures[0], outOfService: true })`), "");
   assert.equal(view.run(`departureLayoverLabel({ ...data.departures[0], endsShift: "certain" })`), "");
 
@@ -1562,8 +1575,8 @@ test("crew confirmation follows the viewed date, including Pier C", async () => 
     const payload = await buildDisplayData({landingNumber});
     const view = await board({now:"2026-09-14T12:00:00Z",payload});
     view.run("renderBoardNote()");
-    assert.equal(view.node("boardNote").hidden,false);
-    assert.match(view.node("boardNote").textContent,/Weekday crew schedule loaded; AS3 AM/);
+    assert.equal(view.node("boardNote").hidden,landingNumber !== 27);
+    assert.doesNotMatch(view.node("boardNote").textContent,/Weekday crew schedule loaded|AS3 AM|unconfirmed/i);
     assert.equal(Boolean(view.run("confirmedCrewCoverage()")),true);
     for (const date of ["2026-09-19", "2026-09-20", "2026-11-01"]) {
       view.run(`viewDate = "${date}"; renderBoardNote()`);

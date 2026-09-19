@@ -20,6 +20,7 @@ def main():
     extractor = module('extract_board', 'extract-vessel-board.py')
     parser = module('shift_parser', 'import-boat-shifts.py')
     source = extractor.extract(sys.argv[1], 'FALL WKDY 26')
+    corrections = json.loads((ROOT / 'schedules/fall-2026-crew-corrections.json').read_text())
     rows = lambda name: list(csv.DictReader((ROOT / 'gtfs' / (name + '.txt')).open()))
     services = {r['service_id'] for r in rows('calendar') if r['monday'] == '1' and r['start_date'] <= '20260914' <= r['end_date']}
     assignments = json.loads((ROOT / 'content/boat-assignments.json').read_text())['assignments']
@@ -44,8 +45,12 @@ def main():
             continue
         boat = parser.ROUTES[label[1]] + label[2]
         record = {'shift': 'AM' if re.search(r'\bAM\b', entry['label']) else 'PM', 'source': source['sheet'] + '!' + entry['cell']}
+        correction = next((c for c in corrections if c['source'] == record['source'] and c['boat'] == boat and c['shift'] == record['shift']), None)
+        note = correction['note'] if correction else entry['note']
+        if correction:
+            record['correction'] = correction
         for kind, regex in [('start', parser.FIRST), ('end', parser.LAST)]:
-            match = regex.search(entry['note'])
+            match = regex.search(note)
             if not match:
                 rejected.append({'source': record['source'], 'boat': boat, 'field': kind, 'reason': 'unparsed note'})
                 continue
@@ -58,6 +63,10 @@ def main():
             # The documented Pier 11 berth/departure difference applies only to shuttled RS crews.
             allowed = kind == 'end' and boat in {'RS1', 'RS3', 'RS4', 'RS6'} and record['shift'] == 'AM' and place == stops['87']
             matched = noted if noted in candidates else (min(candidates, key=lambda s: abs(s-noted)) if allowed and candidates else None)
+            if correction and kind == 'end' and correction.get('endTimetableTime'):
+                confirmed_event = parser.seconds(correction['endTimetableTime'])
+                if confirmed_event in candidates:
+                    matched = confirmed_event
             if matched is None:
                 rejected.append({'source': record['source'], 'boat': boat, 'field': kind, 'time': time, 'place': place, 'reason': 'no matching fall weekday event'})
                 continue
