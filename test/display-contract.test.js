@@ -1581,7 +1581,7 @@ test("crew confirmation follows the viewed date, including Pier C", async () => 
     for (const date of ["2026-09-19", "2026-09-20", "2026-11-01"]) {
       view.run(`viewDate = "${date}"; renderBoardNote()`);
       assert.ok(view.run("confirmedCrewCoverage()"));
-      assert.match(view.node("boardNote").textContent,/Weekend crew schedule loaded/);
+      assert.doesNotMatch(view.node("boardNote").textContent,/Weekend crew schedule loaded|remain unconfirmed/i);
       if (landingNumber === 27) {
         const rows = view.run("routeDirectionGroups(new Date(),1000).flatMap(g=>g.departures)");
         assert.equal(rows.filter(r=>r.crewShuttle).length,5);

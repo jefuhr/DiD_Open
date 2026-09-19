@@ -9,14 +9,20 @@ const boards = new Map(await Promise.all([8,9,11,16,17,26,27].map(async landing 
 const index = createConnectionIndex(boards);
 const rows = (landing, date) => boards.get(landing).departures.filter(r => activeServices(index, date).has(r.serviceId));
 
-test('weekend import keeps verified fields and records conflicting notes without substituting guesses', () => {
+test('weekend import keeps verified fields and applies confirmed operational corrections', () => {
   assert.equal(Object.values(source.shifts.weekend).flat().length, 36);
-  assert.deepEqual(source.rejected.map(r => [r.boat, r.field]).sort(), [['RS1','end'],['SG3','start']]);
-  assert.equal(source.shifts.weekend.RS1.find(r => r.shift === 'PM').endTime, undefined);
-  assert.equal(source.shifts.weekend.SG3.find(r => r.shift === 'PM').startTime, undefined);
+  assert.deepEqual(source.rejected || [], []);
+  assert.equal(source.shifts.weekend.RS1.find(r => r.shift === 'PM').endTime, '21:57');
+  assert.equal(source.shifts.weekend.SG3.find(r => r.shift === 'PM').startTime, '16:15');
   assert.equal(source.shifts.weekend.RS5[0].endTime, '14:54', 'cell E2 controls identity despite copied RWSV4 heading');
   assert.equal(source.shifts.weekend.RS5[0].endNoteTime, '14:46');
   assert.equal(source.shifts.weekend.ER2.find(r=>r.shift==='PM').startTime, '14:36', 'comment matches timetable; summary cell 14:06 does not');
+});
+
+test('confirmed weekend corrections remove the old uncertainty notice', () => {
+  const status = boards.get(27).meta.crewScheduleStatus;
+  assert.deepEqual(status.confirmedWeekends.message, undefined);
+  assert.equal(status.confirmedWeekends.startDate, '2026-09-19');
 });
 
 test('five afternoon crew shuttles recur on every confirmed weekend, including non-cruise Sundays', () => {

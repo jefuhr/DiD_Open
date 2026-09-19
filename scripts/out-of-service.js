@@ -171,7 +171,8 @@ export function serviceBreaks({
     // than it is.
     const finalRun = list.at(-1);
     certainty.set(finalRun.tripId, "certain");
-    tieUps.push({ ...finalRun, endsDay: true });
+    const finalTieUp = { ...finalRun, endsDay: true };
+    tieUps.push(finalTieUp);
 
     // Mid-day is where it gets interesting, and where the crew schedule earns its keep. Its shift
     // boundaries say where a shift ends as well as when, cover a boat relieved mid-route that
@@ -181,6 +182,17 @@ export function serviceBreaks({
       for (const [index, entry] of known.entries()) {
         if (!entry.endTime) continue;
         const endSeconds = hhmmSeconds(entry.endTime);
+        // A confirmed operational drop can be later than the final published arrival. Keep the
+        // final home-port row at the confirmed drop time instead of discarding the boundary.
+        if (endSeconds >= finalRun.endSeconds && index === known.length - 1) {
+          const finalStop = [...(timesByTrip.get(finalRun.tripId) || [])].reverse().find(c =>
+            stopName(c.stop_id) === entry.endPlace);
+          if (finalStop) {
+            finalTieUp.endStopId = finalStop.stop_id;
+            finalTieUp.endSeconds = endSeconds;
+          }
+          continue;
+        }
         if (endSeconds >= finalRun.endSeconds) continue;
         const next = known[index + 1];
         // A crew carried out to the boat is the one case where a shift end is not a drop off: the

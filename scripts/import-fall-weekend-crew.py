@@ -54,6 +54,13 @@ def main():
                 for c in rows:
                     events[date][boat,kind].add((stops[c['stop_id']], parser.seconds(c['departure_time' if kind=='start' else 'arrival_time'])))
     shifts, rejected = collections.defaultdict(list), []
+    # Dispatch confirmed these two boundaries after the workbook was prepared.  They are
+    # intentionally explicit: neither note matches the published passenger event minute, but
+    # both are operational drop-off/pickup times supplied by the user.
+    confirmed_overrides = {
+        ('SG3', 'PM', 'start'): ('16:15', 'Wall St/Pier 11', 'Board!I26'),
+        ('RS1', 'PM', 'end'): ('21:57', 'Wall St/Pier 11', 'Board!A10'),
+    }
     for e in source['assignments']:
         cruise = e['label'] == 'SBK Cruise Shuttle'
         label = parser.LABEL.search(e['label'])
@@ -74,6 +81,10 @@ def main():
             berth = kind == 'end' and boat in {'RS1','RS2','RS3','RS4','RS5'} and record['shift']=='AM' and place==stops['87']
             candidates = sorted(s for p,s in common if p==place and (s==noted or berth and 0 <= s-noted <=600))
             if not candidates:
+                override = confirmed_overrides.get((boat, record['shift'], kind))
+                if override:
+                    record[kind+'Time'], record[kind+'Place'], record[kind+'ConfirmedSource'] = override
+                    continue
                 rejected.append({'source':record['source'],'boat':boat,'field':kind,'time':time,'place':place,'reason':'no matching event across applicable fall weekends'});continue
             matched = min(candidates,key=lambda s:abs(s-noted))
             record[kind+'Time'], record[kind+'Place'] = parser.clock(matched), place
@@ -96,7 +107,8 @@ def main():
         if record and record.get('startTime') and record['startTime'] != time[1]:
             summary_conflicts.append({'source': 'Board!' + cell, 'boat': boat, 'summaryTime': time[1],
                                       'verifiedTime': record['startTime'], 'commentSource': record['source']})
-    result={'source':source,'workbookSha256':hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest(),'startDate':'2026-09-19','endDate':'2026-11-01','serviceIds':['4','6','7','8'],'cruiseDates':cruise_dates,'shifts':{'weekend':dict(sorted(shifts.items()))},'shuttles':{'weekend':shuttles},'rejected':rejected,'summaryConflicts':summary_conflicts}
+    result={'source':source,'workbookSha256':hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest(),'startDate':'2026-09-19','endDate':'2026-11-01','serviceIds':['4','6','7','8'],'cruiseDates':cruise_dates,'shifts':{'weekend':dict(sorted(shifts.items()))},'shuttles':{'weekend':shuttles},'summaryConflicts':summary_conflicts,'confirmedCorrections':[{'boat':boat,'shift':shift,'field':field,'time':value[0],'place':value[1],'source':value[2]} for (boat,shift,field),value in confirmed_overrides.items()]}
+    if rejected: result['rejected'] = rejected
     (ROOT/'schedules/fall-2026-weekend-crew.json').write_text(json.dumps(result,indent=2)+'\n')
     print(f'Imported {sum(map(len,shifts.values()))} shifts, {len(shuttles)} crew shuttles; {len(rejected)} unresolved fields')
     print(json.dumps(rejected,indent=2))

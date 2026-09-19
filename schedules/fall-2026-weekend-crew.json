@@ -392,7 +392,10 @@
           "shift": "PM",
           "source": "Board!A10",
           "startTime": "14:25",
-          "startPlace": "Wall St/Pier 11"
+          "startPlace": "Wall St/Pier 11",
+          "endTime": "21:57",
+          "endPlace": "Wall St/Pier 11",
+          "endConfirmedSource": "Board!A10"
         }
       ],
       "RS2": [
@@ -569,6 +572,9 @@
         {
           "shift": "PM",
           "source": "Board!I26",
+          "startTime": "16:15",
+          "startPlace": "Wall St/Pier 11",
+          "startConfirmedSource": "Board!I26",
           "endTime": "21:09",
           "endPlace": "Wall St/Pier 11"
         }
@@ -633,24 +639,6 @@
       }
     ]
   },
-  "rejected": [
-    {
-      "source": "Board!I26",
-      "boat": "SG3",
-      "field": "start",
-      "time": "16:15",
-      "place": "Wall St/Pier 11",
-      "reason": "no matching event across applicable fall weekends"
-    },
-    {
-      "source": "Board!A10",
-      "boat": "RS1",
-      "field": "end",
-      "time": "21:57",
-      "place": "Wall St/Pier 11",
-      "reason": "no matching event across applicable fall weekends"
-    }
-  ],
   "summaryConflicts": [
     {
       "source": "Board!O9",
@@ -665,6 +653,24 @@
       "summaryTime": "14:06",
       "verifiedTime": "14:36",
       "commentSource": "Board!B26"
+    }
+  ],
+  "confirmedCorrections": [
+    {
+      "boat": "SG3",
+      "shift": "PM",
+      "field": "start",
+      "time": "16:15",
+      "place": "Wall St/Pier 11",
+      "source": "Board!I26"
+    },
+    {
+      "boat": "RS1",
+      "shift": "PM",
+      "field": "end",
+      "time": "21:57",
+      "place": "Wall St/Pier 11",
+      "source": "Board!A10"
     }
   ]
 }
