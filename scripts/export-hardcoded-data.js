@@ -97,10 +97,20 @@ export async function buildExport({ generatedAt = new Date().toISOString() } = {
       sources: [
         "config/landings.json", "config/display.json", "config/crew-shuttles.json",
         "content/boat-assignments.json", "content/boat-shifts.json", "content/vessels.json",
-        "scripts/out-of-service.js"
+        "scripts/out-of-service.js", "schedules/fall-2026-weekday-crew.json", "schedules/fall-2026-weekend-crew.json"
       ]
     },
 
+    fallWeekdayCrew: {
+      source: "schedules/fall-2026-weekday-crew.json",
+      description: "Verified ordinary fall weekday crew operations; overrides historical crew data below. Sukkot remains unconfirmed.",
+      data: await readJson("schedules/fall-2026-weekday-crew.json")
+    },
+    fallWeekendCrew: {
+      source: "schedules/fall-2026-weekend-crew.json",
+      description: "Fall weekend crew boundaries and five crew shuttles; Red Hook cruise working restricted to its ten published dates.",
+      data: await readJson("schedules/fall-2026-weekend-crew.json")
+    },
     landings: {
       source: "config/landings.json",
       description:

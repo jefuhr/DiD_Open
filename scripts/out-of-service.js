@@ -93,6 +93,50 @@ export function turnaroundLayovers({ runs, endsShift = new Map() }) {
   return byTrip;
 }
 
+// A feed may split one boat's day between several simultaneously active services.
+// Combine those services before finding the next trip, and retain only links that
+// are identical on EVERY date the source trip operates. A weekend-only alternative
+// cannot become a weekday turnaround, nor can a fragment look like a complete day.
+export function calendarTurnaroundLayovers({ runs, calendars, exceptions = [], endsShift = new Map() }) {
+  const dates = calendars.flatMap((c) => [c.start_date, c.end_date]).filter(Boolean).sort();
+  if (!dates.length) return new Map();
+  const dateValue = (key) => new Date(`${key.slice(0, 4)}-${key.slice(4, 6)}-${key.slice(6, 8)}T00:00:00Z`);
+  const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const patterns = new Map();
+  for (let date = dateValue(dates[0]); date <= dateValue(dates.at(-1)); date.setUTCDate(date.getUTCDate() + 1)) {
+    const key = date.toISOString().slice(0, 10).replaceAll("-", "");
+    const active = new Set(calendars.filter((c) => c.start_date <= key && c.end_date >= key && c[weekdays[date.getUTCDay()]] === "1").map((c) => c.service_id));
+    for (const exception of exceptions) {
+      if (exception.date !== key) continue;
+      if (exception.exception_type === "1") active.add(exception.service_id);
+      else active.delete(exception.service_id);
+    }
+    patterns.set([...active].sort().join(","), active);
+  }
+  const stable = new Map();
+  for (const active of patterns.values()) {
+    const merged = new Map();
+    for (const list of runs.values()) {
+      for (const run of list) {
+        if (!active.has(run.serviceId)) continue;
+        const key = `${run.routeId}|${run.boat}`;
+        if (!merged.has(key)) merged.set(key, []);
+        merged.get(key).push(run);
+      }
+    }
+    for (const list of merged.values()) list.sort((a, b) => a.startSeconds - b.startSeconds);
+    const links = turnaroundLayovers({ runs: merged, endsShift });
+    for (const list of merged.values()) {
+      for (const run of list) {
+        const candidate = links.get(run.tripId) || null;
+        if (!stable.has(run.tripId)) stable.set(run.tripId, candidate);
+        else if (JSON.stringify(stable.get(run.tripId)) !== JSON.stringify(candidate)) stable.set(run.tripId, null);
+      }
+    }
+  }
+  return new Map([...stable].filter(([, link]) => link));
+}
+
 // Where a boat stops working, and how sure we are about it.
 //
 // A boat that finishes for the day is obvious: nothing follows. A boat that finishes a shift
@@ -108,11 +152,12 @@ export function turnaroundLayovers({ runs, endsShift = new Map() }) {
 // unsure, and the board prints a question mark rather than pretending.
 export function serviceBreaks({
   runs, gapMinutes = 60, certainAfterMinutes = 180, crewSwaps = new Map(), dayTypeOf = () => null,
-  shifts = {}, stopName = () => null
+  shifts = {}, stopName = () => null, timesByTrip = new Map()
 }) {
   const gapSeconds = Math.max(1, gapMinutes) * 60;
   const certainSeconds = Math.max(gapSeconds, certainAfterMinutes * 60);
   const certainty = new Map();
+  const endAt = new Map();
   const tieUps = [];
   for (const list of runs.values()) {
     if (!list.length) continue;
@@ -134,6 +179,7 @@ export function serviceBreaks({
     // nothing here is a guess and nothing is unsure.
     if (known?.length) {
       for (const [index, entry] of known.entries()) {
+        if (!entry.endTime) continue;
         const endSeconds = hhmmSeconds(entry.endTime);
         if (endSeconds >= finalRun.endSeconds) continue;
         const next = known[index + 1];
@@ -147,10 +193,21 @@ export function serviceBreaks({
         // for the home port and another arriving from it. That heuristic silently swallowed AS3's
         // 14:11 and seven others like it.
         if (next && shuttleCovers({ crewSwaps, boat, kind, endSeconds, startSeconds: hhmmSeconds(next.startTime) })) continue;
-        const run = list.find((item) => Math.abs(item.endSeconds - endSeconds) <= 60 &&
+        let run = list.find((item) => Math.abs(item.endSeconds - endSeconds) <= 60 &&
           (!entry.endPlace || stopName(item.endStopId) === entry.endPlace));
+        // A working can change vessels at an intermediate call (RS2 at Pier 11).
+        // Keep the GTFS passenger trip intact and end only the arriving crew's segment.
+        if (!run && entry.endPlace) {
+          for (const item of list) {
+            const call = (timesByTrip.get(item.tripId) || []).slice(1).find(c =>
+              stopName(c.stop_id) === entry.endPlace && timeToSeconds(c.arrival_time) === endSeconds);
+            if (call) { run = { ...item, endStopId: call.stop_id, endSeconds }; break; }
+          }
+        }
         if (!run) continue;
+        if (next && !next.startTime && isCrewSwap({ crewSwaps, run, kind })) continue;
         certainty.set(run.tripId, "certain");
+        endAt.set(run.tripId, endSeconds);
         // And the boat really does leave. A changeover on the sheet is a boat swap, not a crew
         // stepping aboard the one already alongside: the vessel that finishes runs to the home port
         // and a different one comes out of it to pick the working up. That is why the relieving
@@ -175,7 +232,7 @@ export function serviceBreaks({
       if (level === "certain") tieUps.push({ ...run, endsDay: false });
     }
   }
-  return { certainty, tieUps };
+  return { certainty, tieUps, endAt };
 }
 
 // Scoped to the same kind of day, because a boat's weekend shuttle says nothing about its weekday,
@@ -420,12 +477,12 @@ export function homePortDepartures({
   // The trip the boat is about to run. Naming it lets the board show which vessel is currently on
   // that working, which is the closest thing to a prediction available — and it is only ever a
   // prediction, because the boat on a working changes at a moment's notice.
-  const firstTripOf = (boat, kind, startSeconds) => {
+  const firstTripOf = (boat, kind, startSeconds, serviceId) => {
     for (const list of runs.values()) {
       if (!list.length) continue;
       if (boatLabel(list[0].routeId, list[0].boat) !== boat) continue;
       if (dayTypeOf(list[0].serviceId) !== kind) continue;
-      const run = list.find((item) => Math.abs(item.startSeconds - startSeconds) <= 60);
+      const run = list.find((item) => (!serviceId || item.serviceId === serviceId) && Math.abs(item.startSeconds - startSeconds) <= 60);
       if (run) return run.tripId;
     }
     return null;
@@ -441,11 +498,11 @@ export function homePortDepartures({
           crewSwaps, boat, kind,
           endSeconds: hhmmSeconds(previous.endTime), startSeconds: hhmmSeconds(entry.startTime)
         })) continue;
-        if (!entry.startPlace) continue;
+        if (!entry.startPlace || !entry.startTime) continue;
         const seconds = hhmmSeconds(entry.startTime);
-        rows.push({
-          tripId: `pierc:${kind}:${boat}:${entry.startTime}`,
-          routeId: String(boat).replace(/\d+$/, ""), serviceId,
+        for (const entryServiceId of entry.serviceIds || [serviceId]) rows.push({
+          tripId: `pierc:${kind}:${boat}:${entry.startTime}${entry.serviceIds ? `:${entryServiceId}` : ""}`,
+          routeId: String(boat).replace(/\d+$/, ""), serviceId: entryServiceId,
           directionId: "0", stopId: HOME_PORT_STOP_ID,
           departureTime: secondsToTime(seconds), seconds,
           departureTimeEnd: null, secondsEnd: null,
@@ -456,7 +513,7 @@ export function homePortDepartures({
           // The board prints a star: this is when the boat is due at its first landing, not a
           // published Pier C departure, and the operator says the real one is not constant.
           approximate: true, fromHomePort: true, homePortName: homePort,
-          predictTripId: firstTripOf(boat, kind, seconds)
+          predictTripId: firstTripOf(boat, kind, seconds, entry.serviceIds ? entryServiceId : null)
         });
       }
     }

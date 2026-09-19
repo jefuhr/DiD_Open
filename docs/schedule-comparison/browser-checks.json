@@ -1,0 +1,32 @@
+[
+  {
+    "scenario": "fall-desktop",
+    "note": "Weekday crew schedule loaded; AS3 AM pickup/drop-off remains unconfirmed.",
+    "rows": 209,
+    "overflow": false
+  },
+  {
+    "scenario": "fall-mobile",
+    "note": "Weekday crew schedule loaded; AS3 AM pickup/drop-off remains unconfirmed.",
+    "rows": 209,
+    "overflow": false
+  },
+  {
+    "scenario": "sukkot-mobile",
+    "note": "Crew shifts / Pier C shuttles: UNCONFIRMED · Sukkot: published departure times only; trip connections unavailable.",
+    "rows": 175,
+    "overflow": false
+  },
+  {
+    "scenario": "pier-c-mobile",
+    "note": "Weekday crew schedule loaded; AS3 AM pickup/drop-off remains unconfirmed. · *actual departure times at discretion of the captain, listed time is the first pickup time",
+    "rows": 0,
+    "overflow": false
+  },
+  {
+    "scenario": "pier-c-weekend",
+    "note": "Crew shifts / Pier C shuttles: UNCONFIRMED",
+    "rows": 0,
+    "overflow": false
+  }
+]

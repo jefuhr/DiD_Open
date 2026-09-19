@@ -1,5 +1,7 @@
 # nyc ferry did reborn — mobile staff edition
 
+[Fall 2026 NYC Ferry update](docs/schedule-comparison/fall-2026-update.md): official Connexionz service from September 14, dated cruise service, Sukkot departure tables, and verified weekday crew notes. Weekend/Sukkot crew operations and AS3 AM remain unconfirmed.
+
 an offline-first departure display for NYC Ferry landings. a local Node server builds scheduled departures from the bundled GTFS feed, overlays NYC Ferry GTFS-Realtime trip updates, and keeps working when the internet drops.
 
 this branch is the **mobile staff variant**: everything the `staff` branch does, reflowed for a phone in an agent's hand. it is the same codebase and the same data, with a phone layout added — open it on a 1080p kiosk screen and you still get the wall board.
@@ -554,3 +556,5 @@ volumes:
 ```
 
 if the key is encrypted, pass `NYCF_SFTP_KEY_PASSPHRASE` in through the deployment's secret management.
+
+Fall weekend crew operations and the ten Red Hook cruise dates are documented in [the weekend import report](docs/schedule-comparison/fall-weekend-2026.md). Reimport with `python scripts/import-fall-weekend-crew.py WORKBOOK`; rebuild the operational export and display data afterward.

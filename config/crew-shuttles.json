@@ -122,5 +122,7 @@
         ]
       }
     ]
-  }
+  },
+  "confirmationStatus": "unconfirmed",
+  "confirmationNote": "These historical times remain unconfirmed. Verified ordinary fall weekday operations are supplied separately by schedules/fall-2026-weekday-crew.json. Weekend and Sukkot crew data remain unconfirmed."
 }

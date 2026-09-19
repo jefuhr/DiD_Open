@@ -1,3 +1,4 @@
+import { buildSummerDisplayData } from "./helpers/summer-schedule.js";
 import { runtimeStub } from "./helpers/runtime-stub.js";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -168,7 +169,7 @@ test("a scheduled sailing predicts its vessel from the boat working it", async (
   assert.match(app, /Number\.isInteger\(departure\.boatAssignment\)\s*\n?\s*\? vessels\.get\(`\$\{departure\.routeId\}\$\{departure\.boatAssignment\}`\)/);
 
   // A live vessel always wins; the guess only fills the gap, never competes with a real match.
-  assert.match(app, /predictedBoatName: vehicles\.get\(String\(departure\.tripId\)\)\?\.boatName\s*\n?\s*\? null/);
+  assert.match(app, /predictedBoatName: departure\.scheduleOnly \|\| vehicles\.get\(String\(departure\.tripId\)\)\?\.boatName\s*\n?\s*\? null/);
 });
 
 test("staff board shows every route direction with config-driven departure columns", async () => {
@@ -1195,7 +1196,7 @@ test("the home port board says what its stars mean", async () => {
   // Keyed off the stop id the payload already carries, not off landing 27, so renumbering the
   // landings cannot quietly take the note away.
   assert.match(app, /\(data\?\.meta\?\.landing\?\.stopIds \|\| \[\]\)\.includes\("home-port"\)/);
-  assert.match(app, /elements\.boardNote\.hidden = !homePort/);
+  assert.match(app, /elements\.boardNote\.hidden = notes\.length === 0/);
   // Rendered on every pass, so switching landings puts it away again.
   assert.match(app, /renderBoardNote\(\);/);
   // Outside the departures list: that list scrolls, and the kiosk view sizes its rows to a fixed
@@ -1399,7 +1400,7 @@ test("the server picks the same connections the client would", async () => {
 
 test("a departure row opens its trip, and a stop in it switches landing", async () => {
   const { buildDisplayData } = await import("../scripts/build-data.js");
-  const payload = await buildDisplayData({ landingNumber: 16 });
+  const payload = await buildSummerDisplayData({ landingNumber: 16 });
   const view = await board({ now: "2026-08-27T16:00:00Z", payload });
 
   // Every openable row carries the trip it belongs to, in whichever view is rendered.
@@ -1490,11 +1491,11 @@ test("a terminating trip shows its scheduled and live layover beside the eta", a
 });
 
 // Rows need a published stop list, either their own or the arriving trip behind a home-port run.
-test("only rows with a published trip behind them are openable", async () => {
+test("only published trips and explicit timetable entries are openable", async () => {
   const app = await readFile(appPath, "utf8");
   const helper = app.slice(app.indexOf("function tripAttrs"), app.indexOf("function departureCell"));
-  assert.match(helper, /scheduleForDeparture\(item\)\?\.stops/);
-  assert.match(helper, /stops\.length < 2/);
+  assert.match(helper, /const schedule = scheduleForDeparture\(item\)/);
+  assert.match(helper, /stops\.length < 2 && !schedule\.timetableOnly/);
   // Both views go through the one helper, so they cannot disagree about which rows open.
   assert.equal((app.match(/\$\{tripAttrs\(/g) || []).length, 2);
 });
@@ -1519,7 +1520,7 @@ test("the trip view is wired into the surfaces that can bury it", async () => {
 
 test("Pier C home-port rows open previous stops and map the arriving vessel", async () => {
   const { buildDisplayData } = await import("../scripts/build-data.js");
-  const payload = await buildDisplayData({ landingNumber: 16 });
+  const payload = await buildSummerDisplayData({ landingNumber: 16 });
   const row = payload.departures.find((item) => item.tripId.startsWith("oos:") && item.serviceId === "1" && item.seconds > 43200);
   assert.ok(row);
   const schedule = payload.tripSchedules[row.liveTripId];
@@ -1553,4 +1554,58 @@ test("Pier C home-port rows open previous stops and map the arriving vessel", as
   view.run(`setTripOpen(false)`);
   assert.equal(view.node("tripMenu").hidden, true);
   assert.equal(view.run(`tripAttrs({ tripId: "crew:unknown", stopId: "87" })`), "");
+});
+
+test("crew confirmation follows the viewed date, including Pier C", async () => {
+  const { buildDisplayData } = await import("../scripts/build-data.js");
+  for (const landingNumber of [16,27]) {
+    const payload = await buildDisplayData({landingNumber});
+    const view = await board({now:"2026-09-14T12:00:00Z",payload});
+    view.run("renderBoardNote()");
+    assert.equal(view.node("boardNote").hidden,false);
+    assert.match(view.node("boardNote").textContent,/Weekday crew schedule loaded; AS3 AM/);
+    assert.equal(Boolean(view.run("confirmedCrewCoverage()")),true);
+    for (const date of ["2026-09-19", "2026-09-20", "2026-11-01"]) {
+      view.run(`viewDate = "${date}"; renderBoardNote()`);
+      assert.ok(view.run("confirmedCrewCoverage()"));
+      assert.match(view.node("boardNote").textContent,/Weekend crew schedule loaded/);
+      if (landingNumber === 27) {
+        const rows = view.run("routeDirectionGroups(new Date(),1000).flatMap(g=>g.departures)");
+        assert.equal(rows.filter(r=>r.crewShuttle).length,5);
+        assert.equal(rows.filter(r=>r.routeId==='SB'&&r.boatAssignment===3).length,date==='2026-09-20'?0:1);
+      }
+    }
+    for (const date of ["2026-09-13", "2026-09-28", "2026-11-02"]) {
+      view.run(`viewDate = "${date}"; renderBoardNote()`);
+      assert.equal(Boolean(view.run("confirmedCrewCoverage()")),false);
+      const visible = view.run("routeDirectionGroups(new Date(),1000).flatMap(g=>g.departures)");
+      assert.equal(visible.some(r=>r.endsShift || r.crewShuttle || r.fromHomePort),false,date);
+      assert.match(view.node("boardNote").textContent,/Crew shifts \/ Pier C shuttles: UNCONFIRMED/);
+    }
+    if (landingNumber === 27) {
+      assert.match(view.run("emptyBoard()"), /CREW TIMES UNCONFIRMED/);
+      assert.doesNotMatch(view.run("emptyBoard()"), /concluded/);
+    }
+  }
+});
+
+test("Sukkot rows stay scheduled and explain why onward trip connections are unavailable", async () => {
+  const { buildDisplayData } = await import("../scripts/build-data.js");
+  const payload = await buildDisplayData({landingNumber:16});
+  const row = payload.departures.find(r => r.scheduleOnly && r.seconds > 43200);
+  assert.ok(row);
+  const view = await board({now:"2026-09-28T16:00:00Z",payload});
+  view.run(`realtime = {stale:false, updates:[{tripId:${JSON.stringify(row.tripId)},stopId:"87",delaySeconds:600}], vehicles:[{tripId:${JSON.stringify(row.tripId)},boatName:"Wrong boat"}]}`);
+  const matches = view.run(`routeDirectionGroups(new Date(),1000).flatMap(g=>g.departures).filter(r=>r.tripId===${JSON.stringify(row.tripId)})`);
+  assert.equal(matches.length,1);
+  assert.equal(matches[0].hasLiveTiming,false);
+  assert.equal(matches[0].delay,0);
+  assert.equal(matches[0].boatName,null);
+  assert.equal(matches[0].predictedBoatName,null);
+  view.run(`openTripView(${JSON.stringify(row.tripId)},"87",${row.seconds})`);
+  assert.equal(view.node("tripMenu").hidden,false);
+  assert.match(view.node("tripStops").innerHTML,/Trip connections and arrival estimates are unavailable/);
+  assert.equal(view.node("tripMapLink").hidden,true);
+  view.run("renderBoardNote()");
+  assert.match(view.node("boardNote").textContent,/Sukkot: published departure times only/);
 });
