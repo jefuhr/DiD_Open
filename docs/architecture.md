@@ -1,0 +1,61 @@
+# Architecture and native-client preparation
+
+The current product is a responsive staff web app. The iOS UI technology remains undecided; native UI, distribution, authentication, and native-only features are outside this change.
+
+## Boundaries
+
+- **Backend:** `lib/schedule-builder.js` builds landing schedules from bundled feeds. `lib/out-of-service.js` enriches them with crew and home-port movements. `scripts/build-data.js` writes the default fallback; existing script imports remain compatible through re-exports.
+- **Portable rules:** `public/assets/schedule.js` has no DOM, storage, networking, or framework dependencies. Supply schedule data, realtime snapshot, selected date, current instant, and result limit. It returns plain departure groups or a timeline. Backend connections reuse its calendar and timezone helpers.
+- **Client infrastructure:** `MobileRuntime` supplies browser `request(url, options)`, `poll(callback, interval)`, and resilient `storage.getItem/setItem/removeItem/json` adapters. `createScheduleStore({ storage, prefix })` isolates saved schedules by landing. A native implementation can supply equivalent capabilities without reproducing browser APIs.
+- **Application shell:** `assets/app-shell.js` owns URL/history navigation, the fixed shared header, theme changes, and service-worker registration. Root, prefixed, and `map.html` URLs serve the same document. `map.html` is an identical static-host compatibility copy of `index.html`; update both together.
+- **Presentation:** `app.js` exports `mountBoard`; `assets/map.js` exports `mountMap`. Each accepts its view root and an optional `header` element, and returns `ready`, `activate(url)`, `deactivate()`, and `dispose()`. Element lookups cover only that root and heading group. Mount once per view. Hidden views and headings are inert, release dialogs, stop polling and camera animation, and retain their DOM/state. `view-lifecycle.js` keeps in-flight poll guards across activations. Map geometry is fetched once per shell and its drawing is reused. Idle preloading starts after the initial view's first load and respects data-saving mode.
+- **Layout:** `assets/app-shell.css` owns the real header grid (title, secondary controls, right-aligned navigation) and shared theme-aware control/font tokens. The shell measures the header with ResizeObserver so view bounds follow safe areas and enlarged text without overlapping headings. Fonts prefer each theme's system stack, with bundled Lato as the sans-serif fallback. The Board landing rail is permanent at 821px and wider; below that it is a dismissible drawer. `panels.js` binds sheet controls, `preferences.js` owns persistent keys and theme choices, and `styles.css` owns theme palettes and the Board layout. Map-specific drawing and layout styles remain separate.
+
+There is no requirement for a future native app to execute JavaScript. It can implement the documented contract in its own language and verify the same fixtures.
+
+## Offline schedule contract
+
+The wire schedule remains schema version 11. IDs are opaque strings (including operator prefixes); landing IDs are integers. Preserve source IDs rather than parsing their numeric-looking contents.
+
+Store the complete landing payload, including calendars, exceptions, routes, departures, trip stop lists, and stop names. Successful refreshes replace the saved snapshot; a failed refresh must not discard it. Reject payloads for a different landing. Retain the current browser storage keys so existing installations keep their schedules and preferences.
+
+Dates are local calendar dates in `meta.timezone`; timestamps are ISO instants. Departure seconds are measured from service-day midnight and can exceed 86400. Calendar exceptions override regular weekdays. After-midnight departures may belong to the previous service day. Coverage follows each service calendar and dated exception, not merely the primary feed's date range.
+
+Live timing requires a non-stale snapshot and a finite delay. Negative delays never move a departure earlier than its published time. Existing cancellation and vessel-assignment behavior is retained for cached snapshots; freshness must remain visible to the user. Predictions are distinct from confirmed vessel assignments. A browsed date ignores live enrichments.
+
+Departure-only holiday rows (`scheduleOnly` / `timetableOnly`) never acquire live delays,
+cancellations, or vessel predictions. Crew confirmation is scoped by weekday/weekend coverage,
+season dates, and excluded holidays in `meta.crewScheduleStatus`; outside that coverage,
+shift-end badges must not imply confirmation. These rules live in the portable schedule module.
+
+A saved schedule continues to calculate departures as time advances. No matching service outside its coverage is not evidence that service ended for the day. The web app reports unavailable date coverage and prevents browsing outside its advertised range. A native client must show coverage and stale-data state explicitly.
+
+Connections across landings still need a cached server response or additional landing schedules. The prepared contract does not promise offline access to landings or connections never downloaded.
+
+## Cross-platform verification
+
+`test/fixtures/schedule-contract.json` contains a shared schedule, fixed current instants, realtime inputs, and expected departure projections. Compare only the expected fields, in order. It covers advancing offline time, overnight service, holidays, cancellations, delay floors, stale timing, vessel predictions, crew movements, and expired coverage. Timezone cases cover both daylight-saving transitions.
+
+`test/schedule-contract.test.js` executes these cases directly against the portable module. A future native implementation should execute the same JSON cases before UI parity work.
+
+The current HTTP surface is recorded in `docs/api.openapi.json`. Unknown JSON fields are additive. A future incompatible schedule format needs a new supported schema version and a migration strategy; this cleanup does not renumber the existing format.
+
+`npm run test:staff-app` verifies persistent navigation at root and prefixed URLs across 390px,
+768px, and 1440px widths: exact header coordinates, 820/821px resizing, legacy hidden-rail
+preferences, retained date/scroll/camera/search/geometry, Back/Forward, deep links, offline
+reloads, and synchronous warmed switches below 100ms. Run with a local app on port 8094 (or
+`MOBILE_TEST_ORIGIN`). Node lifecycle tests cover inactive polling, focus-trap release,
+disposal, and in-flight requests across rapid switches; worker tests cover saved-data migration.
+
+`npm run test:visual-polish` uses deterministic schedules and vessel positions without an app
+server. It checks both views in all nine themes at 320, 390, 768, 820, 821, 1440, and 1920px,
+including matched control/text fonts, title hierarchy, right-aligned navigation, 44px controls,
+contrast on navigation/filter/status surfaces, long names, card actions, keyboard focus, empty
+states, and enlarged text. Representative screenshots and the matrix report are written under
+`artifacts/browser/`. This is Chromium coverage, not a claim of physical-device Safari testing.
+
+Map route filters live in a modal drawer opened by the Map header hamburger at every width.
+The Board's desktop landing sidebar remains independent. Route selection is retained while the
+drawer itself closes on view deactivation; modal focus and background inertness are released
+without focusing an inactive view. `npm run test:map-drawer` checks phone/desktop breakpoints,
+route selection, keyboard trapping/dismissal, history navigation, offline use, and enlarged text.

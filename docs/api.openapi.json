@@ -1,0 +1,1660 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Ferry Staff API",
+    "version": "1.0.0",
+    "description": "Existing read-only backend contract. Display payload schemaVersion remains 11. Additive properties are allowed; clients must tolerate unknown fields. Schedule IDs are opaque strings. Timestamps are UTC ISO-8601, service dates use meta.timezone, and schedule seconds may exceed 86400. /api/override has been removed."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/api/landings": {
+      "get": {
+        "summary": "Available landings and operator roster",
+        "operationId": "api_landings",
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Landings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/display-data": {
+      "get": {
+        "summary": "Complete offline schedule for one landing",
+        "operationId": "api_display-data",
+        "parameters": [
+          {
+            "name": "landingId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Landing ID from /api/landings. Display data defaults to configured landing; realtime returns all stops when omitted or unrecognized."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayData"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unknown identifier.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source unavailable; response may contain fallback metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/realtime": {
+      "get": {
+        "summary": "Live departure updates and vessel assignments",
+        "operationId": "api_realtime",
+        "parameters": [
+          {
+            "name": "landingId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Landing ID from /api/landings. Display data defaults to configured landing; realtime returns all stops when omitted or unrecognized."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Realtime"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source unavailable; response may contain fallback metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Realtime"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/map": {
+      "get": {
+        "summary": "Bundled harbor geometry and landings",
+        "operationId": "api_map",
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Harbor"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/boats": {
+      "get": {
+        "summary": "Latest vessel positions",
+        "operationId": "api_boats",
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Boats"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source unavailable; response may contain fallback metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Boats"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alerts": {
+      "get": {
+        "summary": "Service alerts and crew notices",
+        "operationId": "api_alerts",
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Alerts"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Source unavailable; response may contain fallback metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Alerts"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/connections": {
+      "get": {
+        "summary": "Current-day connections at every stop of a trip",
+        "operationId": "api_connections",
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Defaults to 3; integer values clamp to 1–5. Hubs may show more; clients filter returned rows before applying each stop's limit."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Connections"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unknown identifier.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid or unknown identifier.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/changelog": {
+      "get": {
+        "summary": "Product change log",
+        "operationId": "api_changelog",
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Changelog"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "summary": "Aggregate usage and feed statistics",
+        "operationId": "api_stats",
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Stats"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Server health and aggregate counters",
+        "operationId": "api_health",
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "summary": "Healthcheck alias",
+        "operationId": "healthz",
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": true
+      },
+      "Landing": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "displayName"
+        ],
+        "additionalProperties": true
+      },
+      "Landings": {
+        "type": "object",
+        "properties": {
+          "landings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Landing"
+            }
+          },
+          "operators": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "configured": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "landings",
+          "operators",
+          "configured"
+        ],
+        "additionalProperties": true
+      },
+      "Calendar": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "type": "boolean"
+            },
+            "minItems": 7,
+            "maxItems": 7,
+            "description": "Sunday first."
+          }
+        },
+        "required": [
+          "serviceId",
+          "startDate",
+          "endDate",
+          "weekdays"
+        ],
+        "additionalProperties": true
+      },
+      "CalendarException": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "added": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "serviceId",
+          "date",
+          "added"
+        ],
+        "additionalProperties": true
+      },
+      "Route": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "textColor": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": true
+      },
+      "Departure": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string"
+          },
+          "routeId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "directionId": {
+            "type": "string"
+          },
+          "stopId": {
+            "type": "string"
+          },
+          "seconds": {
+            "type": "number",
+            "description": "Seconds since local service-day midnight; may exceed 86400."
+          },
+          "departureTime": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "variant": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "boatAssignment": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "via": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mode": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          },
+          "endsShift": {
+            "type": [
+              "boolean",
+              "string",
+              "null"
+            ]
+          },
+          "outOfService": {
+            "type": "boolean"
+          },
+          "crewShuttle": {
+            "type": "boolean"
+          },
+          "arrival": {
+            "type": "boolean"
+          },
+          "approximate": {
+            "type": "boolean"
+          },
+          "servesGovernorsIsland": {
+            "type": "boolean"
+          },
+          "liveTripId": {
+            "type": "string"
+          },
+          "predictTripId": {
+            "type": ["string", "null"]
+          },
+          "departureTimeEnd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "secondsEnd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "endsDay": {
+            "type": "boolean"
+          },
+          "crewBoats": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "viaTerminals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "tripId",
+          "routeId",
+          "serviceId",
+          "stopId",
+          "seconds",
+          "departureTime",
+          "destination"
+        ],
+        "additionalProperties": true
+      },
+      "TripCall": {
+        "type": "object",
+        "properties": {
+          "stopId": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "arrivalSeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "departureSeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "stopId",
+          "sequence"
+        ],
+        "additionalProperties": true
+      },
+      "TripSchedule": {
+        "type": "object",
+        "properties": {
+          "stops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TripCall"
+            }
+          },
+          "turnaround": {
+            "type": "object",
+            "properties": {
+              "stopId": {
+                "type": "string"
+              },
+              "nextTripId": {
+                "type": "string"
+              },
+              "nextDepartureSeconds": {
+                "type": "number"
+              },
+              "scheduledLayoverSeconds": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "stops"
+        ],
+        "additionalProperties": true
+      },
+      "DisplayData": {
+        "type": "object",
+        "properties": {
+          "meta": {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "integer",
+                "const": 11
+              },
+              "generatedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "landingNumber": {
+                "type": "integer"
+              },
+              "landing": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "stopIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "latitude": {
+                    "type": "number"
+                  },
+                  "longitude": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "displayName",
+                  "stopIds"
+                ],
+                "additionalProperties": true
+              },
+              "timezone": {
+                "type": "string"
+              },
+              "agencyName": {
+                "type": "string"
+              },
+              "departureWindowMinutes": {
+                "type": "integer"
+              },
+              "departuresShown": {
+                "type": "integer"
+              },
+              "feedVersion": {
+                "type": "string"
+              },
+              "feedStartDate": {
+                "type": "string",
+                "format": "date"
+              },
+              "feedEndDate": {
+                "type": "string",
+                "format": "date"
+              },
+              "sourceHash": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "generatedAt",
+              "landingNumber",
+              "landing",
+              "timezone",
+              "departureWindowMinutes",
+              "departuresShown"
+            ],
+            "additionalProperties": true
+          },
+          "calendars": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Calendar"
+            }
+          },
+          "exceptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarException"
+            }
+          },
+          "routes": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Route"
+            }
+          },
+          "departures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Departure"
+            }
+          },
+          "tripSchedules": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TripSchedule"
+            }
+          },
+          "stops": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "landingId": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "meta",
+          "calendars",
+          "exceptions",
+          "routes",
+          "departures",
+          "tripSchedules",
+          "stops"
+        ],
+        "additionalProperties": true
+      },
+      "Update": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string"
+          },
+          "stopId": {
+            "type": "string"
+          },
+          "delaySeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "canceled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "tripId",
+          "stopId"
+        ],
+        "additionalProperties": true
+      },
+      "Vehicle": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string"
+          },
+          "boat": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "boatName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAtEpochSeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "tripId"
+        ],
+        "additionalProperties": true
+      },
+      "Realtime": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "fetchedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "feedTimestamp": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "cacheState": {
+            "type": "string"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Update"
+            }
+          },
+          "vehicles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vehicle"
+            }
+          },
+          "nyu": {
+            "type": "object",
+            "properties": {
+              "available": {
+                "type": "boolean"
+              },
+              "stale": {
+                "type": "boolean"
+              },
+              "fetchedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "error": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "available",
+          "stale",
+          "updates",
+          "vehicles"
+        ],
+        "additionalProperties": true
+      },
+      "Harbor": {
+        "type": "object",
+        "properties": {
+          "bounds": {
+            "type": "object",
+            "properties": {
+              "minLatitude": {
+                "type": "number"
+              },
+              "maxLatitude": {
+                "type": "number"
+              },
+              "minLongitude": {
+                "type": "number"
+              },
+              "maxLongitude": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": true
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "color": {
+                  "type": "string"
+                },
+                "shortName": {
+                  "type": "string"
+                },
+                "paths": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  },
+                  "description": "Polylines; each coordinate is [latitude, longitude]."
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "landings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Landing"
+            }
+          },
+          "chart": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "bounds",
+          "routes",
+          "landings"
+        ],
+        "additionalProperties": true
+      },
+      "Boat": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tripId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "bearing": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "speedKnots": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ageSeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "routeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "route": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "routeName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "stop": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
+          "reportedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "destination": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "latitude",
+          "longitude"
+        ],
+        "additionalProperties": true
+      },
+      "Boats": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "fetchedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "boats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Boat"
+            }
+          }
+        },
+        "required": [
+          "available",
+          "stale",
+          "fetchedAt",
+          "boats"
+        ],
+        "additionalProperties": true
+      },
+      "Alert": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "header": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "agency": {
+            "type": "string"
+          },
+          "routeIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stopIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "activePeriods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "end": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "Alerts": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "fetchedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "partial": {
+            "type": "boolean"
+          },
+          "sourceStatus": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Alert"
+            }
+          }
+        },
+        "required": [
+          "available",
+          "stale",
+          "alerts"
+        ],
+        "additionalProperties": true
+      },
+      "Connections": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string"
+          },
+          "generatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "serviceDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "stops": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stopId": {
+                  "type": "string"
+                },
+                "landingId": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                },
+                "sequence": {
+                  "type": "integer"
+                },
+                "arrivalSeconds": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "departureSeconds": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "estimatedArrivalSeconds": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "afterSeconds": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "hub": {
+                  "type": "boolean"
+                },
+                "limit": {
+                  "type": "integer"
+                },
+                "turnaround": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "additionalProperties": true
+                },
+                "connections": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "tripId": {
+                        "type": "string"
+                      },
+                      "routeId": {
+                        "type": "string"
+                      },
+                      "departureTime": {
+                        "type": "string"
+                      },
+                      "seconds": {
+                        "type": "number"
+                      },
+                      "delaySeconds": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "deltaSeconds": {
+                        "type": "number"
+                      },
+                      "hasLiveTiming": {
+                        "type": "boolean"
+                      },
+                      "boatName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "predictedBoatName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "destination": {
+                        "type": "string"
+                      },
+                      "operator": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                }
+              },
+              "required": [
+                "stopId",
+                "name",
+                "sequence",
+                "connections"
+              ],
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "tripId",
+          "generatedAt",
+          "serviceDate",
+          "stale",
+          "stops"
+        ],
+        "additionalProperties": true
+      },
+      "Changelog": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "version": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "notes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "additionalProperties": true
+      },
+      "Stats": {
+        "type": "object",
+        "properties": {
+          "since": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "generatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "routes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "statuses": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "events": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "landings": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "landingNames": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "series": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": true
+          },
+          "feed": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": true
+          },
+          "latency": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "generatedAt",
+          "routes",
+          "statuses",
+          "events",
+          "landings"
+        ],
+        "additionalProperties": true
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "service": {
+            "type": "string"
+          },
+          "now": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "counters": {
+            "$ref": "#/components/schemas/Stats"
+          }
+        },
+        "required": [
+          "ok",
+          "service",
+          "now",
+          "counters"
+        ],
+        "additionalProperties": true
+      }
+    }
+  }
+}

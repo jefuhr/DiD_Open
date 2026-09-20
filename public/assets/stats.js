@@ -19,7 +19,6 @@ const ROUTE_LABELS = {
   "/api/map": "Map outline",
   "/map": "Map page",
   "/api/alerts": "Service alerts",
-  "/api/override": "Posted notices",
   "/api/landings": "Landing list",
   "/api/health": "Health checks",
   "/healthz": "Health checks",

@@ -1,8 +1,8 @@
 // Stamps the asset version from config/asset-version.json onto every file that carries it.
 //
 // An installed board only picks up new code when the service worker's cache name changes and the
-// URLs in its precache list change with it. Those references live in five files and there are more
-// than thirty of them, so bumping the version by hand meant editing all five and the contract test
+// URLs in its precache list change with it. Those references span the HTML, modules and worker,
+// so bumping the version by hand meant editing all of them and the contract test
 // that pins them — and missing one left installed clients holding stale code against a fresh
 // worker, which is the one failure this project cannot see from the outside.
 //
@@ -24,6 +24,7 @@ export const STAMPED_FILES = [
   "public/map.html",
   "public/assets/site.webmanifest",
   "public/app.js",
+  "public/assets/app-shell.js",
   "public/sw.js"
 ];
 
@@ -31,7 +32,7 @@ export const STAMPED_FILES = [
 // together: a new cache name with old URLs re-downloads nothing, and new URLs in the old cache are
 // never fetched at all. Each entry knows how to find its references and how to write one.
 //
-// The cache-name pattern is scoped to the worker on purpose. public/app.js holds
+// The cache-name pattern is scoped to the worker on purpose. assets/preferences.js holds
 // `cacheKey = "nyc-ferry-did-data-v6"`, which looks identical but is the prefix for every
 // localStorage key the board owns — the chosen landing, the favourites, the theme, the hidden
 // operators and the saved schedules. Bumping that with the assets would silently orphan all of it

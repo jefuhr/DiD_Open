@@ -6,4 +6,3 @@ try {
 } catch {
   document.documentElement.dataset.theme = "nyc-ferry";
 }
-document.documentElement.dataset.surface = new URL("./", location).pathname === "/" ? "kiosk" : "app";

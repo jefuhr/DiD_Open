@@ -48,8 +48,8 @@ main("installed viewport", { api: {
     localStorage.setItem("nyc-ferry-did-sort", "time");
     const RealDate = Date;
     window.Date = class extends RealDate {
-      constructor(...args) { super(...(args.length ? args : ["2026-09-05T15:27:00Z"])); }
-      static now() { return +new RealDate("2026-09-05T15:27:00Z"); }
+      constructor(...args) { super(...(args.length ? args : ["2026-09-20T15:27:00Z"])); }
+      static now() { return +new RealDate("2026-09-20T15:27:00Z"); }
     };
   });
   const results = [];

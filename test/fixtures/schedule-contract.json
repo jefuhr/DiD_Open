@@ -1,0 +1,540 @@
+{
+  "description": "Pass schedule and each case's realtime/viewDate/now to timelineDepartures. Compare the projected expected fields in order. now is an ISO instant; serviceDate is a local calendar date.",
+  "schedule": {
+    "meta": {
+      "schemaVersion": 11,
+      "timezone": "America/New_York",
+      "landingNumber": 16,
+      "landing": {
+        "displayName": "Pier 11"
+      },
+      "departureWindowMinutes": 1440,
+      "departuresShown": 5
+    },
+    "routes": {
+      "ER": {
+        "name": "East River"
+      }
+    },
+    "calendars": [
+      {
+        "serviceId": "daily",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "weekdays": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    ],
+    "exceptions": [
+      {
+        "serviceId": "daily",
+        "date": "2026-09-07",
+        "added": false
+      },
+      {
+        "serviceId": "holiday",
+        "date": "2026-09-07",
+        "added": true
+      }
+    ],
+    "departures": [
+      {
+        "tripId": "nine",
+        "routeId": "ER",
+        "serviceId": "daily",
+        "stopId": "1",
+        "directionId": "0",
+        "destination": "Pier 11",
+        "seconds": 32400,
+        "departureTime": "09:00:00",
+        "boatAssignment": 1
+      },
+      {
+        "tripId": "ten",
+        "routeId": "ER",
+        "serviceId": "daily",
+        "stopId": "1",
+        "directionId": "0",
+        "destination": "Pier 11",
+        "seconds": 36000,
+        "departureTime": "10:00:00"
+      },
+      {
+        "tripId": "overnight",
+        "routeId": "ER",
+        "serviceId": "daily",
+        "stopId": "1",
+        "directionId": "0",
+        "destination": "Pier 11",
+        "seconds": 90600,
+        "departureTime": "25:10:00"
+      },
+      {
+        "tripId": "home",
+        "routeId": "ER",
+        "serviceId": "daily",
+        "stopId": "1",
+        "directionId": "0",
+        "destination": "Pier C",
+        "seconds": 37800,
+        "departureTime": "10:30:00",
+        "outOfService": true,
+        "liveTripId": "ten",
+        "predictTripId": "ten",
+        "approximate": true
+      },
+      {
+        "tripId": "crew",
+        "routeId": "ER",
+        "serviceId": "daily",
+        "stopId": "1",
+        "directionId": "0",
+        "destination": "Crew pickup",
+        "seconds": 39600,
+        "departureTime": "11:00:00",
+        "crewShuttle": true,
+        "departureTimeEnd": "11:30:00",
+        "secondsEnd": 41400
+      },
+      {
+        "tripId": "holiday",
+        "routeId": "ER",
+        "serviceId": "holiday",
+        "stopId": "1",
+        "directionId": "0",
+        "destination": "Pier 11",
+        "seconds": 43200,
+        "departureTime": "12:00:00"
+      }
+    ],
+    "tripSchedules": {}
+  },
+  "cases": [
+    {
+      "id": "offline-morning",
+      "now": "2026-09-04T12:50:00Z",
+      "realtime": {
+        "stale": true,
+        "available": false,
+        "updates": [],
+        "vehicles": []
+      },
+      "expected": [
+        {
+          "tripId": "nine",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "ten",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": true
+        },
+        {
+          "tripId": "home",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "crew",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        }
+      ]
+    },
+    {
+      "id": "offline-clock-advances",
+      "now": "2026-09-04T14:02:00Z",
+      "realtime": {
+        "stale": true,
+        "available": false,
+        "updates": [],
+        "vehicles": []
+      },
+      "expected": [
+        {
+          "tripId": "home",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "crew",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        }
+      ]
+    },
+    {
+      "id": "previous-service-day",
+      "now": "2026-09-04T05:00:00Z",
+      "realtime": {
+        "stale": true,
+        "available": false,
+        "updates": [],
+        "vehicles": []
+      },
+      "expected": [
+        {
+          "tripId": "overnight",
+          "serviceDate": "2026-09-03",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "nine",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "ten",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": true
+        },
+        {
+          "tripId": "home",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "crew",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        }
+      ]
+    },
+    {
+      "id": "fresh-delay-and-home-port",
+      "now": "2026-09-04T12:50:00Z",
+      "realtime": {
+        "available": true,
+        "stale": false,
+        "updates": [
+          {
+            "tripId": "ten",
+            "stopId": "1",
+            "delaySeconds": 600
+          }
+        ],
+        "vehicles": [
+          {
+            "tripId": "ten",
+            "boat": "ER1",
+            "boatName": "Opportunity",
+            "updatedAtEpochSeconds": 100
+          }
+        ]
+      },
+      "expected": [
+        {
+          "tripId": "nine",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": "Opportunity",
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "ten",
+          "serviceDate": "2026-09-04",
+          "delay": 600,
+          "hasLiveTiming": true,
+          "boatName": "Opportunity",
+          "predictedBoatName": null,
+          "isLastOfDay": true
+        },
+        {
+          "tripId": "home",
+          "serviceDate": "2026-09-04",
+          "delay": 600,
+          "hasLiveTiming": true,
+          "boatName": null,
+          "predictedBoatName": "Opportunity",
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "crew",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        }
+      ]
+    },
+    {
+      "id": "no-early-departure",
+      "now": "2026-09-04T12:50:00Z",
+      "realtime": {
+        "available": true,
+        "stale": false,
+        "updates": [
+          {
+            "tripId": "nine",
+            "stopId": "1",
+            "delaySeconds": -300
+          }
+        ],
+        "vehicles": []
+      },
+      "expected": [
+        {
+          "tripId": "nine",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": true,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "ten",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": true
+        },
+        {
+          "tripId": "home",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "crew",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        }
+      ]
+    },
+    {
+      "id": "cancellation",
+      "now": "2026-09-04T12:50:00Z",
+      "realtime": {
+        "available": true,
+        "stale": false,
+        "updates": [
+          {
+            "tripId": "nine",
+            "stopId": "1",
+            "canceled": true
+          }
+        ],
+        "vehicles": []
+      },
+      "expected": [
+        {
+          "tripId": "ten",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": true
+        },
+        {
+          "tripId": "home",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "crew",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        }
+      ]
+    },
+    {
+      "id": "stale-delay-ignored",
+      "now": "2026-09-04T12:50:00Z",
+      "realtime": {
+        "stale": true,
+        "available": false,
+        "updates": [
+          {
+            "tripId": "ten",
+            "stopId": "1",
+            "delaySeconds": 600
+          }
+        ],
+        "vehicles": []
+      },
+      "expected": [
+        {
+          "tripId": "nine",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "ten",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": true
+        },
+        {
+          "tripId": "home",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "crew",
+          "serviceDate": "2026-09-04",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        }
+      ]
+    },
+    {
+      "id": "holiday-browsing-ignores-live",
+      "now": "2026-09-04T12:50:00Z",
+      "viewDate": "2026-09-07",
+      "realtime": {
+        "available": true,
+        "stale": false,
+        "updates": [
+          {
+            "tripId": "holiday",
+            "stopId": "1",
+            "canceled": true
+          }
+        ],
+        "vehicles": []
+      },
+      "expected": [
+        {
+          "tripId": "overnight",
+          "serviceDate": "2026-09-06",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": false
+        },
+        {
+          "tripId": "holiday",
+          "serviceDate": "2026-09-07",
+          "delay": 0,
+          "hasLiveTiming": false,
+          "boatName": null,
+          "predictedBoatName": null,
+          "isLastOfDay": true
+        }
+      ]
+    },
+    {
+      "id": "expired-schedule",
+      "now": "2027-01-02T12:50:00Z",
+      "realtime": {
+        "stale": true,
+        "available": false,
+        "updates": [],
+        "vehicles": []
+      },
+      "expected": []
+    }
+  ],
+  "timezones": [
+    {
+      "now": "2026-03-08T06:59:00Z",
+      "dateKey": "2026-03-08",
+      "seconds": 7140
+    },
+    {
+      "now": "2026-03-08T07:00:00Z",
+      "dateKey": "2026-03-08",
+      "seconds": 10800
+    },
+    {
+      "now": "2026-11-01T05:30:00Z",
+      "dateKey": "2026-11-01",
+      "seconds": 5400
+    },
+    {
+      "now": "2026-11-01T06:30:00Z",
+      "dateKey": "2026-11-01",
+      "seconds": 5400
+    }
+  ]
+}

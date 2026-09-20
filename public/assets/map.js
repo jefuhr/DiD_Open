@@ -1,4 +1,10 @@
-const { storage, request, reconcile, poll, reveal } = MobileRuntime;
+import { createViewLifecycle } from "./view-lifecycle.js";
+
+export function mountMap(root, { header = document.querySelector("#mapHeading"), navigate = url => location.assign(url), getGeometry = () => MobileRuntime.request("/api/map"), boardURL = "./" } = {}) {
+const query = selector => root.querySelector(selector) || header?.querySelector(selector);
+const lifecycle = createViewLifecycle();
+const { poll } = lifecycle;
+const { storage, request, reconcile, reveal } = MobileRuntime;
 // The map page.
 //
 // Reads /api/map once for the harbor and /api/boats every fifteen seconds for what is on it, and
@@ -28,17 +34,42 @@ const STALE_FIX_SECONDS = 180;
 const number = new Intl.NumberFormat("en-US");
 const timeLabel = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
 
-const chart = document.getElementById("chart");
-const mapMessage = document.getElementById("mapMessage");
-const statusText = document.getElementById("mapStatusText");
-const boatSearchInput = document.getElementById("boatSearch");
-const routeFilterBar = document.getElementById("routeFilterBar");
-const vesselCard = document.getElementById("vesselCard");
-const dockCard = document.getElementById("dockCard");
-const bridgeCard = document.getElementById("bridgeCard");
-const seamarkCard = document.getElementById("seamarkCard");
-const bottomSheet = document.getElementById("bottomSheet");
-const sheetHandle = document.getElementById("sheetHandle");
+const chart = query("#chart");
+const mapMessage = query("#mapMessage");
+const statusText = query("#mapStatusText");
+const boatSearchInput = query("#boatSearch");
+const routeFilterBar = query("#routeFilterBar");
+const routeMenu = query("#mapRouteMenu");
+const routeMenuButton = query("#mapMenuButton");
+const routeClose = query("#mapRouteClose");
+const routeScrim = query("#mapRouteScrim");
+const routeMessage = query("#mapRouteMessage");
+function setRouteMenuOpen(open, restoreFocus = true) {
+  if (!routeMenu) return;
+  MobileRuntime.panel(routeMenu, open, true, restoreFocus);
+  routeMenuButton?.setAttribute("aria-expanded", String(open));
+  if (open) (routeFilterBar.querySelector('[aria-pressed="true"]') || routeClose)?.focus();
+  else if (restoreFocus) routeMenuButton?.focus({ preventScroll: true });
+}
+const openRouteMenu = () => setRouteMenuOpen(true);
+const closeRouteMenu = () => setRouteMenuOpen(false);
+const routeMenuKeys = event => {
+  if (event.key === "Escape" && routeMenu && !routeMenu.hidden) {
+    event.preventDefault();
+    event.stopPropagation();
+    closeRouteMenu();
+  }
+};
+routeMenuButton?.addEventListener("click", openRouteMenu);
+routeClose?.addEventListener("click", closeRouteMenu);
+routeScrim?.addEventListener("click", closeRouteMenu);
+routeMenu?.addEventListener("keydown", routeMenuKeys);
+const vesselCard = query("#vesselCard");
+const dockCard = query("#dockCard");
+const bridgeCard = query("#bridgeCard");
+const seamarkCard = query("#seamarkCard");
+const bottomSheet = query("#bottomSheet");
+const sheetHandle = query("#sheetHandle");
 
 const hasRaf = typeof requestAnimationFrame === "function";
 
@@ -563,6 +594,7 @@ function drawHarbor() {
 
 function renderRouteFilters() {
   if (!routeFilterBar || !harbor?.routes) return;
+  if (routeMessage) routeMessage.hidden = true;
   routeFilterBar.textContent = "";
 
   const allPill = element("button", `route-filter-pill${!activeRouteFilter ? " is-active" : ""}`, "All routes");
@@ -587,12 +619,13 @@ function renderRouteFilters() {
 function setRouteFilter(routeId) {
   activeRouteFilter = routeId;
   const route = harbor.routes.find((item) => item.id === routeId);
-  document.getElementById("mapScope").textContent = route?.name || "The whole harbor";
-  document.getElementById("mapScopeDetail").textContent = route ? `${route.shortName} · Selected vessels highlighted` : "Landings & vessel positions";
+  query("#mapScope").textContent = route?.name || "The whole harbor";
+  query("#mapScopeDetail").textContent = route ? `${route.shortName} · Selected vessels highlighted` : "Landings & vessel positions";
   renderRouteFilters();
   updateRouteLineStyles();
   drawFleet();
   renderList();
+  setRouteMenuOpen(false);
 }
 
 function updateRouteLineStyles() {
@@ -690,11 +723,13 @@ function metresBetween(from, to) {
 // ---------------------------------------------------------------- pan, zoom & camera easing
 
 let viewFramePending = false;
+let cameraFrame = null;
 function scheduleView() {
+  if (!lifecycle.active) return;
   if (!hasRaf) return applyView();
   if (viewFramePending) return;
   viewFramePending = true;
-  requestAnimationFrame(renderCameraFrame);
+  cameraFrame = requestAnimationFrame(renderCameraFrame);
 }
 
 function renderCameraFrame(now) {
@@ -774,11 +809,11 @@ function cacheViewport(box) {
   if (view) scheduleView();
 }
 cacheViewport(chart.getBoundingClientRect());
-if (typeof ResizeObserver === "function") {
-  new ResizeObserver(entries => cacheViewport(entries[0].contentRect)).observe(chart);
-} else {
-  globalThis.addEventListener?.("resize", () => cacheViewport(chart.getBoundingClientRect()));
-}
+const resizeViewport = () => cacheViewport(chart.getBoundingClientRect());
+const observer = typeof ResizeObserver === "function"
+  ? new ResizeObserver(entries => { if (lifecycle.active) cacheViewport(entries[0].contentRect); }) : null;
+if (observer) observer.observe(chart);
+else globalThis.addEventListener?.("resize", resizeViewport);
 
 function layoutStreetLabels(units, close) {
   const occupied = [];
@@ -1094,9 +1129,9 @@ chart.addEventListener("click", (event) => {
   hideSeamarkCard();
 });
 
-document.getElementById("zoomIn").addEventListener("click", () => zoomBy(1 / 1.4, null, null, { animate: true }));
-document.getElementById("zoomOut").addEventListener("click", () => zoomBy(1.4, null, null, { animate: true }));
-document.getElementById("zoomFit").addEventListener("click", () => {
+query("#zoomIn").addEventListener("click", () => zoomBy(1 / 1.4, null, null, { animate: true }));
+query("#zoomOut").addEventListener("click", () => zoomBy(1.4, null, null, { animate: true }));
+query("#zoomFit").addEventListener("click", () => {
   if (base) {
     if (hasRaf) animateTo({ ...base });
     else setView({ ...base });
@@ -1147,7 +1182,7 @@ function updateVesselCard() {
     .map((dock) => ({ dock, distance: metresBetween(dock, boat.stop) }))
     .filter((item) => item.distance < 300)
     .sort((a, b) => a.distance - b.distance)[0]?.dock;
-  actionBtn.href = landing ? `./?landing=${landing.id}` : ".";
+  actionBtn.href = landing ? `${boardURL}?landing=${landing.id}` : boardURL;
 
   reconcile(vesselCard, [closeBtn, titleRow, status, metaRow, actionBtn]);
 }
@@ -1172,7 +1207,7 @@ function showDockCard(dock) {
   cancel.addEventListener("click", hideDockCard);
   const open = element("button", "confirm-departures", "Open departures");
   open.type = "button";
-  open.addEventListener("click", () => location.assign(`./?landing=${encodeURIComponent(dock.id)}`));
+  open.addEventListener("click", () => navigate(`${boardURL}?landing=${encodeURIComponent(dock.id)}`));
   actions.append(cancel, open);
   dockCard.append(title, description, actions);
   // Keep this in the same floating-card layer as vessel details. A non-modal dialog preserves
@@ -1276,14 +1311,14 @@ if (sheetHandle && bottomSheet) {
     bottomSheet.dataset.state = "peek";
     sheetHandle.setAttribute("aria-expanded", "false");
     sheetHandle.setAttribute("aria-label", "Expand vessel list");
-    document.getElementById("sheetToggleText").textContent = "Expand";
+    query("#sheetToggleText").textContent = "Expand";
   }
   sheetHandle.addEventListener("click", () => {
     const next = bottomSheet.dataset.state === "peek" ? "half" : "peek";
     bottomSheet.dataset.state = next;
     sheetHandle.setAttribute("aria-expanded", String(next !== "peek"));
     sheetHandle.setAttribute("aria-label", next === "peek" ? "Expand vessel list" : "Collapse vessel list");
-    document.getElementById("sheetToggleText").textContent = next === "peek" ? "Expand" : "Collapse";
+    query("#sheetToggleText").textContent = next === "peek" ? "Expand" : "Collapse";
   });
 }
 
@@ -1364,7 +1399,7 @@ function select(id, { recentre = true } = {}) {
 }
 
 function renderList() {
-  const list = document.getElementById("boats");
+  const list = query("#boats");
   if (!list) return;
   const entries = [];
 
@@ -1380,8 +1415,8 @@ function renderList() {
     return true;
   });
 
-  const countElem = document.getElementById("boatCount");
-  document.getElementById("listCount").textContent = `${filtered.length} ${filtered.length === 1 ? "vessel" : "vessels"}${activeRouteFilter || searchQuery ? ` of ${boats.length}` : " reporting"}`;
+  const countElem = query("#boatCount");
+  query("#listCount").textContent = `${filtered.length} ${filtered.length === 1 ? "vessel" : "vessels"}${activeRouteFilter || searchQuery ? ` of ${boats.length}` : " reporting"}`;
   if (countElem) {
     countElem.textContent = boats.length
       ? `${number.format(boats.length)} ${boats.length === 1 ? "boat" : "boats"}`
@@ -1389,7 +1424,10 @@ function renderList() {
   }
 
   if (!boats.length) {
-    reconcile(list, [element("li", "empty", "No NYC Ferry vessel is reporting a position right now. Routes and landings are still available. Partner operators do not supply positions here.")]);
+    const empty = element("li", "empty");
+    empty.append(element("strong", "empty-title", "No vessels reporting"),
+      element("p", null, "No NYC Ferry vessel is reporting a position right now. Routes and landings are still available. Partner operators do not supply positions here."));
+    reconcile(list, [empty]);
     return;
   }
 
@@ -1487,7 +1525,7 @@ function followWanted() {
 // drift apart the way an "Offline" label sitting on the stale styling did.
 function setFeedStatus(label, state) {
   if (statusText) statusText.textContent = label;
-  const chip = document.getElementById("mapStatus");
+  const chip = query("#mapStatus");
   if (chip) chip.dataset.state = state;
 }
 function applyPositions(payload, saved = false) {
@@ -1502,7 +1540,7 @@ function applyPositions(payload, saved = false) {
   if (stale) setFeedStatus("Saved", "stale");
   else if (!payload.available) setFeedStatus("No feed", "offline");
   else setFeedStatus("Live", "live");
-  const note = document.getElementById("feedNote");
+  const note = query("#feedNote");
   if (note) note.textContent = `${at && Number.isFinite(+at) ? `Updated ${timeLabel.format(at)} · ` : ""}NYC Ferry positions · Refreshes every 15s`;
   message(stale ? `Saved positions${at && Number.isFinite(+at) ? `, at ${timeLabel.format(at)}` : ""} · refreshing when connected. These positions may be out of date.`
     : !payload.available ? "The vessel feed is not answering. Nothing here is current." : following);
@@ -1523,7 +1561,7 @@ function harborFingerprint(value) {
 }
 async function load() {
   // Both requests start together. Geometry failure does not suppress the vessel roster.
-  const geometry = geometryFresh ? Promise.resolve() : request("/api/map").then(async response => {
+  const geometry = geometryFresh ? Promise.resolve() : getGeometry().then(async response => {
     if (!response.ok) throw new Error();
     const payload = await response.json();
     if (!payload.bounds || !Array.isArray(payload.landings) || !Array.isArray(payload.routes)) throw new Error();
@@ -1544,6 +1582,7 @@ async function load() {
     return payload;
   });
   const results = await Promise.allSettled([geometry, positions]);
+  if (routeMessage && !harbor?.routes) routeMessage.textContent = "Routes unavailable. Reconnect to load the map.";
   if (results[1].status === "fulfilled") {
     applyPositions(results[1].value);
     return;
@@ -1560,4 +1599,66 @@ if (savedHarbor?.bounds && Array.isArray(savedHarbor.landings) && Array.isArray(
 }
 const savedPositions = storage.json("nyc-ferry-map-positions");
 if (Array.isArray(savedPositions?.boats)) applyPositions(savedPositions, true);
-poll(load, REFRESH_MS);
+let usable;
+const ready = new Promise(resolve => { usable = resolve; });
+poll(async () => { try { await load(); } finally { usable(); } }, REFRESH_MS);
+
+return {
+  ready,
+  activate(url = new URL(location.href)) {
+    if (header) { header.hidden = false; header.inert = false; }
+    root.hidden = false;
+    root.inert = false;
+    if (url.searchParams.has("boat")) wanted = url.searchParams.get("boat");
+    document.title = "NYC Ferry Staff Board · Map";
+    setFeedStatus(boats.length ? "Refreshing" : "Connecting", "loading");
+    lifecycle.activate();
+    resizeViewport();
+    followWanted();
+    scheduleView();
+  },
+  deactivate() {
+    lifecycle.deactivate();
+    root.hidden = true;
+    setRouteMenuOpen(false, false);
+    if (header) { header.hidden = true; header.inert = true; }
+    root.hidden = true;
+    cameraAnimation = null;
+    if (cameraFrame !== null) cancelAnimationFrame(cameraFrame);
+    cameraFrame = null;
+    viewFramePending = false;
+    clearTimeout(wheelTimer);
+    wheelTimer = null;
+    for (const id of pointers.keys()) {
+      if (chart.hasPointerCapture?.(id)) chart.releasePointerCapture(id);
+    }
+    pointers.clear();
+    pointerHistory = [];
+    gestureView = null;
+    gestureMatrix = null;
+    gestureRenderedView = null;
+    pinchAnchor = null;
+    pinchDistance = 0;
+    dragged = false;
+    hideDockCard();
+    hideBridgeCard();
+    hideSeamarkCard();
+    root.getAnimations?.({ subtree: true }).forEach(animation => animation.cancel());
+    root.hidden = true;
+    root.inert = true;
+  },
+  dispose() {
+    this.deactivate();
+    lifecycle.dispose();
+    observer?.disconnect();
+    globalThis.removeEventListener?.("resize", resizeViewport);
+    routeMenuButton?.removeEventListener("click", openRouteMenu);
+    routeClose?.removeEventListener("click", closeRouteMenu);
+    routeScrim?.removeEventListener("click", closeRouteMenu);
+    routeMenu?.removeEventListener("keydown", routeMenuKeys);
+    MobileRuntime.releasePanels?.(root);
+    root.replaceChildren();
+    header?.replaceChildren();
+  }
+};
+}

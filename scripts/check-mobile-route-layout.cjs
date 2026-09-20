@@ -17,7 +17,7 @@ const SIZES = [
   { width: 1024, height: 768 }
 ];
 const TEXT_SIZES = [16, 20, 24];
-const FROZEN_NOW = "2026-09-04T14:00:00Z";
+const FROZEN_NOW = "2026-09-20T14:00:00Z";
 
 main("route layout", {}, async ({ page, site, save, shot }) => {
   await page.addInitScript((now) => {

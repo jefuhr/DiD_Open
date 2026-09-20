@@ -12,7 +12,7 @@ const http = require("http");
 const path = require("path");
 
 const ROOT = process.cwd();
-const DOCS = path.join(ROOT, "docs/mobile-upgrade");
+const ARTIFACTS = path.join(ROOT, "artifacts/browser");
 // The application server these checks read live data from. Started separately, because building
 // the display data takes long enough that doing it per check would dominate the run.
 const ORIGIN = process.env.MOBILE_TEST_ORIGIN || "http://127.0.0.1:8094";
@@ -28,11 +28,12 @@ const TYPES = {
   ".webmanifest": "application/manifest+json"
 };
 
-// The two document paths the board answers on. A kiosk is served at the site root and the public
-// board under /ferryTimesMobile/, and the checks exercise the second because that is the one a
-// phone loads.
+// Root and public-prefix deployments serve the same responsive application.
 function documentFor(pathname) {
-  if (pathname === "/map" || pathname === "/map.html") return "/map.html";
+  if (pathname.startsWith("/ferryTimesMobile/") && pathname !== "/ferryTimesMobile/") {
+    return documentFor(pathname.slice("/ferryTimesMobile".length));
+  }
+  if (pathname === "/map" || pathname === "/map.html") return "/index.html";
   if (pathname === "/ferryTimesMobile/" || pathname === "/") return "/index.html";
   return pathname;
 }
@@ -48,9 +49,10 @@ async function fromApp(pathname) {
  * proxied to the application server otherwise. Handlers may return a string or an object; objects
  * are serialised. Listens on an ephemeral port so checks can run side by side.
  */
-async function serve({ api = {} } = {}) {
+async function serve({ api = {}, headers = {} } = {}) {
   const server = http.createServer(async (request, response) => {
     try {
+      for (const [name, value] of Object.entries(headers)) response.setHeader(name, value);
       const url = new URL(request.url, "http://localhost");
       if (url.pathname.startsWith("/api/")) {
         const handler = api[url.pathname];
@@ -92,21 +94,25 @@ const PHONE = {
 async function check(name, { api = {}, context = {} } = {}, body) {
   const { chromium } = require(path.join(ROOT, "node_modules/playwright"));
   const site = await serve({ api });
-  const browser = await chromium.launch();
   const errors = [];
+  let browser;
   try {
+    browser = await chromium.launch();
     const page = await browser.newPage({ ...PHONE, ...context });
     page.on("pageerror", (error) => errors.push(error.message));
     const save = async (file, data) => {
-      await fs.mkdir(DOCS, { recursive: true });
-      await fs.writeFile(path.join(DOCS, file), `${JSON.stringify(data, null, 2)}\n`);
+      await fs.mkdir(ARTIFACTS, { recursive: true });
+      await fs.writeFile(path.join(ARTIFACTS, file), `${JSON.stringify(data, null, 2)}\n`);
     };
-    const shot = (file) => page.screenshot({ path: path.join(DOCS, file) });
+    const shot = async (file) => {
+      await fs.mkdir(ARTIFACTS, { recursive: true });
+      return page.screenshot({ path: path.join(ARTIFACTS, file) });
+    };
     await body({ page, site, errors, save, shot });
     if (errors.length) throw new Error(`Uncaught page errors: ${errors.join(", ")}`);
     console.log(`${name}: ok`);
   } finally {
-    await browser.close();
+    await browser?.close();
     await site.close();
   }
 }
@@ -121,4 +127,4 @@ function main(name, options, body) {
   });
 }
 
-module.exports = { ORIGIN, DOCS, TYPES, documentFor, fromApp, serve, check, main, PHONE };
+module.exports = { ORIGIN, ARTIFACTS, TYPES, documentFor, fromApp, serve, check, main, PHONE };

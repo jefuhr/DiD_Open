@@ -1,7 +1,9 @@
 {
-  "landingNumber": 26,
+  "landingNumber": 16,
   "departureWindowMinutes": 1440,
   "departuresShown": 5,
+  "showDwellTimes": false,
+  "showLayoverTimes": true,
   "waterwayEnabled": true,
   "waterwayBelfordEnabled": true,
   "seastreakEnabled": true,

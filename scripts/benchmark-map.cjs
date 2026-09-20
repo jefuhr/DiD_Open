@@ -5,12 +5,13 @@ const fs = require('node:fs/promises');
 const { execFileSync } = require('node:child_process');
 const { chromium } = require('playwright');
 const { serve, PHONE } = require('./mobile-check-harness.cjs');
+const { instrumentMap, mapEvaluate } = require("./map-test-scope.cjs");
 const fixture = require('./map-browser-fixture.cjs');
 const args = process.argv.slice(2);
 const option = (name, fallback) => args.includes(name) ? args[args.indexOf(name) + 1] : fallback;
 const runs = Number(option('--runs', 5));
 const baseline = option('--baseline', null);
-const output = option('--output', 'docs/mobile-upgrade/map-performance.json');
+const output = option('--output', 'artifacts/browser/map-performance.json');
 const percentile = (values, p) => [...values].sort((a, b) => a - b)[Math.min(values.length - 1, Math.floor(values.length * p))] || 0;
 (async () => {
   const { harbor, positions } = await fixture();
@@ -32,7 +33,7 @@ const percentile = (values, p) => [...values].sort((a, b) => a - b)[Math.min(val
           const page = await context.newPage();
           const errors = [];
           page.on('pageerror', error => errors.push(error.message));
-          await page.route('**/assets/map.js*', route => route.fulfill({ contentType: 'text/javascript', body: source }));
+          await page.route('**/assets/map.js*', route => route.fulfill({ contentType: 'text/javascript', body: instrumentMap(source) }));
           await page.route(/^https:\/\//, route => route.abort());
           const cdp = await context.newCDPSession(page);
           await cdp.send('Emulation.setCPUThrottlingRate', { rate });
@@ -45,7 +46,7 @@ const percentile = (values, p) => [...values].sort((a, b) => a - b)[Math.min(val
             if (text.getBoundingClientRect().width < 10) throw new Error('Browser fonts are unavailable; configure fontconfig before benchmarking');
           });
           await page.waitForTimeout(200);
-          const samples = await page.evaluate(async () => {
+          const samples = await mapEvaluate(page, async () => {
             const chart = document.querySelector('#chart');
             const original = applyView;
             let recording = null, depth = 0;

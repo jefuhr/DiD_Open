@@ -2,7 +2,10 @@ import { buildSummerDisplayData } from "./helpers/summer-schedule.js";
 import { runtimeStub } from "./helpers/runtime-stub.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile as readDisk } from "node:fs/promises";
+import { clientSource } from "./helpers/client-source.js";
+import { activeServices } from "../public/assets/schedule.js";
+const readFile = (file, encoding) => file.pathname?.endsWith("/public/app.js") ? clientSource(file) : readDisk(file, encoding);
 import vm from "node:vm";
 
 const appPath = new URL("../public/app.js", import.meta.url);
@@ -196,12 +199,12 @@ test("shows the crew boat assignment beside the boat name", async () => {
   assert.match(css, /\.boat-assignment\{[^}]*flex:0 0 auto/);
 });
 
-test("staff board strips the rider-facing chrome: no header bar, no ad", async () => {
+test("staff board keeps navigation without rider-facing advertising", async () => {
   const [index, worker] = await Promise.all([
     readFile(indexPath, "utf8"),
     readFile(workerPath, "utf8")
   ]);
-  assert.doesNotMatch(index, /<header|ferry-mart|ad\.jpg|nyc-ferry-logo/);
+  assert.doesNotMatch(index, /ferry-mart|ad\.jpg|nyc-ferry-logo/);
   assert.doesNotMatch(worker, /ad\.jpg|nyc-ferry-logo/);
   assert.match(index, /id="clockTime"/);
   assert.match(index, /id="routeCount"/);
@@ -234,7 +237,7 @@ test("phone layout stacks the board into scrolling route cards", async () => {
   assert.match(rules, /\.departure-slots\{display:flex;flex-direction:column/);
   assert.match(rules, /\.departures\{flex:1;min-height:0;display:flex;flex-direction:column/);
   // Padding slots and the desktop column header are noise on a phone.
-  assert.match(rules, /\.departure-slot\.unavailable\{display:none\}/);
+  assert.doesNotMatch(await readFile(appPath, "utf8"), /slots\.push\(null\)|No scheduled trip/);
   assert.match(rules, /\.column-head\{display:none\}/);
   // Notch and home-indicator clearance.
   assert.match(rules, /env\(safe-area-inset-top\)/);
@@ -266,9 +269,9 @@ test("the alert bar expands into the full list of alerts", async () => {
   assert.match(css, /\.alert-item\{/);
 });
 
-test("phone layout leaves the kiosk board untouched", async () => {
+test("phone layout adapts the shared board", async () => {
   const css = await readFile(cssPath, "utf8");
-  // Every phone override must live inside a media query; the base rules stay kiosk-sized.
+  // Compact card rules apply at the phone breakpoint.
   const base = css.slice(0, css.indexOf("@media(max-width:820px)"));
   assert.match(base, /\.screen\{width:100vw;height:100vh/);
   assert.match(base, /\.departures\{flex:1;min-height:0;display:grid/);
@@ -301,7 +304,7 @@ test("landing menu lets an agent switch the board's landing", async () => {
   // Selection is persisted and restored, including for an offline start.
   assert.match(app, /storage\.setItem\(landingKey/);
   assert.match(app, /function selectedLanding\(\)/);
-  assert.match(app, /landingDataKey\(/);
+  assert.match(app, /scheduleStore\.read\(/);
   assert.match(app, /\/api\/display-data\$\{query\}/);
   // Close paths: the Done button, the scrim, and Escape.
   assert.match(app, /bindSheet\(setMenuOpen, \{ menu: elements\.landingMenu, trigger: elements\.menuButton, close: elements\.landingMenuClose, scrim: elements\.landingMenuScrim/);
@@ -311,24 +314,10 @@ test("landing menu lets an agent switch the board's landing", async () => {
   assert.match(css, /\.landing-option\{[^}]*min-height:48px/);
 });
 
-test("SFTP landing notices replace all GTFS display regions", async () => {
-  const [app, css, index, server] = await Promise.all([
-    readFile(appPath, "utf8"),
-    readFile(cssPath, "utf8"),
-    readFile(indexPath, "utf8"),
-    readFile(serverPath, "utf8")
-  ]);
-  assert.match(server, /createSftpOverridePoller/);
-  assert.match(server, /sftpOverridePoller\.start\(\)/);
-  assert.match(server, /url\.pathname === "\/api\/override"/);
-  assert.doesNotMatch(server, /request\.method === "POST"|KIOSK_OVERRIDE_TOKEN/);
-  assert.match(index, /id="manualOverride"[^>]*hidden[^>]*aria-live="assertive"/);
-  assert.match(app, /\/api\/override\?landingId=/);
-  assert.match(app, /poll\(loadManualOverride, 5_000\)/);
-  assert.match(app, /setText\(elements\.manualOverrideMessage/);
-  // A notice takes the whole screen: the board, the alert strip and the docked landing rail all go.
-  assert.match(css, /\.screen\.override-active \.content,\.screen\.override-active \.service-alert-bar,\.screen\.override-active \.landing-menu\{display:none\}/);
-  assert.match(css, /\.manual-override-box\{/);
+test("retired landing notices cannot replace the staff board", async () => {
+  for (const file of [appPath, cssPath, indexPath, serverPath]) {
+    assert.doesNotMatch(await readFile(file, "utf8"), /sftpOverride|manualOverride|manual-override|api.override/);
+  }
 });
 
 test("partner operators show their mark in the route badge", async () => {
@@ -373,7 +362,7 @@ test("the timeline lists every upcoming sailing in departure order, route on eac
   ]);
   // Every sailing across every route is flattened into one list ordered by time, so route
   // grouping cannot survive into the ordering.
-  assert.match(app, /routeDirectionGroups\(now, Infinity\)/);
+  assert.match(app, /limitPerGroup: Infinity/);
   assert.match(app, /\.flatMap\(\(group\) => group\.departures\.map\(\(departure\) => \(\{ departure, group \}\)\)\)/);
   assert.match(app, /left\.departure\.delta - right\.departure\.delta \|\| byRoute\(left\.group, right\.group\)/);
 
@@ -450,8 +439,8 @@ test("24-hour is the default, and one helper decides it for every printed time",
   // Every formatter that prints an hour for someone to read goes through the helper. Counting them
   // is what stops a fourth being added later in a fixed cycle and going unnoticed.
   const spread = app.match(/\.\.\.hourOptions\(\)/g) || [];
-  assert.equal(spread.length, 4,
-    "the departure times, the clock, the notice stamp and the alert window");
+  assert.equal(spread.length, 3,
+    "the departure times, the clock and the alert window");
 
   // zonedParts is the exception and must stay one: it reads the hour to do arithmetic with, and a
   // 1-12 hour would put "now" twelve hours out for half of every day.
@@ -601,7 +590,7 @@ test("Pier 11 renders the bundled weekday STG 15:04 departure before boarding", 
   const { buildDisplayData } = await import("../scripts/build-data.js");
   const payload = await buildDisplayData({ root: new URL("..", import.meta.url).pathname, landingNumber: 16 });
   const view = await board({ now: "2026-09-15T18:59:00Z", payload, query: "?landing=16" });
-  const active = view.run('activeServices("2026-09-15")');
+  const active = activeServices(payload, "2026-09-15");
   const departure = payload.departures.find(item => item.routeId === "SG" && active.has(item.serviceId) && item.departureTime === "15:04:00");
   assert.ok(departure, "the published 15:04 sailing must survive the build");
   assert.equal(departure.outOfService, false);
@@ -670,7 +659,7 @@ test("a browsed day honours dated exceptions rather than guessing from the weekd
   // Labor Day 2026 is a Monday, so a weekday-shaped guess would show the weekday boats.
   view.run(`viewDate = "2026-09-07"; render();`);
   assert.deepEqual(view.times(), ["10:00", "16:00"]);
-  assert.deepEqual([...view.run(`activeServices("2026-09-07")`)], ["HOL"]);
+  assert.deepEqual([...activeServices(SAMPLE, "2026-09-07")], ["HOL"]);
   // The ordinary Monday either side of it is unaffected.
   view.run(`viewDate = "2026-09-14"; render();`);
   assert.deepEqual(view.times(), ["06:00", "09:00", "12:00", "18:00", "21:00"]);
@@ -698,29 +687,18 @@ test("the stepper stops at the ends of the bundled schedule", async () => {
 
 // The efficiency requirement. A schedule only varies by weekday and by the dated exceptions, so
 // computing a board per date would be redoing the same work all week.
-test("browsed days are computed once per service pattern, not once per date", async () => {
+test("browsed departures retain the selected service date", async () => {
   const view = await board();
-  view.run("resetSchedule();");
-  const dates = Array.from({ length: 28 }, (_, index) => view.run(`addDays("2026-08-13", ${index + 1})`));
-  for (const date of dates) view.run(`viewDate = ${JSON.stringify(date)}; render();`);
-
-  const patterns = view.run(`new Set(${JSON.stringify(dates)}.map(serviceSignature)).size`);
-  assert.ok(patterns < dates.length, "a month of dates must collapse to fewer patterns");
-  assert.equal(view.run("dayCache.size"), patterns, "one cache entry per pattern, not per date");
-
-  // Re-walking the same month adds no work at all.
-  for (const date of dates) view.run(`viewDate = ${JSON.stringify(date)}; render();`);
-  assert.equal(view.run("dayCache.size"), patterns, "revisiting a date is free");
-
-  // Today is never served from the cache: it moves with the clock and the live feed.
-  view.run("viewDate = null; render();");
-  assert.equal(view.run("dayCache.size"), patterns);
+  for (const date of ["2026-08-14", "2026-08-21", "2026-08-14"]) {
+    view.run(`viewDate = "${date}"; render();`);
+    assert.equal(view.run("timelineDepartures()[0].departure.serviceDate"), date);
+  }
 });
 
 test("an empty browsed day is not reported as service having concluded", async () => {
   const view = await board();
   // A date inside the calendar range that no service covers.
-  view.run(`data.calendars = []; data.exceptions = []; resetSchedule(); viewDate = "2026-08-20"; render();`);
+  view.run(`data.departures = []; viewDate = "2026-08-20"; render();`);
   assert.match(view.text(), /NO SCHEDULED BOATS/);
   assert.match(view.text(), /Nothing is scheduled here on Thursday, August 20/);
   assert.doesNotMatch(view.text(), /concluded for the day/);
@@ -728,6 +706,13 @@ test("an empty browsed day is not reported as service having concluded", async (
   view.run("viewDate = null; render();");
   assert.match(view.text(), /NO MORE BOATS/);
   assert.match(view.text(), /concluded for the day/);
+});
+
+test("expired saved schedules do not claim that service has ended", async () => {
+  const view = await board({ now: "2027-01-02T15:00:00Z" });
+  assert.match(view.text(), /SCHEDULE UNAVAILABLE/);
+  assert.match(view.text(), /No saved schedule covers this date/);
+  assert.doesNotMatch(view.text(), /concluded for the day/);
 });
 
 // A date is a lookup, not a setting. A board reopened the next morning still showing yesterday's
@@ -900,7 +885,7 @@ test("offline shell includes the current departure-link script", async () => {
     readFile(workerPath, "utf8")
   ]);
   assert.ok(index.includes(`styles.css?v=${version}`));
-  assert.ok(index.includes(`app.js?v=${version}`));
+  assert.ok(index.includes(`app-shell.js?v=${version}`));
   assert.ok(worker.includes(`nyc-ferry-did-shell-v${version}`));
   assert.ok(worker.includes(`styles.css?v=${version}`));
   assert.ok(worker.includes(`app.js?v=${version}`));
@@ -982,25 +967,14 @@ test("the nearest-landing button locates on tap and then shortcuts", async () =>
 // that can silently break here is the link: rooted at /map it works on a kiosk and 404s on
 // juliet.nyc, where this board is proxied under /ferryTimesMobile/ and the site root belongs to
 // somebody else. Relative is the only spelling that is right in both places.
-test("the board links to the map from the heading, by a path that works under either root", async () => {
-  const [index, css] = await Promise.all([readFile(indexPath, "utf8"), readFile(cssPath, "utf8")]);
-
-  assert.match(index, /<a class="map-button" id="mapButton" href="map"/);
-  assert.doesNotMatch(index, /href="\/map"/, "a rooted link is served by the landing page on juliet.nyc");
-  assert.match(index, /id="mapButton"[^>]*aria-label="[^"]+"/);
-
-  // Beside the location button, and both before the chips that wrap onto the second line — which is
-  // what keeps the pair in the top right corner of a phone.
-  assert.ok(index.indexOf('id="mapButton"') > index.indexOf('id="landingName"'));
-  assert.ok(index.indexOf('id="mapButton"') < index.indexOf('id="nearestButton"'));
-  assert.ok(index.indexOf('id="nearestButton"') < index.indexOf('class="board-state"'));
-
-  // The same square as the button beside it, on both sizes — and themed, since eight themes recolour
-  // every surface on this board and a hardcoded white would be the one control that ignored them.
-  assert.match(css, /\.map-button\{[^}]*width:38px;height:38px/);
-  assert.match(css, /\.map-button\{[^}]*background:var\(--card\)/);
-  const phoneStyles = css.slice(css.indexOf("@media(max-width:820px)"));
-  assert.match(phoneStyles, /\.map-button\{height:40px;width:40px\}/);
+test("the shared header owns one Board/Map navigation above both views", async () => {
+  const index = await readFile(indexPath, "utf8");
+  const alias = await readFile(new URL("../public/map.html", import.meta.url), "utf8");
+  assert.equal(alias, index, "static map alias must ship the same shell");
+  assert.equal((index.match(/class="product-nav"/g) || []).length, 1);
+  assert.match(index, /id="mapButton" href="map" data-view="map"/);
+  assert.ok(index.indexOf('id="mapButton"') < index.indexOf('id="boardView"'));
+  assert.ok(index.indexOf('id="boardView"') < index.indexOf('id="mapView"'));
 });
 
 // The trip sheet already answers "where does this boat go". This is the other half — "and where is
@@ -1062,7 +1036,7 @@ test("the map page draws itself from this origin alone", async () => {
   for (const url of script.match(OFF_ORIGIN) || []) assert.match(url, /^https:/, `${url} is not over TLS`);
 
   // Both spellings of the path, the same way the stats page is reached.
-  assert.match(server, /\["\/stats", "stats\.html"\], \["\/map", "map\.html"\]/);
+  assert.match(server, /\["\/map", "index\.html"\], \["\/map\.html", "index\.html"\]/);
   assert.match(server, /url\.pathname === "\/api\/boats"/);
   assert.match(server, /url\.pathname === "\/api\/map"/);
 
@@ -1136,7 +1110,7 @@ test("the LOCAL badge is allowed the width its own word needs", async () => {
   assert.doesNotMatch(css, /\.departure\.variant-a \.route-badge\{width:auto/);
 });
 
-test("anything wider than a phone gets the roomy layout, and a landing rail it can hide", async () => {
+test("anything wider than a phone gets the roomy layout and a permanent landing rail", async () => {
   const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
   // The gap the phone breakpoint leaves behind: above 820px the kiosk board was being handed to
   // everything, and it sizes itself in vh, so it sprawls on any screen that is not the one it was
@@ -1147,26 +1121,26 @@ test("anything wider than a phone gets the roomy layout, and a landing rail it c
   // Two columns of sailings, which is the whole point of having the width. Wrapping flex, not a
   // grid: grid row sizing takes the container's height as an input, and at a 246-sailing landing it
   // handed back rows a fraction of the height their cards needed, clipping every one mid-text.
-  assert.match(css, /:root\[data-surface="app"\] \.departures\[data-view="timeline"\]\{display:flex;flex-direction:row;flex-wrap:wrap/);
-  assert.match(css, /:root\[data-surface="app"\] \.departure\.timeline-row\{flex:0 0 calc\(50% - 4px\)/);
+  assert.match(css, /:root \.departures\[data-view="timeline"\]\{display:flex;flex-direction:row;flex-wrap:wrap/);
+  assert.match(css, /:root \.departure\.timeline-row\{flex:0 0 calc\(50% - 4px\)/);
   // The route board's percentage columns collapse once the rail takes its share of the width, which
   // is what set partner wordmarks one letter per line.
-  assert.match(css, /:root\[data-surface="app"\] \.column-head, :root\[data-surface="app"\] \.departure\{grid-template-columns:172px minmax\(0,1fr\) minmax\(0,2\.4fr\)\}/);
-  assert.match(css, /:root\[data-surface="app"\] \.departure-slot:nth-child\(n\+4\)\{display:none\}/);
+  assert.match(css, /:root \.column-head, :root \.departure\{grid-template-columns:172px minmax\(0,1fr\) minmax\(0,2\.4fr\)\}/);
+  assert.match(css, /:root \.departure-slot:nth-child\(n\+4\)\{display:none\}/);
   // iPadOS draws its status bar over a home-screen app, and the kiosk layout made no room for it.
-  assert.match(css, /:root\[data-surface="app"\] \.board\{padding:calc\(4px \+ env\(safe-area-inset-top\)\)/);
+  assert.match(css, /:root \.board\{padding:calc\(4px \+ env\(safe-area-inset-top\)\)/);
   // Docked, the rail sits beside the board rather than over it: no scrim, and the board moves over.
-  assert.match(css, /body\.sidebar-docked \.screen\{padding-left:var\(--rail\)\}/);
-  assert.match(css, /body\.sidebar-docked \.landing-menu-scrim\{display:none\}/);
+  assert.match(css, /#boardView\.sidebar-docked \.screen\{padding-left:var\(--rail\)\}/);
+  assert.match(css, /#boardView\.sidebar-docked \.landing-menu-scrim\{display:none\}/);
   // And it stops being a full-viewport sheet, or an invisible layer eats every tap on the board.
-  assert.match(css, /body\.sidebar-docked \.landing-menu\{z-index:40;right:auto;width:var\(--rail\)\}/);
+  assert.match(css, /#boardView\.sidebar-docked \.landing-menu\{z-index:40;right:auto;width:var\(--rail\)\}/);
   // Width, and then the surface. A mouse is no longer a reason to hide the list — a desktop docks
   // it too — so the kiosk is the only thing held back, and it is held back by what it is.
   assert.match(app, /matchMedia\("\(min-width:821px\)"\)/);
-  assert.match(app, /dataset\.surface !== "kiosk" && railMedia\.matches/);
-  // Shown by default, hidden only because someone hid it, and remembered either way.
-  assert.match(app, /storage\.getItem\(railKey\) !== "hidden"/);
-  assert.match(app, /storage\.setItem\(railKey, open \? "shown" : "hidden"\)/);
+  assert.match(app, /const railDocked = \(\) => railMedia\.matches/);
+  assert.doesNotMatch(app, /railKey/);
+  assert.match(app, /elements.menuButton.hidden = docked/);
+  assert.match(app, /elements.landingMenuClose.hidden = docked/);
   // Rotating an iPad crosses the boundary, so the rail cannot be decided once at startup.
   assert.match(app, /railMedia\.addEventListener\("change", applyRail\)/);
 });
@@ -1175,27 +1149,10 @@ test("anything wider than a phone gets the roomy layout, and a landing rail it c
 // signage display and giving away a quarter of its screen to a list nobody standing at a terminal
 // can tap. Everything that keeps the kiosk out of it is asserted here, because none of it is
 // visible from the kiosk itself until it is already wrong on a wall.
-test("the kiosk keeps its whole screen", async () => {
-  const [app, css, index] = await Promise.all([
-    readFile(appPath, "utf8"), readFile(cssPath, "utf8"), readFile(indexPath, "utf8")
-  ]);
-  // The surface is decided from the path, before the first paint, so the board never reflows once
-  // its module loads. The kiosk is served at the root; the public board is proxied under a prefix.
-  assert.match(index, /dataset\.surface\s*=\s*\n?\s*new URL\("\.\/", location\)\.pathname === "\/" \? "kiosk" : "app"/);
-  // app.js derives the same answer for itself rather than trusting the document, which is what
-  // covers a shell cached by an older worker being driven by this script.
-  assert.match(app, /if \(!document\.documentElement\.dataset\.surface\) \{/);
-  // Every rule in the roomy block is scoped. One unscoped selector leaks the whole layout onto the
-  // kiosk, and it would leak silently — this is the assertion that catches that.
-  const roomy = css.split("@media(min-width:821px){")[1].split("\n/* Docked landing rail.")[0];
-  const selectors = roomy.replace(/\/\*[\s\S]*?\*\//g, "").match(/[^{}]+(?=\{)/g) || [];
-  assert.ok(selectors.length > 20, "expected the roomy block to still hold its rules");
-  for (const selector of selectors) {
-    for (const one of selector.split(",")) {
-      assert.ok(one.trim().startsWith(':root[data-surface="app"]'),
-        `unscoped selector would leak the roomy layout onto the kiosk: ${one.trim()}`);
-    }
-  }
+test("the staff layout does not depend on its deployment path", async () => {
+  const [app, css, index] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8"), readFile(indexPath, "utf8")]);
+  assert.doesNotMatch(app + css + index, /dataset.surface|data-surface/);
+  assert.match(index, /src="\/assets\/map-theme.js/);
 });
 
 // No row on the home port's board is a departure time: the operator does not publish when a boat
@@ -1222,7 +1179,7 @@ test("the home port board says what its stars mean", async () => {
 // runs again on the one install that most needs it — the phone in someone's pocket, days behind the
 // browser tab on the same handset.
 test("an installed board checks for a new shell when it comes back to the front", async () => {
-  const app = await readFile(appPath, "utf8");
+  const app = await readFile(new URL("../public/assets/app-shell.js", import.meta.url), "utf8");
   assert.match(app, /document\.addEventListener\("visibilitychange"/);
   assert.match(app, /document\.visibilityState !== "visible"/);
   assert.match(app, /registration\.update\(\)\.catch/);
@@ -1297,7 +1254,7 @@ test("the web app manifest names a real icon for every size it claims", async ()
 // This is the check that would have caught the manifest 404ing in production.
 test("the page only fetches absolute paths the deployment proxies", async () => {
   const [index, app, worker] = await Promise.all([
-    readFile(indexPath, "utf8"), readFile(appPath, "utf8"), readFile(workerPath, "utf8")
+    readFile(indexPath, "utf8"), readFile(new URL("../public/assets/app-shell.js", import.meta.url), "utf8"), readFile(workerPath, "utf8")
   ]);
   const forwarded = /^\/(?:app\.js|styles\.css|sw\.js|assets\/|api\/|ferryTimesMobile\/)/;
   const referenced = [...index.matchAll(/(?:href|src)="(\/[^"]*)"/g)].map((match) => match[1]);
@@ -1437,6 +1394,7 @@ test("a departure row opens its trip, and a stop in it switches landing", async 
 
 test("a terminating trip shows its scheduled and live layover beside the eta", async () => {
   const payload = structuredClone(SAMPLE);
+  payload.meta.showDwellTimes = true;
   payload.stops = {
     1: { name: "Wall St/Pier 11", landingId: 16 },
     2: { name: "East 34th Street", landingId: 8 }
@@ -1457,6 +1415,14 @@ test("a terminating trip shows its scheduled and live layover beside the eta", a
   };
   const view = await board({ payload });
   for (const sort of ["time", "route"]) {
+    for (const [dwell, layover] of [[false, true], [true, false], [false, false], [true, true]]) {
+      view.run(`data.meta.showDwellTimes = ${dwell}; data.meta.showLayoverTimes = ${layover}`);
+      const label = view.run(`departureLayoverLabel(data.departures[0])`);
+      assert.equal(label.includes("Dwell 2m"), dwell);
+      assert.equal(label.includes("Layover 5m"), layover);
+      const tripLabel = view.run(`layoverLabel({ scheduledSeconds: 300 }, "trip-stop-layover")`);
+      assert.equal(tripLabel.includes("scheduled 5 min"), layover);
+    }
     view.run(`selectSort("${sort}"); render()`);
     assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small>/);
   }

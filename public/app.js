@@ -1,124 +1,76 @@
-const { storage, request, html: reconcileHTML, poll, panel, contentTransition } = MobileRuntime;
+import { createScheduleStore, validSchedule } from "./assets/schedule-store.js";
+import { cacheKey, landingKey, landingsKey, sortKey, clockKey, hiddenOperatorsKey, operatorsKey, favouriteLandingsKey, themeKey, THEMES, changelogSeenKey, nearestKey, nearestMaxAgeMs } from "./assets/preferences.js";
+import { bindSheet, setSheetOpen } from "./assets/panels.js";
+import { zonedParts, addDays, scheduleRange as scheduleBounds, viewFrame as scheduleFrame, routeDirectionGroups as scheduleGroups, timelineDepartures as scheduleTimeline, confirmedCrewCoverage as scheduleCrewCoverage } from "./assets/schedule.js";
+import { createViewLifecycle } from "./assets/view-lifecycle.js";
+
+export function mountBoard(root, { header = document.querySelector("#boardHeading"), setTheme } = {}) {
+const findViewElement = selector => root.querySelector(selector) || header?.querySelector(selector);
+const lifecycle = createViewLifecycle();
+const { poll } = lifecycle;
+const { storage, request, html: reconcileHTML, panel, contentTransition } = MobileRuntime;
+const scheduleStore = createScheduleStore({ storage, prefix: cacheKey });
 const elements = {
-  screen: document.querySelector("#screen"),
-  landing: document.querySelector("#landingName"),
-  time: document.querySelector("#clockTime"),
-  date: document.querySelector("#clockDate"),
-  departures: document.querySelector("#departures"),
-  status: document.querySelector("#dataStatus"),
-  routeCount: document.querySelector("#routeCount"),
-  columnHead: document.querySelector("#columnHead"),
-  boardNote: document.querySelector("#boardNote"),
-  serviceAlerts: document.querySelector("#serviceAlerts"),
-  serviceAlertSummary: document.querySelector("#serviceAlertSummary"),
-  serviceAlertFreshness: document.querySelector("#serviceAlertFreshness"),
-  serviceAlertCount: document.querySelector("#serviceAlertCount"),
-  serviceAlertChevron: document.querySelector("#serviceAlertChevron"),
-  alertMenu: document.querySelector("#alertMenu"),
-  alertMenuScrim: document.querySelector("#alertMenuScrim"),
-  alertMenuClose: document.querySelector("#alertMenuClose"),
-  tripMenu: document.querySelector("#tripMenu"),
-  tripMenuScrim: document.querySelector("#tripMenuScrim"),
-  tripMenuClose: document.querySelector("#tripMenuClose"),
-  tripMenuTitle: document.querySelector("#tripMenuTitle"),
-  tripSummary: document.querySelector("#tripSummary"),
-  tripMapLink: document.querySelector("#tripMapLink"),
-  tripMapLabel: document.querySelector("#tripMapLabel"),
-  tripStops: document.querySelector("#tripStops"),
-  alertList: document.querySelector("#alertList"),
-  changelogButton: document.querySelector("#changelogButton"),
-  changelogBang: document.querySelector("#changelogBang"),
-  changelogMenu: document.querySelector("#changelogMenu"),
-  changelogMenuScrim: document.querySelector("#changelogMenuScrim"),
-  changelogMenuClose: document.querySelector("#changelogMenuClose"),
-  changelogList: document.querySelector("#changelogList"),
-  manualOverride: document.querySelector("#manualOverride"),
-  manualOverrideBox: document.querySelector("#manualOverrideBox"),
-  manualOverrideMessage: document.querySelector("#manualOverrideMessage"),
-  manualOverrideUpdated: document.querySelector("#manualOverrideUpdated"),
-  menuButton: document.querySelector("#menuButton"),
-  landingMenu: document.querySelector("#landingMenu"),
-  landingMenuPanel: document.querySelector("#landingMenuPanel"),
-  landingMenuScrim: document.querySelector("#landingMenuScrim"),
-  landingMenuClose: document.querySelector("#landingMenuClose"),
-  landingList: document.querySelector("#landingList"),
-  nearestButton: document.querySelector("#nearestButton"),
-  nearestLabel: document.querySelector("#nearestLabel"),
-  dateBar: document.querySelector("#dateBar"),
-  datePrev: document.querySelector("#datePrev"),
-  dateNext: document.querySelector("#dateNext"),
-  dateCurrent: document.querySelector("#dateCurrent"),
-  clockToggle: document.querySelector("#clockToggle"),
-  filterButton: document.querySelector("#filterButton"),
-  filterCount: document.querySelector("#filterCount"),
-  filterMenu: document.querySelector("#filterMenu"),
-  filterMenuScrim: document.querySelector("#filterMenuScrim"),
-  filterMenuClose: document.querySelector("#filterMenuClose"),
-  filterList: document.querySelector("#filterList"),
-  filterReset: document.querySelector("#filterReset"),
-  themeButton: document.querySelector("#themeButton"),
-  themeMenu: document.querySelector("#themeMenu"),
-  themeMenuScrim: document.querySelector("#themeMenuScrim"),
-  themeMenuClose: document.querySelector("#themeMenuClose"),
-  themeList: document.querySelector("#themeList"),
-  sortOptions: [...document.querySelectorAll("[data-sort]")]
+  screen: findViewElement("#screen"),
+  landing: findViewElement("#landingName"),
+  time: findViewElement("#clockTime"),
+  date: findViewElement("#clockDate"),
+  departures: findViewElement("#departures"),
+  status: findViewElement("#dataStatus"),
+  routeCount: findViewElement("#routeCount"),
+  columnHead: findViewElement("#columnHead"),
+  boardNote: findViewElement("#boardNote"),
+  serviceAlerts: findViewElement("#serviceAlerts"),
+  serviceAlertSummary: findViewElement("#serviceAlertSummary"),
+  serviceAlertFreshness: findViewElement("#serviceAlertFreshness"),
+  serviceAlertCount: findViewElement("#serviceAlertCount"),
+  serviceAlertChevron: findViewElement("#serviceAlertChevron"),
+  alertMenu: findViewElement("#alertMenu"),
+  alertMenuScrim: findViewElement("#alertMenuScrim"),
+  alertMenuClose: findViewElement("#alertMenuClose"),
+  tripMenu: findViewElement("#tripMenu"),
+  tripMenuScrim: findViewElement("#tripMenuScrim"),
+  tripMenuClose: findViewElement("#tripMenuClose"),
+  tripMenuTitle: findViewElement("#tripMenuTitle"),
+  tripSummary: findViewElement("#tripSummary"),
+  tripMapLink: findViewElement("#tripMapLink"),
+  tripMapLabel: findViewElement("#tripMapLabel"),
+  tripStops: findViewElement("#tripStops"),
+  alertList: findViewElement("#alertList"),
+  changelogButton: findViewElement("#changelogButton"),
+  changelogBang: findViewElement("#changelogBang"),
+  changelogMenu: findViewElement("#changelogMenu"),
+  changelogMenuScrim: findViewElement("#changelogMenuScrim"),
+  changelogMenuClose: findViewElement("#changelogMenuClose"),
+  changelogList: findViewElement("#changelogList"),
+  menuButton: findViewElement("#menuButton"),
+  landingMenu: findViewElement("#landingMenu"),
+  landingMenuPanel: findViewElement("#landingMenuPanel"),
+  landingMenuScrim: findViewElement("#landingMenuScrim"),
+  landingMenuClose: findViewElement("#landingMenuClose"),
+  landingList: findViewElement("#landingList"),
+  nearestButton: findViewElement("#nearestButton"),
+  nearestLabel: findViewElement("#nearestLabel"),
+  dateBar: findViewElement("#dateBar"),
+  datePrev: findViewElement("#datePrev"),
+  dateNext: findViewElement("#dateNext"),
+  dateCurrent: findViewElement("#dateCurrent"),
+  clockToggle: findViewElement("#clockToggle"),
+  filterButton: findViewElement("#filterButton"),
+  filterCount: findViewElement("#filterCount"),
+  filterMenu: findViewElement("#filterMenu"),
+  filterMenuScrim: findViewElement("#filterMenuScrim"),
+  filterMenuClose: findViewElement("#filterMenuClose"),
+  filterList: findViewElement("#filterList"),
+  filterReset: findViewElement("#filterReset"),
+  themeButton: findViewElement("#themeButton"),
+  themeMenu: findViewElement("#themeMenu"),
+  themeMenuScrim: findViewElement("#themeMenuScrim"),
+  themeMenuClose: findViewElement("#themeMenuClose"),
+  themeList: findViewElement("#themeList"),
+  sortOptions: [...root.querySelectorAll("[data-sort]")]
 };
 
-// The prefix for every localStorage key this board owns: the chosen landing, the favourites, the
-// theme, the hidden operators and the saved schedules. It resembles the service worker's cache
-// names and is deliberately not versioned with them — bumping it would orphan all of that on every
-// device on every release. scripts/stamp-assets.js scopes its rewrite to sw.js for this reason.
-const cacheKey = "nyc-ferry-did-data-v6";
-// Which landing this device is showing. Persisted so an agent's choice survives a reload and
-// so an offline start knows which cached board to restore.
-const landingKey = "nyc-ferry-did-selected-landing";
-const landingsKey = "nyc-ferry-did-landings";
-// Whether the board orders route cards by which one leaves next (the default) or by route.
-// Persisted like the landing choice, and deliberately per-device: it is a reading preference,
-// not board config.
-const sortKey = "nyc-ferry-did-sort";
-// Whether times print as 24-hour (the default, and what the schedule, the workbook and the radio
-// all speak in) or 12-hour. Persisted per device like the sort choice: it is a reading preference,
-// not board config, and an agent who wants one wants it on every landing they open.
-const clockKey = "nyc-ferry-did-clock";
-// Which operators the board has been told to hide, as a list of operator names. Persisted per
-// device and deliberately not per landing: an agent who does not want to read NY Waterway boats
-// does not want to read them at Pier 79 either. Stored by name rather than by route id so a
-// partner adding a route does not quietly reappear on a board that hid the operator.
-const hiddenOperatorsKey = "nyc-ferry-did-hidden-operators";
-// Every operator the system serves anywhere, as /api/landings reports it. Cached like the landing
-// list so the panel is complete offline too.
-const operatorsKey = "nyc-ferry-did-operators";
-// Which landings have been starred, as a list of landing ids. Persisted per device like the other
-// reading preferences: an agent works a handful of docks out of the 26 on the list, and the ones
-// they work do not change because they opened the board somewhere else.
-const favouriteLandingsKey = "nyc-ferry-did-favourite-landings";
-// Which paint the board wears. Persisted per device like the other reading preferences, and read
-// again by the inline script in index.html so the choice is on the document before the first paint.
-const themeKey = "nyc-ferry-did-theme";
-// The board's own livery first, so a device that has never been told otherwise looks like the
-// terminal signage it is modelled on.
-// Night sits second because it is the only one of these anybody picks for a reason other than
-// liking it — a board read on a dark bridge at 3am is a working need, not a mood.
-const THEMES = [
-  { id: "nyc-ferry", name: "NYC Ferry", note: "Terminal signage blue", color: "#001d41" },
-  { id: "night", name: "Night", note: "Dark, for a wheelhouse after dark", color: "#0d1b26" },
-  { id: "hello-kitty", name: "Hello Kitty", note: "Juliet's favorite theme 😇", color: "#ff9dbb" },
-  { id: "cinnamoroll", name: "Cinnamoroll", note: "Sky blue and quiet", color: "#7ec8f0" },
-  { id: "pompompurin", name: "Pompompurin", note: "Butter yellow, brown beret", color: "#ffd94a" },
-  { id: "kuromi", name: "Kuromi", note: "Purple, with a loud pink streak", color: "#4a2d6b" },
-  { id: "windows-xp", name: "Windows XP", note: "Luna blue and Tahoma", color: "#0058ee" },
-  { id: "hacker", name: "Hacker", note: "Green phosphor on black", color: "#000000" },
-  { id: "burger-king", name: "Burger King", note: "Flame-grilled, in Flame", color: "#D62300" }
-];
-// The newest change-log entry this device has already been shown. The mark beside the kitty is
-// meant to say "there is something you have not read", so it has to remember what was read.
-const changelogSeenKey = "nyc-ferry-did-changelog-seen";
-// The landing a location fix last resolved to, so the shortcut survives a reload.
-const nearestKey = "nyc-ferry-did-nearest";
-// A fix is only good for about the shift it was taken in. Crew move between landings, and a
-// shortcut still pointing at yesterday's dock is worse than no shortcut at all.
-const nearestMaxAgeMs = 12 * 60 * 60 * 1000;
 let nearestTimer = null;
 // Which service date the board is showing, as YYYY-MM-DD, or null for "today, live".
 //
@@ -136,7 +88,6 @@ let data;
 // the two have to be told apart because only one of them can honestly be called "Saved".
 let realtime = { updates: [], vehicles: [], available: false, stale: true, cached: false };
 let serviceAlerts = null;
-let manualOverride = { active: false, message: "", updatedAt: null };
 
 function sortedBy() {
   return storage.getItem(sortKey) === "route" ? "route" : "time";
@@ -252,10 +203,9 @@ function renderFilterMenu() {
 }
 
 function setFilterOpen(open) {
-  panel(elements.filterMenu, open);
-  elements.filterButton.setAttribute("aria-expanded", String(open));
-  if (open) (elements.filterList.querySelector(".filter-option") || elements.filterMenuClose)?.focus();
-  else elements.filterButton.focus();
+  setSheetOpen({ menu: elements.filterMenu, trigger: elements.filterButton,
+    close: elements.filterMenuClose, panel,
+    focusTarget: () => elements.filterList.querySelector(".filter-option") }, open);
 }
 
 // The change log, written by hand in content/changelog.json and served from /api/changelog. Never
@@ -328,6 +278,7 @@ function activeTheme() {
 }
 
 function applyTheme() {
+  if (setTheme) return setTheme(activeTheme());
   const theme = THEMES.find((entry) => entry.id === activeTheme()) || THEMES[0];
   document.documentElement.dataset.theme = theme.id;
   // The status bar of an installed board is painted from this, so it has to move with the theme or
@@ -361,10 +312,9 @@ function selectTheme(id) {
 }
 
 function setThemeOpen(open) {
-  panel(elements.themeMenu, open);
-  elements.themeButton.setAttribute("aria-expanded", String(open));
-  if (open) (elements.themeList.querySelector(".theme-option") || elements.themeMenuClose)?.focus();
-  else elements.themeButton.focus();
+  setSheetOpen({ menu: elements.themeMenu, trigger: elements.themeButton,
+    close: elements.themeMenuClose, panel,
+    focusTarget: () => elements.themeList.querySelector(".theme-option") }, open);
 }
 
 function clockFormat() {
@@ -395,10 +345,6 @@ function renderClockToggle() {
 function toggleClockFormat() {
   storage.setItem(clockKey, clockFormat() === "12" ? "24" : "12");
   renderClockToggle();
-  // Every printed time changes at once: the rows, the clock and the notice stamp. The browsed-day
-  // cache holds rendered HTML, so it has to go with them.
-  resetSchedule();
-  renderManualOverride();
   updateClock();
   render();
   if (tripView) renderTripView();
@@ -413,65 +359,10 @@ function applyDisplayCounts() {
   document.documentElement.dataset.departuresShown = String(displayCount("departuresShown"));
 }
 
-function zonedParts(date = new Date(), timeZone = "America/New_York") {
-  const values = Object.fromEntries(
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone, year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
-    }).formatToParts(date).filter((part) => part.type !== "literal").map((part) => [part.type, part.value])
-  );
-  return {
-    dateKey: `${values.year}-${values.month}-${values.day}`,
-    seconds: (Number(values.hour) % 24) * 3600 + Number(values.minute) * 60 + Number(values.second)
-  };
-}
 
-function addDays(dateKey, amount) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  const value = new Date(Date.UTC(year, month - 1, day + amount));
-  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}-${String(value.getUTCDate()).padStart(2, "0")}`;
-}
 
-// Memoized per landing payload. Stepping through days asks this the same questions over and over —
-// every render re-reads today and yesterday — and the answer for a given date cannot change while
-// the payload is the one it was computed from. Cleared wholesale in resetSchedule().
-const serviceCache = new Map();
-const dayCache = new Map();
 
-function resetSchedule() {
-  serviceCache.clear();
-  dayCache.clear();
-}
 
-function activeServices(dateKey) {
-  const cached = serviceCache.get(dateKey);
-  if (cached) return cached;
-  const weekday = new Date(`${dateKey}T00:00:00Z`).getUTCDay();
-  const active = new Set();
-  for (const item of data.calendars || []) {
-    if (dateKey >= item.startDate && dateKey <= item.endDate && item.weekdays[weekday]) active.add(item.serviceId);
-  }
-  for (const item of data.exceptions || []) {
-    if (item.date !== dateKey) continue;
-    if (item.added) active.add(item.serviceId); else active.delete(item.serviceId);
-  }
-  serviceCache.set(dateKey, active);
-  return active;
-}
-
-// What actually distinguishes one schedule day from another.
-//
-// A date is not the unit of work here — a service pattern is. Every ordinary Tuesday in the feed
-// selects the identical set of service ids, and so produces the identical board; only weekends and
-// the dated exceptions in calendar_dates.txt differ. Keying the computed day on the services rather
-// than the date means stepping across a week costs two real computations, not seven, and stepping
-// back across it costs none.
-//
-// Yesterday's services are part of the key because a sailing published as 25:10 belongs to the
-// previous service day and lands on this one.
-function serviceSignature(dateKey) {
-  return `${[...activeServices(dateKey)].sort().join(",")}|${[...activeServices(addDays(dateKey, -1))].sort().join(",")}`;
-}
 
 // The span of dates the bundled schedule can actually answer for. Read off the calendars rather
 // than feed_info, because the crew calendars and the partner feeds each carry their own bounds and
@@ -479,12 +370,7 @@ function serviceSignature(dateKey) {
 // covers: a day inside NYC Ferry's range but past NY Waterway's simply shows no waterway rows,
 // which is the same thing the live board already does when a partner feed lapses.
 function scheduleRange() {
-  const bounded = (data.calendars || []).filter((item) => item.startDate && item.endDate);
-  if (!bounded.length) return null;
-  return {
-    first: bounded.map((item) => item.startDate).sort()[0],
-    last: bounded.map((item) => item.endDate).sort().at(-1)
-  };
+  return scheduleBounds(data);
 }
 
 // Today and now, or a browsed date and the start of it.
@@ -492,11 +378,7 @@ function scheduleRange() {
 // Everything downstream reads the board through this one object, which is what keeps browsing from
 // forking the render path: a browsed day is simply "now = 00:00 on that date, and no live feed".
 function viewFrame(now = new Date()) {
-  const current = zonedParts(now, data.meta.timezone);
-  if (!viewDate || viewDate === current.dateKey) {
-    return { dateKey: current.dateKey, seconds: current.seconds, today: current.dateKey, live: true };
-  }
-  return { dateKey: viewDate, seconds: 0, today: current.dateKey, live: false };
+  return scheduleFrame(data, viewDate, now);
 }
 
 function escapeHtml(value) {
@@ -548,136 +430,12 @@ function directionLabel(directionId) {
 }
 
 function routeDirectionGroups(now = new Date(), limitPerGroup = displayCount("departuresShown")) {
-  const frame = viewFrame(now);
-  // A browsed day is a pure function of the schedule: no live feed is applied, and every delta is
-  // measured from midnight rather than from a clock that moves. So the whole computed day can be
-  // memoized, and — keyed on its services rather than its date — reused by every other day that
-  // runs the same pattern. Today is never served from here; it changes every fifteen seconds.
-  const cacheKey = frame.live ? null : `${limitPerGroup}|${serviceSignature(frame.dateKey)}`;
-  if (cacheKey && dayCache.has(cacheKey)) return dayCache.get(cacheKey);
-  const current = { dateKey: frame.dateKey, seconds: frame.seconds };
-  const departureWindowSeconds = (Number(data.meta.departureWindowMinutes) || 180) * 60;
-  // Live estimates describe boats that are on the water now. On any other day there are none, and
-  // pretending otherwise would put yesterday's delays on tomorrow's sailings.
-  const updates = frame.live ? new Map((realtime.updates || []).map((item) => [`${item.tripId}|${item.stopId}`, item])) : new Map();
-  const vehicles = frame.live ? new Map((realtime.vehicles || []).map((item) => [String(item.tripId), item])) : new Map();
-  // Which vessel is on each boat right now. The feed only names a vessel for a trip it has reached,
-  // so a sailing later today has none of its own — but the workbook knows which boat runs it, and
-  // that boat is out on the water under a vessel the feed *has* named. Freshest report wins when a
-  // boat appears on more than one trip, which happens as it hands over between them.
-  const vessels = new Map();
-  for (const item of frame.live ? realtime.vehicles || [] : []) {
-    if (!item.boat || !item.boatName) continue;
-    const seen = vessels.get(item.boat);
-    if (!seen || (item.updatedAtEpochSeconds || 0) >= (seen.updatedAtEpochSeconds || 0)) vessels.set(item.boat, item);
-  }
-  const groups = new Map();
-  const lastDepartures = new Map();
-  const lastGovernorsIslandDepartures = new Map();
-
-  for (let offset = -1; offset <= 0; offset += 1) {
-    const serviceDate = addDays(current.dateKey, offset);
-    const active = activeServices(serviceDate);
-    for (const departure of data.departures || []) {
-      if (!active.has(departure.serviceId)) continue;
-      const calendarDate = addDays(serviceDate, Math.floor(departure.seconds / 86400));
-      if (calendarDate !== current.dateKey) continue;
-      // Usually the row's own trip. A home-port run's id is minted by the build and matches nothing
-      // live, so it names the revenue trip it follows out instead — the boat going to Pier C is the
-      // boat that just got in, and it ties up as late as that trip ran. Crew shuttles carry no such
-      // trip and keep their published times.
-      const update = departure.scheduleOnly ? null : updates.get(`${departure.liveTripId || departure.tripId}|${departure.stopId}`);
-      if (update?.canceled) continue;
-      const liveDelay = Number(update?.delaySeconds);
-      const hasLiveTiming = !realtime.stale && update?.delaySeconds != null && Number.isFinite(liveDelay);
-      // NYC Ferry boats may arrive ahead of schedule, but never depart early.
-      // Keep the published departure as the rider-facing floor even for old cached updates.
-      const delay = hasLiveTiming ? Math.max(0, liveDelay) : 0;
-      const delta = offset * 86400 + departure.seconds + delay - current.seconds;
-      const slotKey = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}`;
-      const scheduledMoment = offset * 86400 + departure.seconds;
-      // LAST means the last departure a passenger can take. A home-port run or a crew shuttle
-      // leaves after it and carries nobody, so neither is allowed to claim the badge.
-      const carriesPassengers = !departure.outOfService && !departure.crewShuttle && !departure.arrival;
-      const previousLast = carriesPassengers ? lastDepartures.get(slotKey) : null;
-      if (carriesPassengers && (!previousLast || scheduledMoment > previousLast.scheduledMoment)) {
-        lastDepartures.set(slotKey, { tripId: String(departure.tripId), scheduledMoment });
-      }
-      if (departure.routeId === "SB" && departure.servesGovernorsIsland) {
-        const previousIslandLast = lastGovernorsIslandDepartures.get(slotKey);
-        if (!previousIslandLast || scheduledMoment > previousIslandLast.scheduledMoment) {
-          lastGovernorsIslandDepartures.set(slotKey, { tripId: String(departure.tripId), scheduledMoment });
-        }
-      }
-      if (delta < -60) continue;
-      const via = (departure.via || []).join(" > ");
-      const key = `${departure.routeId}|${departure.variant || ""}|${departure.directionId}|${departure.destination}|${via}`;
-      const group = groups.get(key) || {
-        key, routeId: departure.routeId, directionId: departure.directionId,
-        destination: departure.destination, via: departure.via || [], variant: departure.variant || null,
-        outOfService: Boolean(departure.outOfService), crewShuttle: Boolean(departure.crewShuttle),
-        arrival: Boolean(departure.arrival),
-        departures: []
-      };
-      group.departures.push({
-        ...departure,
-        endsShift: data.meta.crewScheduleStatus && !confirmedCrewCoverage(serviceDate) ? null : departure.endsShift,
-        serviceDate,
-        delay,
-        delta,
-        live: frame.live,
-        hasLiveTiming,
-        boatName: departure.scheduleOnly ? null : vehicles.get(String(departure.tripId))?.boatName || null,
-        // Failing a vessel of its own, the one currently working this boat — by way of the trip a
-        // home-port row is about to pick up, or simply by the boat the workbook puts on this
-        // sailing. A guess either way, and labelled as one: the vessel on a working changes at
-        // short notice, which is exactly why the board says "McShane?" rather than "McShane".
-        predictedBoatName: departure.scheduleOnly || vehicles.get(String(departure.tripId))?.boatName
-          ? null
-          : (departure.predictTripId ? vehicles.get(String(departure.predictTripId))?.boatName : null)
-            || (Number.isInteger(departure.boatAssignment)
-              ? vessels.get(`${departure.routeId}${departure.boatAssignment}`)?.boatName || null
-              : null)
-      });
-      groups.set(key, group);
-    }
-  }
-
-  const result = [...groups.values()]
-    .map((group) => ({
-      ...group,
-      departures: group.departures
-        .sort((left, right) => left.delta - right.delta)
-        .map((departure) => ({
-          ...departure,
-          isLastOfDay: lastDepartures.get(`${departure.routeId}|${departure.variant || ""}|${departure.directionId}`)?.tripId === String(departure.tripId),
-          isLastGovernorsIsland: departure.servesGovernorsIsland &&
-            lastGovernorsIslandDepartures.get(`${departure.routeId}|${departure.variant || ""}|${departure.directionId}`)?.tripId === String(departure.tripId)
-        }))
-    }))
-    // The lookahead window is about what is worth showing someone standing at the dock. Browsing a
-    // day is the opposite question — the whole day is the point — so it only bounds the live board.
-    .filter((group) => !frame.live || group.departures[0]?.delta <= departureWindowSeconds)
-    .map((group) => ({
-      ...group,
-      departures: group.departures.slice(0, limitPerGroup)
-    }))
-    .sort(byRoute);
-  if (cacheKey) dayCache.set(cacheKey, result);
-  return result;
+  return scheduleGroups({ data, realtime, viewDate, now, limitPerGroup });
 }
 
 // Route-card order, and the tiebreak the timeline falls back on when two boats leave in the
 // same minute.
-function byRoute(left, right) {
-  const routeOrder = left.routeId.localeCompare(right.routeId);
-  if (routeOrder) return routeOrder;
-  const variantOrder = { A: 0, B: 1, LOCAL: 2 };
-  const variantDifference = (variantOrder[left.variant] ?? 3) - (variantOrder[right.variant] ?? 3);
-  if (variantDifference) return variantDifference;
-  const directionOrder = String(left.directionId).localeCompare(String(right.directionId));
-  return directionOrder || left.destination.localeCompare(right.destination);
-}
+
 
 
 function routeShortName(routeId) {
@@ -693,14 +451,7 @@ function routeShortName(routeId) {
 // fixed compact height rather than squishing, because a row too short to read is worse than one
 // more flick of the thumb.
 function timelineDepartures(now = new Date()) {
-  const windowSeconds = (Number(data.meta.departureWindowMinutes) || 180) * 60;
-  const live = viewFrame(now).live;
-  return routeDirectionGroups(now, Infinity)
-    .flatMap((group) => group.departures.map((departure) => ({ departure, group })))
-    .filter(({ departure }) => !live || departure.delta <= windowSeconds)
-    // Ties fall back to route order so two boats leaving the same minute cannot swap places
-    // between the 15s re-renders.
-    .sort((left, right) => left.departure.delta - right.departure.delta || byRoute(left.group, right.group));
+  return scheduleTimeline({ data, realtime, viewDate, now });
 }
 
 // NY Waterway boats call at more than one terminal, so the stops before the far end are named.
@@ -982,6 +733,10 @@ function emptyBoard() {
     return `<div class="empty"><div><strong>CREW TIMES UNCONFIRMED</strong><span>Pier C departures will appear when the crew schedule is confirmed.</span></div></div>`;
   }
   const frame = viewFrame();
+  const coverage = scheduleRange();
+  if (!coverage || frame.dateKey < coverage.first || frame.dateKey > coverage.last) {
+    return '<div class="empty"><div><strong>SCHEDULE UNAVAILABLE</strong><span>No saved schedule covers this date. Connect to refresh the schedule.</span></div></div>';
+  }
   return frame.live
     ? `<div class="empty"><div><strong>NO MORE BOATS!</strong><span>NYC Ferry service has concluded for the day.</span></div></div>`
     : `<div class="empty"><div><strong>NO SCHEDULED BOATS</strong><span>Nothing is scheduled here on ${escapeHtml(longDayLabel(frame.dateKey))}.</span></div></div>`;
@@ -995,10 +750,7 @@ const HOME_PORT_NOTE =
   "*actual departure times at discretion of the captain, listed time is the first pickup time";
 
 function confirmedCrewCoverage(date = viewFrame().dateKey) {
-  const weekend = [0,6].includes(new Date(`${date}T12:00:00Z`).getUTCDay());
-  const coverage = data?.meta?.crewScheduleStatus?.[weekend ? "confirmedWeekends" : "confirmedWeekdays"];
-  return coverage && date >= coverage.startDate && date <= coverage.endDate &&
-    !(coverage.excludedDates || []).includes(date) ? coverage : null;
+  return scheduleCrewCoverage(data, date);
 }
 
 // The home port is the one landing with no real stop behind it; it is keyed off the stop id the
@@ -1021,6 +773,7 @@ function renderBoardNote() {
 
 let renderFrame = null;
 function render() {
+  if (!lifecycle.active) return;
   if (renderFrame !== null) return;
   renderFrame = requestAnimationFrame(() => { renderFrame = null; renderNow(); });
 }
@@ -1036,7 +789,7 @@ function renderNow() {
     const previous = oldOperations.get(node.dataset.key);
     if (previous !== undefined && previous !== operationalText(node)) { contentTransition(node); changes++; }
   }
-  if (changes) document.querySelector("#boardAnnouncement").textContent = `Vessel or service status updated at ${elements.time.textContent}.`;
+  if (changes) findViewElement("#boardAnnouncement").textContent = `Vessel or service status updated at ${elements.time.textContent}.`;
 }
 
 // An empty board caused by the filter is not a schedule fact, and must never be read as one.
@@ -1126,8 +879,6 @@ function renderRouteBoard() {
   const groups = routeDirectionGroups().filter((group) => isVisibleRoute(group.routeId));
   elements.departures.dataset.view = "routes";
   elements.columnHead.hidden = false;
-  // Staff view: no slideshow paging. Every route direction stays on screen and
-  // the row grid squishes to fit, so an agent never waits for the answer to rotate in.
   elements.routeCount.textContent = `${groups.length} route direction${groups.length === 1 ? "" : "s"}`;
 
   if (!groups.length) {
@@ -1144,15 +895,13 @@ function renderRouteBoard() {
     // Partner-operator routes (NY Waterway, Seastreak) keep their own official GTFS color and get
     // a small operator label so they're never mistaken for NYC Ferry service.
     const operatorBadge = isOtherOperator ? `<small class="route-operator">${escapeHtml(route.operator)}</small>` : "";
-    const slots = [...group.departures];
-    while (slots.length < departuresShown) slots.push(null);
     return `<article data-key="${escapeHtml(group.key)}" class="departure route-${routeClass}${variantClass}"${routeStyle}>
       <div class="route">
         <span class="route-badge${partnerLogo ? " route-badge-image" : ""}">${badgeContent}${variantBadge}</span>
         <span class="route-name">${escapeHtml(routeName)}${operatorBadge}</span>
       </div>
       <div class="destination"><strong>${escapeHtml(group.destination)}${viaLabel(group)}</strong><span>${groupContext(group, isOtherOperator)}</span></div>
-      <div class="departure-slots">${slots.map((item) => item ? departureCell(item) : `<div class="departure-slot unavailable"><span>No scheduled trip</span></div>`).join("")}</div>
+      <div class="departure-slots">${group.departures.map(departureCell).join("")}</div>
     </article>`;
   }).join(""));
 }
@@ -1164,48 +913,6 @@ function ageLabel(timestamp) {
   return `${Math.floor(ageMs / 3_600_000)} hr ago`;
 }
 
-function setText(node, value) {
-  if (node.textContent !== value) node.textContent = value;
-}
-
-function renderManualOverride() {
-  const active = Boolean(manualOverride?.active && manualOverride.message);
-  elements.screen.classList.toggle("override-active", active);
-  elements.manualOverride.hidden = !active;
-  setText(elements.manualOverrideMessage, active ? manualOverride.message : "");
-  const length = manualOverride?.message?.length || 0;
-  elements.manualOverrideBox.dataset.size = length > 700 ? "long" : length > 280 ? "medium" : "short";
-
-  const updatedAt = Date.parse(manualOverride?.updatedAt);
-  setText(elements.manualOverrideUpdated, active && Number.isFinite(updatedAt)
-    ? `Updated ${new Intl.DateTimeFormat("en-US", {
-      timeZone: data?.meta?.timezone || "America/New_York",
-      month: "long", day: "numeric", ...hourOptions(), minute: "2-digit"
-    }).format(new Date(updatedAt))}`
-    : "");
-
-  if (data) {
-    document.title = active
-      ? `${data.meta.landing.displayName} Service Notice`
-      : `${data.meta.landing.displayName} Departures`;
-  }
-}
-
-async function loadManualOverride() {
-  const landingId = data?.meta?.landingNumber ?? requestedLanding;
-  if (!landingId) return;
-  const generation = landingRequest;
-  try {
-    const response = await request(`/api/override?landingId=${encodeURIComponent(landingId)}`, { cache: "no-store" });
-    if (!response.ok) throw new Error();
-    const payload = await response.json();
-    if (generation !== landingRequest) return;
-    manualOverride = payload;
-    renderManualOverride();
-  } catch {
-    // Preserve the last known state if the local server is temporarily unreachable.
-  }
-}
 
 // One alert, in full. The bar above can only ever carry the first one, clipped to two lines; this
 // is where the other nine live, and where the whole of any of them can actually be read.
@@ -1313,6 +1020,7 @@ function turnaroundLabel(stop) {
 }
 
 function layoverLabel(turnaround, className, prefix = "") {
+  if (data?.meta?.showLayoverTimes === false) return "";
   const scheduled = Number(turnaround?.scheduledSeconds);
   if (!Number.isFinite(scheduled)) return "";
   const scheduledMinutes = layoverMinutes(scheduled);
@@ -1334,14 +1042,14 @@ function departureLayoverLabel(item) {
   const stop = schedule?.stops?.find((stop) => String(stop.stopId) === String(item.stopId));
   const dwellSeconds = stop?.arrivalSeconds != null && stop?.departureSeconds != null
     ? Number(stop.departureSeconds) - Number(stop.arrivalSeconds) : NaN;
-  const dwellMinutes = Number.isFinite(dwellSeconds) && dwellSeconds >= 0
+  const dwellMinutes = data?.meta?.showDwellTimes === true && Number.isFinite(dwellSeconds) && dwellSeconds >= 0
     ? layoverMinutes(dwellSeconds) : null;
   const dwellText = dwellMinutes == null ? "" : `Dwell ${dwellMinutes}m`;
   const dwellAria = dwellMinutes == null ? "" : `Estimated dwell ${dwellMinutes} minutes`;
   const dwellOnly = dwellText
     ? `<small class="departure-layover" aria-label="${dwellAria}">${dwellText}</small>` : "";
   const turn = schedule?.turnaround;
-  if (!turn) return dwellOnly;
+  if (!turn || data?.meta?.showLayoverTimes === false) return dwellOnly;
   const live = item.live !== false && !realtime.stale;
   const updates = live ? realtime.updates || [] : [];
   const arrival = updates.find((update) => String(update.tripId) === String(item.tripId) && update.stopId === turn.stopId);
@@ -1584,10 +1292,8 @@ function setAlertMenuOpen(open) {
   // Nothing to expand into. The bar is disabled in that state, so this only guards the keyboard.
   if (open && !(serviceAlerts?.alerts || []).length) return;
   if (open) renderAlertMenu();
-  panel(elements.alertMenu, open);
-  elements.serviceAlerts.setAttribute("aria-expanded", String(open));
-  if (open) elements.alertMenuClose?.focus();
-  else elements.serviceAlerts.focus();
+  setSheetOpen({ menu: elements.alertMenu, trigger: elements.serviceAlerts,
+    close: elements.alertMenuClose, panel }, open);
 }
 
 function renderServiceAlerts() {
@@ -1707,20 +1413,15 @@ function selectedLanding() {
   return Number.isInteger(value) && value > 0 ? value : null;
 }
 
-function landingDataKey(landingNumber) {
-  return `${cacheKey}-landing-${landingNumber}`;
-}
+
 
 let landingRequest = 0;
 let requestedLanding = null;
 let scheduleSaved = false;
-function validSchedule(value, selected) {
-  return value?.meta?.landing?.displayName && value.routes && Array.isArray(value.calendars) && Array.isArray(value.departures)
-    && (selected === null || value.meta.landingNumber === selected);
-}
+
 function applySchedule(payload) {
   data = payload;
-  resetSchedule();
+  if (lifecycle.active) document.title = `${data.meta.landing.displayName} Departures`;
   elements.landing.textContent = data.meta.landing.displayName;
   renderLandingList();
   renderFilterMenu();
@@ -1735,16 +1436,16 @@ async function load(selected = selectedLanding()) {
   if (changed) {
     viewDate = null;
     setTripOpen(false);
-    manualOverride = { active: false };
-    renderManualOverride();
+
+
     const savedRealtime = storage.json(`${cacheKey}-realtime-${selected}`);
     realtime = savedRealtime
       ? { ...savedRealtime, stale: true, cached: true }
       : { updates: [], vehicles: [], available: false, stale: true, cached: false };
     data = null;
-    void loadManualOverride();
+
   }
-  const saved = storage.json(landingDataKey(selected));
+  const saved = scheduleStore.read(selected);
   if (validSchedule(saved, selected)) {
     scheduleSaved = true;
     applySchedule(saved);
@@ -1760,7 +1461,7 @@ async function load(selected = selectedLanding()) {
     if (token !== landingRequest) return;
     if (!validSchedule(payload, selected)) throw new Error('Invalid schedule');
     storage.setItem(landingKey, String(payload.meta.landingNumber));
-    storage.setItem(landingDataKey(payload.meta.landingNumber), JSON.stringify(payload));
+    scheduleStore.write(payload);
     requestedLanding = payload.meta.landingNumber;
     scheduleSaved = Boolean(response.saved);
     applySchedule(payload);
@@ -1773,7 +1474,7 @@ async function load(selected = selectedLanding()) {
     }
   }
   if (token !== landingRequest) return;
-  void loadManualOverride();
+
   void loadRealtime();
   void loadServiceAlerts();
 }
@@ -1849,7 +1550,7 @@ function renderLandingList() {
     ...landings.filter((landing) => favourites.has(landing.id)),
     ...landings.filter((landing) => !favourites.has(landing.id))
   ];
-  const query = document.querySelector("#landingSearch")?.value.trim().toLowerCase() || "";
+  const query = findViewElement("#landingSearch")?.value.trim().toLowerCase() || "";
   reconcileHTML(elements.landingList, ordered.filter(landing => landing.displayName.toLowerCase().includes(query)).map((landing) => {
     const starred = favourites.has(landing.id);
     const name = escapeHtml(landing.displayName);
@@ -1977,38 +1678,15 @@ function locateNearest() {
   );
 }
 
-// A tablet has the width to hold the landing list beside the board rather than over it, so on one
-// the list is docked: it is on screen by default and the hamburger takes it away, which is the
-// opposite of what the same button does on a phone. Same markup and same open/closed state either
-// way — only what "open" looks like changes.
-//
-// Width alone, and then the surface. This used to also require a coarse pointer and a width under
-// 1400px, which meant a desktop never docked the rail and read the landing list as a drawer over a
-// board drawn for a screen it wasn't sitting at. A mouse is not a reason to hide the list; the only
-// board that genuinely needs its whole screen is the signage display, and that is what the surface
-// says. index.html sets it before the first paint.
+// Wide screens dock the landing list; phones use a drawer.
 const railMedia = window.matchMedia("(min-width:821px)");
-const railKey = "nyc-ferry-did-landing-rail";
-// index.html stamps this before the first paint, which is what the stylesheet reads. Deriving it
-// again here rather than trusting the attribute covers the one case where the two could disagree:
-// a document cached by an older service worker being driven by this script. Getting it wrong on a
-// kiosk means the signage loses a quarter of its screen to a list nobody standing there can tap.
-// Read off the path as a string rather than through new URL(): this runs at module top level, where
-// a throw takes the whole board down with it, and location is not always the fully-formed thing a
-// browser hands you.
-if (!document.documentElement.dataset.surface) {
-  const directory = String(location.pathname || "/").replace(/[^/]*$/, "");
-  document.documentElement.dataset.surface = directory === "/" ? "kiosk" : "app";
-}
-MobileRuntime.syncViewport?.();
-const railDocked = () => document.documentElement.dataset.surface !== "kiosk" && railMedia.matches;
+const railDocked = () => railMedia.matches;
 
 function setMenuOpen(open, moveFocus = true) {
+  if (railDocked()) open = true;
   panel(elements.landingMenu, open, !railDocked());
   elements.menuButton.setAttribute("aria-expanded", String(open));
-  document.body.classList.toggle("menu-open", open);
-  // Only the docked rail is a preference. A drawer is always closed to begin with.
-  if (railDocked()) storage.setItem(railKey, open ? "shown" : "hidden");
+  root.classList.toggle("menu-open", open);
   if (!moveFocus) return;
   if (open) (elements.landingList.querySelector(".is-current") || elements.landingMenuClose)?.focus();
   else elements.menuButton.focus();
@@ -2018,9 +1696,11 @@ function setMenuOpen(open, moveFocus = true) {
 // boundary, because a layout that only settles on load is wrong the moment an iPad is turned.
 function applyRail() {
   const docked = railDocked();
-  document.body.classList.toggle("sidebar-docked", docked);
-  elements.landingMenuClose.textContent = docked ? "Hide" : "Done";
-  setMenuOpen(docked && storage.getItem(railKey) !== "hidden", false);
+  root.classList.toggle("sidebar-docked", docked);
+  elements.menuButton.hidden = docked;
+  elements.landingMenuClose.hidden = docked;
+  elements.landingMenuClose.textContent = "Done";
+  setMenuOpen(docked, false);
 }
 
 async function selectLanding(landingNumber) {
@@ -2039,12 +1719,7 @@ elements.nearestButton.addEventListener("click", () => {
   locateNearest();
 });
 
-function bindSheet(setOpen, { menu, trigger, close, scrim, canClose = () => true }) {
-  trigger?.addEventListener("click", () => setOpen(trigger.getAttribute("aria-expanded") !== "true"));
-  close.addEventListener("click", () => setOpen(false));
-  scrim.addEventListener("click", () => setOpen(false));
-  return { menu, setOpen, canClose };
-}
+
 
 const sheets = [
   bindSheet(setTripOpen, { menu: elements.tripMenu, close: elements.tripMenuClose, scrim: elements.tripMenuScrim }),
@@ -2055,7 +1730,7 @@ const sheets = [
   bindSheet(setChangelogOpen, { menu: elements.changelogMenu, trigger: elements.changelogButton, close: elements.changelogMenuClose, scrim: elements.changelogMenuScrim })
 ];
 
-document.querySelector("#landingSearch")?.addEventListener("input", renderLandingList);
+findViewElement("#landingSearch")?.addEventListener("input", renderLandingList);
 elements.landingList.addEventListener("click", (event) => {
   const star = event.target.closest("[data-favourite-id]");
   if (star) return setLandingFavourite(Number(star.dataset.favouriteId), star.getAttribute("aria-pressed") !== "true");
@@ -2099,7 +1774,7 @@ elements.themeList.addEventListener("click", (event) => {
 elements.datePrev.addEventListener("click", () => stepDate(-1));
 elements.dateNext.addEventListener("click", () => stepDate(1));
 elements.dateCurrent.addEventListener("click", showToday);
-document.addEventListener("keydown", (event) => {
+function handleBoardKeys(event) {
   const openSheet = sheets.find(({ menu, canClose }) => !menu.hidden && canClose());
   if (event.key === "Escape" && openSheet) return openSheet.setOpen(false);
   // Arrow keys page through the schedule, which is how anyone reaches for a date stepper on a
@@ -2109,7 +1784,9 @@ document.addEventListener("keydown", (event) => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (event.key === "ArrowLeft") stepDate(-1);
   else if (event.key === "ArrowRight") stepDate(1);
-});
+}
+root.addEventListener("keydown", handleBoardKeys);
+header?.addEventListener("keydown", handleBoardKeys);
 
 railMedia.addEventListener("change", applyRail);
 applyRail();
@@ -2118,43 +1795,61 @@ renderThemeMenu();
 renderSortToggle();
 renderClockToggle();
 renderNearest();
-loadChangelog();
-loadLandings();
-load().catch(() => {
+void loadChangelog();
+void loadLandings();
+const ready = load().catch(() => {
   elements.departures.innerHTML = `<div class="empty"><div><strong>Schedule unavailable</strong><span>The local schedule needs attention.</span></div></div>`;
 });
 poll(updateClock, 15_000);
 poll(() => data ? loadRealtime() : load(requestedLanding), 15_000);
 poll(loadServiceAlerts, 60_000);
-poll(loadManualOverride, 5_000);
-if ("serviceWorker" in navigator) {
-  let reloadingForUpdate = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (reloadingForUpdate) return;
-    reloadingForUpdate = true;
-    window.location.reload();
-  });
-  // The worker is fetched from the site root, so its scope covers the board wherever the board is
-  // mounted — but the document it has to precache is wherever this page is, which is the root on a
-  // kiosk and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
-  // between an offline shell and an install that fails on a 404.
-  const base = new URL("./", location).pathname;
-  navigator.serviceWorker.register(`/sw.js?v=108&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
-    .then((registration) => {
-      registration.update();
-      // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,
-      // so the check above — which only ever runs on a load — never runs again, and an installed
-      // board can sit on a shell several deploys old while a browser tab on the same phone is
-      // current. Checking when it comes back to the front is what makes a relaunch mean something.
-      // Throttled because resuming is something someone does dozens of times a shift, and the
-      // answer cannot change faster than a deploy.
-      let lastCheck = Date.now();
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState !== "visible") return;
-        if (Date.now() - lastCheck < 60_000) return;
-        lastCheck = Date.now();
-        registration.update().catch(() => {});
-      });
-    })
-    .catch(() => {});
+
+
+// View lifecycle: no network response is awaited before retained content is shown.
+return {
+  ready,
+  activate(url = new URL(location.href)) {
+    if (header) { header.hidden = false; header.inert = false; }
+    root.hidden = false;
+    root.inert = false;
+    const landing = Number(url.searchParams.get("landing"));
+    if (landing > 0 && Number.isInteger(landing)) void selectLanding(landing);
+    applyRail();
+    updateClock();
+    document.title = data ? `${data.meta.landing.displayName} Departures` : "NYC Ferry Staff Board";
+    lifecycle.activate();
+    render();
+  },
+  deactivate() {
+    lifecycle.deactivate();
+    if (header) { header.hidden = true; header.inert = true; }
+    if (renderFrame !== null) cancelAnimationFrame(renderFrame);
+    renderFrame = null;
+    root.hidden = true;
+    clearTimeout(nearestTimer);
+    tripView = null;
+    tripRequest += 1;
+    for (const sheet of sheets) {
+      if (sheet.menu === elements.landingMenu && railDocked()) continue;
+      if (!sheet.menu.hidden) { panel(sheet.menu, false); sheet.menu.hidden = true; }
+    }
+    if (!railDocked()) setMenuOpen(false, false);
+    root.getAnimations?.({ subtree: true }).forEach(animation => animation.cancel());
+    [...root.querySelectorAll('[aria-expanded="true"]'), ...(header?.querySelectorAll('[aria-expanded="true"]') || [])].forEach(node => {
+      if (node !== elements.menuButton || !railDocked()) node.setAttribute("aria-expanded", "false");
+    });
+    root.hidden = true;
+    root.inert = true;
+  },
+  dispose() {
+    this.deactivate();
+    lifecycle.dispose();
+    railMedia.removeEventListener("change", applyRail);
+    root.removeEventListener("keydown", handleBoardKeys);
+    header?.removeEventListener("keydown", handleBoardKeys);
+    MobileRuntime.releasePanels?.(root);
+    root.replaceChildren();
+    header?.replaceChildren();
+  }
+};
 }

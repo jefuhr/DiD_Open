@@ -7,6 +7,7 @@ Holiday per-landing timetables are merged by build-data.js, not invented GTFS tr
 """
 import csv
 import io
+import hashlib
 import zipfile
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,6 +28,28 @@ def main():
         return reader.fieldnames,list(reader)
     fields,info=read('feed_info.txt')
     assert info[0]['feed_version']=='20260913'
+    # September 20 compacts the same timetable to services 1/2/3 and removes expired
+    # trips. Keep the verified seasonal IDs used by crew notes and historical date
+    # navigation, but require every current trip and call to match the refresh.
+    refresh_path = ROOT/'schedules/fall-2026-sources/nycferry-20260920.zip'
+    assert hashlib.sha256(refresh_path.read_bytes()).hexdigest() == 'f08d8455b1c9286f19bb7f0a994124fe23b7e7f18fd467cfd2d92883e1e0e100'
+    with zipfile.ZipFile(refresh_path) as refresh:
+        def current(name):
+            return list(csv.DictReader(io.StringIO(refresh.read(name).decode('utf-8-sig'))))
+        old_trips = {r['trip_id']:r for r in read('trips.txt')[1]}
+        new_trips = current('trips.txt')
+        mapping = {'2':'1', '3':'1', '4':'2', '6':'2', '8':'3'}
+        for trip in new_trips:
+            old = old_trips[trip['trip_id']]
+            assert mapping[old['service_id']] == trip['service_id'], trip
+            assert {k:v for k,v in old.items() if k != 'service_id'} == {k:v for k,v in trip.items() if k != 'service_id'}, trip
+        current_ids = {r['trip_id'] for r in new_trips}
+        assert {r['service_id'] for k,r in old_trips.items() if k not in current_ids} == {'1','5','7'}
+        expected_calls = {tuple(sorted(r.items())) for r in read('stop_times.txt')[1] if r['trip_id'] in current_ids}
+        assert expected_calls == {tuple(sorted(r.items())) for r in current('stop_times.txt')}
+        refreshed_info = current('feed_info.txt')[0]
+        assert refreshed_info['feed_version'] == '20260920'
+        info[0]['feed_version'] = refreshed_info['feed_version']
     info[0]['feed_end_date']='20261101'
     files['feed_info.txt']=encode(fields,info)
     fields,calendar=read('calendar.txt')
@@ -46,5 +69,5 @@ def main():
     for name,data in files.items():
         assert '/' not in name and name.endswith('.txt')
         (ROOT/'gtfs'/name).write_bytes(data)
-    print('Built NYC Ferry fall feed through November 1, with exact cruise dates and Sukkot exclusions.')
+    print('Verified all 555 current trips against feed 20260920; built the curated fall calendar through November 1, retaining historical trips, exact cruise dates and Sukkot exclusions.')
 if __name__=='__main__':main()

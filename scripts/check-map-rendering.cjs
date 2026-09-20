@@ -1,6 +1,7 @@
 // Behavior requiring real retained DOM nodes, SVG transforms, and animation frames.
 const assert = require('node:assert/strict');
 const { check } = require('./mobile-check-harness.cjs');
+const { instrumentMap, mapEvaluate, mapWaitFor } = require("./map-test-scope.cjs");
 const fixture = require('./map-browser-fixture.cjs');
 (async () => {
   const { harbor, positions } = await fixture();
@@ -10,10 +11,14 @@ const fixture = require('./map-browser-fixture.cjs');
     }, async ({ page, site }) => {
       await page.route(/^https:\/\//, route => route.fulfill({ contentType: 'image/png',
         body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64') }));
+      await page.route("**/assets/map.js*", async route => {
+        const source = await require("node:fs/promises").readFile("public/assets/map.js", "utf8");
+        await route.fulfill({ contentType: "text/javascript", body: instrumentMap(source) });
+      });
       await page.goto(`${site.origin}/map`);
       await page.waitForSelector('.boat');
       await page.evaluate(() => document.fonts.ready);
-      const result = await page.evaluate(async () => {
+      const result = await mapEvaluate(page, async () => {
         const expect = (condition, message) => { if (!condition) throw new Error(message); };
         const frame = () => new Promise(requestAnimationFrame);
         const settle = () => new Promise(resolve => setTimeout(resolve, 140));
@@ -155,19 +160,19 @@ const fixture = require('./map-browser-fixture.cjs');
       });
       assert(result.culled > 0);
       await page.setViewportSize({ width: viewport.width + 80, height: viewport.height - 80 });
-      await page.waitForFunction(() => {
+      await mapWaitFor(page, () => {
         const box = chart.getBoundingClientRect();
         return Math.abs(viewport.width - box.width) < 1 && Math.abs(viewport.height - box.height) < 1 &&
           fleetScalers.every(node => node.getAttribute('transform') ===
             `scale(${Math.max(view.width / viewport.width, view.height / viewport.height).toFixed(3)})`);
       });
       await page.emulateMedia({ reducedMotion: 'reduce' });
-      assert(await page.evaluate(async () => {
+      assert(await mapEvaluate(page, async () => {
         animateTo({ ...base, width: base.width / 5 });
         await new Promise(requestAnimationFrame);
         return cameraAnimation === null && view.width === base.width / 5;
       }), 'reduced motion applies the destination without animation');
-      assert(await page.evaluate(async () => {
+      assert(await mapEvaluate(page, async () => {
         harbor = { ...harbor, chart: null };
         drawHarbor();
         await new Promise(requestAnimationFrame);

@@ -18,74 +18,74 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
     <title>NYC Ferry Staff Board</title>
-    <link rel="icon" href="/assets/app-icon.png?v=108" type="image/png" />
+    <link rel="icon" href="/assets/app-icon.png?v=115" type="image/png" />
     <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=108" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=115" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
          come from the manifest, which is why the board installs as a bare shortcut without it.
          It lives under /assets/ because that is a path the deployment's proxy forwards to this
          server — a manifest at the site root is served by the landing page, not by the board. -->
-    <link rel="manifest" href="/assets/site.webmanifest?v=108" />
-    <link rel="stylesheet" href="/styles.css?v=108" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=115" />
+    <link rel="stylesheet" href="/styles.css?v=115" />
+    <link rel="stylesheet" href="/assets/map.css?v=115" />
+    <link rel="stylesheet" href="/assets/app-shell.css?v=115" />
     <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
          after the board has already been drawn once, and a saved theme applied there arrives as a
          visible flash of the other one. -->
-    <script>
-      try {
-        var saved = localStorage.getItem("nyc-ferry-did-theme");
-        var known = ["night", "hello-kitty", "cinnamoroll", "pompompurin", "kuromi", "windows-xp", "hacker", "burger-king"];
-        document.documentElement.dataset.theme = known.indexOf(saved) === -1 ? "nyc-ferry" : saved;
-      } catch (error) {
-        document.documentElement.dataset.theme = "nyc-ferry";
-      }
-      // Which board this is. The signage display is served at the site root and the public board
-      // under /ferryTimesMobile/ — the same split the service worker uses to find its document.
-      // The kiosk is drawn for one fixed 16:9 screen and must keep all of it, so the roomy layout
-      // and the docked landing rail are both for the app only. Set here rather than in app.js for
-      // the same reason as the theme: the module runs after the first paint, and a board that
-      // reflows once it loads is worse than one that never moved.
-      document.documentElement.dataset.surface =
-        new URL("./", location).pathname === "/" ? "kiosk" : "app";
-    </script>
-    <link rel="stylesheet" href="/assets/mobile-console.css?v=108" />
+    <script src="/assets/map-theme.js?v=115"></script>
   </head>
-  <body>
+  <body class="app-shell">
+    <header class="app-header">
+      <div class="board-heading" id="boardHeading" hidden inert>
+        <div class="heading-title">
+          <button type="button" class="menu-button" id="menuButton" aria-expanded="false" aria-controls="landingMenu">
+            <span class="menu-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Choose landing</span>
+          </button>
+          <h1 id="landingName">NYC Ferry</h1>
+          <!-- Belongs on the title line with the other controls, not down with the status text: a
+               44px button alone on the second row reads as a stray satellite of the hamburger, and
+               it is what forced that row to stay button-height. Source order is still landing name
+               → this button → the status chips, which the contract test pins. -->
+          <button type="button" class="nearest-button" id="nearestButton" data-state="idle">
+            <svg class="nearest-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 1v3m0 16v3M1 12h3m16 0h3" />
+            </svg>
+            <span class="nearest-label visually-hidden" id="nearestLabel">Nearest</span>
+          </button>
+        </div>
+        <div class="heading-meta">
+          <!-- Read as one line: status, then how many boats, then when. The status leads because it
+               is the only part that changes on its own. -->
+          <div class="board-state">
+            <div class="status" id="dataStatus"><i></i><span>Local schedule</span></div>
+            <div class="route-count" id="routeCount">Loading routes…</div>
+            <div class="clock"><time id="clockTime">--:--</time><span id="clockDate">Loading schedule…</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="board-heading map-heading" id="mapHeading" hidden inert>
+        <div class="map-heading-copy heading-title">
+          <button type="button" class="menu-button" id="mapMenuButton" aria-label="Choose routes" aria-expanded="false" aria-controls="mapRouteMenu"><span class="menu-icon" aria-hidden="true"></span></button>
+          <h1 id="mapTitle">Map</h1>
+        </div>
+        <div class="board-state heading-meta">
+          <div class="status" id="mapStatus" data-state="loading" role="status"><i></i><span id="mapStatusText">Connecting</span></div>
+          <div class="route-count" id="boatCount">Loading…</div>
+        </div>
+      </div>
+      <nav class="product-nav" aria-label="Main">
+        <a id="boardButton" href="." data-view="board">Board</a>
+        <a id="mapButton" href="map" data-view="map">Map</a>
+      </nav>
+      <span id="navigationStatus" role="status" class="navigation-status"></span>
+    </header>
+    <section id="boardView" class="app-view" aria-label="Departure board" hidden inert>
     <main class="screen" id="screen">
       <div class="content">
         <section class="board" aria-labelledby="landingName">
-          <div class="board-heading">
-            <button type="button" class="menu-button" id="menuButton" aria-expanded="false" aria-controls="landingMenu">
-              <span class="menu-icon" aria-hidden="true"></span>
-              <span class="visually-hidden">Choose landing</span>
-            </button>
-            <h1 id="landingName">NYC Ferry</h1>
-            <!-- A link rather than a button, and relative rather than rooted: the board is the site
-                 root on a kiosk and lives under /ferryTimesMobile/ on juliet.nyc, and "map" resolves
-                 against whichever of the two this document was served from. -->
-            <nav class="product-nav" aria-label="Main"><a href="." aria-current="page">Board</a>
-            <a class="map-button" id="mapButton" href="map" aria-label="Map of the boats on the water" title="Map of the boats on the water">
-              <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4Z" />
-                <path d="M9 4v13m6-6.5v13" />
-              </svg>
-              <span>Map</span>
-            </a></nav>
-            <!-- Icon only. The button's state is carried by its colour and its title, and the row it
-                 sits in has three controls on a phone where it used to have two. -->
-            <button type="button" class="nearest-button" id="nearestButton" data-state="idle">
-              <svg class="nearest-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 1v3m0 16v3M1 12h3m16 0h3" />
-              </svg>
-              <span class="nearest-label visually-hidden" id="nearestLabel">Nearest</span>
-            </button>
-            <div class="board-state">
-              <div class="route-count" id="routeCount">Loading routes…</div>
-              <div class="status" id="dataStatus"><i></i><span>Local schedule</span></div>
-              <div class="clock"><time id="clockTime">--:--</time><span id="clockDate">Loading schedule…</span></div>
-            </div>
-          </div>
           <div class="column-head" id="columnHead" hidden><span>Route</span><span>Direction</span><span>Next departures</span></div>
           <!-- Sits outside the departures list rather than as its first row: the list scrolls and
                the kiosk view sizes its rows to a fixed height, and this belongs to the board rather
@@ -130,7 +130,7 @@
             <!-- The change log, beside the drawer's own title. Its own mark rather than a glyph,
                  because it is the one thing in here that is not a landing. -->
             <button type="button" class="changelog-button" id="changelogButton" aria-expanded="false" aria-controls="changelogMenu" aria-label="What's new">
-              <img class="changelog-icon" src="/assets/kitty.png?v=108" alt="" width="128" height="128" loading="lazy" />
+              <img class="changelog-icon" src="/assets/kitty.png?v=115" alt="" width="128" height="128" loading="lazy" />
               <span class="changelog-bang" id="changelogBang" aria-hidden="true" hidden>!</span>
             </button>
             <button type="button" class="landing-menu-close" id="landingMenuClose">Done</button>
@@ -206,13 +206,6 @@
           <ol class="filter-list trip-stops" id="tripStops"></ol>
         </div>
       </div>
-      <section class="manual-override" id="manualOverride" hidden aria-live="assertive" aria-atomic="true">
-        <div class="manual-override-box" id="manualOverrideBox" data-size="short">
-          <span class="manual-override-label">Service notice</span>
-          <p id="manualOverrideMessage"></p>
-          <small id="manualOverrideUpdated"></small>
-        </div>
-      </section>
       <!-- A button, because the bar can only ever show one alert and there are usually several. It
            stays a live region: the summary still announces itself when the feed changes, and the
            sheet behind it is where the rest of them live. -->
@@ -246,7 +239,61 @@
         </div>
       </div>
     </main>
-    <script src="/assets/mobile-runtime.js?v=108"></script>
-    <script type="module" src="/app.js?v=108"></script>
+    </section>
+    <section id="mapView" class="app-view map-body" aria-label="Harbor map" hidden inert>
+
+
+    <div class="landing-menu map-route-menu" id="mapRouteMenu" hidden inert>
+      <div class="landing-menu-scrim" id="mapRouteScrim"></div>
+      <section class="landing-menu-panel" role="dialog" aria-modal="true" aria-labelledby="mapRoutesTitle">
+        <div class="landing-menu-head"><strong id="mapRoutesTitle">Routes</strong><button type="button" class="landing-menu-close" id="mapRouteClose">Done</button></div>
+        <p id="mapRouteMessage" role="status">Loading routes…</p>
+        <nav class="route-filter-bar" id="routeFilterBar" aria-label="Route filter"></nav>
+      </section>
+    </div>
+
+    <!-- Map canvas keeps its own space beside or above the vessel list. -->
+    <div class="map-frame" id="mapFrame">
+      <div class="map-context"><span class="eyebrow">Service map</span><strong id="mapScope">The whole harbor</strong><span id="mapScopeDetail">Landings & vessel positions</span></div>
+      <svg id="chart" tabindex="0" role="group" aria-labelledby="chartTitle"></svg>
+      <div class="map-tools">
+        <span class="north-arrow" aria-label="North is up">↑<small>N</small></span>
+        <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
+        <button type="button" id="zoomOut" aria-label="Zoom out">−</button>
+        <button type="button" id="zoomFit" aria-label="Show the whole harbor">Fit</button>
+      </div>
+      <p class="map-message" id="mapMessage" hidden></p>
+      <div class="map-key" aria-label="Map symbols"><span><i class="key-dock"></i>Landing</span><span><i class="key-vessel"></i>Vessel</span><span><i class="key-channel"></i>Channel</span><span><i class="key-light"></i>Light</span></div>
+      <p class="map-credit">Service overview · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · <a href="https://carto.com/attributions">CARTO</a> · OpenSeaMap</p>
+
+    <!-- Floating Interactive Cards -->
+    <div class="vessel-card" id="vesselCard" aria-live="polite" hidden></div>
+    <dialog class="landing-confirm" id="dockCard" aria-labelledby="landingConfirmTitle" aria-describedby="landingConfirmDescription" hidden></dialog>
+    <div class="bridge-card" id="bridgeCard" aria-live="polite" hidden></div>
+    <div class="seamark-card" id="seamarkCard" aria-live="polite" hidden></div>
+    </div>
+
+    <!-- Desktop roster / collapsible mobile vessel list -->
+    <aside class="bottom-sheet" id="bottomSheet" data-state="half" aria-label="Vessel overview">
+      <button type="button" class="sheet-handle-zone" id="sheetHandle" aria-label="Collapse vessel list" aria-expanded="true" aria-controls="fleetContent"><span class="sheet-handle-bar"></span><span>Vessels</span><span id="sheetToggleText">Collapse</span></button>
+      <div class="fleet-content" id="fleetContent">
+      <div class="sheet-header">
+        <div class="fleet-heading"><h2>Vessels</h2><span id="listCount">Waiting for feed</span></div>
+        <p class="fleet-description">A quick look at who's going where.</p>
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="search" id="boatSearch" class="search-input" aria-label="Search vessels, hull numbers or stops" placeholder="Find a vessel or landing…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        </div>
+      </div>
+      <div class="sheet-scrollable">
+        <ol class="boats" id="boats"></ol>
+      </div>
+      <p class="fleet-footer" id="feedNote">NYC Ferry positions · Refreshes every 15 seconds</p>
+      </div>
+    </aside>
+
+    </section>
+    <script src="/assets/mobile-runtime.js?v=115"></script>
+    <script type="module" src="/assets/app-shell.js?v=115"></script>
   </body>
 </html>

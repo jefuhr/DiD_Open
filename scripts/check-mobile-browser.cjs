@@ -26,7 +26,7 @@ const root = process.cwd();
     "-C",
     baselineRoot,
   ]);
-  await fs.mkdir("docs/mobile-upgrade", { recursive: true });
+  await fs.mkdir("artifacts/browser", { recursive: true });
   const fixture = new Map();
   for (const url of [
     "/api/display-data?landingId=17",
@@ -56,7 +56,7 @@ const root = process.cwd();
     JSON.stringify({
       available: true,
       stale: false,
-      fetchedAt: "2026-09-04T14:00:00Z",
+      fetchedAt: "2026-09-20T14:00:00Z",
       boats: [vessel],
     }),
   );
@@ -131,10 +131,10 @@ const root = process.cwd();
       const Real = Date;
       window.Date = class extends Real {
         constructor(...args) {
-          super(...(args.length ? args : ["2026-09-04T14:00:00Z"]));
+          super(...(args.length ? args : ["2026-09-20T14:00:00Z"]));
         }
         static now() {
-          return +new Real("2026-09-04T14:00:00Z");
+          return +new Real("2026-09-20T14:00:00Z");
         }
       };
       localStorage.setItem("nyc-ferry-did-selected-landing", "17");
@@ -147,7 +147,7 @@ const root = process.cwd();
     await page.waitForSelector(".timeline-row");
     const cold = Math.round(performance.now() - start);
     await page.waitForTimeout(1000);
-    await page.screenshot({ path: `docs/mobile-upgrade/${mode}-board.png` });
+    await page.screenshot({ path: `artifacts/browser/${mode}-board.png` });
     start = performance.now();
     await page.reload();
     await page.waitForSelector(".timeline-row");
@@ -215,7 +215,7 @@ const root = process.cwd();
           requestAnimationFrame(frame);
         }),
     );
-    await page.screenshot({ path: `docs/mobile-upgrade/${mode}-map.png` });
+    await page.screenshot({ path: `artifacts/browser/${mode}-map.png` });
     await ctx.tracing.stop({ path: `/tmp/mobile-${mode}-trace.zip` });
     results.push({
       mode,
@@ -230,7 +230,7 @@ const root = process.cwd();
   }
   console.log(JSON.stringify(results, null, 2));
   await fs.writeFile(
-    "docs/mobile-upgrade/browser-results.json",
+    "artifacts/browser/browser-results.json",
     JSON.stringify(results, null, 2) + "\n",
   ); // Responsive/theme matrix against the upgraded page, with no fixture changes.
   const matrix = [];
@@ -241,10 +241,10 @@ const root = process.cwd();
     const Real = Date;
     window.Date = class extends Real {
       constructor(...args) {
-        super(...(args.length ? args : ["2026-09-04T14:00:00Z"]));
+        super(...(args.length ? args : ["2026-09-20T14:00:00Z"]));
       }
       static now() {
-        return +new Real("2026-09-04T14:00:00Z");
+        return +new Real("2026-09-20T14:00:00Z");
       }
     };
   });
@@ -293,7 +293,7 @@ const root = process.cwd();
     }
   }
   await fs.writeFile(
-    "docs/mobile-upgrade/browser-matrix.json",
+    "artifacts/browser/browser-matrix.json",
     JSON.stringify(matrix, null, 2) + "\n",
   );
   const failures = matrix.filter(

@@ -9,11 +9,9 @@ import { clampLimit, createConnectionIndex, tripConnections, vesselsByBoat } fro
 import { createCounterService } from "./lib/counters.js";
 import { openStatsStore } from "./lib/stats-store.js";
 import { describeBoats, loadHarborMap } from "./lib/fleet-map.js";
-import { createManualOverrideService } from "./lib/manual-overrides.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
 import { createServiceAlertService } from "./lib/service-alerts.js";
-import { createSftpOverridePoller, loadSftpOverrideConfig } from "./lib/sftp-overrides.js";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, "public");
@@ -21,9 +19,7 @@ const DATA = path.join(PUBLIC, "data/display-data.json");
 const HOST = process.env.HOST || "127.0.0.1";
 const PORT = Number(process.env.PORT || 8090);
 const DISPLAY_CONFIG = path.join(ROOT, "config/display.json");
-const SFTP_CONFIG = path.join(ROOT, "config/sftp.json");
 const displayConfig = JSON.parse(await readFile(DISPLAY_CONFIG, "utf8"));
-const sftpConfig = await loadSftpOverrideConfig({ configPath: SFTP_CONFIG, rootPath: ROOT });
 
 // This server answers for every landing, not just config/display.json's. See lib/landing-data.js
 // for why the merged view matters as much as the per-landing map: without it the realtime feeds
@@ -59,10 +55,6 @@ const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROO
 // leaves from the far end of a sailing. Built once from the landings already in memory and holding
 // their departures by reference — see lib/connections.js.
 const connectionIndex = createConnectionIndex(landingData.byLanding);
-// The landings this server actually built, which is what a notice can meaningfully be posted for.
-const LANDING_IDS = new Set(landingData.available.map((landing) => landing.id));
-const manualOverrideService = createManualOverrideService({ statePath: path.join(ROOT, "state/manual-overrides.json"), landingIds: LANDING_IDS });
-const sftpOverridePoller = createSftpOverridePoller({ config: sftpConfig, landingId: displayConfig.landingNumber, landingIds: LANDING_IDS, cacheService: manualOverrideService });
 const statsStore = await openStatsStore({ databasePath: path.join(ROOT, "state/stats.db") });
 // The totals that existed before the history did. Folded into the hour they were last written and
 // marked, so the lifetime numbers on the stats page survive the deploy that gave them a time axis.
@@ -77,16 +69,16 @@ const counters = createCounterService({ store: statsStore });
 const LANDING_NAMES = Object.fromEntries(landingData.available.map((landing) => [landing.id, landing.displayName || landing.name]));
 // The extensionless pages this server answers for, and the file each one is.
 //
-// Reachable as /stats on a kiosk and as /ferryTimesMobile/stats on juliet.nyc. Whether the proxy
+// Reachable as /stats at the site root and as /ferryTimesMobile/stats on juliet.nyc. Whether the proxy
 // hands the prefix on or strips it is the proxy's business and not visible from here, so both
 // arrivals are answered rather than guessed between — and both are counted as the one page they
 // are, since counting them apart would file the proxied spelling in with the served files.
-const PAGES = new Map([["/stats", "stats.html"], ["/map", "map.html"]]);
+const PAGES = new Map([["/", "index.html"], ["/index.html", "index.html"], ["/stats", "stats.html"], ["/map", "index.html"], ["/map.html", "index.html"]]);
 const PROXY_PREFIX = "/ferryTimesMobile";
 function pageFor(pathname) {
   // With or without the trailing slash a browser may add.
   const trimmed = pathname.replace(/\/+$/, "") || "/";
-  const canonical = trimmed.startsWith(`${PROXY_PREFIX}/`) ? trimmed.slice(PROXY_PREFIX.length) : trimmed;
+  const canonical = trimmed === PROXY_PREFIX ? "/" : trimmed.startsWith(`${PROXY_PREFIX}/`) ? trimmed.slice(PROXY_PREFIX.length) : trimmed;
   return PAGES.has(canonical) ? { canonical, file: PAGES.get(canonical) } : null;
 }
 // Everything counted so far, including the current minute.
@@ -175,10 +167,8 @@ async function serve(response, file) {
 }
 async function handle(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
-  if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), sftpOverride:sftpOverridePoller.status(), counters: buildStats() });
-  // The counters alone, for the public stats page. /api/health carries them too, but alongside the
-  // SFTP poller's target host, its key fingerprints and its last error string — fine for an
-  // operator hitting health directly, not something to put behind a page anyone can open.
+  if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), counters: buildStats() });
+  // Public aggregate request statistics.
   if (url.pathname === "/api/stats") return json(response, 200, buildStats());
   // The change log, written by hand in content/changelog.json. Read off disk on every request
   // rather than at boot so an edit needs a deploy and not a restart, and served from /api/ so the
@@ -200,7 +190,7 @@ async function handle(request, response) {
     const landingNumber = requested === null ? Number(displayConfig.landingNumber) : Number(requested);
     if (requested !== null && !displayDataJson.has(landingNumber)) return json(response, 400, { error: "Unknown landing." });
     const built = displayDataJson.get(landingNumber);
-    // Falling back to the file the build wrote keeps a kiosk alive if its own landing was the one
+    // Falling back to the file the build wrote keeps the default board available if its own landing was the one
     // that failed to build at startup — stale published times beat a blank board.
     try {
       const body = built ?? await readFile(DATA, "utf8");
@@ -295,19 +285,6 @@ async function handle(request, response) {
     return json(response, 200, result);
   }
   if (url.pathname === "/api/alerts") { const result = await serviceAlertService.getCurrent(); return json(response, result.available ? 200 : 503, result); }
-  if (url.pathname === "/api/override") {
-    response.setHeader("Allow", "GET");
-    try {
-      if (request.method === "GET") {
-        const saved = await manualOverrideService.get(url.searchParams.get("landingId"));
-        return json(response, 200, sftpConfig.enabled ? saved : { ...saved, active:false, message:"", updatedAt:null });
-      }
-      return json(response, 405, { error: "Method not allowed" });
-    } catch (error) {
-      const status = error.statusCode || (error instanceof TypeError || error instanceof RangeError ? 400 : 500);
-      return json(response, status, { error: status === 500 ? "Manual override unavailable." : error.message });
-    }
-  }
   const page = pageFor(url.pathname);
   if (page) return serve(response, path.join(PUBLIC, page.file));
   let relative; try { relative = decodeURIComponent(url.pathname === "/" ? "index.html" : url.pathname.replace(/^\/+/, "")); } catch { return json(response, 400, { error:"Invalid path" }); }
@@ -321,10 +298,7 @@ function count(request, response) {
   response.on("finish", () => {
     const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
     // Only the payload a board fetches when it opens or switches docks counts as viewing a landing.
-    // Realtime and override both carry landingId too, and both are polled — every 15 and every 5
-    // seconds — so counting those would measure how long a board was left on, which is a different
-    // question wearing this one's clothes. A request with no landingId is a kiosk on the landing it
-    // was configured for, and is the view it looks like rather than nothing at all.
+    // Count board selections separately from background polling.
     const requested = url.searchParams.get("landingId");
     const landingId = requested === null ? Number(displayConfig.landingNumber) : Number(requested);
     counters.record({
@@ -341,8 +315,7 @@ const server = http.createServer((request, response) => {
 });
 server.listen(PORT, HOST, () => {
   console.log(`NYC Ferry DiD ready at http://${HOST}:${PORT}`);
-  sftpOverridePoller.start();
   counters.start();
 });
-const shutdown = () => server.close(() => void Promise.all([sftpOverridePoller.stop(), counters.stop()]).finally(() => { statsStore.close(); process.exit(0); }));
+const shutdown = () => server.close(() => void Promise.all([counters.stop()]).finally(() => { statsStore.close(); process.exit(0); }));
 process.on("SIGINT", shutdown); process.on("SIGTERM", shutdown);

@@ -1,10 +1,29 @@
-const SHELL='nyc-ferry-did-shell-v108',DATA='nyc-ferry-did-data-v108';
+const SHELL='nyc-ferry-did-shell-v115',DATA='nyc-ferry-did-data-v115';
 const requestedBase = new URL(self.location.href).searchParams.get('base');
 const BASE = requestedBase === '/ferryTimesMobile/' ? requestedBase : '/';
-const FILES=[BASE,'/assets/app-icon.png?v=108','/assets/app-icon-180.png?v=108','/assets/app-icon-maskable-512.png?v=108','/assets/waterway.png','/assets/seastreak.png','/assets/nyu.png','/assets/cityferry.png','/assets/gi.png',`${BASE}map`,'/styles.css?v=108','/app.js?v=108','/assets/mobile-runtime.js?v=108','/assets/mobile-console.css?v=108','/assets/map.js?v=108','/assets/map.css?v=108','/assets/map-theme.js?v=108','/assets/site.webmanifest?v=108','/assets/app-icon-192.png?v=108','/assets/app-icon-512.png?v=108','/assets/fonts/lato-regular-latin.woff2','/assets/fonts/lato-bold-latin.woff2','/assets/fonts/lato-black-latin.woff2','/assets/fonts/oswald-variable-latin.woff2'];
+const FILES=[BASE,'/assets/view-lifecycle.js','/assets/app-shell.js?v=115','/assets/app-shell.css?v=115','/assets/schedule.js','/assets/preferences.js','/assets/panels.js','/assets/schedule-store.js','/assets/app-icon.png?v=115','/assets/app-icon-180.png?v=115','/assets/app-icon-maskable-512.png?v=115','/assets/waterway.png','/assets/seastreak.png','/assets/nyu.png','/assets/cityferry.png','/assets/gi.png',`${BASE}map`,'/styles.css?v=115','/app.js?v=115','/assets/mobile-runtime.js?v=115','/assets/map.js?v=115','/assets/map.css?v=115','/assets/map-theme.js?v=115','/assets/site.webmanifest?v=115','/assets/app-icon-192.png?v=115','/assets/app-icon-512.png?v=115','/assets/fonts/lato-regular-latin.woff2','/assets/fonts/lato-bold-latin.woff2','/assets/fonts/lato-black-latin.woff2','/assets/fonts/oswald-variable-latin.woff2'];
 // Theme artwork and optional fonts enter the cache after first use.
 self.addEventListener('install',event=>event.waitUntil(caches.open(SHELL).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('nyc-ferry-did-')&&![SHELL,DATA].includes(key)).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
+async function upgradeCaches() {
+  const names = await caches.keys();
+  const data = await caches.open(DATA);
+  const oldData = names.filter(name => /^nyc-ferry-did-data-v\d+$/.test(name) && name !== DATA)
+    .sort((a, b) => Number(b.split('-v').at(-1)) - Number(a.split('-v').at(-1)));
+  for (const name of oldData) {
+    try {
+      const previous = await caches.open(name);
+      for (const request of await previous.keys()) {
+        const path = new URL(request.url).pathname;
+        if (!path.startsWith('/api/') || path === '/api/override' || await data.match(request)) continue;
+        const response = await previous.match(request);
+        if (response) await data.put(request, response);
+      }
+      await caches.delete(name);
+    } catch { /* Keep the source cache if copying fails; schedules must not be lost on upgrade. */ }
+  }
+  await Promise.all(names.filter(name => name.startsWith('nyc-ferry-did-shell-v') && name !== SHELL).map(name => caches.delete(name)));
+}
+self.addEventListener('activate',event=>event.waitUntil(upgradeCaches().then(()=>self.clients.claim())));
 async function networkFirst(request,cacheName,wait=10000){
   const cache=await caches.open(cacheName).catch(()=>null);
   const controller=new AbortController();
@@ -35,6 +54,7 @@ async function networkFirst(request,cacheName,wait=10000){
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET'||new URL(event.request.url).origin!==location.origin)return;
   const url=new URL(event.request.url);
+  if(url.pathname === '/api/override')return;
   if(url.pathname.startsWith('/api/'))event.respondWith(networkFirst(event.request,DATA));
   else if(event.request.mode==='navigate')event.respondWith(networkFirst(event.request,SHELL,2500));
   else event.respondWith(caches.match(event.request).then(saved=>saved||fetch(event.request).then(response=>{

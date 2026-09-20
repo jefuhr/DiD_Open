@@ -18,8 +18,11 @@
     "stamp": "node scripts/stamp-assets.js",
     "stamp:bump": "node scripts/stamp-assets.js --bump",
     "test:mobile-browser": "node scripts/check-mobile-browser.cjs",
+    "test:staff-app": "node scripts/check-staff-app.cjs",
+    "test:visual-polish": "node scripts/check-visual-polish.cjs",
     "test:mobile-map-drag": "node scripts/check-mobile-map-drag.cjs",
     "test:map-selection": "node scripts/check-map-selection.cjs",
+    "test:map-drawer": "node scripts/check-map-drawer.cjs",
     "test:mobile-route-layout": "node scripts/check-mobile-route-layout.cjs",
     "test:mobile-viewport": "node scripts/check-mobile-viewport.cjs",
     "benchmark:map": "node scripts/benchmark-map.cjs",
@@ -28,8 +31,7 @@
     "check:nyc-fall": "python3 scripts/check-nyc-fall-2026.py"
   },
   "dependencies": {
-    "gtfs-realtime-bindings": "2.1.0",
-    "ssh2-sftp-client": "^12.1.1"
+    "gtfs-realtime-bindings": "2.1.0"
   },
   "devDependencies": {
     "@mapbox/vector-tile": "^2.0.4",

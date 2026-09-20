@@ -6,6 +6,31 @@ import path from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { applyNonRevenueRuns, buildDisplayData, decodeEntities, parseCsv } from "../scripts/build-data.js";
+import { activeServices } from "../public/assets/schedule.js";
+
+test("NPS fall feed covers September 8 through October 12 with separate weekday and weekend trips", async () => {
+  const [info] = parseCsv(await readFile(new URL("../gtfs/statue/feed_info.txt", import.meta.url), "utf8"));
+  assert.equal(info.feed_version, "20260908");
+  assert.equal(info.feed_end_date, "20261012");
+  for (const landingNumber of [28, 30, 31]) {
+    const data = await buildDisplayData({ landingNumber });
+    const active = date => {
+      const services = activeServices(data, date);
+      return data.departures.filter(row => row.routeId.startsWith("sta:") && services.has(row.serviceId));
+    };
+    for (const date of ["2026-09-08", "2026-09-20", "2026-09-21", "2026-10-12"]) {
+      assert.ok(active(date).length > 0, `landing ${landingNumber} has fall service on ${date}`);
+    }
+    assert.equal(active("2026-09-07").length, 0);
+    assert.equal(active("2026-10-13").length, 0);
+    assert.ok(active("2026-09-20").every(row => row.serviceId !== "sta:weekday"));
+    assert.ok(active("2026-09-21").every(row => row.serviceId !== "sta:weekend"));
+    if (landingNumber === 28) {
+      assert.ok(active("2026-09-20").some(row => row.serviceId === "sta:weekend"));
+      assert.ok(active("2026-09-21").some(row => row.serviceId === "sta:weekday"));
+    }
+  }
+});
 
 test("every configured landing builds departures", async () => {
   for (let landingNumber = 2; landingNumber <= 26; landingNumber += 1) {
@@ -63,6 +88,8 @@ test("display data includes the configured departure window and count", async ()
   const display = JSON.parse(await readFile(new URL("../config/display.json", import.meta.url), "utf8"));
   assert.equal(data.meta.departureWindowMinutes, display.departureWindowMinutes);
   assert.equal(data.meta.departuresShown, display.departuresShown);
+  assert.equal(data.meta.showDwellTimes, display.showDwellTimes === true);
+  assert.equal(data.meta.showLayoverTimes, display.showLayoverTimes !== false);
   assert.equal(data.meta.schemaVersion, 11);
   assert.ok(data.tripSchedules[data.departures[0].tripId]?.stops.length > 1);
   const directions = new Set(data.departures.map((item) => `${item.routeId}|${item.directionId}|${item.destination}`));

@@ -118,7 +118,7 @@ test("nothing was lost or emptied on the way through JSON", async () => {
 
 test("the crew model constants reach the export as real values, not transcriptions", async () => {
   const data = await committed();
-  const outOfService = await readFile(path.join(ROOT, "scripts/out-of-service.js"), "utf8");
+  const outOfService = await readFile(path.join(ROOT, "lib/out-of-service.js"), "utf8");
   // Imported from the module that uses them, so they cannot drift from the running code.
   assert.match(outOfService, /export const SHUTTLE_READY_BEFORE/);
   assert.match(outOfService, /export const SWAP_WINDOW_BEFORE/);

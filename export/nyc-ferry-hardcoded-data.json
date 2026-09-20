@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "NYC Ferry departure board — hardcoded NYC Ferry data",
-    "generatedAt": "2026-09-19T23:16:00.070Z",
+    "generatedAt": "2026-09-20T16:03:42.268Z",
     "generator": "scripts/export-hardcoded-data.js",
     "description": "Every piece of NYC Ferry data this repository carries that did not come from a published GTFS feed. Each section names the file it was read from; edit that file, not this one.",
     "scope": "NYC Ferry only. The partner operators sharing these docks have their own hand-maintained data in this repository — NY Waterway route corrections, transcribed timetables for the Governors Island, IKEA and Liberty Landing boats, and downloads for the Staten Island Ferry and the Statue of Liberty boats — and none of it is included here. Partner stop ids and partner on/off switches are stripped from the config below.",
@@ -1637,9 +1637,11 @@
       "statueEnabled"
     ],
     "settings": {
-      "landingNumber": 26,
+      "landingNumber": 16,
       "departureWindowMinutes": 1440,
       "departuresShown": 5,
+      "showDwellTimes": false,
+      "showLayoverTimes": true,
       "busesEnabled": false
     }
   },

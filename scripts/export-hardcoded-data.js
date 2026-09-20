@@ -25,11 +25,11 @@ import { fileURLToPath } from "node:url";
 
 // Imported only to learn which keys belong to a partner, so that adding one cannot quietly leave
 // its data in an export that promises not to carry any.
-import { PARTNER_FEEDS } from "./build-data.js";
+import { PARTNER_FEEDS } from "../lib/schedule-builder.js";
 import {
   CREW_ROUTE, CREW_ROUTE_ID, CREW_WEEKDAY_SERVICE, CREW_WEEKEND_SERVICE, HOME_PORT_STOP_ID,
   SHUTTLE_READY_BEFORE, SWAP_WINDOW_AFTER, SWAP_WINDOW_BEFORE
-} from "./out-of-service.js";
+} from "../lib/out-of-service.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT = path.join(ROOT, "export/nyc-ferry-hardcoded-data.json");

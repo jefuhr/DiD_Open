@@ -14,6 +14,7 @@
   "timetables": "https://nycferry.connexionz.net/rtt/public/Schedule.aspx",
   "serviceCalendar": "https://nycferry.connexionz.net/rtt/public/ServiceCalendar.aspx",
   "checkedDate": "2026-09-13",
+  "refreshCheckedDate": "2026-09-20",
   "sha256": {
     "AS.pdf": "7ae11a3ccde7ceb995aa7bc73ff653a743bf925fce9d2ed2cdff8195c28934fd",
     "ER.pdf": "4314cf2296b46473af83d64604568cdff96d104ecc4a0dd991334649e5e4013b",
@@ -24,6 +25,7 @@
     "SB-fall.pdf": "48ec383155e7bcc5bbe5bc8c88b8c3b06d949b14635346458b1a938f658e7e91",
     "SB.pdf": "96d363ed5e2f45db307c54a9cad5ba86711c539974afc8b260b3cc47568aa592",
     "SG.pdf": "998d730cf06fe11c0a2466bdef36c1bff9e863f775c7a0f29111f2ebe837fbfb",
-    "nycferry-20260913.zip": "f92a79b63f66d703a9393caa77abc972f9827ce21a0958c1a2b640a3201d9004"
+    "nycferry-20260913.zip": "f92a79b63f66d703a9393caa77abc972f9827ce21a0958c1a2b640a3201d9004",
+    "nycferry-20260920.zip": "f08d8455b1c9286f19bb7f0a994124fe23b7e7f18fd467cfd2d92883e1e0e100"
   }
 }

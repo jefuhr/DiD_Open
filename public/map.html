@@ -6,33 +6,251 @@
     <meta name="theme-color" content="#001d41" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <!-- Kept in step with the board: black-translucent leaves the bottom of the screen outside the
-         web view. See the note on the same tag in index.html. -->
+    <!-- default, not black-translucent. Translucent lets the board draw under the status bar and
+         then hands it a web view one status bar shorter than the screen, top-aligned: on an 844pt
+         iPhone the page is painted down to 797pt and the last 47pt belong to the system, which
+         fills them with the document's background colour. Nothing the page does reaches into that
+         strip — measured against the visible viewport the alert bar stopped 47pt above the bottom
+         edge, and sized in vh (which still reports the full 844) its last line was cut in half.
+         Under default the web view starts below the status bar and ends at the screen's own bottom,
+         which is the only way the last bar gets there. env(safe-area-inset-top) becomes 0 to match;
+         every use of it here adds to a padding rather than standing in for one. -->
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Ferry Board" />
-    <meta name="robots" content="noindex" />
-    <title>NYC Ferry Staff Board · Map</title>
-    <link rel="manifest" href="/assets/site.webmanifest?v=108" />
-    <link rel="icon" href="/assets/app-icon.png?v=108" type="image/png" />
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=108" />
-    <!-- The board's own stylesheet, loaded first for design system variables, typography, and themes. -->
-    <script src="/assets/map-theme.js?v=108"></script>
-    <link rel="stylesheet" href="/styles.css?v=108" />
-    <link rel="stylesheet" href="/assets/map.css?v=108" />
-    <link rel="stylesheet" href="/assets/mobile-console.css?v=108" />
+    <title>NYC Ferry Staff Board</title>
+    <link rel="icon" href="/assets/app-icon.png?v=115" type="image/png" />
+    <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
+         screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=115" />
+    <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
+         come from the manifest, which is why the board installs as a bare shortcut without it.
+         It lives under /assets/ because that is a path the deployment's proxy forwards to this
+         server — a manifest at the site root is served by the landing page, not by the board. -->
+    <link rel="manifest" href="/assets/site.webmanifest?v=115" />
+    <link rel="stylesheet" href="/styles.css?v=115" />
+    <link rel="stylesheet" href="/assets/map.css?v=115" />
+    <link rel="stylesheet" href="/assets/app-shell.css?v=115" />
+    <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
+         after the board has already been drawn once, and a saved theme applied there arrives as a
+         visible flash of the other one. -->
+    <script src="/assets/map-theme.js?v=115"></script>
   </head>
-  <body class="map-body">
-    <header class="board-heading map-heading">
-      <nav class="product-nav" aria-label="Main"><a href=".">Board</a><a href="map" aria-current="page">Map</a></nav>
-      <div class="map-heading-copy"><span class="eyebrow">NYC Ferry · Staff overview</span><h1>On the water</h1></div>
-      <div class="board-state">
-        <div class="route-count" id="boatCount">Loading…</div>
-        <div class="status" id="mapStatus" data-state="loading" role="status"><i></i><span id="mapStatusText">Connecting</span></div>
+  <body class="app-shell">
+    <header class="app-header">
+      <div class="board-heading" id="boardHeading" hidden inert>
+        <div class="heading-title">
+          <button type="button" class="menu-button" id="menuButton" aria-expanded="false" aria-controls="landingMenu">
+            <span class="menu-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Choose landing</span>
+          </button>
+          <h1 id="landingName">NYC Ferry</h1>
+          <!-- Belongs on the title line with the other controls, not down with the status text: a
+               44px button alone on the second row reads as a stray satellite of the hamburger, and
+               it is what forced that row to stay button-height. Source order is still landing name
+               → this button → the status chips, which the contract test pins. -->
+          <button type="button" class="nearest-button" id="nearestButton" data-state="idle">
+            <svg class="nearest-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 1v3m0 16v3M1 12h3m16 0h3" />
+            </svg>
+            <span class="nearest-label visually-hidden" id="nearestLabel">Nearest</span>
+          </button>
+        </div>
+        <div class="heading-meta">
+          <!-- Read as one line: status, then how many boats, then when. The status leads because it
+               is the only part that changes on its own. -->
+          <div class="board-state">
+            <div class="status" id="dataStatus"><i></i><span>Local schedule</span></div>
+            <div class="route-count" id="routeCount">Loading routes…</div>
+            <div class="clock"><time id="clockTime">--:--</time><span id="clockDate">Loading schedule…</span></div>
+          </div>
+        </div>
       </div>
+      <div class="board-heading map-heading" id="mapHeading" hidden inert>
+        <div class="map-heading-copy heading-title">
+          <button type="button" class="menu-button" id="mapMenuButton" aria-label="Choose routes" aria-expanded="false" aria-controls="mapRouteMenu"><span class="menu-icon" aria-hidden="true"></span></button>
+          <h1 id="mapTitle">Map</h1>
+        </div>
+        <div class="board-state heading-meta">
+          <div class="status" id="mapStatus" data-state="loading" role="status"><i></i><span id="mapStatusText">Connecting</span></div>
+          <div class="route-count" id="boatCount">Loading…</div>
+        </div>
+      </div>
+      <nav class="product-nav" aria-label="Main">
+        <a id="boardButton" href="." data-view="board">Board</a>
+        <a id="mapButton" href="map" data-view="map">Map</a>
+      </nav>
+      <span id="navigationStatus" role="status" class="navigation-status"></span>
     </header>
+    <section id="boardView" class="app-view" aria-label="Departure board" hidden inert>
+    <main class="screen" id="screen">
+      <div class="content">
+        <section class="board" aria-labelledby="landingName">
+          <div class="column-head" id="columnHead" hidden><span>Route</span><span>Direction</span><span>Next departures</span></div>
+          <!-- Sits outside the departures list rather than as its first row: the list scrolls and
+               the kiosk view sizes its rows to a fixed height, and this belongs to the board rather
+               than to any sailing on it. -->
+          <p class="board-note" id="boardNote" hidden></p>
+          <span id="boardAnnouncement" class="visually-hidden" role="status" aria-live="polite"></span>
+          <div class="departures" id="departures"></div>
+          <!-- Below the list, not above it: the question "what about tomorrow?" is the one you have
+               after you have read today's boats and run out of them. The clock format sits beside
+               it because both are about how the board is read rather than what it says. -->
+          <div class="board-footer">
 
-    <!-- Quick Route Filter Bar -->
-    <nav class="route-filter-bar" id="routeFilterBar" aria-label="Route filter"></nav>
+
+            <button type="button" class="filter-button" id="filterButton" aria-expanded="false" aria-controls="filterMenu" aria-label="Filter operators">
+              <svg class="filter-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 5h18l-7 8v6l-4 2v-8Z" />
+              </svg>
+              <span class="filter-count" id="filterCount" hidden></span>
+            </button>
+            <!-- Beside the filter because both are the same kind of control: neither changes what the
+                 board knows, only how it is read. -->
+            <button type="button" class="filter-button theme-button" id="themeButton" aria-expanded="false" aria-controls="themeMenu" aria-label="Theme">
+              <svg class="filter-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none" />
+              </svg>
+            </button>
+            <div class="date-bar" id="dateBar" data-state="today">
+              <button type="button" class="date-step" id="datePrev" aria-label="Previous day">‹</button>
+              <button type="button" class="date-current" id="dateCurrent" aria-label="Showing today's schedule">Today</button>
+              <button type="button" class="date-step" id="dateNext" aria-label="Next day">›</button>
+            </div>
+            <button type="button" class="clock-toggle" id="clockToggle" aria-pressed="false">24 h</button>
+          </div>
+        </section>
+      </div>
+      <div class="landing-menu" id="landingMenu" hidden>
+        <div class="landing-menu-scrim" id="landingMenuScrim"></div>
+        <nav class="landing-menu-panel" id="landingMenuPanel" aria-label="Choose landing">
+          <div class="landing-menu-head">
+            <strong>Landing</strong>
+            <!-- The change log, beside the drawer's own title. Its own mark rather than a glyph,
+                 because it is the one thing in here that is not a landing. -->
+            <button type="button" class="changelog-button" id="changelogButton" aria-expanded="false" aria-controls="changelogMenu" aria-label="What's new">
+              <img class="changelog-icon" src="/assets/kitty.png?v=115" alt="" width="128" height="128" loading="lazy" />
+              <span class="changelog-bang" id="changelogBang" aria-hidden="true" hidden>!</span>
+            </button>
+            <button type="button" class="landing-menu-close" id="landingMenuClose">Done</button>
+          </div>
+          <label class="landing-search">Find a landing<input id="landingSearch" type="search" autocomplete="off" placeholder="Name of landing" /></label>
+          <ul class="landing-list" id="landingList"></ul>
+          <div class="sort-toggle" role="group" aria-label="Sort departures">
+            <button type="button" class="sort-option" id="sortByRoute" data-sort="route" aria-pressed="false">Route</button>
+            <button type="button" class="sort-option" id="sortByTime" data-sort="time" aria-pressed="true">Departure time</button>
+          </div>
+        </nav>
+      </div>
+      <!-- Anchored to the footer rather than the landing drawer: hiding an operator is something you
+           do while looking at the board it changes, and the answer has to be visible behind it. -->
+      <div class="filter-menu" id="filterMenu" hidden>
+        <div class="filter-menu-scrim" id="filterMenuScrim"></div>
+        <div class="filter-menu-panel" id="filterMenuPanel" role="dialog" aria-modal="true" aria-label="Filter operators">
+          <div class="filter-menu-head">
+            <strong>Operators</strong>
+            <button type="button" class="filter-menu-close" id="filterMenuClose">Done</button>
+          </div>
+          <ul class="filter-list" id="filterList"></ul>
+          <button type="button" class="filter-reset" id="filterReset">Show all</button>
+        </div>
+      </div>
+      <!-- Same sheet shape and the same option rows as the operator filter: it is opened from the
+           button beside it and does the same class of thing, so it should not look like a new idea. -->
+      <div class="filter-menu theme-menu" id="themeMenu" hidden>
+        <div class="filter-menu-scrim" id="themeMenuScrim"></div>
+        <div class="filter-menu-panel" role="dialog" aria-modal="true" aria-label="Theme">
+          <div class="filter-menu-head">
+            <strong>Theme</strong>
+            <button type="button" class="filter-menu-close" id="themeMenuClose">Done</button>
+          </div>
+          <ul class="filter-list" id="themeList"></ul>
+        </div>
+      </div>
+      <!-- Same sheet as the filter, the theme picker and the alerts: opened from the thing it
+           belongs to, with the board still visible behind it. -->
+      <div class="filter-menu changelog-menu" id="changelogMenu" hidden>
+        <div class="filter-menu-scrim" id="changelogMenuScrim"></div>
+        <div class="filter-menu-panel" role="dialog" aria-modal="true" aria-label="What's new">
+          <div class="filter-menu-head">
+            <strong>What's new</strong>
+            <button type="button" class="filter-menu-close" id="changelogMenuClose">Done</button>
+          </div>
+          <ul class="filter-list changelog-list" id="changelogList"></ul>
+        </div>
+      </div>
+      <!-- One sailing, end to end, and what leaves from each pier it calls at. Fullscreen rather
+           than a bottom sheet: a trip is up to a dozen stops each carrying two connections, and
+           unlike the filter there is nothing behind it worth keeping in view. It keeps the other
+           sheets' class names on purpose — every theme styles .filter-menu-panel and its head and
+           close button, and none of them names a per-sheet class, so this arrives already dressed
+           for all eight of them. -->
+      <div class="filter-menu trip-menu" id="tripMenu" hidden>
+        <div class="filter-menu-scrim" id="tripMenuScrim"></div>
+        <div class="filter-menu-panel trip-panel" role="dialog" aria-modal="true" aria-labelledby="tripMenuTitle">
+          <div class="filter-menu-head">
+            <strong id="tripMenuTitle">Trip</strong>
+            <button type="button" class="filter-menu-close" id="tripMenuClose">Done</button>
+          </div>
+          <p class="trip-summary" id="tripSummary"></p>
+          <!-- Only shown once a vessel is known for this sailing, which is most of them and never
+               all of them. Relative like the heading's map button, for the same two roots. -->
+          <a class="trip-map-link" id="tripMapLink" href="map" hidden>
+            <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4Z" />
+              <path d="M9 4v13m6-6.5v13" />
+            </svg>
+            <span id="tripMapLabel">See this boat on the map</span>
+          </a>
+          <ol class="filter-list trip-stops" id="tripStops"></ol>
+        </div>
+      </div>
+      <!-- A button, because the bar can only ever show one alert and there are usually several. It
+           stays a live region: the summary still announces itself when the feed changes, and the
+           sheet behind it is where the rest of them live. -->
+      <button type="button" class="service-alert-bar loading" id="serviceAlerts" aria-live="polite" aria-atomic="true" aria-expanded="false" aria-controls="alertMenu" disabled>
+        <svg class="service-alert-icon" width="48" height="48" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path d="M16 3 30 28H2L16 3Z" />
+          <path d="M16 11v8m0 4v1" />
+        </svg>
+        <span class="service-alert-copy">
+          <span class="service-alert-heading">
+            <strong>Service alerts</strong>
+            <small id="serviceAlertFreshness">Realtime GTFS service updates</small>
+          </span>
+          <span class="service-alert-summary" id="serviceAlertSummary">Checking NYC Ferry service…</span>
+        </span>
+        <span class="service-alert-count" id="serviceAlertCount" hidden></span>
+        <svg class="service-alert-chevron" id="serviceAlertChevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false" hidden>
+          <path d="M7 14.5 12 9.5l5 5" />
+        </svg>
+      </button>
+      <!-- The rest of the alerts. Same sheet as the operator filter and the theme picker, for the
+           same reason: it is opened from the thing it belongs to and the board stays visible. -->
+      <div class="filter-menu alert-menu" id="alertMenu" hidden>
+        <div class="filter-menu-scrim" id="alertMenuScrim"></div>
+        <div class="filter-menu-panel" role="dialog" aria-modal="true" aria-label="Service alerts">
+          <div class="filter-menu-head">
+            <strong>Service alerts</strong>
+            <button type="button" class="filter-menu-close" id="alertMenuClose">Done</button>
+          </div>
+          <ul class="filter-list alert-list" id="alertList"></ul>
+        </div>
+      </div>
+    </main>
+    </section>
+    <section id="mapView" class="app-view map-body" aria-label="Harbor map" hidden inert>
+
+
+    <div class="landing-menu map-route-menu" id="mapRouteMenu" hidden inert>
+      <div class="landing-menu-scrim" id="mapRouteScrim"></div>
+      <section class="landing-menu-panel" role="dialog" aria-modal="true" aria-labelledby="mapRoutesTitle">
+        <div class="landing-menu-head"><strong id="mapRoutesTitle">Routes</strong><button type="button" class="landing-menu-close" id="mapRouteClose">Done</button></div>
+        <p id="mapRouteMessage" role="status">Loading routes…</p>
+        <nav class="route-filter-bar" id="routeFilterBar" aria-label="Route filter"></nav>
+      </section>
+    </div>
 
     <!-- Map canvas keeps its own space beside or above the vessel list. -->
     <div class="map-frame" id="mapFrame">
@@ -74,7 +292,8 @@
       </div>
     </aside>
 
-    <script src="/assets/mobile-runtime.js?v=108"></script>
-    <script src="/assets/map.js?v=108"></script>
+    </section>
+    <script src="/assets/mobile-runtime.js?v=115"></script>
+    <script type="module" src="/assets/app-shell.js?v=115"></script>
   </body>
 </html>

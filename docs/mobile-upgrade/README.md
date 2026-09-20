@@ -1,5 +1,7 @@
 # Mobile console upgrade
 
+Historical implementation notes and screenshots. Current browser checks write to ignored `artifacts/browser/`; see the [current README](../../README.md) for setup and commands.
+
 Map rendering follow-up: [smoother pan and zoom, with a repeatable five-run comparison](map-performance.md).
 
 Earlier follow-up: [the strip under the alert bar on an installed board](installed-viewport-fix.md),

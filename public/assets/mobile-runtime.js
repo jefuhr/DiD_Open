@@ -12,7 +12,6 @@
   // thing at that edge.
   function syncViewport() {
     const root = document.documentElement;
-    if (root.dataset.surface !== "app" && !document.body?.classList.contains("map-body")) return;
     const viewport = globalThis.visualViewport;
     if (viewport && viewport.scale !== 1) return;
     const height = viewport?.height || globalThis.innerHeight;
@@ -184,8 +183,26 @@
   }
   const panels = new Map();
   const modalStack = [];
+  function releasePanels(root) {
+    for (const [menu, state] of panels) {
+      if (!root.contains(menu)) continue;
+      state.animation?.cancel();
+      const index = modalStack.indexOf(menu);
+      if (index >= 0) modalStack.splice(index, 1);
+      panels.delete(menu);
+    }
+    refreshInert();
+  }
   function refreshInert() {
     const active = modalStack.at(-1);
+    const boardHeading = document.querySelector("#boardHeading");
+    if (boardHeading) boardHeading.inert = boardHeading.hidden || Boolean(active);
+    const mapModal = Boolean(active?.classList.contains("map-route-menu"));
+    const appHeader = document.querySelector(".app-header");
+    if (appHeader) appHeader.inert = mapModal;
+    const mapView = document.querySelector("#mapView");
+    if (mapView) for (const child of mapView.children)
+      child.inert = child.hidden || Boolean(active && child !== active && !child.contains(active));
     const screen = document.querySelector("#screen");
     if (!screen) return;
     for (const child of screen.children)
@@ -193,7 +210,7 @@
         active && child !== active && !child.contains(active),
       );
   }
-  function panel(menu, open, modal = true) {
+  function panel(menu, open, modal = true, restoreFocus = true) {
     let state = panels.get(menu);
     if (!state) {
       state = {};
@@ -230,6 +247,7 @@
     };
     if (
       !modal ||
+      menu.parentElement?.closest("[hidden]") ||
       matchMedia("(prefers-reduced-motion: reduce)").matches ||
       !surface.animate
     )
@@ -244,7 +262,7 @@
       state.animation = animation;
       animation.onfinish = finish;
     }
-    if (!open && state.opener?.isConnected)
+    if (!open && restoreFocus && state.opener?.isConnected)
       state.opener.focus({ preventScroll: true });
   }
   document.addEventListener("keydown", (event) => {
@@ -275,6 +293,7 @@
     }
   });
   function contentTransition(node) {
+    if (node.closest?.("[hidden]")) return;
     if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
       node.getAnimations?.().forEach((animation) => animation.cancel());
       node.animate?.([{ opacity: 0.65 }, { opacity: 1 }], { duration: 180 });
@@ -293,7 +312,7 @@
     node.inert = !open;
     if (open) node.hidden = false;
     if (
-      !node.animate ||
+      !node.animate || node.parentElement?.closest("[hidden]") ||
       matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
       node.hidden = !open;
@@ -318,6 +337,7 @@
     html,
     poll,
     panel,
+    releasePanels,
     contentTransition,
     reveal,
   };

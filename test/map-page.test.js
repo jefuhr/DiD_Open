@@ -11,6 +11,7 @@ import { runtimeStub } from "./helpers/runtime-stub.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { clientSource } from "./helpers/client-source.js";
 import vm from "node:vm";
 
 const scriptPath = new URL("../public/assets/map.js", import.meta.url);
@@ -60,6 +61,7 @@ function makeNode(tag) {
     append(...kids) { for (const kid of kids) { kid.parent = this; this.children.push(kid); } },
     addEventListener(type, handler) { this.listeners.set(type, handler); },
     setPointerCapture() {},
+    focus() {},
     // Identity, so a client pixel is a drawing unit and a pan of sixty pixels is a pan of sixty
     // units. The real matrix is the browser's business; what is being tested is the arithmetic.
     getScreenCTM: () => ({ inverse: () => ({}) }),
@@ -94,7 +96,7 @@ function makeNode(tag) {
 }
 
 async function page({ boats = [BOAT], available = true, stale = false, query = "", harbor = HARBOR } = {}) {
-  const [source, markup] = await Promise.all([readFile(scriptPath, "utf8"), readFile(pagePath, "utf8")]);
+  const [source, markup] = await Promise.all([clientSource(scriptPath), readFile(pagePath, "utf8")]);
   const ids = [...markup.matchAll(/id="([^"]+)"/g)].map((match) => match[1]);
   const registry = new Map();
   const byId = (id) => {
@@ -111,6 +113,7 @@ async function page({ boats = [BOAT], available = true, stale = false, query = "
     // How the board hands a boat over: /map?boat=Tooth%20Ferry.
     location: { search: query, assign: (url) => navigated.push(url) },
     document: {
+      querySelector: (selector) => (ids.includes(selector.slice(1)) ? byId(selector.slice(1)) : null),
       getElementById: (id) => (ids.includes(id) ? byId(id) : null),
       createElement: (tag) => makeNode(tag),
       createElementNS: (_namespace, tag) => makeNode(tag)

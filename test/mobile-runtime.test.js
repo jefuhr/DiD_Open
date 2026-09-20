@@ -2,17 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
+import { clientSource } from "./helpers/client-source.js";
 import { JSDOM } from "jsdom";
 
 const runtime = await readFile(
   new URL("../public/assets/mobile-runtime.js", import.meta.url),
   "utf8",
 );
-const app = await readFile(
+const app = await clientSource(
   new URL("../public/app.js", import.meta.url),
   "utf8",
 );
-const mapScript = await readFile(
+const mapScript = await clientSource(
   new URL("../public/assets/map.js", import.meta.url),
   "utf8",
 );
@@ -93,7 +94,7 @@ const deferred = () => {
 
 async function page(
   t,
-  { map = false, stored = {}, handler, brokenStorage = false, query = "" } = {},
+  { map = false, stored = {}, handler, brokenStorage = false, query = "", controller = false } = {},
 ) {
   const markup = await readFile(
     new URL(
@@ -117,7 +118,7 @@ async function page(
     nextTimer = 0;
   Object.defineProperty(w.document, "hidden", { get: () => hidden });
   w.document.documentElement.dataset.surface = "app";
-  w.matchMedia = () => ({ matches: false, addEventListener() {} });
+  w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
   w.CSS = { escape: (value) => String(value) };
   w.requestAnimationFrame = (callback) => {
     frames.push(callback);
@@ -176,8 +177,16 @@ async function page(
     width: 390,
     height: 500,
   });
+  w.document.querySelector(map ? "#mapView" : "#boardView").hidden = false;
+  w.document.querySelector(map ? "#mapView" : "#boardView").inert = false;
+  w.document.querySelector(map ? "#mapHeading" : "#boardHeading").hidden = false;
+  w.document.querySelector(map ? "#mapHeading" : "#boardHeading").inert = false;
   vm.runInContext(runtime, context);
-  vm.runInContext(map ? mapScript : app, context);
+  if (controller) {
+    const source = (await clientSource(new URL(map ? "../public/assets/map.js" : "../public/app.js", import.meta.url), false)).replace(/^export /gm, "");
+    vm.runInContext(source, context);
+    vm.runInContext(`globalThis.viewController = mount${map ? "Map" : "Board"}(document.querySelector("#${map ? "map" : "board"}View")); viewController.activate(new URL(location.href));`, context);
+  } else vm.runInContext(map ? mapScript : app, context);
   const flush = async () => {
     for (let n = 0; n < 12; n++) {
       await new Promise((resolve) => setImmediate(resolve));
@@ -199,6 +208,50 @@ async function page(
     },
   };
 }
+
+for (const map of [false, true]) test(`${map ? "map" : "board"} controller pauses polling, retains DOM, closes dialogs and disposes`, async t => {
+  const p = await page(t, { map, controller: true });
+  const root = p.node(map ? "#mapView" : "#boardView");
+  const header = p.node(map ? "#mapHeading" : "#boardHeading");
+  const content = p.node(map ? "#chart" : "#departures");
+  const retained = content.firstChild;
+  assert.ok(retained);
+  const count = p.intervals.size;
+  assert.equal(count, map ? 1 : 3);
+  if (!map) p.node("#filterButton").click();
+  if (!map) assert.equal(header.inert, true, "modal also disables controls in the shared header");
+  p.run("viewController.deactivate()");
+  assert.equal(p.intervals.size, 0);
+  assert.equal(root.hidden, true);
+  assert.equal(root.inert, true);
+  assert.equal(header.hidden, true);
+  assert.equal(header.inert, true);
+  if (!map) {
+    assert.equal(p.node("#filterMenu").hidden, true);
+    assert.equal(p.node(".content").inert, false);
+  }
+  const requests = p.requests.length;
+  p.hide(true); p.hide(false);
+  await p.flush();
+  assert.equal(p.requests.length, requests, "document visibility must not restart an inactive view");
+  for (let i = 0; i < 4; i++) {
+    p.run("viewController.activate(new URL(location.href))");
+    assert.equal(p.intervals.size, count);
+    assert.equal(root.hidden, false);
+    assert.equal(root.inert, false);
+    assert.equal(header.hidden, false);
+    assert.equal(header.inert, false);
+    assert.equal(content.firstChild, retained);
+    p.run("viewController.deactivate()");
+    assert.equal(p.intervals.size, 0);
+  }
+  await p.flush();
+  p.run("viewController.dispose()");
+  p.hide(true); p.hide(false);
+  assert.equal(root.children.length, 0);
+  assert.equal(header.children.length, 0);
+  assert.equal(p.intervals.size, 0);
+});
 
 test("board reconciliation preserves row identity, focused sailing, scroll and unchanged descendants in both sorts", async (t) => {
   const p = await page(t);
@@ -247,29 +300,16 @@ test("corrupt saved JSON falls back to the network without aborting startup", as
   assert.ok(p.node(".timeline-row"));
 });
 
-test("obsolete schedules and notices never overwrite a newer landing", async (t) => {
-  const slow = deferred(),
-    oldNotice = deferred();
-  let deferNotice = false;
-  const p = await page(t, {
-    handler: (url) =>
-      url === "/api/display-data?landingId=2"
-        ? slow.promise
-        : deferNotice && url === "/api/override?landingId=1"
-          ? oldNotice.promise
-          : undefined,
-  });
-  deferNotice = true;
-  p.run("loadManualOverride()");
+test("obsolete schedules never overwrite a newer landing", async (t) => {
+  const slow = deferred();
+  const p = await page(t, { handler: (url) => url === "/api/display-data?landingId=2" ? slow.promise : undefined });
   p.run("selectLanding(2)");
   await p.flush();
   p.run("selectLanding(3)");
   await p.flush();
   slow.resolve(schedule(2));
-  oldNotice.resolve({ active: true, message: "Obsolete closure" });
   await p.flush();
   assert.equal(p.node("#landingName").textContent, "Landing 3");
-  assert.equal(p.node("#manualOverride").hidden, true);
 });
 
 test("same-landing refresh preserves browsed date and open trip", async (t) => {
@@ -503,25 +543,7 @@ test("a marine detail card remains selected across vessel updates", async (t) =>
   assert.equal(p.node("#vesselCard").hidden, true);
 });
 
-test("unchanged service notices do not repeatedly announce their text", async (t) => {
-  const p = await page(t);
-  p.run(
-    'manualOverride = { active: true, message: "Use the alternate pier", updatedAt: "2026-09-04T13:00:00Z" }; renderManualOverride()',
-  );
-  const records = [];
-  const observer = new p.w.MutationObserver((changes) =>
-    records.push(...changes),
-  );
-  observer.observe(p.node("#manualOverride"), {
-    childList: true,
-    subtree: true,
-    characterData: true,
-  });
-  p.run("renderManualOverride()");
-  await p.flush();
-  observer.disconnect();
-  assert.equal(records.length, 0);
-});
+
 
 test('the app follows visible viewport changes and leaves pinch zoom alone', async t => {
   const p = await page(t);
@@ -583,13 +605,12 @@ test('the installed board and map are sized by what is painted, not by the windo
   }
 });
 
-test('the kiosk board keeps the fixed screen it was drawn for', async t => {
+test('the root board follows the visible viewport', async t => {
   const p = await page(t);
   const root = p.w.document.documentElement;
-  root.dataset.surface = 'kiosk';
   root.style.removeProperty('--app-viewport-height');
   p.w.dispatchEvent(new p.w.Event('resize'));
-  assert.equal(root.style.getPropertyValue('--app-viewport-height'), '');
+  assert.equal(root.style.getPropertyValue('--app-viewport-height'), `${p.w.innerHeight}px`);
 });
 
 test('a departure boat link starts with the vessel sheet collapsed', async t => {

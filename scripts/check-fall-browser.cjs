@@ -2,11 +2,12 @@
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
+const { ARTIFACTS } = require('./mobile-check-harness.cjs');
 const origin = process.env.FALL_TEST_ORIGIN || 'http://127.0.0.1:8090';
 (async () => {
   const browser = await chromium.launch({headless:true});
   const results = [];
-  await fs.mkdir('docs/schedule-comparison',{recursive:true});
+  await fs.mkdir(ARTIFACTS,{recursive:true});
   try {
     for (const scenario of [
       {name:'fall-desktop',date:'2026-09-14T12:00:00Z',landing:16,width:1440,height:1000},
@@ -27,11 +28,12 @@ const origin = process.env.FALL_TEST_ORIGIN || 'http://127.0.0.1:8090';
       await page.route('**/api/alerts*',route=>route.fulfill({json:{available:true,alerts:[]}}));
       await page.goto(`${origin}/?landing=${scenario.landing}`);
       await page.waitForFunction(() => /September/.test(document.querySelector('#dateCurrent').getAttribute('aria-label') || ''));
-      if (scenario.landing !== 27) await page.waitForSelector('#departures [data-trip-id]');
+      await page.waitForSelector('#departures .timeline-row, #departures .departure-slot');
       const state=await page.evaluate(() => ({
         note:document.querySelector('#boardNote').textContent,
         overflow:document.documentElement.scrollWidth > innerWidth,
         rows:document.querySelectorAll('#departures [data-trip-id]').length,
+        departureRows:document.querySelectorAll('#departures .timeline-row, #departures .departure-slot').length,
         hasFinal:!!document.querySelector('.drop-off-badge'),
         text:document.querySelector('#departures').textContent
       }));
@@ -39,7 +41,10 @@ const origin = process.env.FALL_TEST_ORIGIN || 'http://127.0.0.1:8090';
       if (scenario.unconfirmed || scenario.name==='sukkot-mobile') {
         assert.equal(state.hasFinal,false,scenario.name);
         assert.match(state.note,/Crew shifts \/ Pier C shuttles: UNCONFIRMED/);
-      } else if (scenario.weekend) assert.match(state.note,/Weekend crew schedule loaded/);
+      } else if (scenario.weekend) {
+        assert.ok(state.departureRows > 0, 'confirmed weekend crew departures are present');
+        assert.doesNotMatch(state.note,/UNCONFIRMED|Weekend crew schedule loaded/);
+      }
       else assert.doesNotMatch(state.note,/Weekday crew schedule loaded|AS3 AM|unconfirmed/i);
       if (scenario.unconfirmed) {
         assert.equal(state.rows,0);
@@ -63,12 +68,12 @@ const origin = process.env.FALL_TEST_ORIGIN || 'http://127.0.0.1:8090';
         await page.waitForFunction(() => document.querySelector('#tripMenu').hidden);
       }
       await page.evaluate(() => document.fonts.ready);
-      await page.screenshot({path:`docs/schedule-comparison/${scenario.name}.png`,fullPage:true});
+      await page.screenshot({path:`${ARTIFACTS}/${scenario.name}.png`,fullPage:true});
       assert.deepEqual(errors,[],scenario.name);
       results.push({scenario:scenario.name,note:state.note,rows:state.rows,overflow:state.overflow});
       await context.close();
     }
-    await fs.writeFile('docs/schedule-comparison/browser-checks.json',JSON.stringify(results,null,2)+'\n');
+    await fs.writeFile(`${ARTIFACTS}/fall-browser-checks.json`,JSON.stringify(results,null,2)+'\n');
     console.log(JSON.stringify(results,null,2));
   } finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exitCode=1;});

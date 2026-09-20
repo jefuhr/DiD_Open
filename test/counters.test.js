@@ -64,13 +64,13 @@ test("polling a landing does not count as viewing it", () => {
 
   counters.record({ route: "/api/display-data", landingId: 18, status: 200 });
   for (let poll = 0; poll < 240; poll += 1) counters.record({ route: "/api/realtime", status: 200 });
-  for (let poll = 0; poll < 720; poll += 1) counters.record({ route: "/api/override", status: 200 });
+  for (let poll = 0; poll < 720; poll += 1) counters.record({ route: "/api/alerts", status: 200 });
   counters.flush();
 
   const { counts } = store.last();
   assert.deepEqual(counts.landing, { 18: 1 });
   assert.equal(counts.route["/api/realtime"], 240);
-  assert.equal(counts.route["/api/override"], 720);
+  assert.equal(counts.route["/api/alerts"], 720);
 });
 
 test("response times land in histogram buckets, keyed by route", () => {

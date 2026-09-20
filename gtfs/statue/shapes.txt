@@ -1,4 +1,4 @@
-﻿shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled
+shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled
 NY,40.701617,-74.016198,1,0
 NY,40.700125,-74.018756,2,0.272
 NY,40.699661,-74.019915,3,0.383
