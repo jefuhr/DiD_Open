@@ -1067,8 +1067,10 @@ test("the tile layer is Web Mercator, and is only rebuilt when it has to be", as
   const script = await readFile(new URL("../public/assets/map.js", import.meta.url), "utf8");
 
   // Mercator, not the equirectangular approximation that came before it: the tiles are cut to it.
-  assert.match(script, /function worldY\(latitude\)/);
-  assert.match(script, /Math\.log\(\(1 \+ sine\) \/ \(1 - sine\)\)/);
+  const projection = await readFile(new URL("../public/assets/map-projection.js", import.meta.url), "utf8");
+  assert.match(script, /import \{ worldX, worldY \} from "\.\/map-projection\.js"/);
+  assert.match(projection, /function worldY\(latitude\)/);
+  assert.match(projection, /Math\.log\(\(1 \+ sine\) \/ \(1 - sine\)\)/);
   // A tile's box is the same arithmetic as any other point, which is what keeps them in register.
   assert.match(script, /tile\(x, y, span\)/);
 

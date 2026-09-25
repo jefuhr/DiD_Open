@@ -28,7 +28,8 @@
     "benchmark:map": "node scripts/benchmark-map.cjs",
     "test:map-rendering": "node scripts/check-map-rendering.cjs",
     "build:nyc-fall": "python3 scripts/build-nyc-fall-2026.py",
-    "check:nyc-fall": "python3 scripts/check-nyc-fall-2026.py"
+    "check:nyc-fall": "python3 scripts/check-nyc-fall-2026.py",
+    "test:riding-mode": "node scripts/check-riding-mode.cjs"
   },
   "dependencies": {
     "gtfs-realtime-bindings": "2.1.0"

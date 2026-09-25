@@ -1,0 +1,83 @@
+/* Riding is a shell view. Its minimized control reserves viewport space for both other views. */
+:root { --ride-bar-height: 0px; }
+:root.ride-minimized { --ride-bar-height: calc(68px + env(safe-area-inset-bottom)); }
+:root.ride-minimized :is(.app-view, #mapView, #boardView .landing-menu, #boardView .filter-menu, #mapView .map-route-menu) {
+  height: calc(var(--app-viewport-height, 100dvh) - var(--app-header-height) - var(--ride-bar-height));
+}
+:root :is(.ride-view, .ride-picker, .ride-bar, .ride-action) { font-family: var(--ui-font); color: var(--ink); }
+:root .ride-view { overflow: auto; background: var(--canvas); }
+:root .ride-content { max-width: 1180px; margin: 0 auto; padding: 16px max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+:root :is(.ride-content, .ride-picker) * { box-sizing: border-box; }
+:root :is(.ride-content, .ride-picker) :is(button, input), :root .ride-action {
+  min-height: 44px; min-width: 44px; padding: 10px 14px; border: 1px solid var(--control-border); border-radius: var(--control-radius);
+  font: 700 .875rem/1.4 var(--ui-font); color: var(--ink); background: var(--card); cursor: pointer;
+}
+:root :is(.ride-content, .ride-picker) button:hover, :root .ride-action:hover { background: var(--sunken); }
+:root :is(.ride-content, .ride-picker, .ride-bar, .ride-action) :focus-visible, :root :is(.ride-bar, .ride-action):focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
+:root .ride-action { display: block; width: 100%; margin: 8px 0; color: var(--canvas); background: var(--navy); }
+:root .ride-action[hidden] { display: none; }
+:root .ride-action:hover { color: var(--ink); }
+:root .trip-panel > .ride-action { width: calc(100% - 32px); margin: 8px 16px 16px; }
+:root .ride-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+:root .ride-toolbar p { margin: 0; font-size: .875rem; }
+:root .ride-toolbar > div { display: flex; gap: 8px; }
+:root .ride-layout { display: grid; gap: 24px; align-items: start; }
+:root .ride-now { background: var(--card); border: 1px solid var(--line); border-radius: var(--panel-radius); padding: 20px; min-width: 0; }
+:root .ride-eyebrow { font-size: .8rem; line-height: 1.5; margin: 0 0 8px; color: var(--muted); }
+:root #rideRoute { color: var(--ink); margin-bottom: 24px; font-weight: 700; }
+:root #rideNext { color: var(--navy); font: 700 clamp(1.7rem, 4vw, 2.4rem)/1.12 var(--heading-font); margin: 0 0 12px; overflow-wrap: anywhere; }
+:root .ride-arrival { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; line-height: 1.5; }
+:root #rideCountdown { border-radius: 8px; background: var(--sunken); padding: 4px 8px; font-size: .875rem; }
+:root #rideCountdown:empty { display: none; }
+:root .ride-metrics { display: flex; align-items: end; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line); padding-top: 18px; margin-top: 22px; }
+:root .ride-metrics div { display: flex; flex-direction: column; gap: 6px; }
+:root .ride-metrics span, :root #rideReported { font-size: .75rem; color: var(--muted); }
+:root .ride-metrics strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+:root #rideReported { text-align: right; max-width: 150px; line-height: 1.5; }
+:root .ride-map-wrap { margin-top: 20px; }
+:root #rideMiniMap { display: block; width: 100%; height: 180px; background: var(--sunken); border: 1px solid var(--line); border-radius: var(--control-radius); }
+:root #rideMiniMap[hidden] { display: none; }
+:root #rideMiniMap .ride-land { fill: var(--card); stroke: var(--line); stroke-width: .5; }
+:root #rideMiniMap text { fill: var(--ink); font: 10px var(--ui-font); paint-order: stroke; stroke: var(--card); stroke-width: 3px; stroke-linejoin: round; }
+:root #rideMiniMap .ride-dock { fill: var(--ink); }
+:root #rideMiniMap .ride-boat-halo { fill: var(--navy); opacity: .18; }
+:root #rideMiniMap .ride-boat-dot { fill: var(--navy); stroke: var(--card); stroke-width: 2; }
+:root .ride-map-wrap button { margin-top: 10px; width: 100%; }
+:root .ride-map-wrap small { display: block; font-size: .625rem; margin-top: 6px; color: var(--muted); }
+:root .ride-day { min-width: 0; }
+:root .ride-day h2 { font: 700 1.15rem/1.4 var(--ui-font); margin: 0 0 8px; }
+:root #rideHistoryNote, :root .ride-empty { color: var(--muted); font-size: .85rem; line-height: 1.5; }
+:root .ride-trip { border: 1px solid var(--line); background: var(--card); border-radius: var(--panel-radius); margin-top: 12px; overflow: hidden; }
+:root .ride-trip-current { border: 2px solid var(--navy); }
+:root .ride-trip summary { padding: 16px; min-height: 56px; cursor: pointer; line-height: 1.4; }
+:root .ride-trip-name { font-weight: 700; overflow-wrap: anywhere; }
+:root .ride-trip-meta { display: block; color: var(--muted); font-size: .8rem; margin: 6px 0 0 18px; text-transform: capitalize; }
+:root .ride-stops { margin: 0 16px 16px 36px; padding: 0; }
+:root .ride-stops li { padding: 10px 0; border-top: 1px solid var(--line); }
+:root .ride-stops a { color: var(--navy); font-weight: 700; display: inline-flex; align-items: center; min-height: 44px; }
+:root .ride-stop-times { display: block; font-size: .8rem; color: var(--muted); line-height: 1.6; font-variant-numeric: tabular-nums; }
+:root .ride-stops .is-current { font-weight: 700; }
+:root .ride-stops .is-current::marker { color: var(--navy); }
+:root .ride-stops .is-past { color: var(--muted); }
+:root .ride-bar {
+  position: fixed; left: 0; right: 0; top: calc(var(--app-viewport-top, 0px) + var(--app-viewport-height, 100dvh) - var(--ride-bar-height)); height: var(--ride-bar-height);
+  z-index: 90; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px max(20px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background: var(--navy); color: var(--canvas); border: 0; text-align: left; cursor: pointer;
+}
+:root .ride-bar[hidden] { display: none; }
+:root .ride-bar strong, :root .ride-bar span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+:root .ride-bar strong { font-size: .95rem; }
+:root .ride-bar span { font-size: .8rem; grid-column: 1; }
+:root .ride-bar b { grid-column: 2; grid-row: 1 / 3; align-self: center; font-size: 1.5rem; }
+:root .ride-picker { width: min(520px, calc(100% - 24px)); max-height: calc(var(--app-viewport-height, 100dvh) - 40px); padding: 20px; border: 1px solid var(--line); border-radius: var(--panel-radius); background: var(--canvas); overflow: auto; }
+:root .ride-picker::backdrop { background: #0008; }
+:root .ride-picker-head { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+:root .ride-picker h2 { font-size: 1.2rem; line-height: 1.4; margin: 0; }
+:root .ride-picker p { font-size: .875rem; line-height: 1.5; }
+:root .ride-picker label { display: block; font-size: .8rem; margin-bottom: 6px; }
+:root #rideSearch { width: 100%; margin-bottom: 12px; }
+:root .ride-choices { display: grid; gap: 8px; }
+:root .ride-choices button { text-align: left; padding: 12px; }
+:root .ride-choices span { display: block; font-size: .75rem; font-weight: 400; margin-top: 5px; color: var(--muted); }
+@media (min-width: 821px) { :root .ride-layout { grid-template-columns: minmax(280px, .85fr) minmax(0, 1.15fr); } :root .ride-now { position: sticky; top: 16px; } }
+@media (prefers-reduced-motion: reduce) { :root .ride-view * { scroll-behavior: auto; } }

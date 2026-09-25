@@ -4,7 +4,7 @@ import { bindSheet, setSheetOpen } from "./assets/panels.js";
 import { zonedParts, addDays, scheduleRange as scheduleBounds, viewFrame as scheduleFrame, routeDirectionGroups as scheduleGroups, timelineDepartures as scheduleTimeline, confirmedCrewCoverage as scheduleCrewCoverage } from "./assets/schedule.js";
 import { createViewLifecycle } from "./assets/view-lifecycle.js";
 
-export function mountBoard(root, { header = document.querySelector("#boardHeading"), setTheme } = {}) {
+export function mountBoard(root, { header = document.querySelector("#boardHeading"), setTheme, onRide = () => {} } = {}) {
 const findViewElement = selector => root.querySelector(selector) || header?.querySelector(selector);
 const lifecycle = createViewLifecycle();
 const { poll } = lifecycle;
@@ -36,6 +36,7 @@ const elements = {
   tripMapLink: findViewElement("#tripMapLink"),
   tripMapLabel: findViewElement("#tripMapLabel"),
   tripStops: findViewElement("#tripStops"),
+  tripRide: findViewElement("#tripRide"),
   alertList: findViewElement("#alertList"),
   changelogButton: findViewElement("#changelogButton"),
   changelogBang: findViewElement("#changelogBang"),
@@ -1134,13 +1135,13 @@ function vesselForTrip(tripId) {
   const departure = (data?.departures || []).find((item) => String(item.tripId) === String(tripId));
   if (departure?.scheduleOnly) return null;
   const working = vehicles.find((item) => String(item.tripId) === String(departure?.liveTripId || tripId) && item.boatName);
-  if (working) return { name: working.boatName, predicted: false };
+  if (working) return { name: working.boatName, number: working.vesselNumber, vesselId: working.vesselId, predicted: false };
   if (!Number.isInteger(departure?.boatAssignment)) return null;
   const boat = `${departure.routeId}${departure.boatAssignment}`;
   const onTheBoat = vehicles
     .filter((item) => item.boat === boat && item.boatName)
     .sort((left, right) => (right.updatedAtEpochSeconds || 0) - (left.updatedAtEpochSeconds || 0))[0];
-  return onTheBoat ? { name: onTheBoat.boatName, predicted: true } : null;
+  return onTheBoat ? { name: onTheBoat.boatName, number: onTheBoat.vesselNumber, vesselId: onTheBoat.vesselId, predicted: true } : null;
 }
 
 // The link out to the map, when there is a boat to point it at.
@@ -1151,6 +1152,8 @@ function vesselForTrip(tripId) {
 // map button is a tap away for anyone who wants the whole harbor.
 function renderTripMapLink() {
   const vessel = tripView && viewFrame(new Date()).live ? vesselForTrip(tripView.tripId) : null;
+  const departure = data?.departures?.find(item => String(item.tripId) === String(tripView?.tripId));
+  if (elements.tripRide) elements.tripRide.hidden = !tripView || !viewFrame(new Date()).live || operatorOf(departure?.routeId) !== agencyName() || departure?.mode === "bus";
   elements.tripMapLink.hidden = !vessel;
   if (!vessel) return;
   elements.tripMapLink.href = `map?boat=${encodeURIComponent(vessel.name)}`;
@@ -1159,6 +1162,15 @@ function renderTripMapLink() {
     ? `See ${vessel.name} on the map — currently on this working, boats change at short notice`
     : `See ${vessel.name} on the map`);
 }
+
+elements.tripRide?.addEventListener("click", () => {
+  if (!tripView) return;
+  const vessel = vesselForTrip(tripView.tripId);
+  const departure = data?.departures?.find(item => String(item.tripId) === String(tripView.tripId));
+  const intent = { ...vessel, confirmed: Boolean(vessel && !vessel.predicted && !realtime.stale && !realtime.cached), routeId: departure?.routeId };
+  setTripOpen(false);
+  void onRide(intent);
+});
 
 function renderTripView() {
   if (!tripView) return;

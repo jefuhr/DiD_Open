@@ -1,9 +1,10 @@
+import { createRideController } from "./ride-controller.js";
 import { themeKey, THEMES } from "./preferences.js";
 
 const prefix = "/ferryTimesMobile";
 const base = location.pathname === prefix || location.pathname.startsWith(prefix + "/") ? prefix + "/" : "/";
-const roots = { board: document.querySelector("#boardView"), map: document.querySelector("#mapView") };
-const headings = { board: document.querySelector("#boardHeading"), map: document.querySelector("#mapHeading") };
+const roots = { board: document.querySelector("#boardView"), map: document.querySelector("#mapView"), ride: document.querySelector("#rideView") };
+const headings = { board: document.querySelector("#boardHeading"), map: document.querySelector("#mapHeading"), ride: document.querySelector("#rideHeading") };
 const appHeader = document.querySelector(".app-header");
 const measureHeader = () => document.documentElement.style.setProperty("--app-header-height", appHeader.getBoundingClientRect().height + "px");
 new ResizeObserver(measureHeader).observe(appHeader);
@@ -15,10 +16,11 @@ let current = null;
 let navigation = 0;
 let geometryPromise = null;
 const status = document.querySelector("#navigationStatus");
+const ride = createRideController({ navigate, base });
 
 function moduleFor(view) {
   if (!modules[view]) {
-    modules[view] = (view === "board" ? import("../app.js?v=115") : import("./map.js?v=115"))
+    modules[view] = (view === "board" ? import("../app.js?v=116") : view === "ride" ? import("./ride.js?v=116") : import("./map.js?v=116"))
       .catch(error => { delete modules[view]; throw error; });
   }
   return modules[view];
@@ -50,6 +52,7 @@ function viewFor(url) {
   const local = path.startsWith(prefix + "/") ? path.slice(prefix.length) : path === prefix ? "/" : path;
   if (["/", "/index.html"].includes(local)) return "board";
   if (["/map", "/map.html"].includes(local)) return "map";
+  if (local === "/ride") return "ride";
   return null;
 }
 function mount(view) {
@@ -59,8 +62,10 @@ function mount(view) {
       // Geometry needs a real viewport on first draw, but mounting never waits for its feed.
       roots[view].hidden = false;
       const controller = view === "board"
-        ? module.mountBoard(roots[view], { header: headings[view], setTheme })
-        : module.mountMap(roots[view], { header: headings[view], navigate, getGeometry: geometry, boardURL: base });
+        ? module.mountBoard(roots[view], { header: headings[view], setTheme, onRide: ride.choose })
+        : view === "ride"
+        ? module.mountRide(roots[view], { header: headings[view], ride, navigate, getGeometry: geometry, base })
+        : module.mountMap(roots[view], { header: headings[view], navigate, getGeometry: geometry, boardURL: base, onRide: ride.choose });
       controllers.set(view, controller);
       roots[view].hidden = true;
       return controller;
@@ -78,17 +83,19 @@ function show(view, controller, url, focus) {
   current = view;
   status.textContent = "";
   controller.activate(url);
+  ride.viewChanged(view, url);
   measureHeader();
   for (const link of links) {
     if (link.dataset.view === view) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   }
-  if (focus) links.find(link => link.dataset.view === view).focus({ preventScroll: true });
+  if (focus) (links.find(link => link.dataset.view === view) || document.querySelector("#rideMinimize")).focus({ preventScroll: true });
   document.documentElement.dataset.view = view;
 }
 async function navigate(destination, { historyMode = "push", focus = true } = {}) {
-  const url = new URL(destination, location.href);
-  const view = viewFor(url);
+  let url = new URL(destination, location.href);
+  let view = viewFor(url);
+  if (view === "ride" && !ride.session) { url = new URL(base, location.origin); view = "board"; historyMode = "replace"; }
   if (!view) { location.assign(url.href); return; }
   const generation = ++navigation;
   try {
@@ -100,6 +107,7 @@ async function navigate(destination, { historyMode = "push", focus = true } = {}
     }
     if (generation !== navigation) return;
     if (historyMode === "push" && url.href !== location.href) history.pushState(null, "", url);
+    if (historyMode === "replace") history.replaceState(null, "", url);
     show(view, controller, url, focus);
     void controller.ready.then(preload);
   } catch {
@@ -128,7 +136,7 @@ function preload() {
   if ("requestIdleCallback" in window) window.requestIdleCallback(work, { timeout: 3000 });
   else window.setTimeout(work, 1000);
 }
-void navigate(location.href, { historyMode: "none", focus: false });
+void navigate(ride.session ? base + "ride" : location.href, { historyMode: ride.session ? "replace" : "none", focus: false });
 
 if ("serviceWorker" in navigator) {
   let reloadingForUpdate = false;
@@ -141,7 +149,7 @@ if ("serviceWorker" in navigator) {
   // mounted — but the document it has to precache is wherever this page is, which is the root on a
   // local deployment and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
-  navigator.serviceWorker.register(`/sw.js?v=115&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=116&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

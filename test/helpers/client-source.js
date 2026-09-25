@@ -18,7 +18,7 @@ export async function clientSource(url, unwrap = true) {
   // mount the real controllers; here unwrap just the controller boundary, not its implementation.
   if (unwrap && /export function mount(?:Board|Map)\(/.test(source)) {
     source = source.replace(/^export function mount(?:Board|Map)\(.*\) \{\n/m,
-      'const root = document; const header = null; const setTheme = null; const boardURL = "./"; const navigate = url => location.assign(url); const getGeometry = () => MobileRuntime.request("/api/map");\n');
+      'const root = document; const header = null; const setTheme = null; const onRide = () => {}; const boardURL = "./"; const navigate = url => location.assign(url); const getGeometry = () => MobileRuntime.request("/api/map");\n');
     source = source.slice(0, source.lastIndexOf("\nreturn {"));
     source = source.replace("const lifecycle = createViewLifecycle();", "const lifecycle = createViewLifecycle(); lifecycle.activate();");
     source = source.replaceAll("root.classList", "document.body.classList");

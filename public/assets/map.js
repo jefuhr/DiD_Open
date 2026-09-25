@@ -1,6 +1,7 @@
+import { worldX, worldY } from "./map-projection.js";
 import { createViewLifecycle } from "./view-lifecycle.js";
 
-export function mountMap(root, { header = document.querySelector("#mapHeading"), navigate = url => location.assign(url), getGeometry = () => MobileRuntime.request("/api/map"), boardURL = "./" } = {}) {
+export function mountMap(root, { header = document.querySelector("#mapHeading"), navigate = url => location.assign(url), getGeometry = () => MobileRuntime.request("/api/map"), boardURL = "./", onRide = () => {} } = {}) {
 const query = selector => root.querySelector(selector) || header?.querySelector(selector);
 const lifecycle = createViewLifecycle();
 const { poll } = lifecycle;
@@ -77,6 +78,7 @@ let harbor = null;
 let geometryFresh = false;
 let boats = [];
 let selectedId = null;
+let rideFeedFresh = false;
 let activeRouteFilter = null;
 let searchQuery = "";
 let projection = null;
@@ -180,14 +182,6 @@ function svgNode(tag, attributes = {}) {
 }
 
 // ---------------------------------------------------------------- the drawing
-
-function worldX(longitude) {
-  return (longitude + 180) / 360;
-}
-function worldY(latitude) {
-  const sine = Math.sin(latitude * RADIANS);
-  return 0.5 - Math.log((1 + sine) / (1 - sine)) / (4 * Math.PI);
-}
 
 function makeProjection(bounds) {
   const left = worldX(bounds.minLongitude);
@@ -618,6 +612,8 @@ function renderRouteFilters() {
 
 function setRouteFilter(routeId) {
   activeRouteFilter = routeId;
+  const rideAction = query("#routeRide");
+  if (rideAction) rideAction.hidden = !routeId;
   const route = harbor.routes.find((item) => item.id === routeId);
   query("#mapScope").textContent = route?.name || "The whole harbor";
   query("#mapScopeDetail").textContent = route ? `${route.shortName} · Selected vessels highlighted` : "Landings & vessel positions";
@@ -1184,8 +1180,18 @@ function updateVesselCard() {
     .sort((a, b) => a.distance - b.distance)[0]?.dock;
   actionBtn.href = landing ? `${boardURL}?landing=${landing.id}` : boardURL;
 
-  reconcile(vesselCard, [closeBtn, titleRow, status, metaRow, actionBtn]);
+  const rideButton = element("button", "card-action-btn ride-action", "Riding this boat?");
+  rideButton.type = "button";
+  rideButton.dataset.rideBoat = boat.id;
+  reconcile(vesselCard, [closeBtn, titleRow, status, metaRow, rideButton, actionBtn]);
 }
+
+vesselCard?.addEventListener("click", event => {
+  const button = event.target.closest?.("[data-ride-boat]");
+  const boat = button && boats.find(item => item.id === button.dataset.rideBoat);
+  if (boat) void onRide({ vesselId: boat.vesselId, name: boat.name || boat.number, number: boat.number, confirmed: rideFeedFresh && (boat.ageSeconds == null || boat.ageSeconds <= STALE_FIX_SECONDS), routeId: boat.routeId });
+});
+query("#routeRide")?.addEventListener("click", () => { setRouteMenuOpen(false); void onRide({ routeId: activeRouteFilter }); });
 
 function showDockCard(dock) {
   if (!dockCard) return;
@@ -1530,6 +1536,7 @@ function setFeedStatus(label, state) {
 }
 function applyPositions(payload, saved = false) {
   boats = payload.boats || [];
+  rideFeedFresh = !saved && !payload.stale && Boolean(payload.available);
   updateHeadings(boats);
   if (selectedId && !boats.some(boat => boat.id === selectedId)) selectedId = null;
   const following = followWanted();

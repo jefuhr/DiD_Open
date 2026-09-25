@@ -195,6 +195,8 @@
   }
   function refreshInert() {
     const active = modalStack.at(-1);
+    const rideBar = document.querySelector("#rideBar");
+    if (rideBar) rideBar.inert = Boolean(active);
     const boardHeading = document.querySelector("#boardHeading");
     if (boardHeading) boardHeading.inert = boardHeading.hidden || Boolean(active);
     const mapModal = Boolean(active?.classList.contains("map-route-menu"));

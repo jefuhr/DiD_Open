@@ -11,6 +11,7 @@ import { openStatsStore } from "./lib/stats-store.js";
 import { describeBoats, loadHarborMap } from "./lib/fleet-map.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
+import { createRideService, resolveVessel } from "./lib/ride.js";
 import { createServiceAlertService } from "./lib/service-alerts.js";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -48,7 +49,10 @@ const harbor = await loadHarborMap({ root: ROOT, landings: landingData.available
 const harborMapJson = precompressed(`${JSON.stringify(harbor.map)}\n`);
 console.log(`Charted ${harbor.map.routes.length} routes and ${harbor.map.landings.length} docks for the map.`);
 
-const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json") });
+const fleet = JSON.parse(await readFile(path.join(ROOT, "content/vessels.json"), "utf8")).vessels;
+const rideService = await createRideService({ fleet, byLanding: landingData.byLanding, historyPath: path.join(ROOT, "state/vessel-trip-history.json") });
+const vesselIdentity = item => resolveVessel({ id: item.vesselNumber || item.number, label: item.boatName || item.name }, fleet)?.id || null;
+const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json"), onRefresh: rideService.observe });
 const nyuRealtimeService = createNyuRealtimeService({ loadDisplay: async () => landingData.merged, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
 const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROOT, "state/service-alerts.json") });
 // Every stop on the board, indexed by the pier it belongs to, so the trip view can be told what
@@ -73,7 +77,7 @@ const LANDING_NAMES = Object.fromEntries(landingData.available.map((landing) => 
 // hands the prefix on or strips it is the proxy's business and not visible from here, so both
 // arrivals are answered rather than guessed between — and both are counted as the one page they
 // are, since counting them apart would file the proxied spelling in with the served files.
-const PAGES = new Map([["/", "index.html"], ["/index.html", "index.html"], ["/stats", "stats.html"], ["/map", "index.html"], ["/map.html", "index.html"]]);
+const PAGES = new Map([["/", "index.html"], ["/index.html", "index.html"], ["/stats", "stats.html"], ["/map", "index.html"], ["/map.html", "index.html"], ["/ride", "index.html"]]);
 const PROXY_PREFIX = "/ferryTimesMobile";
 function pageFor(pathname) {
   // With or without the trailing slash a browser may add.
@@ -201,6 +205,14 @@ async function handle(request, response) {
   // the "nyu:" trip and stop ids the display was built with, so the client matches both operators
   // through one lookup. Either operator's feed failing leaves the other's usable, and one stale
   // source marks the whole payload stale — which only ever falls back to published times.
+  if (url.pathname === "/api/vessels") return json(response, 200, { vessels: rideService.vessels() });
+  if (url.pathname === "/api/ride") {
+    const id = url.searchParams.get("vesselId");
+    if (!id) return json(response, 400, { error: "A vesselId is required." });
+    const current = await realtimeService.getCurrent();
+    const ride = rideService.describe(id, Date.now(), { stale: current.stale, positionsStale: current.vehiclesStale });
+    return ride ? json(response, 200, ride) : json(response, 404, { error: "Unknown vessel." });
+  }
   if (url.pathname === "/api/realtime") {
     const [ferry, nyu] = await Promise.all([realtimeService.getCurrent(), nyuRealtimeService.getCurrent()]);
     // Upstream is polled once for the whole system, then narrowed per request. A client that names
@@ -218,6 +230,7 @@ async function handle(request, response) {
     const { positions, ...departureData } = ferry;
     const result = {
       ...departureData,
+      vehicles: (departureData.vehicles || []).map(item => ({ ...item, vesselId: vesselIdentity(item) })),
       available: ferry.available || nyu.available,
       stale: Boolean(ferry.stale || nyu.stale),
       updates: stops ? updates.filter((update) => stops.has(String(update.stopId)) || turnaroundKeys?.has(`${update.tripId}|${update.stopId}`)) : updates,
@@ -253,7 +266,7 @@ async function handle(request, response) {
       stale: Boolean(current.stale || current.vehiclesStale),
       fetchedAt: current.fetchedAt,
       error: current.error,
-      boats
+      boats: boats.map(item => ({ ...item, vesselId: vesselIdentity(item) }))
     });
   }
   // What else leaves from the stops one trip calls at. The client cannot answer this from its own

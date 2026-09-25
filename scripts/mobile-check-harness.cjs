@@ -33,7 +33,7 @@ function documentFor(pathname) {
   if (pathname.startsWith("/ferryTimesMobile/") && pathname !== "/ferryTimesMobile/") {
     return documentFor(pathname.slice("/ferryTimesMobile".length));
   }
-  if (pathname === "/map" || pathname === "/map.html") return "/index.html";
+  if (pathname === "/map" || pathname === "/map.html" || pathname === "/ride") return "/index.html";
   if (pathname === "/ferryTimesMobile/" || pathname === "/") return "/index.html";
   return pathname;
 }

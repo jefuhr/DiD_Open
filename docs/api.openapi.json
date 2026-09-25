@@ -270,7 +270,7 @@
             "schema": {
               "type": "integer"
             },
-            "description": "Defaults to 3; integer values clamp to 1–5. Hubs may show more; clients filter returned rows before applying each stop's limit."
+            "description": "Defaults to 3; integer values clamp to 1\u20135. Hubs may show more; clients filter returned rows before applying each stop's limit."
           }
         ],
         "responses": {
@@ -425,6 +425,69 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/vessels": {
+      "get": {
+        "summary": "Known NYC Ferry vessels for the riding picker",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success. Freshness and history completeness are independent of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "vessels"
+                  ],
+                  "properties": {
+                    "vessels": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RideVessel"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ride": {
+      "get": {
+        "summary": "Current vessel details and observed confirmed trip assignments",
+        "parameters": [
+          {
+            "name": "vesselId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success. Freshness and history completeness are independent of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ride"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing vesselId"
+          },
+          "404": {
+            "description": "Unknown vessel"
           }
         }
       }
@@ -661,7 +724,10 @@
             "type": "string"
           },
           "predictTripId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "departureTimeEnd": {
             "type": [
@@ -972,6 +1038,13 @@
               "number",
               "null"
             ]
+          },
+          "vesselId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Stable identity accepted by /api/ride."
           }
         },
         "required": [
@@ -1226,6 +1299,12 @@
           },
           "mode": {
             "type": "string"
+          },
+          "vesselId": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -1653,6 +1732,298 @@
           "now",
           "counters"
         ],
+        "additionalProperties": true
+      },
+      "RideVessel": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable fleet ID or nycf: provider vehicle ID; never a feed entity ID."
+          },
+          "name": {
+            "type": "string"
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": true
+      },
+      "RideStop": {
+        "type": "object",
+        "required": [
+          "stopId",
+          "sequence",
+          "name",
+          "arrivalAt",
+          "departureAt",
+          "skipped",
+          "current",
+          "past"
+        ],
+        "properties": {
+          "stopId": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "landingId": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "arrivalSeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "departureSeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "estimatedArrivalSeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "estimatedDepartureSeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "arrivalAt": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Unix epoch milliseconds. Uses a fresh arrival estimate when present, otherwise the schedule."
+          },
+          "departureAt": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "layoverSeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "skipped": {
+            "type": "boolean"
+          },
+          "current": {
+            "type": "boolean"
+          },
+          "past": {
+            "type": "boolean"
+          },
+          "layoverEstimated": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": true
+      },
+      "RideTrip": {
+        "type": "object",
+        "required": [
+          "tripId",
+          "serviceDate",
+          "state",
+          "stops"
+        ],
+        "properties": {
+          "tripId": {
+            "type": "string"
+          },
+          "serviceDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "routeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "current",
+              "past",
+              "upcoming",
+              "reassigned",
+              "canceled"
+            ]
+          },
+          "confirmedAt": {
+            "type": "number",
+            "description": "Observation timestamp in Unix epoch milliseconds; confirms assignment, not actual arrival."
+          },
+          "outOfService": {
+            "type": "boolean"
+          },
+          "startAt": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "stops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RideStop"
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "RidePosition": {
+        "type": "object",
+        "required": [
+          "vesselId",
+          "reportedAt",
+          "latitude",
+          "longitude",
+          "speedKnots"
+        ],
+        "properties": {
+          "vesselId": {
+            "type": "string"
+          },
+          "tripId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "serviceDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reportedAt": {
+            "type": "number"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "speedKnots": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "sequence": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Ride": {
+        "type": "object",
+        "required": [
+          "vessel",
+          "date",
+          "timezone",
+          "generatedAt",
+          "stale",
+          "positionStale",
+          "trips",
+          "historyNote"
+        ],
+        "properties": {
+          "vessel": {
+            "$ref": "#/components/schemas/RideVessel"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fetchedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "positionStale": {
+            "type": "boolean"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RidePosition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nextStop": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RideStop"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RideTrip"
+            }
+          },
+          "historyNote": {
+            "type": "string"
+          }
+        },
         "additionalProperties": true
       }
     }

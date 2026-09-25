@@ -23,6 +23,12 @@ Startup builds the configured landing's fallback file, then the server builds ev
 
 Choose a landing from the drawer or desktop sidebar. The choice, favorites, operator filters, theme, sort order, and clock format persist on the device. Browse dates within the bundled service calendars, or open a departure for its stops and connections. The map shows reporting NYC Ferry vessels.
 
+Choose **Riding this boat?** from a vessel card, a current-day NYC Ferry trip, or a selected map route to pin a physical vessel. Riding mode opens at `/ride` (also `/ferryTimesMobile/ride`) and returns whenever the app comes back to the foreground. **Minimize** keeps a return bar while browsing; **Exit boat** clears the session. Unknown assignments open a vessel picker. The dashboard shows arrival estimates separately from departure times, speed, a small harbor map, and recorded confirmed trip assignments.
+
+The day view contains confirmations observed during normal app use, so it can have gaps. It does not extrapolate future trips or synthetic crew/home-port movements from a route working. Assignment history is saved atomically in `state/vessel-trip-history.json` for the current and previous service days; there is no background collector. Offline snapshots retain their date and show scheduled times instead of stale estimates. No device location permission is needed.
+
+Run `npm run test:riding-mode` for deterministic Chromium coverage of boarding, picking/switching vessels, minimizing, foreground restoration, reloads, offline use, exit races, both deployment paths, and responsive themes. Screenshots, traces, and results are written to `artifacts/browser/riding-*`. This is browser emulation, not physical iOS/Android certification.
+
 The responsive staff layout is identical at the root and under the existing `/ferryTimesMobile/` deployment prefix. The fixed-screen kiosk mode has been retired.
 
 ## Configuration and data
