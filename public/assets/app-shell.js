@@ -20,7 +20,7 @@ const ride = createRideController({ navigate, base });
 
 function moduleFor(view) {
   if (!modules[view]) {
-    modules[view] = (view === "board" ? import("../app.js?v=116") : view === "ride" ? import("./ride.js?v=116") : import("./map.js?v=116"))
+    modules[view] = (view === "board" ? import("../app.js?v=117") : view === "ride" ? import("./ride.js?v=117") : import("./map.js?v=117"))
       .catch(error => { delete modules[view]; throw error; });
   }
   return modules[view];
@@ -149,7 +149,7 @@ if ("serviceWorker" in navigator) {
   // mounted — but the document it has to precache is wherever this page is, which is the root on a
   // local deployment and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
-  navigator.serviceWorker.register(`/sw.js?v=116&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=117&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

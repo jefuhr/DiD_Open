@@ -31,7 +31,8 @@ test("the schedule API contract describes real passenger and crew payloads", asy
 
 test("every documented API is still implemented and SFTP is retired", async () => {
   const server = await readFile(new URL("../server.js", import.meta.url), "utf8");
-  for (const path of Object.keys(contract.paths)) assert.ok(server.includes(JSON.stringify(path)), path);
+  const notifications = await readFile(new URL("../lib/ride-push.js", import.meta.url), "utf8");
+  for (const path of Object.keys(contract.paths)) assert.ok((server + notifications).includes(JSON.stringify(path)), path);
   assert.equal(contract.paths["/api/override"], undefined);
   assert.doesNotMatch(server, /sftpOverride|api.override/);
 });

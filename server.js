@@ -12,6 +12,7 @@ import { describeBoats, loadHarborMap } from "./lib/fleet-map.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
 import { createRideService, resolveVessel } from "./lib/ride.js";
+import { createRidePush, handleRidePush } from "./lib/ride-push.js";
 import { createServiceAlertService } from "./lib/service-alerts.js";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -53,6 +54,12 @@ const fleet = JSON.parse(await readFile(path.join(ROOT, "content/vessels.json"),
 const rideService = await createRideService({ fleet, byLanding: landingData.byLanding, historyPath: path.join(ROOT, "state/vessel-trip-history.json") });
 const vesselIdentity = item => resolveVessel({ id: item.vesselNumber || item.number, label: item.boatName || item.name }, fleet)?.id || null;
 const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json"), onRefresh: rideService.observe });
+let ridePush = null, notificationFreshness = { stale: true };
+try {
+  ridePush = await createRidePush({ directory: path.join(ROOT, "state"), subject: process.env.WEB_PUSH_SUBJECT || "https://juliet.nyc/ferryTimesMobile/",
+    refresh: async () => { const current = await realtimeService.getCurrent(); notificationFreshness = { stale: current.stale, positionsStale: current.vehiclesStale }; return current.available && !current.stale; },
+    describe: (id, at) => rideService.describe(id, at, notificationFreshness) });
+} catch { console.error("Departure notifications unavailable: check the writable state directory and Web Push configuration."); }
 const nyuRealtimeService = createNyuRealtimeService({ loadDisplay: async () => landingData.merged, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
 const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROOT, "state/service-alerts.json") });
 // Every stop on the board, indexed by the pier it belongs to, so the trip view can be told what
@@ -171,6 +178,7 @@ async function serve(response, file) {
 }
 async function handle(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
+  if (await handleRidePush(request, response, ridePush)) return;
   if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), counters: buildStats() });
   // Public aggregate request statistics.
   if (url.pathname === "/api/stats") return json(response, 200, buildStats());
@@ -329,6 +337,7 @@ const server = http.createServer((request, response) => {
 server.listen(PORT, HOST, () => {
   console.log(`NYC Ferry DiD ready at http://${HOST}:${PORT}`);
   counters.start();
+  ridePush?.start();
 });
-const shutdown = () => server.close(() => void Promise.all([counters.stop()]).finally(() => { statsStore.close(); process.exit(0); }));
+const shutdown = () => server.close(() => void Promise.all([counters.stop(), ridePush?.stop()]).finally(() => { statsStore.close(); process.exit(0); }));
 process.on("SIGINT", shutdown); process.on("SIGTERM", shutdown);

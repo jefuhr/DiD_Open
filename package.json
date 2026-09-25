@@ -29,10 +29,12 @@
     "test:map-rendering": "node scripts/check-map-rendering.cjs",
     "build:nyc-fall": "python3 scripts/build-nyc-fall-2026.py",
     "check:nyc-fall": "python3 scripts/check-nyc-fall-2026.py",
-    "test:riding-mode": "node scripts/check-riding-mode.cjs"
+    "test:riding-mode": "node scripts/check-riding-mode.cjs",
+    "test:ride-notifications": "node scripts/check-ride-notifications.cjs"
   },
   "dependencies": {
-    "gtfs-realtime-bindings": "2.1.0"
+    "gtfs-realtime-bindings": "2.1.0",
+    "web-push": "3.6.7"
   },
   "devDependencies": {
     "@mapbox/vector-tile": "^2.0.4",

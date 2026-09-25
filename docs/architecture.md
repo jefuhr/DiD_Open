@@ -60,3 +60,9 @@ The Board's desktop landing sidebar remains independent. Route selection is reta
 drawer itself closes on view deactivation; modal focus and background inertness are released
 without focusing an inactive view. `npm run test:map-drawer` checks phone/desktop breakpoints,
 route selection, keyboard trapping/dismissal, history navigation, offline use, and enlarged text.
+
+## Departure notifications
+
+`lib/ride-notifications.js` schedules published departures for recently confirmed physical-vessel assignments. It shares `realtimeService` with the board and refreshes only while push subscriptions exist. `lib/ride-push.js` owns the Web Push transport, persistent VAPID identity, and uncached per-device subscription API. Bearer tokens stay on the device; only token hashes are stored on the server. Known HTTPS browser-push hosts and valid P-256 keys are required. Subscription endpoints and keys are private state, never client-readable roster data.
+
+`public/assets/ride-notifications.js` handles gesture-bound permission, subscription persistence, and cancellation before switching/exiting. Browser unsubscribe lets an offline device stop alerts; failed server cleanup is retained for the next connection. If both cancellation paths fail, the ride stays open with a retry message. `public/sw.js` displays push notifications without an open page and routes notification taps to the appropriate `/ride` deployment path. Notification settings bypass both service-worker and HTTP caching.

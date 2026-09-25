@@ -29,6 +29,16 @@ The day view contains confirmations observed during normal app use, so it can ha
 
 Run `npm run test:riding-mode` for deterministic Chromium coverage of boarding, picking/switching vessels, minimizing, foreground restoration, reloads, offline use, exit races, both deployment paths, and responsive themes. Screenshots, traces, and results are written to `artifacts/browser/riding-*`. This is browser emulation, not physical iOS/Android certification.
 
+### Departure notifications
+
+In riding mode, **Turn on notifications** requests permission and subscribes this device to scheduled departures for its selected physical vessel. Alerts continue when minimized, locked, or closed. **Turn off notifications**, **Exit boat**, and switching boats stop the subscription; enable notifications again for a new boat. iPhone/iPad users must install the app with Safari’s **Add to Home Screen** and open that installation first (iOS/iPadOS 16.4+). HTTPS is required except for local development on localhost. Phone settings control sound and delivery; these are scheduled-time reminders, not confirmation that the boat has left.
+
+The server refreshes the shared ferry feed every 15 seconds only while notification subscriptions exist, and checks departures every second. It sends one Web Push per scheduled call on a recently confirmed vessel trip, excluding skipped/canceled/reassigned calls and final drop-offs. The next confirmed trip supplies the departure after a terminal layover. Times use the original GTFS service day, including overnight calls. Stale assignments suppress alerts; missed alerts are discarded after 60 seconds. Short-lived push messages and saved delivery IDs avoid catch-up bursts and restart duplicates.
+
+On first startup the server generates private VAPID keys in ignored `state/ride-push-keys.json`; subscriptions and delivery IDs are stored in `state/ride-push-subscriptions.json`, both with mode `0600`. Keep these files and the writable `state/` directory across restarts/deploys; do not publish or commit them. This scheduler assumes one app process owns the state directory. `WEB_PUSH_SUBJECT` can override the default contact URL `https://juliet.nyc/ferryTimesMobile/`. Outbound HTTPS to browser push services must be available. No external account is required. A broken notification store disables notifications while leaving the board available.
+
+Run `npm run test:ride-notifications` for browser coverage of enabling, minimizing, reload, disabling, exit, both deployment paths, and responsive layouts. It mocks notification permission and push registration; `node --test test/ride-notifications.test.js test/ride-notification-client.test.js test/ride-push.test.js` checks scheduling, persistence, permission/exit races, API restrictions, and the worker’s notification/click handlers. Artifacts are saved as `artifacts/browser/ride-notifications-*`. Actual lock-screen delivery needs a subscribed physical device and is not certified by these checks.
+
 The responsive staff layout is identical at the root and under the existing `/ferryTimesMobile/` deployment prefix. The fixed-screen kiosk mode has been retired.
 
 ## Configuration and data

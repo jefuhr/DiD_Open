@@ -3,7 +3,7 @@
   "info": {
     "title": "Ferry Staff API",
     "version": "1.0.0",
-    "description": "Existing read-only backend contract. Display payload schemaVersion remains 11. Additive properties are allowed; clients must tolerate unknown fields. Schedule IDs are opaque strings. Timestamps are UTC ISO-8601, service dates use meta.timezone, and schedule seconds may exceed 86400. /api/override has been removed."
+    "description": "Schedule and riding API contract. Schedule endpoints are read-only; departure-notification subscriptions use a private per-device bearer token. Display payload schemaVersion remains 11. Additive properties are allowed; clients must tolerate unknown fields. Schedule IDs are opaque strings. Timestamps are UTC ISO-8601, service dates use meta.timezone, and schedule seconds may exceed 86400. /api/override has been removed."
   },
   "servers": [
     {
@@ -270,7 +270,7 @@
             "schema": {
               "type": "integer"
             },
-            "description": "Defaults to 3; integer values clamp to 1\u20135. Hubs may show more; clients filter returned rows before applying each stop's limit."
+            "description": "Defaults to 3; integer values clamp to 1–5. Hubs may show more; clients filter returned rows before applying each stop's limit."
           }
         ],
         "responses": {
@@ -488,6 +488,243 @@
           },
           "404": {
             "description": "Unknown vessel"
+          }
+        }
+      }
+    },
+    "/api/ride-notifications/config": {
+      "get": {
+        "summary": "Check Web Push availability and get the public subscription key",
+        "operationId": "ride_notification_config",
+        "responses": {
+          "200": {
+            "description": "Success. Notification responses are never cached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "available",
+                    "publicKey"
+                  ],
+                  "properties": {
+                    "available": {
+                      "type": "boolean"
+                    },
+                    "publicKey": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Public VAPID key for PushManager.subscribe; never the private key."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ride-notifications": {
+      "get": {
+        "summary": "Read this device’s notification subscription",
+        "operationId": "ride_notification_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bearer followed by a private random 256-bit device token. Retain it locally to manage or stop notifications."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success. Notification responses are never cached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notification": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "vesselId": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "400 invalid input; 401 missing token; 403 cross-origin request; 409 subscription already owned; 413 payload too large; 415 expected JSON; 503 unavailable or could not save."
+          }
+        }
+      },
+      "put": {
+        "summary": "Enable scheduled-departure alerts for a physical vessel",
+        "operationId": "ride_notification_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bearer followed by a private random 256-bit device token. Retain it locally to manage or stop notifications."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success. Notification responses are never cached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notification": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "vesselId": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "400 invalid input; 401 missing token; 403 cross-origin request; 409 subscription already owned; 413 payload too large; 415 expected JSON; 503 unavailable or could not save."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vesselId",
+                  "base",
+                  "subscription"
+                ],
+                "properties": {
+                  "vesselId": {
+                    "type": "string"
+                  },
+                  "base": {
+                    "enum": [
+                      "/",
+                      "/ferryTimesMobile/"
+                    ]
+                  },
+                  "subscription": {
+                    "type": "object",
+                    "required": [
+                      "endpoint",
+                      "keys"
+                    ],
+                    "properties": {
+                      "endpoint": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "keys": {
+                        "type": "object",
+                        "required": [
+                          "p256dh",
+                          "auth"
+                        ],
+                        "properties": {
+                          "p256dh": {
+                            "type": "string"
+                          },
+                          "auth": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Stop this device’s departure notifications",
+        "operationId": "ride_notification_delete",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bearer followed by a private random 256-bit device token. Retain it locally to manage or stop notifications."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success. Notification responses are never cached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notification": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "vesselId": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "400 invalid input; 401 missing token; 403 cross-origin request; 409 subscription already owned; 413 payload too large; 415 expected JSON; 503 unavailable or could not save."
           }
         }
       }

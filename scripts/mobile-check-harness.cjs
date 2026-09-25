@@ -58,7 +58,7 @@ async function serve({ api = {}, headers = {} } = {}) {
         const handler = api[url.pathname];
         const body = handler === undefined
           ? await fromApp(request.url)
-          : typeof handler === "function" ? await handler(url) : handler;
+          : typeof handler === "function" ? await handler(url, request) : handler;
         response.setHeader("Content-Type", TYPES[".json"]);
         response.end(typeof body === "string" ? body : JSON.stringify(body));
         return;

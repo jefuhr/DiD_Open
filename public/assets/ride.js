@@ -63,6 +63,11 @@ export function mountRide(root, { header, ride, getGeometry, navigate, base }) {
     if (!active || !session) return;
     if (renderedVessel !== session.vesselId) { expanded.clear(); renderedVessel = session.vesselId; }
     title.textContent = session.name;
+    const notifications = ride.notifications.state;
+    query("#rideNotifications").textContent = notifications.busy ? "Updating notifications…" : notifications.enabled ? "Turn off notifications" : "Turn on notifications";
+    query("#rideNotifications").disabled = notifications.busy || (!notifications.enabled && (!notifications.supported || !notifications.available));
+    query("#rideNotifications").setAttribute("aria-pressed", String(notifications.enabled));
+    query("#rideNotificationNote").textContent = notifications.message;
     query("#rideHull").textContent = [session.number, "NYC Ferry"].filter(Boolean).join(" · ");
     const live = snapshot && !snapshot.stale && !snapshot.positionStale;
     query("#rideFreshness").textContent = !snapshot ? "Connecting…" : snapshot.stale ? "Saved data" : snapshot.positionStale ? "Position unavailable" : "Live";
@@ -112,6 +117,7 @@ export function mountRide(root, { header, ride, getGeometry, navigate, base }) {
     expanded.add(event.target.open ? key : `closed:${key}`);
   }, true);
   query("#rideMinimize").addEventListener("click", () => ride.minimize());
+  query("#rideNotifications").addEventListener("click", () => { void ride.notifications.toggle(); });
   query("#rideExit").addEventListener("click", () => ride.exit());
   query("#rideOpenMap").addEventListener("click", () => { if (session) void navigate(`${base}map?boat=${encodeURIComponent(session.name)}`); });
   const unsubscribe = ride.subscribe((data, selected) => { snapshot = data; session = selected; render(); });

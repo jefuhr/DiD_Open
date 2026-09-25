@@ -1,4 +1,5 @@
 import { createRideSession } from "./ride-session.js";
+import { createDepartureNotifications } from "./ride-notifications.js";
 import { clockKey } from "./preferences.js";
 
 const SNAPSHOT_KEY = "nyc-ferry-ride-snapshot-v1";
@@ -13,6 +14,8 @@ export function createRideController({ navigate, base }) {
   const pickerNote = document.querySelector("#ridePickerNote");
   let snapshot = null, stopPolling = null, generation = 0, browsing = true;
   let roster = [], context = {}, pickerGeneration = 0;
+  let selectionGeneration = 0;
+  const notifications = createDepartureNotifications({ base, getSession: () => session.current, onChange: () => publish() });
   const cached = storage.json(SNAPSHOT_KEY);
   if (cached?.vessel?.id === session.current?.vesselId) snapshot = { ...cached, stale: true, positionStale: true };
 
@@ -59,9 +62,12 @@ export function createRideController({ navigate, base }) {
     closePicker();
     void navigate(base + "ride", { historyMode: replace ? "replace" : "push" });
   }
-  function start(vessel) {
+  async function start(vessel) {
+    const selection = ++selectionGeneration;
     const same = session.current?.vesselId === vessel.id;
     if (!same) {
+      if (session.current && !(await notifications.stop())) { closePicker(); restore(); return; }
+      if (selection !== selectionGeneration) return;
       generation++;
       const returnURL = session.current?.returnURL || location.pathname + location.search;
       session.start(vessel, returnURL);
@@ -140,6 +146,7 @@ export function createRideController({ navigate, base }) {
   return {
     get session() { return session.current; },
     get snapshot() { return snapshot; },
+    notifications,
     choose, refresh,
     subscribe(listener) { listeners.add(listener); listener(snapshot, session.current); return () => listeners.delete(listener); },
     viewChanged(view, url) {
@@ -148,7 +155,9 @@ export function createRideController({ navigate, base }) {
       publish();
     },
     minimize() { void navigate(session.current?.returnURL || base); },
-    exit() {
+    async exit() {
+      selectionGeneration++;
+      if (!(await notifications.stop())) return;
       const target = session.current?.returnURL || base;
       generation++;
       session.exit(); snapshot = null;
