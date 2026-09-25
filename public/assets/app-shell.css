@@ -165,7 +165,7 @@
 :root #mapView :is(.fleet-heading > span, .fleet-footer, .card-hull-number) { font-size: 11px; line-height: 1.4; }
 :root #mapView .fleet-description { margin: 6px 0 16px; font-size: 13px; line-height: 1.5; }
 :root :is(#boatSearch, .landing-search input) {
-  height: 44px; font: 400 16px/1.4 var(--ui-font); color: var(--ink);
+  min-height: 44px; font: 400 max(16px, 1rem)/1.4 var(--ui-font); color: var(--ink);
   background: var(--card); border: 1px solid var(--control-border); border-radius: var(--control-radius);
 }
 :root #mapView .search-input::placeholder { color: var(--muted); opacity: 1; }

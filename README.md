@@ -65,11 +65,14 @@ npm test
 npm run test:staff-app
 npm run test:mobile-route-layout
 npm run test:mobile-viewport
+npm run test:installed-ride-layout
 npm run test:map-selection
 npm run test:map-rendering
 ```
 
 Browser checks require installed Playwright browsers and a running app. Set `MOBILE_TEST_ORIGIN` to its origin (default `http://127.0.0.1:8094`). Reports and screenshots go to ignored `artifacts/browser/`. Historical screenshots remain in `docs/mobile-upgrade/`.
+
+`test:installed-ride-layout` uses bundled fixtures and needs no app server. It checks home-screen safe-area spacing with a minimized ride, larger text, search-field font sizes, keyboard/zoom recovery, and restoring bottom padding after exiting a ride. Chromium emulates the insets and viewport changes; native Safari keyboard focus zoom still needs a physical iPhone check.
 
 The browser uses native ES modules with no bundler. Backend schedule construction lives in `lib/`; scripts are maintenance entrypoints. [Architecture and native-client preparation](docs/architecture.md) describes the boundaries, offline rules, and portable fixtures. The existing API is documented in [OpenAPI](docs/api.openapi.json).
 

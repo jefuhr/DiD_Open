@@ -2,6 +2,16 @@
   "_comment": "The board's change log. Newest entry first — the board shows them in the order they appear here and marks the top one as the latest. Add an entry by copying the shape below; 'date' is what the board prints, 'notes' is a list of lines. Nothing here is validated against the code, so it says whatever you write.",
   "entries": [
     {
+      "version": "2026-09-25",
+      "date": "25 September 2026",
+      "title": "iPhone layout and search",
+      "notes": [
+        "Removed extra space above the minimized boat bar in the home-screen app.",
+        "The boat bar now grows with larger text, and the board follows safe-area changes when rotating.",
+        "Search fields use larger text to avoid Safari's automatic focus zoom. Pinch zoom remains available."
+      ]
+    },
+    {
       "version": "2026-09-24",
       "date": "24 September 2026",
       "title": "What's new",

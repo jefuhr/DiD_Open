@@ -1,6 +1,11 @@
 /* Riding is a shell view. Its minimized control reserves viewport space for both other views. */
 :root { --ride-bar-height: 0px; }
-:root.ride-minimized { --ride-bar-height: calc(68px + env(safe-area-inset-bottom)); }
+/* Two text lines at 1.3 line-height, a 4px gap and 20px padding. Keep the
+   ordinary 68px bar, but grow with larger text instead of clipping its rows. */
+:root.ride-minimized { --ride-bar-height: calc(max(68px, 2.275rem + 24px) + var(--app-safe-bottom)); }
+/* The ride bar owns the screen's bottom edge. Views above it need ordinary
+   padding, not a second home-indicator inset in their alerts, sheets or drawers. */
+:root.ride-minimized :is(#boardView, #mapView) { --app-safe-bottom: 0px; }
 :root.ride-minimized :is(.app-view, #mapView, #boardView .landing-menu, #boardView .filter-menu, #mapView .map-route-menu) {
   height: calc(var(--app-viewport-height, 100dvh) - var(--app-header-height) - var(--ride-bar-height));
 }
@@ -65,8 +70,8 @@
 :root .ride-stops .is-past { color: var(--muted); }
 :root .ride-bar {
   position: fixed; left: 0; right: 0; top: calc(var(--app-viewport-top, 0px) + var(--app-viewport-height, 100dvh) - var(--ride-bar-height)); height: var(--ride-bar-height);
-  z-index: 90; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px max(20px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
-  background: var(--navy); color: var(--canvas); border: 0; text-align: left; cursor: pointer;
+  z-index: 90; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px max(20px, env(safe-area-inset-right)) calc(10px + var(--app-safe-bottom)) max(20px, env(safe-area-inset-left));
+  background: var(--navy); color: var(--canvas); border: 0; text-align: left; cursor: pointer; line-height: 1.3;
 }
 :root .ride-bar[hidden] { display: none; }
 :root .ride-bar strong, :root .ride-bar span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -79,7 +84,9 @@
 :root .ride-picker h2 { font-size: 1.2rem; line-height: 1.4; margin: 0; }
 :root .ride-picker p { font-size: .875rem; line-height: 1.5; }
 :root .ride-picker label { display: block; font-size: .8rem; margin-bottom: 6px; }
-:root #rideSearch { width: 100%; margin-bottom: 12px; }
+/* Keep editable text out of Safari's small-input focus zoom while honoring
+   larger user text sizes. The surrounding buttons can retain their smaller font. */
+:root #rideSearch { width: 100%; margin-bottom: 12px; font-size: max(16px, 1rem); }
 :root .ride-choices { display: grid; gap: 8px; }
 :root .ride-choices button { text-align: left; padding: 12px; }
 :root .ride-choices span { display: block; font-size: .75rem; font-weight: 400; margin-top: 5px; color: var(--muted); }

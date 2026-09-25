@@ -7,7 +7,9 @@ const roots = { board: document.querySelector("#boardView"), map: document.query
 const headings = { board: document.querySelector("#boardHeading"), map: document.querySelector("#mapHeading"), ride: document.querySelector("#rideHeading") };
 const appHeader = document.querySelector(".app-header");
 const measureHeader = () => document.documentElement.style.setProperty("--app-header-height", appHeader.getBoundingClientRect().height + "px");
-new ResizeObserver(measureHeader).observe(appHeader);
+// Safe-area changes resize the padding even when the header's content stays the
+// same size. Observe the whole header so rotation cannot leave stale view bounds.
+new ResizeObserver(measureHeader).observe(appHeader, { box: "border-box" });
 const links = [...document.querySelectorAll(".app-header [data-view]")];
 const controllers = new Map();
 const mounting = new Map();
@@ -20,7 +22,7 @@ const ride = createRideController({ navigate, base });
 
 function moduleFor(view) {
   if (!modules[view]) {
-    modules[view] = (view === "board" ? import("../app.js?v=117") : view === "ride" ? import("./ride.js?v=117") : import("./map.js?v=117"))
+    modules[view] = (view === "board" ? import("../app.js?v=118") : view === "ride" ? import("./ride.js?v=118") : import("./map.js?v=118"))
       .catch(error => { delete modules[view]; throw error; });
   }
   return modules[view];
@@ -149,7 +151,7 @@ if ("serviceWorker" in navigator) {
   // mounted — but the document it has to precache is wherever this page is, which is the root on a
   // local deployment and /ferryTimesMobile/ behind the deployment's proxy. Passing it along is the difference
   // between an offline shell and an install that fails on a 404.
-  navigator.serviceWorker.register(`/sw.js?v=117&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
+  navigator.serviceWorker.register(`/sw.js?v=118&base=${encodeURIComponent(base)}`, { scope: "/", updateViaCache: "none" })
     .then((registration) => {
       registration.update();
       // A board added to a home screen is resumed, not reloaded. iOS keeps the page alive for days,

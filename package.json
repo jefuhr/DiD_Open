@@ -25,6 +25,7 @@
     "test:map-drawer": "node scripts/check-map-drawer.cjs",
     "test:mobile-route-layout": "node scripts/check-mobile-route-layout.cjs",
     "test:mobile-viewport": "node scripts/check-mobile-viewport.cjs",
+    "test:installed-ride-layout": "node scripts/check-installed-ride-layout.cjs",
     "benchmark:map": "node scripts/benchmark-map.cjs",
     "test:map-rendering": "node scripts/check-map-rendering.cjs",
     "build:nyc-fall": "python3 scripts/build-nyc-fall-2026.py",
