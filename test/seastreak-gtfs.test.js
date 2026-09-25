@@ -7,6 +7,31 @@ import { parseCsv } from "../scripts/build-data.js";
 const dir = new URL("../gtfs/seastreak/", import.meta.url);
 const read = async (name) => parseCsv(await readFile(new URL(name, dir), "utf8"));
 
+// Independent, printed-column transcriptions of the user's September 8 sheets.
+// The adjacent images let reviewers check every cell and the blue/purple day restrictions.
+// Compare the generated feed, not the generator's own arrays: a correct source table is not
+// enough if stop order, pickup flags, service assignment or the committed output drifts.
+const sourceDir = new URL("../schedules/seastreak-2026-09-08/", import.meta.url);
+const sourceStops = {
+  "Brookfield Place": { id: "9825", side: "ny" },
+  "East 35th St.": { id: "168", side: "ny" },
+  "BMB-Slip 5": { id: "170", side: "ny" },
+  "Highlands": { id: "176", side: "nj" },
+  "Atlantic Highlands": { id: "175", side: "nj" }
+};
+const sourceServices = {
+  "Monday-Friday": "ss-weekday",
+  "Monday-Wednesday": "ss-mon-wed",
+  "Thursday-Friday": "ss-thu-fri"
+};
+
+function sourceTime(value) {
+  const match = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(value);
+  assert.ok(match, `invalid time in source transcription: ${value}`);
+  const hours = Number(match[1]) % 12 + (match[3] === "PM" ? 12 : 0);
+  return `${String(hours).padStart(2, "0")}:${match[2]}:00`;
+}
+
 async function feed() {
   const [stops, trips, stopTimes, calendar, routes] = await Promise.all(
     ["stops.txt", "trips.txt", "stop_times.txt", "calendar.txt", "routes.txt"].map(read));
@@ -19,6 +44,53 @@ async function feed() {
   return { stops, trips, stopTimes, calendar, routes, byTrip,
     service: new Map(trips.map((trip) => [trip.trip_id, trip.service_id])) };
 }
+
+for (const [sheet, side, direction] of [["new-york", "ny", "1"], ["new-jersey", "nj", "0"]]) {
+  test(`all ${sheet} weekday calls match the supplied September 8 sheet`, async () => {
+    const source = parseCsv(await readFile(new URL(`${sheet}.csv`, sourceDir), "utf8"));
+    assert.equal(source.length, 17, "17 printed rows, including both coloured rows");
+    const { trips, byTrip } = await feed();
+    const expected = source.map((row) => ({
+      service: sourceServices[row.days],
+      calls: Object.entries(row).filter(([column, time]) => column !== "days" && time)
+        .map(([column, time]) => ({
+          stop: sourceStops[column].id,
+          arrival: sourceTime(time),
+          departure: sourceTime(time),
+          pickup: sourceStops[column].side === side ? "0" : "1",
+          dropOff: sourceStops[column].side === side ? "1" : "0"
+        }))
+        .sort((a, b) => a.departure.localeCompare(b.departure))
+    }));
+    const actual = trips.filter((trip) => trip.service_id !== "ss-weekend" && trip.direction_id === direction)
+      .map((trip) => ({
+        service: trip.service_id,
+        calls: byTrip.get(trip.trip_id).map((call) => ({
+          stop: call.stop_id,
+          arrival: call.arrival_time,
+          departure: call.departure_time,
+          pickup: call.pickup_type,
+          dropOff: call.drop_off_type
+        }))
+      }));
+    // Trip ids and CSV row order are not passenger-facing; compare complete sailing patterns.
+    const patterns = (rows) => rows.map((row) => JSON.stringify(row)).sort();
+    assert.deepEqual(patterns(actual), patterns(expected));
+  });
+}
+
+test("weekday service starts on the sheets' effective date with the printed day restrictions", async () => {
+  const { calendar } = await feed();
+  const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  for (const [service, pattern] of Object.entries({
+    "ss-weekday": "1111100", "ss-mon-wed": "1110000", "ss-thu-fri": "0001100"
+  })) {
+    const row = calendar.find((item) => item.service_id === service);
+    assert.ok(row, `${service} is missing`);
+    assert.equal(row.start_date, "20260908");
+    assert.equal(days.map((day) => row[day]).join(""), pattern, service);
+  }
+});
 
 // The board points at these three by id in config/landings.json. Renumbering them in a feed rebuild
 // would take Seastreak off the board at Whitehall, East 35th and Brookfield without failing

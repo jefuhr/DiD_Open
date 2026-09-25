@@ -159,11 +159,21 @@ to add a partner at another landing, find its `stop_id` in that feed's `stops.tx
 
 the Seastreak feed is **transcribed, not downloaded** — regenerate it with `node scripts/build-seastreak-gtfs.js`. it used to be the operator's own GTFS (via [transit.land `f-drk-seastreak`](https://www.transit.land/feeds/f-drk-seastreak), published at `https://seastreak.com/api/transit/google_transit.zip`), which carried a 2020 `feed_start_date`, times that no longer matched the printed schedule, and — because every sailing appears in both of Seastreak's printed tables — the same boat offered as two separate boardings at the same pier at the same minute, eighteen times over at the three piers this board watches.
 
-it is now read from the operator's published sheets — two weekday tables *Effective September 8, 2026* and a weekend one *Effective September 12, 2026*. three things about that source are worth knowing before re-reading it:
+it is now read from the operator's published sheets — two weekday tables *Effective September 8, 2026* and a weekend one *Effective September 12, 2026*.
+
+Both weekday sheets were checked again against user-supplied images on September 25, 2026.
+All 34 rows already matched the feed, including the blue Monday–Wednesday and purple
+Thursday–Friday trips. The [saved source images and CSV transcriptions](../schedules/seastreak-2026-09-08/README.md)
+now back tests of every weekday time, stop order and boarding restriction. The rebuild updates
+`feed_version` to `transcribed-2026-09-25`; sailing times and service dates are unchanged. Weekend
+service remains from the September 12 sheet last checked on September 7; no new weekend sheet
+was supplied.
+
+Three things about that source are worth knowing before re-reading it:
 
 - **the tables are headed `Departures` on the boarding side and `Arrivals` on the far side, and that is taken literally.** on a New Jersey departure the Manhattan calls are drop-off only; on a New York departure the New Jersey calls are. this is what stops one boat being advertised as two. the 06:20 out of Highlands is the clearest case: it is printed in both weekday tables and is one vessel, so Brookfield Place 06:55 boards on the New York row and is a drop-off on the New Jersey one.
 - **the columns are read by clock, not by heading order.** several rows call at the piers in a different order than the headings suggest — the 15:55 out of East 35th reaches Brookfield Place *after* Battery Maritime although Brookfield is printed first, and the 18:15 New Jersey departure boards Atlantic Highlands before Highlands. a stop out of order in the rebuilt feed means a misread column, and the build asserts on it.
-- **times printed in blue run Monday to Wednesday, and times in purple Thursday and Friday.** that is the last boat of the night each way: it leaves at one time for the first half of the week and later for the second. colour does not survive a text extraction, so those four rows are carried as `ss-mon-wed` and `ss-thu-fri`, and the test in [`test/seastreak-gtfs.test.js`](../test/seastreak-gtfs.test.js) is the only record that the colour was read at all. this replaces the August sheet's red *not on Fridays* rows, which are gone.
+- **times printed in blue run Monday to Wednesday, and times in purple Thursday and Friday.** that is the last boat of the night each way: it leaves at one time for the first half of the week and later for the second. colour does not survive a text extraction, so those four rows are carried as `ss-mon-wed` and `ss-thu-fri`, with the restrictions recorded in the saved source CSVs and checked by [`test/seastreak-gtfs.test.js`](../test/seastreak-gtfs.test.js). this replaces the August sheet's red *not on Fridays* rows, which are gone.
 
 the weekday calendar runs `20260908`–`20271231` and the weekend one `20260912`–`20271231`, both then lapsing, so a transcription cannot quietly outlive the timetable it came from. note the weekday sheet takes effect *before* the weekend one this time; in August it was the other way round. Seastreak's Massachusetts routes (New Bedford, Nantucket, Martha's Vineyard) were in the download this replaced and are deliberately not here: no landing on this board is within two hundred miles of them.
 

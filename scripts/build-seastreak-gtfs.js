@@ -1,5 +1,5 @@
-// Regenerates gtfs/seastreak/ from Seastreak's published timetable PDF: the weekday schedule on
-// its first page and the weekend schedule on its second.
+// Regenerates gtfs/seastreak/ from Seastreak's published weekday and weekend timetable sheets.
+// The weekday source images are saved in schedules/seastreak-2026-09-08/.
 //
 // Seastreak does publish a GTFS, and gtfs/seastreak/ used to be that download. It was wrong in a
 // way that showed: it carried a 2020 feed_start_date, times that no longer matched the printed
@@ -7,7 +7,8 @@
 // offered the same boat as two separate boardings at the same pier at the same minute. There were
 // eighteen such duplicates at the three Manhattan piers this board actually watches.
 //
-// So this feed is now a TRANSCRIPTION of SOURCE_URL, like gtfs/gi/, gtfs/ikea/ and gtfs/liberty/.
+// So this feed is now a TRANSCRIPTION of the operator's sheets, like gtfs/gi/, gtfs/ikea/ and
+// gtfs/liberty/. SOURCE_URL identifies the route page, not an archived copy of the sheets.
 //
 // Run with: node scripts/build-seastreak-gtfs.js
 //
@@ -50,7 +51,7 @@
 //   Times in blue run Monday to Wednesday only, and times in purple Thursday and Friday only. That
 //   replaces the August sheet's red "not on Fridays" rows, which are gone. Colour does not survive
 //   a text extraction, so the two coloured rows in each table are carried here as days: "mon-wed"
-//   and days: "thu-fri" — this is the only record that the colour was read at all.
+//   and days: "thu-fri", and are checked against the saved source images' CSV transcriptions.
 //
 //   The page also carries a WEEKDAY SHUTTLE BUS table between the New Jersey terminals — Highlands
 //   to Atlantic Highlands at 12:15 and 17:05, about ten minutes. Those are road transfers, not
@@ -91,13 +92,15 @@ import { toCsv, writeGtfsFiles } from "./gtfs-utils.js";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT_DIR = path.join(ROOT, "gtfs/seastreak");
 
-// !! The August PDF this feed used to be read from is superseded. These sheets were transcribed
-// !! from the operator's published September timetables, whose own dated PDF URL was not captured
-// !! with them; the link below is the route page that always carries the current sheets. If you
-// !! have the dated PDF's URL, put it here — a transcription should name the exact thing it read.
+// !! The August PDF is superseded. The user supplied both September 8 weekday sheets again on
+// !! September 25; their source images and independent CSV transcriptions are saved in
+// !! schedules/seastreak-2026-09-08/. All 34 rows already matched the feed. The dated PDF URL was
+// !! not supplied; the link below is the operator's route page, not the source of this recheck.
+// !! No weekend sheet was supplied in that update, so its earlier verification date is separate.
 export const SOURCE_URL =
   "https://seastreak.com/ferry-routes-and-schedules/between-new-jersey-and-new-york-city/";
-export const SOURCE_CHECKED_ON = "2026-09-07";
+export const SOURCE_CHECKED_ON = "2026-09-25";
+export const WEEKEND_SOURCE_CHECKED_ON = "2026-09-07";
 
 // Both weekday sheets are headed "Effective September 8, 2026" — the Tuesday after Labor Day, and
 // the same day NY Waterway's Belford sheet starts.
@@ -350,7 +353,8 @@ async function main() {
   }
 
   const count = (id) => trips.filter((trip) => trip.service_id === id).length;
-  console.log(`Wrote gtfs/seastreak/ from ${SOURCE_URL} as checked on ${SOURCE_CHECKED_ON}.`);
+  console.log(`Wrote gtfs/seastreak/ from Seastreak's timetable sheets (${SOURCE_URL}).`);
+  console.log(`  weekdays verified against supplied images on ${SOURCE_CHECKED_ON}; weekends last checked ${WEEKEND_SOURCE_CHECKED_ON}`);
   console.log(`  weekday: ${NEW_JERSEY_DEPARTURES.length} New Jersey departures, ${NEW_YORK_DEPARTURES.length} New York departures`);
   console.log(`  weekend: ${WEEKEND_NEW_JERSEY_DEPARTURES.length} New Jersey departures, ${WEEKEND_NEW_YORK_DEPARTURES.length} New York departures`);
   console.log(`  ${trips.length} trips, ${stopTimes.length} calls at ${Object.keys(STOPS).length} piers`);
