@@ -1,0 +1,14 @@
+name: Check NYC Ferry feed freshness
+
+on:
+  schedule:
+    - cron: '15 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare published GTFS with reviewed live maps
+        run: python3 scripts/check-nyc-feed-freshness.py

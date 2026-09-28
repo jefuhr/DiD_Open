@@ -1,0 +1,259 @@
+{
+  "source": "sukkot.xlsx",
+  "workbookSha256": "cf75f0de747a6956451c68e19928ab7b686fbd66369943c41ac50739f758d6dc",
+  "sheet": "Board",
+  "assignments": [
+    {
+      "cell": "A26",
+      "label": "ERF 1 PM (T) ",
+      "note": "ERF 1 PM\nFirst departure 13:49 at E34th\n\nLast drop 21:20 at Pier 11 "
+    },
+    {
+      "cell": "B26",
+      "label": "ERF 2 PM (T)",
+      "note": "ERF 2 PM\nFirst departure 14:52 at Pier 11\n\nLast drop off 21:33 at E34th"
+    },
+    {
+      "cell": "C26",
+      "label": "ERF 3 PM (T)",
+      "note": "ERF 3 PM\nFirst departure 14:19 at East 34th St.\n\nLast drop off  21:43 at Pier 11."
+    },
+    {
+      "cell": "D26",
+      "label": "ERF 4 PM (T)\n",
+      "note": "ERF 4 PM\nFirst departure 14:29 at E34th\n\nLast drop off 21:59 at 34th St."
+    },
+    {
+      "cell": "E26",
+      "label": "ERF 5 PM (T)\n",
+      "note": "ERF 5 PM\nFirst departure 14:00 at Pier 11\n\nLast drop off 21:26 at Pier 11"
+    },
+    {
+      "cell": "F26",
+      "label": "ERF 6 PM (T)",
+      "note": "ERF 5 PM\nFirst departure 14:13 at Pier 11\n\n Last drop off 20:37 at Pier 11\n"
+    },
+    {
+      "cell": "H26",
+      "label": "STG 1 PM (T)",
+      "note": "STG-BK 1 PM\nFirst departure 13:24 at Pier 11  \n\nLast drop 21:20 at Pier 11\n"
+    },
+    {
+      "cell": "A18",
+      "label": "ERF 1 AM (T) ",
+      "note": "ERF 1 AM\nFirst departure 06:06 at HPS\n\nLast drop 13:42 at E34th"
+    },
+    {
+      "cell": "I26",
+      "label": "STG 2 PM (T)",
+      "note": "STG-BK 2 PM\nFirst pickup 14:14 at Pier 11, \n\nLast drop 22:08 at P11"
+    },
+    {
+      "cell": "B18",
+      "label": "ERF 2 AM (T)",
+      "note": "ERF 2 AM\nFirst departure 06:26 at E 34th St\n\nLast drop 14:41 at Pier 11"
+    },
+    {
+      "cell": "J26",
+      "label": "TRN/STG 3 PM (T)",
+      "note": "STG-BK 3 PM\nFirst Pickup is 16:54 ar P79, \n\nLast drop is 21:49 at P79\n"
+    },
+    {
+      "cell": "C18",
+      "label": "ERF 3 AM (T)",
+      "note": "ERF 3 AM\nFirst departure 06:31 at HPS\n\nLast drop off 14:11 at E 34th St"
+    },
+    {
+      "cell": "K26",
+      "label": "STG 4 PM (T)",
+      "note": "STG-BK 4 PM\n First pickup 13:50 at Pier 79  \n\nLast drop 21:12 at Pier 79\n"
+    },
+    {
+      "cell": "D18",
+      "label": "ERF 4 AM (T)",
+      "note": "ERF 4 AM\nFirst departure 06:50 at E 34th St\nLast drop off 14:24 at E 34th St"
+    },
+    {
+      "cell": "E18",
+      "label": "ERF 5 AM (T)",
+      "note": "ERF 5 AM\nFirst departure 06:26 at Pier 11\n\nLast drop 13:47 at Pier 11"
+    },
+    {
+      "cell": "F18",
+      "label": "ERF 6 AM (T)\n",
+      "note": "ERF 5 AM\nFirst departure 06:38 at P11,\n\n Last drop 14:01 at Pier 11"
+    },
+    {
+      "cell": "G18",
+      "label": "ERF 7 (T)\n",
+      "note": "ERF 5 AM\nFirst departure 12:51 at P11,\n\n Last drop 21:52 at Pier 11"
+    },
+    {
+      "cell": "H18",
+      "label": "STG 1 AM (T)",
+      "note": "STG-BK 1 AM\nFirst pickup 06:16 at STG  \n\nLast drop 13:18 at Pier 11"
+    },
+    {
+      "cell": "A10",
+      "label": "RWSV 1 PM (K-299)",
+      "note": "RWSV 1 PM\nFirst departure is 12:52 from Pier 11  \n\nLast drop off is 21:35 at RWY"
+    },
+    {
+      "cell": "I18",
+      "label": "STG 2 AM (T)",
+      "note": "STG-BK 2 AM\nFirst pickup 06:15 at Pier 11 \n\nLast drop 14:08 at Pier 11"
+    },
+    {
+      "cell": "B10",
+      "label": "RWSV 2 PM (K-299)",
+      "note": "RWSV 2 PM\n First departure is 13:37 at Pier 11 \n\nLast drop off is 21:05 at RWY"
+    },
+    {
+      "cell": "J18",
+      "label": "STG 3 AM (T) TRN",
+      "note": "STG-BK 3 AM\nFirst pickup 06:21 at STG  \n\nLast drop 10:37 at Pier 79"
+    },
+    {
+      "cell": "C10",
+      "label": "RWSV 3 PM (K-299)",
+      "note": "RWSV 3 PM\nFirst departure is 14:12 from Pier 11 \n\nLast drop off is 21:40 at RWY"
+    },
+    {
+      "cell": "K18",
+      "label": "STG 4 AM (T)",
+      "note": "STG-BK 4 AM\nFirst pickup 06:22 at Pier 79  \n\nLast drop 13:43 at Pier 79"
+    },
+    {
+      "cell": "D10",
+      "label": "RWSV 4 PM (K-299)",
+      "note": "RWSV 2 PM\nFirst departure is 12:47 from Pier 11, \n\nLast drop off is 21:30 at Pier 11"
+    },
+    {
+      "cell": "E10",
+      "label": "RWSV 5 PM (K-299)",
+      "note": "RWSV 5 PM\nFirst departure is 13:32 at Pier 11\n\nLast drop off is 21:10 at FPP"
+    },
+    {
+      "cell": "F10",
+      "label": "RWSV 6 PM (K-299)",
+      "note": "RWSV 2 PM\nFirst departure is 14:17 from Pier 11 \n\nLast drop off is 21:55 at FPP"
+    },
+    {
+      "cell": "G10",
+      "label": "AST 1 PM (K-299) TRN",
+      "note": "AST 1 AM\nFirst pickup 17:19 at Pier 11\n\nLast drop 21:18 at Pier 11\n\n"
+    },
+    {
+      "cell": "H10",
+      "label": "AST 2 PM (K-299)",
+      "note": "AST 2 PM\nFirst departure 13:34 at Pier 11\n\nLast drop 21:03 at 90th"
+    },
+    {
+      "cell": "A2",
+      "label": "RWSV 1 AM (K-299)",
+      "note": "RWSV 1 AM\nFirst pickup 05:03 at FPP.   \n\nLast drop off 12:44 at Pier 11\n\n\n\n"
+    },
+    {
+      "cell": "I10",
+      "label": "AST 3 PM (K-299)",
+      "note": "AST 3 PM\nFirst departure 14:34 at Pier 11.\n\nLast drop off 20:44 at Pier 11\n"
+    },
+    {
+      "cell": "B2",
+      "label": "RWSV 2 AM (K-299)",
+      "note": "RWSV 2 AM\nFirst pickup 05:47 at FPP \n\nLast drop off 13:29 at Pier 11\n"
+    },
+    {
+      "cell": "J10",
+      "label": "SBK 1 PM (T)",
+      "note": "SBK 1 PM\nFirst pickup 14:02 at E 34th St, \n\nLast drop 21:45 at Bay Ridge"
+    },
+    {
+      "cell": "C2",
+      "label": "RWSV 3 AM (K-299)",
+      "note": "RWSV 3 AM\nFirst pickup 06:31 at FPP \n\nLast drop off 14:04 at P11\n\n\n"
+    },
+    {
+      "cell": "K10",
+      "label": "SBK 2 PM (T)",
+      "note": "SBK 2 PM\nFirst pickup 13:17 at E34th\n\nLast drop 22:07 at E34th"
+    },
+    {
+      "cell": "D2",
+      "label": "RWSV 4 AM (K-299)",
+      "note": "RWSV 4 AM\n First pickup 05:05 at RWY \n\nLast drop off 12:39 at P11\n\n\n"
+    },
+    {
+      "cell": "L10",
+      "label": "G.I. 1",
+      "note": "First Pick Up\n09:50 Pier 11\n\nLast Drop\n17:50 Pier 11"
+    },
+    {
+      "cell": "E2",
+      "label": "RWSV 5 AM (K-299)",
+      "note": "RWSV 4 AM\nFirst pickup 05:49 at RWY. \n\nLast drop off 13:24 at Pier 11\n"
+    },
+    {
+      "cell": "M10",
+      "label": "G.I. 2",
+      "note": "First Pick Up\n10:06 Pier 11\n\nLast Drop\n17:06 Pier 11"
+    },
+    {
+      "cell": "F2",
+      "label": "RWSV 6 AM (K-299)",
+      "note": "RWSV 4 AM\nFirst pickup 06:33 at RWY\n\nLast drop off 14:09 at P11\n\n\n"
+    },
+    {
+      "cell": "G2",
+      "label": "AST 1 AM (K-299) TRN",
+      "note": "AST 1 AM\nFirst pickup 06:03 at 90th\n\nLast drop 10:42 at Pier 11\n\n"
+    },
+    {
+      "cell": "H2",
+      "label": "AST 2 AM (K-299)",
+      "note": "AST 2 AM\nFirst departure 06:41 90th St.\n\nLast drop 13:26 at Pier 11"
+    },
+    {
+      "cell": "I2",
+      "label": "AST 3 AM (K-299)",
+      "note": "AST 3 AM\nFirst departure 06:22 at Pier 11 \n\nLast drop 14:26 at Pier 11"
+    },
+    {
+      "cell": "J2",
+      "label": "SBK 1 AM (T)",
+      "note": "SBK 1 AM\nFirst pickup 06:40 at Red Hook \n\nLast drop 13:56 at E 34th St."
+    },
+    {
+      "cell": "K2",
+      "label": "SBK 2 AM (T)",
+      "note": "SBK 2 AM\nFirst departure 06:36 at E 34th.\n\nLast drop 13:11 at E34th"
+    },
+    {
+      "cell": "L2",
+      "label": "SBK 3 AM (T)",
+      "note": "SBK 2 AM\nFirst departure 11:26 at Bay Ridge\n\nLast drop 21:23 at E34th"
+    }
+  ],
+  "shuttles": [
+    {
+      "label": "RWY 1 / RWY 4 ",
+      "timeFraction": "0.5138888888888888",
+      "source": "Board!N3:O3"
+    },
+    {
+      "label": "RWY 2 / RWY 5",
+      "timeFraction": "0.5451388888888888",
+      "source": "Board!N4:O4"
+    },
+    {
+      "label": "RWY 3 / RWY 6  ERF 6",
+      "timeFraction": "0.5729166666666666",
+      "source": "Board!N5:O5"
+    },
+    {
+      "label": "SBK 1",
+      "timeFraction": "0.5625",
+      "source": "Board!N6:O6"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+name: FerryBoard
+options:
+  bundleIdPrefix: nyc.juliet
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  xcodeVersion: "16.0"
+packages:
+  FerryCore:
+    path: FerryCore
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    FERRY_API_BASE_URL: https://juliet.nyc
+configFiles:
+  Debug: Config/Debug.xcconfig
+  Release: Config/Release.xcconfig
+targets:
+  FerryBoard:
+    type: application
+    platform: iOS
+    sources:
+      - path: FerryBoard
+    dependencies:
+      - package: FerryCore
+    info:
+      path: Config/Info.plist
+      properties:
+        CFBundleDisplayName: Ferry Board
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UIRequiresFullScreen: false
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSLocationWhenInUseUsageDescription: Find the ferry landing nearest to you when you tap Nearest.
+        FerryAPIBaseURL: $(FERRY_API_BASE_URL)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: nyc.juliet.ferryboard
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+  FerryBoardTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [FerryBoardTests]
+    dependencies:
+      - target: FerryBoard
+      - package: FerryCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+  FerryBoardUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [FerryBoardUITests]
+    dependencies:
+      - target: FerryBoard
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  FerryBoard:
+    build:
+      targets:
+        FerryBoard: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - FerryBoardTests
+        - FerryBoardUITests
+      gatherCoverageData: true
+    archive:
+      config: Release

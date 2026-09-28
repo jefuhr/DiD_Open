@@ -1,0 +1,40 @@
+{
+  "tripId": "nine",
+  "generatedAt": "2026-09-04T12:50:00Z",
+  "serviceDate": "2026-09-04",
+  "stale": false,
+  "stops": [
+    {
+      "stopId": "1",
+      "name": "Pier 11",
+      "landingId": 16,
+      "sequence": 1,
+      "arrivalSeconds": 32400,
+      "departureSeconds": 32460,
+      "arrivalAt": 1788526800000,
+      "departureAt": 1788526860000,
+      "skipped": false,
+      "current": false,
+      "past": false,
+      "limit": 3,
+      "connections": []
+    },
+    {
+      "stopId": "2",
+      "name": "DUMBO",
+      "landingId": 17,
+      "sequence": 2,
+      "arrivalSeconds": 33000,
+      "departureSeconds": 33060,
+      "estimatedArrivalSeconds": 33120,
+      "estimatedDepartureSeconds": 33180,
+      "arrivalAt": 1788527520000,
+      "departureAt": 1788527580000,
+      "skipped": false,
+      "current": true,
+      "past": false,
+      "limit": 3,
+      "connections": []
+    }
+  ]
+}

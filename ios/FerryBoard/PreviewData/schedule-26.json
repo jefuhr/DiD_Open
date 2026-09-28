@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "schemaVersion": 11,
+    "timezone": "America/New_York",
+    "landingNumber": 26,
+    "landing": {
+      "id": 26,
+      "name": "Pier 79",
+      "displayName": "Midtown West / Pier 79",
+      "latitude": 40.760323,
+      "longitude": -74.004075,
+      "stopIds": [
+        "1"
+      ]
+    },
+    "departureWindowMinutes": 1440,
+    "departuresShown": 5,
+    "generatedAt": "2026-09-04T12:50:00Z"
+  },
+  "routes": {
+    "ER": {
+      "id": "ER",
+      "name": "East River",
+      "shortName": "ER",
+      "color": "#0070AB",
+      "textColor": "#FFFFFF",
+      "operator": "NYC Ferry"
+    }
+  },
+  "calendars": [
+    {
+      "serviceId": "daily",
+      "startDate": "2026-01-01",
+      "endDate": "2026-12-31",
+      "weekdays": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "exceptions": [
+    {
+      "serviceId": "daily",
+      "date": "2026-09-07",
+      "added": false
+    },
+    {
+      "serviceId": "holiday",
+      "date": "2026-09-07",
+      "added": true
+    }
+  ],
+  "departures": [
+    {
+      "tripId": "nine",
+      "routeId": "ER",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Pier 11",
+      "seconds": 32400,
+      "departureTime": "09:00:00",
+      "boatAssignment": 1
+    },
+    {
+      "tripId": "ten",
+      "routeId": "ER",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Pier 11",
+      "seconds": 36000,
+      "departureTime": "10:00:00"
+    },
+    {
+      "tripId": "overnight",
+      "routeId": "ER",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Pier 11",
+      "seconds": 90600,
+      "departureTime": "25:10:00"
+    },
+    {
+      "tripId": "home",
+      "routeId": "ER",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Pier C",
+      "seconds": 37800,
+      "departureTime": "10:30:00",
+      "outOfService": true,
+      "liveTripId": "ten",
+      "predictTripId": "ten",
+      "approximate": true
+    },
+    {
+      "tripId": "crew",
+      "routeId": "ER",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Crew pickup",
+      "seconds": 39600,
+      "departureTime": "11:00:00",
+      "crewShuttle": true,
+      "departureTimeEnd": "11:30:00",
+      "secondsEnd": 41400
+    },
+    {
+      "tripId": "holiday",
+      "routeId": "ER",
+      "serviceId": "holiday",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Pier 11",
+      "seconds": 43200,
+      "departureTime": "12:00:00"
+    }
+  ],
+  "tripSchedules": {
+    "nine": {
+      "stops": [
+        {
+          "stopId": "1",
+          "sequence": 1,
+          "arrivalSeconds": 32400,
+          "departureSeconds": 32460
+        },
+        {
+          "stopId": "2",
+          "sequence": 2,
+          "arrivalSeconds": 33000,
+          "departureSeconds": 33060
+        }
+      ]
+    }
+  },
+  "stops": {
+    "1": {
+      "name": "Pier 11",
+      "landingId": 16
+    },
+    "2": {
+      "name": "DUMBO",
+      "landingId": 17
+    }
+  }
+}
