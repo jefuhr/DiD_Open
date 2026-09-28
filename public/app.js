@@ -615,7 +615,7 @@ function routeVisual(routeId, variant) {
 //
 // Home-port runs open the revenue trip they follow; crew shuttles without a stop list stay inert.
 function scheduleForDeparture(item) {
-  return data?.tripSchedules?.[item.liveTripId || item.tripId];
+  return data?.tripSchedules?.[item.tripId] || data?.tripSchedules?.[item.liveTripId];
 }
 
 function tripAttrs(item) {
@@ -1133,7 +1133,7 @@ function connectionsFor(stop) {
 function vesselForTrip(tripId) {
   const vehicles = realtime.vehicles || [];
   const departure = (data?.departures || []).find((item) => String(item.tripId) === String(tripId));
-  if (departure?.scheduleOnly) return null;
+  if (departure?.scheduleOnly && !departure.liveTripId) return null;
   const working = vehicles.find((item) => String(item.tripId) === String(departure?.liveTripId || tripId) && item.boatName);
   if (working) return { name: working.boatName, number: working.vesselNumber, vesselId: working.vesselId, predicted: false };
   if (!Number.isInteger(departure?.boatAssignment)) return null;
@@ -1239,7 +1239,7 @@ async function loadTripConnections(tripId) {
 
 function openTripView(tripId, stopId, seconds) {
   const departure = data?.departures?.find((item) => item.tripId === tripId);
-  const sourceTripId = departure?.liveTripId || tripId;
+  const sourceTripId = data?.tripSchedules?.[tripId] ? tripId : departure?.liveTripId || tripId;
   const schedule = data?.tripSchedules?.[sourceTripId];
   if (!schedule?.stops?.length || (schedule.stops.length < 2 && !schedule.timetableOnly)) return;
   const stops = [...schedule.stops].sort((left, right) => left.sequence - right.sequence);
@@ -1263,7 +1263,7 @@ function openTripView(tripId, stopId, seconds) {
   };
   if (schedule.timetableOnly) {
     tripView.summary = `${route.shortName || ""} to ${departure.destination} · Published departure`;
-    tripView.note = "Published holiday departure time only. Trip connections and arrival estimates are unavailable.";
+    tripView.note = "Published holiday departure. Trip connections and arrival estimates are unavailable.";
     renderTripView();
     setTripOpen(true);
     return;

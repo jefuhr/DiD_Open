@@ -90,7 +90,8 @@ export function routeDirectionGroups({ data, realtime, viewDate = null, now, lim
       // live, so it names the revenue trip it follows out instead — the boat going to Pier C is the
       // boat that just got in, and it ties up as late as that trip ran. Crew shuttles carry no such
       // trip and keep their published times.
-      const update = departure.scheduleOnly ? null : updates.get(`${departure.liveTripId || departure.tripId}|${departure.stopId}`);
+      const update = departure.scheduleOnly && !departure.liveTripId
+        ? null : updates.get(`${departure.liveTripId || departure.tripId}|${departure.stopId}`);
       if (update?.canceled) continue;
       const liveDelay = Number(update?.delaySeconds);
       const hasLiveTiming = !realtime.stale && update?.delaySeconds != null && Number.isFinite(liveDelay);
@@ -131,12 +132,14 @@ export function routeDirectionGroups({ data, realtime, viewDate = null, now, lim
         delta,
         live: frame.live,
         hasLiveTiming,
-        boatName: departure.scheduleOnly ? null : vehicles.get(String(departure.tripId))?.boatName || null,
+        boatName: departure.scheduleOnly && !departure.liveTripId ? null
+          : vehicles.get(String(departure.liveTripId || departure.tripId))?.boatName || null,
         // Failing a vessel of its own, the one currently working this boat — by way of the trip a
         // home-port row is about to pick up, or simply by the boat the workbook puts on this
         // sailing. A guess either way, and labelled as one: the vessel on a working changes at
         // short notice, which is exactly why the board says "McShane?" rather than "McShane".
-        predictedBoatName: departure.scheduleOnly || vehicles.get(String(departure.tripId))?.boatName
+        predictedBoatName: (departure.scheduleOnly && !departure.liveTripId)
+          || vehicles.get(String(departure.liveTripId || departure.tripId))?.boatName
           ? null
           : (departure.predictTripId ? vehicles.get(String(departure.predictTripId))?.boatName : null)
             || (Number.isInteger(departure.boatAssignment)

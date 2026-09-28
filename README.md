@@ -50,6 +50,30 @@ The responsive staff layout is identical at the root and under the existing `/fe
 
 After updating feeds or configuration, run `npm run build` and restart the server. Maintain transcribed feeds and crew assignments using the procedures in [Schedule and operator maintenance](docs/data-maintenance.md). Geographic refresh procedures and attribution are in [Harbor map](docs/harbor-map.md).
 
+### Sukkot live trip mapping
+
+The September 28–October 2 timetable remains in `schedules/sukkot-2026.json`. NYC Ferry's
+GTFS version `20260928` gives its departures real trip ids, archived in
+`schedules/fall-2026-sources/nycferry-20260928.zip`. The supplied assignment board is retained
+as operational notes without crew names. Regenerate the reviewed maps after a feed change:
+
+```sh
+python3 scripts/import-sukkot-board.py /path/to/sukkot.xlsx
+python3 scripts/import-sukkot-live.py schedules/fall-2026-sources/nycferry-20260928.zip
+python3 scripts/import-post-sukkot-live.py schedules/fall-2026-sources/nycferry-20260928.zip
+npm run build
+npm run stamp:bump
+```
+
+Sukkot cells link to live data only when route, stop, and time identify one operator trip. Fall
+trips link to reissued October ids only when the entire route, stops, and times match. Unmatched
+rows remain scheduled. `npm run check:nyc-feed` and the daily GitHub workflow flag a new operator
+feed version. The production host can run the same check daily with the units in `deploy/systemd/`;
+their failures appear in `journalctl -u nyc-ferry-feed-check.service`. GitHub scheduled workflows
+run only after this workflow reaches the repository's default branch. Shift-end notes that conflict
+with the timetable remain unconfirmed, including
+Pier C movements.
+
 ## Offline behavior
 
 Previously loaded landing schedules remain available and departures are recalculated as time advances. Live timings become stale when refreshes fail; browsing another date never applies today's realtime updates. A landing that has never been saved needs a connection first. Coverage is limited to the bundled calendars and exceptions.

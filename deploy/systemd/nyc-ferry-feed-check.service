@@ -1,0 +1,8 @@
+[Unit]
+Description=Check NYC Ferry GTFS against reviewed live trip mappings
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/opt/nyc-ferry-did
+ExecStart=/usr/bin/python3 scripts/check-nyc-feed-freshness.py

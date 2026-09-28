@@ -5,7 +5,7 @@ export const HOLIDAY_SERVICE = "nyc:sukkot:2026";
 export const CREW_UNCONFIRMED = "Crew shifts / Pier C shuttles: UNCONFIRMED";
 const DIRECTIONS = { ER: ["1", "0"], SB: ["0", "1"], RS: ["1", "0"], AS: ["1", "0"], SG: ["0", "1"], GI: ["0", "1"], RES: ["0", "1"], RWS: ["0", "1"] };
 
-export function holidayDepartures({ source, selectedStops, stopsById, agency, busesEnabled }) {
+export function holidayDepartures({ source, liveMatches = {}, selectedStops, stopsById, agency, busesEnabled }) {
   const departures = [];
   if (!source) return departures;
   for (const [routeId, route] of Object.entries(source.routes)) {
@@ -32,14 +32,19 @@ export function holidayDepartures({ source, selectedStops, stopsById, agency, bu
           }
           const departureTime = times[column];
           const [h, m, s] = departureTime.split(":").map(Number);
+          const tripId = `nyc:sukkot:${routeId}:${table.direction}:${rowIndex}:${column}`;
+          const match = liveMatches[tripId];
+          const verified = match?.routeId === routeId && match.stopId === stopId
+            && match.departureTime === departureTime;
           departures.push({
-            tripId: `nyc:sukkot:${routeId}:${table.direction}:${rowIndex}:${column}`,
+            tripId, liveTripId: verified ? match.tripId : null,
             routeId, serviceId: HOLIDAY_SERVICE, directionId: DIRECTIONS[routeId][table.direction],
             stopId, departureTime, seconds: h * 3600 + m * 60 + s,
             destination: outboundBus ? (routeId === "RES" ? "Rockaway East" : "Rockaway West")
               : stopsById.get(destinationStop)?.stop_name || destinationStop,
             variant, nextStop: null, servesGovernorsIsland: routeId === "SB" && destinationStop === "111",
-            boatAssignment: null, mode: bus ? "bus" : "ferry", operator: agency,
+            boatAssignment: verified && Number.isInteger(match.boatAssignment) ? match.boatAssignment : null,
+            mode: bus ? "bus" : "ferry", operator: agency,
             endsShift: null, outOfService: false, crewShuttle: false, crewBoats: null,
             departureTimeEnd: null, secondsEnd: null, endsDay: false,
             scheduleOnly: true, timetableOnly: true,
