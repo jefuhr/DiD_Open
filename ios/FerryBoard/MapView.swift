@@ -72,6 +72,8 @@ struct HarborMapView: View {
             }
         }
         .mapStyle(.standard(elevation: .flat, emphasis: .muted, pointsOfInterest: .excludingAll, showsTraffic: false))
+        // On the map itself: applied after the insets it replaced the header and vessel list identifiers.
+        .accessibilityIdentifier("harborMap")
         .mapControls { MapCompass(); MapScaleView() }
         .safeAreaInset(edge: .top, spacing: 0) { mapHeader }
         .safeAreaInset(edge: .bottom, spacing: 0) { vesselList }
@@ -98,7 +100,6 @@ struct HarborMapView: View {
             if verticalSizeClass == .compact { showVessels = false }
         }
         .onChange(of: verticalSizeClass) { _, value in if value == .compact { showVessels = false } }
-        .accessibilityIdentifier("harborMap")
     }
 
     private var mapHeader: some View {
@@ -142,15 +143,14 @@ struct HarborMapView: View {
                             Button {
                                 store.selectedBoatID = boat.id; store.wantedVesselName = nil; focusBoat(); store.sheet = .boat(boat)
                             } label: {
-                                HStack {
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
                                     Circle().fill(Color(hex: boat.color)).frame(width: 9, height: 9)
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(boat.name).font(.headline)
-                                        Text([boat.number, boat.route, boat.destination].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right").font(.caption)
-                                }.padding(.horizontal).padding(.vertical, 6).frame(minHeight: 44).contentShape(Rectangle())
+                                    Text(boat.name).font(.subheadline.weight(.semibold)).lineLimit(1)
+                                    Text([boat.number, boat.route, boat.destination].compactMap { $0 }.joined(separator: " · "))
+                                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    Spacer(minLength: 0)
+                                    Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.secondary)
+                                }.padding(.horizontal).frame(minHeight: 44).contentShape(Rectangle())
                             }.buttonStyle(.plain).accessibilityIdentifier("mapBoat-\(boat.id)")
                             Divider()
                         }

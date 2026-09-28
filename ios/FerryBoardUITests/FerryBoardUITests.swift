@@ -27,6 +27,12 @@ final class FerryBoardUITests: XCTestCase {
         let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in condition() }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 10), .completed, description)
     }
+    /// A toggle row's own tap lands on its label; flip the switch control inside it.
+    private func flip(_ toggle: XCUIElement) {
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        let control = toggle.switches.firstMatch
+        if control.exists { control.tap() } else { toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap() }
+    }
     private func sideBySide(_ left: XCUIElement, _ right: XCUIElement) -> Bool {
         left.exists && right.exists && abs(left.frame.minY - right.frame.minY) < 2 && left.frame.maxX <= right.frame.minX + 1
     }
@@ -34,6 +40,8 @@ final class FerryBoardUITests: XCTestCase {
         upper.exists && lower.exists && lower.frame.minY >= upper.frame.maxY - 1
     }
     private func capture(_ name: String) {
+        // Layout settles before the rotation animation ends; let it finish so the picture is whole.
+        Thread.sleep(forTimeInterval: 1)
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name; shot.lifetime = .keepAlways
         add(shot)
@@ -45,10 +53,12 @@ final class FerryBoardUITests: XCTestCase {
         app.buttons["landing-26"].tap()
         waitForLabel(app.buttons["landingTitle"], containing: "79")
         app.buttons["settings"].tap()
-        XCTAssertTrue(app.switches["clockFormat"].waitForExistence(timeout: 10))
-        app.switches["clockFormat"].tap()
+        flip(app.switches["clockFormat"])
         app.buttons["settingsTheme"].tap()
         app.buttons["theme-hello-kitty"].tap()
+        // Done belongs to the sheet's first page; the theme list is pushed onto it.
+        app.navigationBars["Theme"].buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["dismissSheet"].waitForExistence(timeout: 10))
         app.buttons["dismissSheet"].tap()
         app.terminate()
         app.launchEnvironment["FERRY_RESET"] = "0"
@@ -92,8 +102,7 @@ final class FerryBoardUITests: XCTestCase {
     func testOperatorsDatesAndAlerts() {
         XCTAssertTrue(app.buttons["departure-nine"].waitForExistence(timeout: 15))
         app.buttons["operatorFilter"].tap()
-        XCTAssertTrue(app.switches["operator-NYC Ferry"].waitForExistence(timeout: 10))
-        app.switches["operator-NYC Ferry"].tap()
+        flip(app.switches["operator-NYC Ferry"])
         app.buttons["dismissSheet"].tap()
         XCTAssertTrue(app.staticTexts["No matching departures"].waitForExistence(timeout: 10))
         app.buttons["Show all operators"].tap()
@@ -142,7 +151,18 @@ final class FerryBoardUITests: XCTestCase {
         waitForLayout("Route sort: groups share a row") { self.sideBySide(crew, first) }
         capture("Tablet board by route, landscape")
         app.segmentedControls["departureSort"].buttons["Time"].tap()
+        // Portrait keeps the board's width: the landing list opens on demand and closes after a choice.
         XCUIDevice.shared.orientation = .portrait
+        waitForLayout("Portrait: board has both columns") { self.sideBySide(first, second) }
+        app.buttons["Show Sidebar"].tap()
+        XCTAssertTrue(app.buttons["landing-26"].waitForExistence(timeout: 10))
+        app.buttons["landing-26"].tap()
+        waitForLabel(app.buttons["landingTitle"], containing: "79")
+        waitForLayout("Sidebar closes after choosing a landing") {
+            let row = self.app.buttons["landing-26"]
+            return (!row.exists || !row.isHittable) && self.sideBySide(first, second)
+        }
+        capture("Tablet board after choosing a landing, portrait")
         // Accessibility text keeps one readable column.
         app.terminate()
         app.launchEnvironment["FERRY_RESET"] = "0"

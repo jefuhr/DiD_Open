@@ -2,6 +2,19 @@
 
 Checked on this Mac on 2026-09-28 with Xcode 27.0, Node 22.23.3 and XcodeGen 2.46.0.
 
+## Compact board and iPad columns
+
+Checked on 2026-09-28 with Xcode 27.0 on the iOS 27.0 **iPhone 17** and **iPad Pro 11-inch (M5)** simulators. This supersedes the pending iPad layout checks below.
+
+- Departures take two lines. The landing, clock and live state are in the navigation bar, and wide boards keep shortcuts, date and sort in one pinned row. Zero-minute dwells are no longer listed.
+- Boards at least 600 points wide use two columns, filled left to right. The iPad sidebar stays docked only while the board keeps both columns beside it; in portrait it opens over the board and closes after a choice. Riding mode uses two panes from 700 points.
+- The new tablet journey failed against the previous board (portrait 09:00 and 10:00 never shared a row). It now passes in portrait and landscape, by time and by route, opening a trip from the grid, choosing a landing from the portrait sidebar, and with one column at accessibility sizes.
+- The new phone journey measured the previous first row at **93 points**; rows are now about **50 points**, above the 44-point touch minimum, and phone landscape shows two columns.
+- iPhone: **14 unit tests and 7 UI journeys passed**; the tablet journey skips. The four older journeys had never run and failed identically against the previous board. The map's own identifier replaced its header and vessel list identifiers, toggle taps landed on labels, and one test tapped Done on a pushed page. The identifier now applies only to the map, and the tests flip the switch control and go back first.
+- iPad: **14 unit tests and the tablet journey passed**. The older journeys use the iPhone tab bar.
+- Same live Pier 11 data (`https://juliet.nyc`, 17:35 Sukkot service) before and after: iPhone portrait showed about **6** departures before and **10–11** after; iPad portrait about **11** before and about **40** after.
+- XCUITest crops landscape screenshots on this runtime, so landscape pictures were taken with `xcrun simctl io screenshot`. Split View and Stage Manager window sizes and a physical iPad remain unchecked.
+
 ## iPad support revision
 
 The app targets device families 1 and 2. iPad orientations and multitasking are configured explicitly. Wide iPad windows show navigation, landings and favorites in a sidebar; narrow windows retain tabs. Board and ride content keep a readable maximum width.

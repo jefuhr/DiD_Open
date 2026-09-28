@@ -224,7 +224,7 @@ struct RideTripCard: View {
                 RideStopClocks(stop: stop, stale: stale, timezone: timezone)
                 RideStopDurations(stop: stop, stale: stale)
             }
-        }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).padding(.vertical, 7).contentShape(Rectangle())
+        }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).padding(.vertical, 4).contentShape(Rectangle())
     }
 }
 

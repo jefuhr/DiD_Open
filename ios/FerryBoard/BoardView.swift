@@ -128,6 +128,8 @@ struct BoardView: View {
             }.buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.small)
                 .font(.footnote.weight(.medium)).padding(.horizontal, 12).padding(.vertical, 6)
         }.scrollIndicators(.hidden)
+            // Fades rather than clips, so a cut-off favorite reads as "scroll for more".
+            .mask(LinearGradient(stops: [.init(color: .black, location: 0.9), .init(color: .clear, location: 1)], startPoint: .leading, endPoint: .trailing))
     }
 
     /// Pinned under the navigation bar. Wide boards keep the shortcuts here too, in one row.
@@ -313,8 +315,9 @@ struct DepartureButton: View {
             Group {
                 if textSize.isAccessibilitySize { stacked(details) } else { compact(details) }
             }.padding(.horizontal, 12).padding(.vertical, 6)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .frame(minHeight: 44).contentShape(Rectangle())
+                // One-line rows center in the touch target; a row beside a taller one keeps to the top.
+                .frame(minHeight: 44, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityIdentifier("departure-\(departure.tripId)")
             .accessibilityLabel(spoken(pauses))
             .accessibilityHint(canOpen ? "Show trip details" : "Published movement; no trip detail available")
@@ -401,7 +404,8 @@ struct DepartureButton: View {
         } else if let via = departure.via, !via.isEmpty {
             parts.append(Text("via " + via.joined(separator: ", ")))
         }
-        if let minutes = pauses?.dwellMinutes { parts.append(Text("Dwell \(minutes)m").monospacedDigit()) }
+        // Most feeds repeat the arrival time as the departure time; a zero dwell says nothing.
+        if let minutes = pauses?.dwellMinutes, minutes > 0 { parts.append(Text("Dwell \(minutes)m").monospacedDigit()) }
         if let layover = pauses?.layover {
             parts.append(Text("Layover \(layover.minutes)m \(layover.hasLiveTiming ? "est" : "sched")").monospacedDigit())
         }
@@ -458,7 +462,7 @@ struct DepartureButton: View {
         if let until { parts.append(until) }
         if let via = departure.viaTerminals, !via.isEmpty { parts.append("via " + via.map { $0.name ?? $0.code }.joined(separator: ", ")) }
         else if let via = departure.via, !via.isEmpty { parts.append("via " + via.joined(separator: ", ")) }
-        if let minutes = pauses?.dwellMinutes { parts.append("dwell \(minutes) minutes") }
+        if let minutes = pauses?.dwellMinutes, minutes > 0 { parts.append("dwell \(minutes) minutes") }
         if let layover = pauses?.layover { parts.append("layover \(layover.minutes) minutes \(layover.hasLiveTiming ? "estimated" : "scheduled")") }
         if departure.approximate == true && departure.fromHomePort == true { parts.append("first pickup time at destination") }
         return parts.joined(separator: ", ")

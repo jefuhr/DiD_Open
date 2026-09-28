@@ -49,9 +49,11 @@ Native departure push notifications are deferred. The web client's notification 
 
 ## iPad workspace
 
-On iPad windows at least 760 points wide, a sidebar provides Departures/Harbor map navigation, searchable landings, favorites, and direct landing selection. Narrower multitasking windows use the compact tab layout. Rotation, Split View and resizable windows are enabled; departure and ride content has a maximum reading width. Sheets use the system presentation for the available space.
+On iPad windows at least 760 points wide, a sidebar provides Departures/Harbor map navigation, searchable landings, favorites, and direct landing selection. It stays beside the board while the board still has room for two columns, as in landscape. Otherwise it starts hidden, opens over the board from the sidebar button, and closes after a choice. Narrower multitasking windows use the compact tab layout. Rotation, Split View and resizable windows are enabled. Sheets use the system presentation for the available space.
 
-Choose an iPad destination in Xcode with the same **FerryBoard** scheme. To run the existing helper against an installed iPad simulator, set `IOS_SIMULATOR_ID` to its device identifier. iPad layout and multitasking still need simulator or device validation; the current session cannot access those system services.
+The departure board uses two columns whenever it is at least 600 points wide, including iPad portrait and iPhone landscape. Departures fill left to right, so the next two sailings share the top row; route groups tile the same way. Each departure takes two lines: time, route, destination and status, then the countdown, working vessel, flags, and dwell or layover. Accessibility text sizes keep one column. On wide screens riding mode shows the next landing and position beside the confirmed trips.
+
+Choose an iPad destination in Xcode with the same **FerryBoard** scheme. To run the helper against an iPad simulator, set `IOS_SIMULATOR_ID` to its device identifier.
 
 ## Settings for a shift
 
@@ -80,7 +82,7 @@ scripts/ios.sh test                  # Store tests and native UI journeys
 FERRY_LIVE_SMOKE=1 scripts/ios.sh core --filter LiveContractTests
 ```
 
-`test` creates/reuses a dedicated **FerryBoard iPhone** simulator. Install an iOS runtime first; the helper prints the command if missing. Set `IOS_SIMULATOR_ID` to use another simulator. Xcode test results and coverage are under ignored `ios/DerivedData/Logs/Test/`.
+`test` creates/reuses a dedicated **FerryBoard iPhone** simulator. Install an iOS runtime first; the helper prints the command if missing. Set `IOS_SIMULATOR_ID` to use another simulator. The tablet layout journey runs only on an iPad simulator, and the other journeys use the iPhone tab bar. Xcode test results and coverage are under ignored `ios/DerivedData/Logs/Test/`.
 
 UI tests use bundled fixtures and a fixed clock, with an isolated defaults suite and cache. `FERRY_UI_TESTS`, `FERRY_RESET`, and `FERRY_OFFLINE` only affect Debug builds. Rebuild fixtures with `npm run fixtures:ios` after an intentional contract change; the generator reads the canonical shared schedule fixture. Release builds use the live API.
 

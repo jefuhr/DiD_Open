@@ -73,11 +73,12 @@ struct LandingPicker: View {
                 }
             }
             ForEach(choices) { landing in
-                HStack(spacing: 12) {
+                // The sidebar is narrow: a smaller name keeps most landings to one line.
+                HStack(spacing: dismissOnSelection ? 12 : 6) {
                     Button {
                         if !store.preferences.favorites.insert(landing.id).inserted { store.preferences.favorites.remove(landing.id) }
                     } label: {
-                        Image(systemName: store.preferences.favorites.contains(landing.id) ? "star.fill" : "star").frame(width: 44, height: 44)
+                        Image(systemName: store.preferences.favorites.contains(landing.id) ? "star.fill" : "star").frame(width: dismissOnSelection ? 44 : 30, height: 44)
                     }.buttonStyle(.borderless).accessibilityLabel("\(store.preferences.favorites.contains(landing.id) ? "Unfavorite" : "Favorite") \(landing.displayName)")
                         .accessibilityIdentifier("favorite-\(landing.id)")
                     Button {
@@ -88,7 +89,8 @@ struct LandingPicker: View {
                         }
                     } label: {
                         HStack {
-                            Text(landing.displayName).foregroundStyle(.primary).multilineTextAlignment(.leading)
+                            Text(landing.displayName).font(dismissOnSelection ? .body : .subheadline)
+                                .foregroundStyle(.primary).multilineTextAlignment(.leading)
                             Spacer()
                             if store.preferences.landingID == landing.id { Image(systemName: "checkmark").accessibilityLabel("Selected") }
                             Text(String(landing.id)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
