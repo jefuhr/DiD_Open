@@ -15,6 +15,7 @@ COPY content ./content
 COPY gtfs ./gtfs
 COPY schedules/sukkot-2026.json ./schedules/sukkot-2026.json
 COPY schedules/sukkot-2026-live.json ./schedules/sukkot-2026-live.json
+COPY schedules/sukkot-2026-crew.json ./schedules/sukkot-2026-crew.json
 COPY schedules/fall-2026-post-sukkot-live.json ./schedules/fall-2026-post-sukkot-live.json
 COPY schedules/fall-2026-weekday-crew.json ./schedules/fall-2026-weekday-crew.json
 COPY schedules/fall-2026-weekend-crew.json ./schedules/fall-2026-weekend-crew.json

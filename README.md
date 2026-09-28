@@ -60,6 +60,7 @@ as operational notes without crew names. Regenerate the reviewed maps after a fe
 ```sh
 python3 scripts/import-sukkot-board.py /path/to/sukkot.xlsx
 python3 scripts/import-sukkot-live.py schedules/fall-2026-sources/nycferry-20260928.zip
+python3 scripts/import-sukkot-crew.py
 python3 scripts/import-post-sukkot-live.py schedules/fall-2026-sources/nycferry-20260928.zip
 npm run build
 npm run stamp:bump
@@ -67,7 +68,11 @@ npm run stamp:bump
 
 Sukkot cells link to live data only when route, stop, and time identify one operator trip. Fall
 trips link to reissued October ids only when the entire route, stops, and times match. Unmatched
-rows remain scheduled. `npm run check:nyc-feed` and the daily GitHub workflow flag a new operator
+rows remain scheduled. The Pier C board uses the assignment notes' first pickups, matched to
+the operator's holiday trips. Its times remain approximate Pier C departures; the four crew
+shuttles replace the corresponding afternoon boat departures. Two corrected pickups use the
+published trip times at `Board!K2` and `Board!C26` with the original note times retained in the
+crew data. `npm run check:nyc-feed` and the daily GitHub workflow flag a new operator
 feed version. The production host can run the same check daily with the units in `deploy/systemd/`;
 their failures appear in `journalctl -u nyc-ferry-feed-check.service`. GitHub scheduled workflows
 run only after this workflow reaches the repository's default branch. Shift-end notes that conflict

@@ -11,6 +11,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent.parent
 URL = 'https://nycferry.connexionz.net/rtt/public/resource/gtfs.zip'
 MAPS = ('schedules/sukkot-2026-live.json',
+        'schedules/sukkot-2026-crew.json',
         'schedules/fall-2026-post-sukkot-live.json')
 
 
@@ -32,9 +33,9 @@ def main():
         print(f'NYC Ferry GTFS is now {version}; review and regenerate live trip maps:', file=sys.stderr)
         for item in stale:
             print(f'  {item}', file=sys.stderr)
-        print('Archive the new ZIP, then run both import scripts against it.', file=sys.stderr)
+        print('Archive the new ZIP, then regenerate the live and crew mappings.', file=sys.stderr)
         return 1
-    print(f'NYC Ferry GTFS {version} matches both reviewed live trip maps.')
+    print(f'NYC Ferry GTFS {version} matches all reviewed trip and crew maps.')
     return 0
 
 

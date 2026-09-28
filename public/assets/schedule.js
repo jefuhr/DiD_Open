@@ -51,6 +51,8 @@ export function viewFrame(data, viewDate, now) {
 }
 
 export function confirmedCrewCoverage(data, date) {
+  const holiday = data?.meta?.crewScheduleStatus?.confirmedHolidays;
+  if (holiday?.dates?.includes(date)) return holiday;
   const weekend = [0, 6].includes(new Date(`${date}T12:00:00Z`).getUTCDay());
   const coverage = data?.meta?.crewScheduleStatus?.[weekend ? "confirmedWeekends" : "confirmedWeekdays"];
   return coverage && date >= coverage.startDate && date <= coverage.endDate &&
