@@ -70,14 +70,16 @@ Sukkot cells link to live data only when route, stop, and time identify one oper
 trips link to reissued October ids only when the entire route, stops, and times match. Unmatched
 rows remain scheduled. The Pier C board uses the assignment notes' first pickups, matched to
 the operator's holiday trips. Its times remain approximate Pier C departures; the four crew
-shuttles replace the corresponding afternoon boat departures. Two corrected pickups use the
-published trip times at `Board!K2` and `Board!C26` with the original note times retained in the
-crew data. `npm run check:nyc-feed` and the daily GitHub workflow flag a new operator
-feed version. The production host can run the same check daily with the units in `deploy/systemd/`;
-their failures appear in `journalctl -u nyc-ferry-feed-check.service`. GitHub scheduled workflows
-run only after this workflow reaches the repository's default branch. Shift-end notes that conflict
-with the timetable remain unconfirmed, including
-Pier C movements.
+shuttles replace the corresponding afternoon boat departures. Verified last drops add out-of-service
+rows toward Pier C at the arrival landing, except when a shuttle relieves that working. Six
+conflicting return notes remain withheld in `schedules/sukkot-2026-crew.json` until dispatch
+confirms them. Two corrected pickups use the published trip times at `Board!K2` and `Board!C26`
+with the original note times retained in the crew data. `npm run check:nyc-feed` and the daily
+GitHub workflow flag a new operator feed version. The production host can run the same check daily
+with the units in `deploy/systemd/`; their failures appear in
+`journalctl -u nyc-ferry-feed-check.service`. GitHub scheduled workflows run only after this
+workflow reaches the repository's default branch. Shift-end notes that conflict with the timetable
+remain unconfirmed, including Pier C movements.
 
 ## Offline behavior
 

@@ -615,6 +615,7 @@ function routeVisual(routeId, variant) {
 //
 // Home-port runs open the revenue trip they follow; crew shuttles without a stop list stay inert.
 function scheduleForDeparture(item) {
+  if (item?.holidayOperational) return null;
   return data?.tripSchedules?.[item.tripId] || data?.tripSchedules?.[item.liveTripId];
 }
 
@@ -1239,6 +1240,7 @@ async function loadTripConnections(tripId) {
 
 function openTripView(tripId, stopId, seconds) {
   const departure = data?.departures?.find((item) => item.tripId === tripId);
+  if (departure?.holidayOperational) return;
   const sourceTripId = data?.tripSchedules?.[tripId] ? tripId : departure?.liveTripId || tripId;
   const schedule = data?.tripSchedules?.[sourceTripId];
   if (!schedule?.stops?.length || (schedule.stops.length < 2 && !schedule.timetableOnly)) return;

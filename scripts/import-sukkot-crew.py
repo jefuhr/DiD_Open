@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Sukkot pickup notes against the holiday GTFS for Pier C's board."""
+"""Verify Sukkot pickups and returns against the holiday GTFS."""
 import collections
 import csv
 import datetime as dt
@@ -23,6 +23,9 @@ SHUTTLE_LANDING = {3: (16, 'Wall St/Pier 11'), 4: (16, 'Wall St/Pier 11'),
                    5: (16, 'Wall St/Pier 11'), 6: (8, 'East 34th Street')}
 # Dispatch approved the published pickup times over these two conflicting notes on 2026-09-28.
 PUBLISHED_PICKUPS = {'Board!K2': '06:46', 'Board!C26': '14:18'}
+# Dispatch asked to withhold these six conflicting returns until the last drops are confirmed.
+WITHHELD_DROPS = {'Board!A26', 'Board!C26', 'Board!F26',
+                  'Board!A10', 'Board!D10', 'Board!L10'}
 
 
 def minutes(value):
@@ -67,9 +70,9 @@ def main():
         trips = {row['trip_id']: row for row in rows('trips.txt')}
         stops = {row['stop_id']: row['stop_name'] for row in rows('stops.txt')}
         events = {date: collections.defaultdict(set) for date in dates}
+        arrivals = {date: collections.defaultdict(set) for date in dates}
+        trip_calls = collections.defaultdict(list)
         for call in rows('stop_times.txt'):
-            if call['pickup_type'] == '1':
-                continue
             trip = trips.get(call['trip_id'])
             if not trip or trip['route_id'] not in allowed:
                 continue
@@ -84,14 +87,28 @@ def main():
             if working not in allowed[route]:
                 continue
             boat = f'{route}{working}'
-            key = (boat, stops[call['stop_id']], call['departure_time'][:5])
+            stop_name = stops[call['stop_id']]
+            trip_calls[call['trip_id']].append((boat, call))
+            departure_key = (boat, stop_name, call['departure_time'][:5])
             for date, services in active.items():
                 if trip['service_id'] in services:
-                    events[date][key].add(call['trip_id'])
+                    if call['pickup_type'] != '1':
+                        events[date][departure_key].add(call['trip_id'])
+        finals = {date: {} for date in dates}
+        for trip_id, calls in trip_calls.items():
+            boat, last = max(calls, key=lambda item: int(item[1]['stop_sequence']))
+            final = (last['arrival_time'][:5], stops[last['stop_id']], trip_id, last['stop_id'])
+            for date, services in active.items():
+                if trips[trip_id]['service_id'] in services:
+                    arrivals[date][(boat, final[1], final[0])].add((trip_id, final[3]))
+                    previous = finals[date].get(boat)
+                    if previous is None or minutes(final[0]) > minutes(previous[0]):
+                        finals[date][boat] = final
 
     shifts = collections.defaultdict(list)
     parsed = {}
     rejected = []
+    withheld = []
     for entry in board['assignments']:
         label = LABEL.search(entry['label'])
         if not label:
@@ -110,6 +127,8 @@ def main():
         noted_time, raw_place = first.groups()
         noted_place = place(raw_place)
         last = parser['LAST'].search(entry['note'])
+        if not last and boat.startswith('GI'):
+            last = re.search(r'Last\s+Drop\s*(\d{1,2}:\d{2})\s*([^\n]+)', entry['note'], re.I)
         parsed[boat, kind] = {'startTime': noted_time, 'startPlace': noted_place,
                               'endTime': last[1] if last else None,
                               'endPlace': place(last[2]) if last else None,
@@ -159,17 +178,58 @@ def main():
                 raise ValueError(f'Shuttle {entry["source"]} does not bracket {boat} at {landing_name}')
             verified_pm['shuttled'] = True
             verified_pm['shuttleSource'] = entry['source']
+            verified_am = next((shift for shift in shifts[boat] if shift['shift'] == 'AM'), None)
+            if verified_am:
+                verified_am['shuttledEnd'] = True
+                verified_am['shuttleSource'] = entry['source']
         shuttles.append({'landing': landing, 'time': f'{ready // 60:02}:{ready % 60:02}',
                          'boats': boats, 'source': entry['source']})
 
-    for entries in shifts.values():
+    for boat, entries in shifts.items():
+        for shift in entries:
+            if shift.get('shuttledEnd'):
+                continue
+            source = shift['source']
+            noted = parsed[boat, shift['shift']]
+            noted_time, noted_place = noted['endTime'], noted['endPlace']
+            if not noted_time or not noted_place:
+                rejected.append({'source': source, 'boat': boat, 'field': 'end',
+                                 'reason': 'unparsed last drop'})
+                continue
+            if source in WITHHELD_DROPS:
+                proposed = sorted({finals[date].get(boat) for date in dates})
+                withheld.append({'source': source, 'boat': boat, 'notedTime': noted_time,
+                                 'notedPlace': noted_place,
+                                 'publishedFinal': [{'time': value[0], 'place': value[1],
+                                                     'tripId': value[2]} for value in proposed if value],
+                                 'reason': 'Dispatch withheld return pending confirmation'})
+                continue
+            key = (boat, noted_place, noted_time)
+            common = set.intersection(*(arrivals[date][key] for date in dates))
+            if len(common) != 1:
+                proposed = sorted({finals[date].get(boat) for date in dates})
+                rejected.append({'source': source, 'boat': boat, 'field': 'end',
+                                 'notedTime': noted_time, 'notedPlace': noted_place,
+                                 'publishedFinal': [{'time': value[0], 'place': value[1],
+                                                     'tripId': value[2]} for value in proposed if value],
+                                 'reason': 'last drop does not uniquely match the holiday GTFS'})
+                continue
+            trip_id, stop_id = next(iter(common))
+            shift['endTime'] = noted_time
+            shift['endPlace'] = noted_place
+            shift['endTripId'] = trip_id
+            shift['endStopId'] = stop_id
         entries.sort(key=lambda item: item['startTime'])
+    if {item['source'] for item in withheld} != WITHHELD_DROPS:
+        raise ValueError('The six withheld Sukkot returns need another workbook review')
     result = {'source': str(BOARD.relative_to(ROOT)), 'workbookSha256': board['workbookSha256'],
               'feedVersion': version, 'dates': dates, 'shifts': {'holiday': dict(sorted(shifts.items()))},
-              'shuttles': {'holiday': shuttles}, 'rejected': rejected}
+              'shuttles': {'holiday': shuttles}, 'withheldDrops': withheld, 'rejected': rejected}
     OUTPUT.write_text(json.dumps(result, indent=2) + '\n')
-    print(f'Saved {sum(map(len, shifts.values()))} verified pickups and {len(shuttles)} Pier C shuttles; '
-          f'{len(rejected)} pickup notes unresolved.')
+    print(f'Saved {sum(map(len, shifts.values()))} verified pickups, '
+          f'{sum(bool(entry.get("endTripId")) for entries in shifts.values() for entry in entries)} returns, '
+          f'and {len(shuttles)} Pier C shuttles; {len(withheld)} returns withheld, '
+          f'{len(rejected)} unexpected notes unresolved.')
     for item in rejected:
         print(f'  {item["source"]} {item["boat"]}: {item.get("notedTime", item["reason"])} '
               f'{item.get("nearby", [])}')

@@ -17,14 +17,22 @@
           "source": "Board!G2",
           "startTime": "06:03",
           "startPlace": "East 90th St",
-          "predictTripId": "1008"
+          "predictTripId": "1008",
+          "endTime": "10:42",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1014",
+          "endStopId": "87"
         },
         {
           "shift": "PM",
           "source": "Board!G10",
           "startTime": "17:19",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "1262"
+          "predictTripId": "1262",
+          "endTime": "21:18",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1277",
+          "endStopId": "87"
         }
       ],
       "AS2": [
@@ -33,14 +41,22 @@
           "source": "Board!H2",
           "startTime": "06:41",
           "startPlace": "East 90th St",
-          "predictTripId": "1009"
+          "predictTripId": "1009",
+          "endTime": "13:26",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1268",
+          "endStopId": "87"
         },
         {
           "shift": "PM",
           "source": "Board!H10",
           "startTime": "13:34",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "1128"
+          "predictTripId": "1128",
+          "endTime": "21:03",
+          "endPlace": "East 90th St",
+          "endTripId": "1266",
+          "endStopId": "113"
         }
       ],
       "AS3": [
@@ -49,14 +65,22 @@
           "source": "Board!I2",
           "startTime": "06:22",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "987"
+          "predictTripId": "987",
+          "endTime": "14:26",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1269",
+          "endStopId": "87"
         },
         {
           "shift": "PM",
           "source": "Board!I10",
           "startTime": "14:34",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "1129"
+          "predictTripId": "1129",
+          "endTime": "20:44",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1276",
+          "endStopId": "87"
         }
       ],
       "ER1": [
@@ -65,7 +89,11 @@
           "source": "Board!A18",
           "startTime": "06:06",
           "startPlace": "Hunters Point South",
-          "predictTripId": "305"
+          "predictTripId": "305",
+          "endTime": "13:42",
+          "endPlace": "East 34th Street",
+          "endTripId": "882",
+          "endStopId": "17"
         },
         {
           "shift": "PM",
@@ -81,14 +109,22 @@
           "source": "Board!B18",
           "startTime": "06:26",
           "startPlace": "East 34th Street",
-          "predictTripId": "945"
+          "predictTripId": "945",
+          "endTime": "14:41",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1062",
+          "endStopId": "87"
         },
         {
           "shift": "PM",
           "source": "Board!B26",
           "startTime": "14:52",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "890"
+          "predictTripId": "890",
+          "endTime": "21:33",
+          "endPlace": "East 34th Street",
+          "endTripId": "918",
+          "endStopId": "17"
         }
       ],
       "ER3": [
@@ -97,7 +133,11 @@
           "source": "Board!C18",
           "startTime": "06:31",
           "startPlace": "Hunters Point South",
-          "predictTripId": "306"
+          "predictTripId": "306",
+          "endTime": "14:11",
+          "endPlace": "East 34th Street",
+          "endTripId": "884",
+          "endStopId": "17"
         },
         {
           "shift": "PM",
@@ -115,14 +155,22 @@
           "source": "Board!D18",
           "startTime": "06:50",
           "startPlace": "East 34th Street",
-          "predictTripId": "978"
+          "predictTripId": "978",
+          "endTime": "14:24",
+          "endPlace": "East 34th Street",
+          "endTripId": "885",
+          "endStopId": "17"
         },
         {
           "shift": "PM",
           "source": "Board!D26",
           "startTime": "14:29",
           "startPlace": "East 34th Street",
-          "predictTripId": "1064"
+          "predictTripId": "1064",
+          "endTime": "21:59",
+          "endPlace": "East 34th Street",
+          "endTripId": "933",
+          "endStopId": "17"
         }
       ],
       "ER5": [
@@ -131,14 +179,22 @@
           "source": "Board!E18",
           "startTime": "06:26",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "841"
+          "predictTripId": "841",
+          "endTime": "13:47",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1058",
+          "endStopId": "87"
         },
         {
           "shift": "PM",
           "source": "Board!E26",
           "startTime": "14:00",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "886"
+          "predictTripId": "886",
+          "endTime": "21:26",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1093",
+          "endStopId": "87"
         }
       ],
       "ER6": [
@@ -147,7 +203,9 @@
           "source": "Board!F18",
           "startTime": "06:38",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "842"
+          "predictTripId": "842",
+          "shuttledEnd": true,
+          "shuttleSource": "Board!N5:O5"
         },
         {
           "shift": "PM",
@@ -165,7 +223,11 @@
           "source": "Board!G18",
           "startTime": "12:51",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "881"
+          "predictTripId": "881",
+          "endTime": "21:52",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1095",
+          "endStopId": "87"
         }
       ],
       "GI1": [
@@ -183,7 +245,11 @@
           "source": "Board!M10",
           "startTime": "10:06",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "1333"
+          "predictTripId": "1333",
+          "endTime": "17:06",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1438",
+          "endStopId": "87"
         }
       ],
       "RS1": [
@@ -192,7 +258,9 @@
           "source": "Board!A2",
           "startTime": "05:03",
           "startPlace": "Ferry Point Park",
-          "predictTripId": "575"
+          "predictTripId": "575",
+          "shuttledEnd": true,
+          "shuttleSource": "Board!N3:O3"
         },
         {
           "shift": "PM",
@@ -210,7 +278,9 @@
           "source": "Board!B2",
           "startTime": "05:47",
           "startPlace": "Ferry Point Park",
-          "predictTripId": "600"
+          "predictTripId": "600",
+          "shuttledEnd": true,
+          "shuttleSource": "Board!N4:O4"
         },
         {
           "shift": "PM",
@@ -219,7 +289,11 @@
           "startPlace": "Wall St/Pier 11",
           "predictTripId": "1100",
           "shuttled": true,
-          "shuttleSource": "Board!N4:O4"
+          "shuttleSource": "Board!N4:O4",
+          "endTime": "21:05",
+          "endPlace": "Rockaway",
+          "endTripId": "1096",
+          "endStopId": "88"
         }
       ],
       "RS3": [
@@ -228,7 +302,9 @@
           "source": "Board!C2",
           "startTime": "06:31",
           "startPlace": "Ferry Point Park",
-          "predictTripId": "602"
+          "predictTripId": "602",
+          "shuttledEnd": true,
+          "shuttleSource": "Board!N5:O5"
         },
         {
           "shift": "PM",
@@ -237,7 +313,11 @@
           "startPlace": "Wall St/Pier 11",
           "predictTripId": "1101",
           "shuttled": true,
-          "shuttleSource": "Board!N5:O5"
+          "shuttleSource": "Board!N5:O5",
+          "endTime": "21:40",
+          "endPlace": "Rockaway",
+          "endTripId": "1123",
+          "endStopId": "88"
         }
       ],
       "RS4": [
@@ -246,7 +326,9 @@
           "source": "Board!D2",
           "startTime": "05:05",
           "startPlace": "Rockaway",
-          "predictTripId": "556"
+          "predictTripId": "556",
+          "shuttledEnd": true,
+          "shuttleSource": "Board!N3:O3"
         },
         {
           "shift": "PM",
@@ -264,7 +346,9 @@
           "source": "Board!E2",
           "startTime": "05:49",
           "startPlace": "Rockaway",
-          "predictTripId": "557"
+          "predictTripId": "557",
+          "shuttledEnd": true,
+          "shuttleSource": "Board!N4:O4"
         },
         {
           "shift": "PM",
@@ -273,7 +357,11 @@
           "startPlace": "Wall St/Pier 11",
           "predictTripId": "1111",
           "shuttled": true,
-          "shuttleSource": "Board!N4:O4"
+          "shuttleSource": "Board!N4:O4",
+          "endTime": "21:10",
+          "endPlace": "Ferry Point Park",
+          "endTripId": "1122",
+          "endStopId": "141"
         }
       ],
       "RS6": [
@@ -282,7 +370,9 @@
           "source": "Board!F2",
           "startTime": "06:33",
           "startPlace": "Rockaway",
-          "predictTripId": "558"
+          "predictTripId": "558",
+          "shuttledEnd": true,
+          "shuttleSource": "Board!N5:O5"
         },
         {
           "shift": "PM",
@@ -291,7 +381,11 @@
           "startPlace": "Wall St/Pier 11",
           "predictTripId": "1114",
           "shuttled": true,
-          "shuttleSource": "Board!N5:O5"
+          "shuttleSource": "Board!N5:O5",
+          "endTime": "21:55",
+          "endPlace": "Ferry Point Park",
+          "endTripId": "1109",
+          "endStopId": "141"
         }
       ],
       "SB1": [
@@ -300,7 +394,9 @@
           "source": "Board!J2",
           "startTime": "06:40",
           "startPlace": "Red Hook/Atlantic Basin",
-          "predictTripId": "1174"
+          "predictTripId": "1174",
+          "shuttledEnd": true,
+          "shuttleSource": "Board!N6:O6"
         },
         {
           "shift": "PM",
@@ -309,7 +405,11 @@
           "startPlace": "East 34th Street",
           "predictTripId": "1284",
           "shuttled": true,
-          "shuttleSource": "Board!N6:O6"
+          "shuttleSource": "Board!N6:O6",
+          "endTime": "21:45",
+          "endPlace": "Bay Ridge",
+          "endTripId": "1293",
+          "endStopId": "23"
         }
       ],
       "SB2": [
@@ -320,14 +420,22 @@
           "startPlace": "East 34th Street",
           "predictTripId": "1278",
           "startNoteTime": "06:36",
-          "startConfirmedSource": "User approved published GTFS time, 2026-09-28"
+          "startConfirmedSource": "User approved published GTFS time, 2026-09-28",
+          "endTime": "13:11",
+          "endPlace": "East 34th Street",
+          "endTripId": "1297",
+          "endStopId": "17"
         },
         {
           "shift": "PM",
           "source": "Board!K10",
           "startTime": "13:17",
           "startPlace": "East 34th Street",
-          "predictTripId": "1283"
+          "predictTripId": "1283",
+          "endTime": "22:07",
+          "endPlace": "East 34th Street",
+          "endTripId": "1310",
+          "endStopId": "17"
         }
       ],
       "SB3": [
@@ -336,7 +444,11 @@
           "source": "Board!L2",
           "startTime": "11:26",
           "startPlace": "Bay Ridge",
-          "predictTripId": "1296"
+          "predictTripId": "1296",
+          "endTime": "21:23",
+          "endPlace": "East 34th Street",
+          "endTripId": "1309",
+          "endStopId": "17"
         }
       ],
       "SG1": [
@@ -345,14 +457,22 @@
           "source": "Board!H18",
           "startTime": "06:16",
           "startPlace": "St. George",
-          "predictTripId": "919"
+          "predictTripId": "919",
+          "endTime": "13:18",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "758",
+          "endStopId": "87"
         },
         {
           "shift": "PM",
           "source": "Board!H26",
           "startTime": "13:24",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "930"
+          "predictTripId": "930",
+          "endTime": "21:20",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "862",
+          "endStopId": "87"
         }
       ],
       "SG2": [
@@ -361,14 +481,22 @@
           "source": "Board!I18",
           "startTime": "06:15",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "920"
+          "predictTripId": "920",
+          "endTime": "14:08",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "759",
+          "endStopId": "87"
         },
         {
           "shift": "PM",
           "source": "Board!I26",
           "startTime": "14:14",
           "startPlace": "Wall St/Pier 11",
-          "predictTripId": "931"
+          "predictTripId": "931",
+          "endTime": "22:08",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "863",
+          "endStopId": "87"
         }
       ],
       "SG3": [
@@ -377,14 +505,22 @@
           "source": "Board!J18",
           "startTime": "06:21",
           "startPlace": "St. George",
-          "predictTripId": "748"
+          "predictTripId": "748",
+          "endTime": "10:37",
+          "endPlace": "Midtown West 39th St-Pier 79",
+          "endTripId": "925",
+          "endStopId": "138"
         },
         {
           "shift": "PM",
           "source": "Board!J26",
           "startTime": "16:54",
           "startPlace": "Midtown West 39th St-Pier 79",
-          "predictTripId": "857"
+          "predictTripId": "857",
+          "endTime": "21:49",
+          "endPlace": "Midtown West 39th St-Pier 79",
+          "endTripId": "942",
+          "endStopId": "138"
         }
       ],
       "SG4": [
@@ -393,14 +529,22 @@
           "source": "Board!K18",
           "startTime": "06:22",
           "startPlace": "Midtown West 39th St-Pier 79",
-          "predictTripId": "750"
+          "predictTripId": "750",
+          "endTime": "13:43",
+          "endPlace": "Midtown West 39th St-Pier 79",
+          "endTripId": "929",
+          "endStopId": "138"
         },
         {
           "shift": "PM",
           "source": "Board!K26",
           "startTime": "13:50",
           "startPlace": "Midtown West 39th St-Pier 79",
-          "predictTripId": "762"
+          "predictTripId": "762",
+          "endTime": "21:12",
+          "endPlace": "Midtown West 39th St-Pier 79",
+          "endTripId": "941",
+          "endStopId": "138"
         }
       ]
     }
@@ -445,5 +589,91 @@
       }
     ]
   },
+  "withheldDrops": [
+    {
+      "source": "Board!A26",
+      "boat": "ER1",
+      "notedTime": "21:20",
+      "notedPlace": "Wall St/Pier 11",
+      "publishedFinal": [
+        {
+          "time": "21:20",
+          "place": "East 34th Street",
+          "tripId": "917"
+        }
+      ],
+      "reason": "Dispatch withheld return pending confirmation"
+    },
+    {
+      "source": "Board!C26",
+      "boat": "ER3",
+      "notedTime": "21:43",
+      "notedPlace": "Wall St/Pier 11",
+      "publishedFinal": [
+        {
+          "time": "21:46",
+          "place": "East 34th Street",
+          "tripId": "932"
+        }
+      ],
+      "reason": "Dispatch withheld return pending confirmation"
+    },
+    {
+      "source": "Board!F26",
+      "boat": "ER6",
+      "notedTime": "20:37",
+      "notedPlace": "Wall St/Pier 11",
+      "publishedFinal": [
+        {
+          "time": "21:37",
+          "place": "Wall St/Pier 11",
+          "tripId": "1094"
+        }
+      ],
+      "reason": "Dispatch withheld return pending confirmation"
+    },
+    {
+      "source": "Board!A10",
+      "boat": "RS1",
+      "notedTime": "21:35",
+      "notedPlace": "Rockaway",
+      "publishedFinal": [
+        {
+          "time": "21:43",
+          "place": "Wall St/Pier 11",
+          "tripId": "1110"
+        }
+      ],
+      "reason": "Dispatch withheld return pending confirmation"
+    },
+    {
+      "source": "Board!D10",
+      "boat": "RS4",
+      "notedTime": "21:30",
+      "notedPlace": "Wall St/Pier 11",
+      "publishedFinal": [
+        {
+          "time": "21:38",
+          "place": "Wall St/Pier 11",
+          "tripId": "1124"
+        }
+      ],
+      "reason": "Dispatch withheld return pending confirmation"
+    },
+    {
+      "source": "Board!L10",
+      "boat": "GI1",
+      "notedTime": "17:50",
+      "notedPlace": "Wall St/Pier 11",
+      "publishedFinal": [
+        {
+          "time": "17:23",
+          "place": "Wall St/Pier 11",
+          "tripId": "1475"
+        }
+      ],
+      "reason": "Dispatch withheld return pending confirmation"
+    }
+  ],
   "rejected": []
 }
