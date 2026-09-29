@@ -1,6 +1,6 @@
 // The holiday PDFs are per-landing timetables, not a source of vehicle trip IDs.
-// Some printed rows run backwards in time. Keep their departure columns exactly,
-// without creating through-trip connections or allowing realtime to match them.
+// Some printed rows run backwards in time. Keep their departure columns exactly;
+// only independently verified GTFS matches can supply a trip path or live status.
 export const HOLIDAY_SERVICE = "nyc:sukkot:2026";
 export const CREW_UNCONFIRMED = "Crew shifts / Pier C shuttles: UNCONFIRMED";
 const DIRECTIONS = { ER: ["1", "0"], SB: ["0", "1"], RS: ["1", "0"], AS: ["1", "0"], SG: ["0", "1"], GI: ["0", "1"], RES: ["0", "1"], RWS: ["0", "1"] };

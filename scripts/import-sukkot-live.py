@@ -24,6 +24,11 @@ ROUTES = {'RWSV': 'RS', 'AST': 'AS', 'SBK': 'SB', 'ERF': 'ER',
 WORKING_PREFIX = {'ER': '1', 'RS': '2', 'SB': '3', 'AS': '4', 'GI': '7', 'SG': '8'}
 
 
+def seconds(value):
+    hours, minutes, seconds = map(int, value.split(':'))
+    return hours * 3600 + minutes * 60 + seconds
+
+
 def main(source_path):
     source = json.loads(SCHEDULE.read_text())
     board = json.loads(BOARD.read_text())
@@ -46,10 +51,12 @@ def main(source_path):
         trips = {row['trip_id']: row for row in rows('trips.txt')
                  if row['service_id'] in services}
         by_event = collections.defaultdict(set)
+        calls_by_trip = collections.defaultdict(list)
         for row in rows('stop_times.txt'):
             trip = trips.get(row['trip_id'])
             if trip:
                 by_event[(trip['route_id'], row['stop_id'], row['departure_time'])].add(row['trip_id'])
+                calls_by_trip[row['trip_id']].append(row)
 
     matches = {}
     counts = collections.Counter()
@@ -81,6 +88,24 @@ def main(source_path):
                     }
                     counts['matched'] += 1
 
+    # The PDF tables are per landing; some rows splice different sailings together. A cell
+    # verified against one GTFS trip can show that trip's actual stop sequence without joining
+    # adjacent PDF cells that may describe another boat.
+    trip_schedules = {}
+    for trip_id in sorted({match['tripId'] for match in matches.values()}, key=int):
+        calls = sorted(calls_by_trip[trip_id], key=lambda call: int(call['stop_sequence']))
+        if len(calls) < 2 or len({call['stop_sequence'] for call in calls}) != len(calls):
+            raise ValueError(f'Incomplete Sukkot trip stop sequence for {trip_id}')
+        if any(seconds(before['departure_time']) > seconds(after['arrival_time'])
+               for before, after in zip(calls, calls[1:])):
+            raise ValueError(f'Nonchronological Sukkot trip stop sequence for {trip_id}')
+        trip_schedules[trip_id] = [
+            {'stopId': call['stop_id'], 'sequence': int(call['stop_sequence']),
+             'arrivalSeconds': seconds(call['arrival_time']),
+             'departureSeconds': seconds(call['departure_time'])}
+            for call in calls
+        ]
+
     result = {
         'source': str(source_path.relative_to(ROOT)),
         'sourceSha256': hashlib.sha256(source_path.read_bytes()).hexdigest(),
@@ -88,7 +113,7 @@ def main(source_path):
         'boardWorkbookSha256': board['workbookSha256'],
         'allowedWorkings': {route: sorted(numbers) for route, numbers in sorted(allowed.items())},
         'feedVersion': version, 'dates': source['dates'],
-        'counts': dict(counts), 'matches': matches
+        'counts': dict(counts), 'matches': matches, 'tripSchedules': trip_schedules
     }
     OUTPUT.write_text(json.dumps(result, indent=2) + '\n')
     print(f"Mapped {counts['matched']} of {counts['printed']} published Sukkot cells "

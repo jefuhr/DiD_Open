@@ -7,7 +7,7 @@
     "2026-10-01",
     "2026-10-02"
   ],
-  "note": "Per-landing published times only. Through-trip rows in ER, SG and SB contain inconsistencies; no vehicle trips, arrival estimates or connections are inferred. Timetable PDF takes precedence over blog prose (GI final Pier 11 departure: 16:26 in PDF, 16:21 in blog).",
+  "note": "Per-landing published times only. Through-trip rows in ER, SG and SB contain inconsistencies; trip paths are supplied only by independently verified GTFS matches, never inferred from adjacent PDF cells. Timetable PDF takes precedence over blog prose (GI final Pier 11 departure: 16:26 in PDF, 16:21 in blog).",
   "routes": {
     "ER": {
       "url": "https://images.ferry.nyc/wp-content/uploads/2026/08/08091248/091426_Sukkot_Schedule_Web_ER.pdf",

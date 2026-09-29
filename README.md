@@ -66,11 +66,12 @@ npm run build
 npm run stamp:bump
 ```
 
-Sukkot cells link to live data only when route, stop, and time identify one operator trip. Fall
-trips link to reissued October ids only when the entire route, stops, and times match. Unmatched
-rows remain scheduled. The Pier C board uses the assignment notes' first pickups, matched to
-the operator's holiday trips. Its times remain approximate Pier C departures; the four crew
-shuttles replace the corresponding afternoon boat departures. Verified last drops add out-of-service
+Sukkot cells link to live data and trip connections only when route, stop, and time identify one
+operator trip. The matched trip's GTFS stop sequence supplies its path; unmatched PDF cells stay
+departure only. Fall trips link to reissued October ids only when the entire route, stops, and times
+match. Unmatched rows remain scheduled. The Pier C board uses the assignment notes' first pickups,
+matched to the operator's holiday trips. Its times remain approximate Pier C departures; the four
+crew shuttles replace the corresponding afternoon boat departures. Verified last drops add out-of-service
 rows toward Pier C at the arrival landing, except when a shuttle relieves that working. Six
 conflicting return notes remain withheld in `schedules/sukkot-2026-crew.json` until dispatch
 confirms them. Two corrected pickups use the published trip times at `Board!K2` and `Board!C26`

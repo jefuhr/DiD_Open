@@ -623,7 +623,7 @@ function tripAttrs(item) {
   const schedule = scheduleForDeparture(item);
   const stops = schedule?.stops;
   if (!Array.isArray(stops) || (stops.length < 2 && !schedule.timetableOnly)) return "";
-  const label = `${departureLabel(item)} to ${item.destination || "destination unavailable"} — ${schedule.timetableOnly ? "show published departure details" : "show this trip's stops"}`;
+  const label = `${departureLabel(item)} to ${item.destination || "destination unavailable"} — ${stops.length < 2 ? "show published departure details" : "show this trip's stops"}`;
   // role/tabindex rather than a real <button>: these sit inside a CSS grid and a flex column with
   // overflow and route-colour custom properties on them, and a button's own layout rules are not
   // worth the regression for an affordance the delegated listener provides either way.
@@ -1263,9 +1263,9 @@ function openTripView(tripId, stopId, seconds) {
       ? `${route.shortName || ""} to ${departure.destination} · Out of service · Previous stops before ${tripStopName(stopId)}`.trim()
       : `${route.shortName || ""} ${destination ? `to ${destination}` : ""} · ${stops.length} stops · next boats after each call`.trim()
   };
-  if (schedule.timetableOnly) {
+  if (schedule.timetableOnly && stops.length < 2) {
     tripView.summary = `${route.shortName || ""} to ${departure.destination} · Published departure`;
-    tripView.note = "Published holiday departure. Trip connections and arrival estimates are unavailable.";
+    tripView.note = "This published departure has no verified trip path. Connections and arrival estimates are unavailable.";
     renderTripView();
     setTripOpen(true);
     return;
@@ -1283,7 +1283,7 @@ function openTripView(tripId, stopId, seconds) {
 }
 
 function refreshTripConnections() {
-  if (!tripView || elements.tripMenu.hidden || !viewFrame(new Date()).live) return;
+  if (!tripView || tripView.stops.length < 2 || elements.tripMenu.hidden || !viewFrame(new Date()).live) return;
   loadTripConnections(tripView.sourceTripId || tripView.tripId);
 }
 
