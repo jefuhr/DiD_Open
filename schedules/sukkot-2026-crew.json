@@ -107,7 +107,15 @@
           "source": "Board!A26",
           "startTime": "13:49",
           "startPlace": "East 34th Street",
-          "predictTripId": "1061"
+          "predictTripId": "1061",
+          "endTime": "21:20",
+          "endPlace": "East 34th Street",
+          "endTripId": "917",
+          "endStopId": "17",
+          "endSequence": 5,
+          "endNoteTime": "21:20",
+          "endNotePlace": "Wall St/Pier 11",
+          "endConfirmedSource": "User approved published GTFS final, 2026-09-29"
         }
       ],
       "ER2": [
@@ -156,7 +164,15 @@
           "startPlace": "East 34th Street",
           "predictTripId": "1063",
           "startNoteTime": "14:19",
-          "startConfirmedSource": "User approved published GTFS time, 2026-09-28"
+          "startConfirmedSource": "User approved published GTFS time, 2026-09-28",
+          "endTime": "21:46",
+          "endPlace": "East 34th Street",
+          "endTripId": "932",
+          "endStopId": "17",
+          "endSequence": 5,
+          "endNoteTime": "21:43",
+          "endNotePlace": "Wall St/Pier 11",
+          "endConfirmedSource": "User approved published GTFS final, 2026-09-29"
         }
       ],
       "ER4": [
@@ -232,6 +248,14 @@
           "startTime": "14:13",
           "startPlace": "Wall St/Pier 11",
           "predictTripId": "887",
+          "endTime": "21:37",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1094",
+          "endStopId": "87",
+          "endSequence": 5,
+          "endNoteTime": "20:37",
+          "endNotePlace": "Wall St/Pier 11",
+          "endConfirmedSource": "User approved published GTFS final, 2026-09-29",
           "shuttled": true,
           "shuttleSource": "Board!N5:O5"
         }
@@ -294,6 +318,14 @@
           "startTime": "12:52",
           "startPlace": "Wall St/Pier 11",
           "predictTripId": "1099",
+          "endTime": "21:35",
+          "endPlace": "Wall St/Pier 11",
+          "endTripId": "1110",
+          "endStopId": "87",
+          "endSequence": 3,
+          "endNoteTime": "21:35",
+          "endNotePlace": "Rockaway",
+          "endConfirmedSource": "User approved published GTFS final, 2026-09-29",
           "shuttled": true,
           "shuttleSource": "Board!N3:O3"
         }
@@ -663,66 +695,6 @@
   },
   "withheldDrops": [
     {
-      "source": "Board!A26",
-      "boat": "ER1",
-      "shift": "PM",
-      "notedTime": "21:20",
-      "notedPlace": "Wall St/Pier 11",
-      "publishedFinal": [
-        {
-          "time": "21:20",
-          "place": "East 34th Street",
-          "tripId": "917"
-        }
-      ],
-      "reason": "Dispatch withheld return pending confirmation"
-    },
-    {
-      "source": "Board!C26",
-      "boat": "ER3",
-      "shift": "PM",
-      "notedTime": "21:43",
-      "notedPlace": "Wall St/Pier 11",
-      "publishedFinal": [
-        {
-          "time": "21:46",
-          "place": "East 34th Street",
-          "tripId": "932"
-        }
-      ],
-      "reason": "Dispatch withheld return pending confirmation"
-    },
-    {
-      "source": "Board!F26",
-      "boat": "ER6",
-      "shift": "PM",
-      "notedTime": "20:37",
-      "notedPlace": "Wall St/Pier 11",
-      "publishedFinal": [
-        {
-          "time": "21:37",
-          "place": "Wall St/Pier 11",
-          "tripId": "1094"
-        }
-      ],
-      "reason": "Dispatch withheld return pending confirmation"
-    },
-    {
-      "source": "Board!A10",
-      "boat": "RS1",
-      "shift": "PM",
-      "notedTime": "21:35",
-      "notedPlace": "Rockaway",
-      "publishedFinal": [
-        {
-          "time": "21:43",
-          "place": "Wall St/Pier 11",
-          "tripId": "1110"
-        }
-      ],
-      "reason": "Dispatch withheld return pending confirmation"
-    },
-    {
       "source": "Board!D10",
       "boat": "RS4",
       "shift": "PM",
@@ -730,7 +702,7 @@
       "notedPlace": "Wall St/Pier 11",
       "publishedFinal": [
         {
-          "time": "21:38",
+          "time": "21:30",
           "place": "Wall St/Pier 11",
           "tripId": "1124"
         }

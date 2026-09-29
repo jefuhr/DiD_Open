@@ -23,9 +23,14 @@ SHUTTLE_LANDING = {3: (16, 'Wall St/Pier 11'), 4: (16, 'Wall St/Pier 11'),
                    5: (16, 'Wall St/Pier 11'), 6: (8, 'East 34th Street')}
 # Dispatch approved the published pickup times over these two conflicting notes on 2026-09-28.
 PUBLISHED_PICKUPS = {'Board!K2': '06:46', 'Board!C26': '14:18'}
-# Dispatch asked to withhold these six conflicting returns until the last drops are confirmed.
-WITHHELD_DROPS = {'Board!A26', 'Board!C26', 'Board!F26',
-                  'Board!A10', 'Board!D10', 'Board!L10'}
+# Dispatch approved the published trip's final stop for these four returns on 2026-09-29.
+PUBLISHED_DROPS = {
+    'Board!A26': ('21:20', 'East 34th Street', '917'),
+    'Board!C26': ('21:46', 'East 34th Street', '932'),
+    'Board!F26': ('21:37', 'Wall St/Pier 11', '1094'),
+    'Board!A10': ('21:35', 'Wall St/Pier 11', '1110'),
+}
+WITHHELD_DROPS = {'Board!D10', 'Board!L10'}
 
 
 def minutes(value):
@@ -104,11 +109,16 @@ def main():
             for date, services in active.items():
                 if trip['service_id'] in services:
                     events[date][key].add(call['trip_id'])
-        # Each boat's last published arrival per date, offered to reviewers beside a withheld return.
+        # Each boat's last published arrival per date, for approved and withheld returns.
         finals = {date: {} for date in dates}
         for trip_id, calls in trip_calls.items():
             boat, last_call = max(calls, key=lambda item: int(item[1]['stop_sequence']))
-            final = (last_call['arrival_time'][:5], stops[last_call['stop_id']], trip_id)
+            published_call = next((stop for stop in published.get('trips', {}).get(trip_id, {}).get('stops', [])
+                                   if stop['sequence'] == int(last_call['stop_sequence'])
+                                   and stop['stopId'] == last_call['stop_id']), None)
+            arrival = published_call['arrivalSeconds'] if published_call else None
+            arrival_time = f'{arrival // 3600:02}:{arrival % 3600 // 60:02}' if arrival is not None else last_call['arrival_time'][:5]
+            final = (arrival_time, stops[last_call['stop_id']], trip_id)
             for date, services in active.items():
                 if trips[trip_id]['service_id'] in services:
                     previous = finals[date].get(boat)
@@ -171,7 +181,13 @@ def main():
             shift['startNoteTime'] = noted_time
             shift['startConfirmedSource'] = 'User approved published GTFS time, 2026-09-28'
         end_place = place(last[2]) if last else None
-        end_key = (boat, end_place, last[1]) if last else None
+        end_time = last[1] if last else None
+        approved_end = PUBLISHED_DROPS.get(source)
+        if approved_end:
+            if any(finals[date].get(boat) != approved_end for date in dates):
+                raise ValueError(f'Approved published final for {source} changed')
+            end_time, end_place, _ = approved_end
+        end_key = (boat, end_place, end_time) if end_time and end_place else None
         matching_ends = [drop_events[date][end_key] for date in dates] if end_key else []
         common_end = set.intersection(*matching_ends) if matching_ends else set()
         if source in WITHHELD_DROPS:
@@ -182,9 +198,17 @@ def main():
                              'reason': 'Dispatch withheld return pending confirmation'})
         elif len(common_end) == 1 and all(len(items) == 1 for items in matching_ends):
             end_trip, end_stop, end_sequence = next(iter(common_end))
-            shift.update(endTime=last[1], endPlace=end_place, endTripId=end_trip,
+            if approved_end and end_trip != approved_end[2]:
+                raise ValueError(f'Approved published final for {source} matched another trip')
+            shift.update(endTime=end_time, endPlace=end_place, endTripId=end_trip,
                          endStopId=end_stop, endSequence=end_sequence)
+            if approved_end:
+                shift['endNoteTime'] = last[1]
+                shift['endNotePlace'] = place(last[2])
+                shift['endConfirmedSource'] = 'User approved published GTFS final, 2026-09-29'
         else:
+            if approved_end:
+                raise ValueError(f'Approved published final for {source} is no longer unique')
             # Keep the source note visible to reviewers; proximity is not authority to change it.
             unresolved_ends.append({'source': source, 'boat': boat, 'shift': kind,
                                     'notedTime': last[1] if last else None, 'place': end_place,
@@ -218,7 +242,7 @@ def main():
     for entries in shifts.values():
         entries.sort(key=lambda item: item['startTime'])
     if {item['source'] for item in withheld} != WITHHELD_DROPS:
-        raise ValueError('The six withheld Sukkot returns need another workbook review')
+        raise ValueError('The two withheld Sukkot returns need another workbook review')
     result = {'source': str(BOARD.relative_to(ROOT)), 'workbookSha256': board['workbookSha256'],
               'feedVersion': version, 'dates': dates, 'shifts': {'holiday': dict(sorted(shifts.items()))},
               'shuttles': {'holiday': shuttles}, 'withheldDrops': withheld,
