@@ -958,7 +958,10 @@
             "type": "boolean"
           },
           "liveTripId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "predictTripId": {
             "type": [
@@ -1037,6 +1040,19 @@
               "number",
               "null"
             ]
+          },
+          "feedArrivalSeconds": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Original operator arrival baseline retained when a published timetable supplies a separate arrival before dwell."
+          },
+          "pickupType": {
+            "type": "integer"
+          },
+          "dropOffType": {
+            "type": "integer"
           }
         },
         "required": [
@@ -1068,9 +1084,36 @@
               },
               "scheduledLayoverSeconds": {
                 "type": "number"
+              },
+              "nextLiveTripId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "additionalProperties": true
+          },
+          "liveTripId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "routeId": {
+            "type": "string"
+          },
+          "boatAssignment": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "timetableOnly": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1244,6 +1287,13 @@
           },
           "canceled": {
             "type": "boolean"
+          },
+          "arrivalDelaySeconds": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Arrival delay relative to the published arrival, when it differs from delaySeconds (departure)."
           }
         },
         "required": [

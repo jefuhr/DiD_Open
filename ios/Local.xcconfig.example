@@ -1,0 +1,2 @@
+// Copy to Local.xcconfig and enter your team from Xcode > Settings > Accounts.
+DEVELOPMENT_TEAM =

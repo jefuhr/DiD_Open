@@ -47,6 +47,8 @@ export function holidayDepartures({ source, liveMatches = {}, selectedStops, sto
             mode: bus ? "bus" : "ferry", operator: agency,
             endsShift: null, outOfService: false, crewShuttle: false, crewBoats: null,
             departureTimeEnd: null, secondsEnd: null, endsDay: false,
+            scheduledArrivalSeconds: column > 0 && table.stops[column - 1] === stopId && times[column - 1]
+              ? times[column - 1].split(":").map(Number).reduce((total, value) => total * 60 + value, 0) : null,
             scheduleOnly: true, timetableOnly: true,
             sourceUrl: route.url
           });

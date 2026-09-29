@@ -345,3 +345,45 @@ test("a hub pier offers more onward boats than an ordinary one", () => {
   // list. The client filters and then cuts to `limit`.
   assert.ok(hub.connections.length > hub.limit, "the server sends headroom above what is shown");
 });
+
+test("verified holiday trip and turnaround use feed aliases without falling back to colliding published IDs", () => {
+  const view = index([departure({ tripId: "published", liveTripId: "704" })], {
+    tripSchedules: {
+      published: { liveTripId: "704", stops: [
+        { stopId: "87", sequence: 1, arrivalSeconds: 43200, departureSeconds: 43260 },
+        { stopId: "18", sequence: 2, arrivalSeconds: 44100, departureSeconds: 44100 }
+      ], turnaround: { stopId: "18", nextTripId: "nyc:sukkot:trip:705", nextLiveTripId: "705", scheduledLayoverSeconds: 300 } },
+      "nyc:sukkot:trip:705": { liveTripId: "705", stops: [] }
+    }
+  });
+  const updates = new Map([
+    ["published|18", { delaySeconds: 3600 }],
+    ["nyc:sukkot:trip:705|18", { delaySeconds: 3600 }],
+    ["704|18", { delaySeconds: 120 }],
+    ["705|18", { delaySeconds: 240 }]
+  ]);
+  const terminal = tripConnections({ index: view, tripId: "published", updates, now: new Date("2026-09-28T15:00:00Z") }).stops.at(-1);
+  assert.equal(terminal.estimatedArrivalSeconds, 44220);
+  assert.deepEqual(terminal.turnaround, { scheduledSeconds: 300, estimatedSeconds: 420, hasLiveTiming: true });
+  const fallback = { ...view.turnarounds.get("published") };
+  delete fallback.nextLiveTripId;
+  view.turnarounds.set("published", fallback);
+  assert.deepEqual(tripConnections({ index: view, tripId: "published", updates, now: new Date("2026-09-28T15:00:00Z") }).stops.at(-1).turnaround, terminal.turnaround);
+});
+
+test("connections and layovers use arrival delay independently of departure after dwell", () => {
+  const view = index([departure({ tripId: "t1" })]);
+  const [boardable] = nextDepartures({ index: view, stopId: "87", now: new Date("2026-09-28T15:50:00Z"),
+    updates: new Map([["t1|87", { delaySeconds: 0, arrivalDelaySeconds: 120 }]]) });
+  assert.equal(boardable.delaySeconds, 0, "an arriving delay does not move the following departure");
+  assert.equal(boardable.deltaSeconds, 600);
+  const result = tripConnections({ index: view, tripId: "t1", now: new Date("2026-09-28T15:00:00Z"),
+    updates: new Map([["t1|18", { delaySeconds: 0, arrivalDelaySeconds: 120 }]]) });
+  const stop = result.stops.at(-1);
+  assert.equal(stop.estimatedArrivalSeconds, 44220);
+  assert.deepEqual(stop.turnaround, { scheduledSeconds: 300, estimatedSeconds: 180, hasLiveTiming: true });
+  const canceled = tripConnections({ index: view, tripId: "t1", now: new Date("2026-09-28T15:00:00Z"),
+    updates: new Map([["t1|18", { delaySeconds: 0, arrivalDelaySeconds: 120, canceled: true }]]) }).stops.at(-1);
+  assert.equal(canceled.estimatedArrivalSeconds, null);
+  assert.equal(canceled.turnaround.hasLiveTiming, false);
+});

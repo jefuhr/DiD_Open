@@ -298,8 +298,8 @@
           "serviceDate": "2026-09-04",
           "delay": 600,
           "hasLiveTiming": true,
-          "boatName": null,
-          "predictedBoatName": "Opportunity",
+          "boatName": "Opportunity",
+          "predictedBoatName": null,
           "isLastOfDay": false
         },
         {

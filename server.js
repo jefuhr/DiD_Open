@@ -35,18 +35,24 @@ const OPERATORS = operatorRoster(landingData.byLanding);
 const realtimeStopsByLanding = new Map([...landingData.byLanding].map(([id, data]) => [id, stopIdsForLanding(data)]));
 // The departure board also shows the pause at the far terminal. Keep just the two timing keys
 // needed for each turn, alongside this landing's updates, rather than sending the whole feed.
-const turnaroundKeysByLanding = new Map([...landingData.byLanding].map(([id, data]) => [id,
-  new Set(Object.entries(data.tripSchedules || {}).flatMap(([tripId, schedule]) => {
+const turnaroundLiveIDs = new Map((landingData.merged.departures || []).filter(row => row.liveTripId)
+  .map(row => [String(row.tripId), String(row.liveTripId)]));
+const turnaroundLiveID = tripId => landingData.merged.tripSchedules?.[tripId]?.liveTripId
+  || turnaroundLiveIDs.get(String(tripId)) || tripId;
+const turnaroundKeysByLanding = new Map([...landingData.byLanding].map(([id, data]) => {
+  return [id, new Set(Object.entries(data.tripSchedules || {}).flatMap(([tripId, schedule]) => {
     const turn = schedule.turnaround;
-    return turn ? [`${tripId}|${turn.stopId}`, `${turn.nextTripId}|${turn.stopId}`] : [];
-  }))
-]));
+    if (!turn) return [];
+    return [schedule.liveTripId || turnaroundLiveID(tripId), turn.nextLiveTripId || turnaroundLiveID(turn.nextTripId)]
+      .filter(value => value != null).map(value => `${value}|${turn.stopId}`);
+  }))];
+}));
 console.log(`Loaded ${landingData.byLanding.size} of ${LANDING_CHOICES.length} landings; realtime covers ${landingData.merged.meta.landing.stopIds.length} stops.`);
 
 // The map page's static half: the route lines, the docks and the bounds that hold them, plus the
 // trip index that turns "in transit to stop 4 of trip 863" into the name of a landing. Built once
 // from the bundled feed, which is the same contract the landing data above has.
-const harbor = await loadHarborMap({ root: ROOT, landings: landingData.available });
+const harbor = await loadHarborMap({ root: ROOT, landings: landingData.available, byLanding: landingData.byLanding });
 const harborMapJson = precompressed(`${JSON.stringify(harbor.map)}\n`);
 console.log(`Charted ${harbor.map.routes.length} routes and ${harbor.map.landings.length} docks for the map.`);
 
@@ -265,7 +271,7 @@ async function handle(request, response) {
   if (url.pathname === "/api/boats") {
     const current = await realtimeService.getCurrent();
     const asOf = current.fetchedAt ? Date.parse(current.fetchedAt) : Date.now();
-    const boats = describeBoats(current.positions, { trips: harbor.trips, routes: harbor.routes, asOf });
+    const boats = describeBoats(current.positions, { trips: harbor.trips, serviceTrips: harbor.serviceTrips, routes: harbor.routes, asOf });
     return json(response, current.available ? 200 : 503, {
       available: current.available,
       // The vessel-position feed is fetched alongside the trip updates and can fail on its own, so

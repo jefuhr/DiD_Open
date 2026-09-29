@@ -615,7 +615,6 @@ function routeVisual(routeId, variant) {
 //
 // Home-port runs open the revenue trip they follow; crew shuttles without a stop list stay inert.
 function scheduleForDeparture(item) {
-  if (item?.holidayOperational) return null;
   return data?.tripSchedules?.[item.tripId] || data?.tripSchedules?.[item.liveTripId];
 }
 
@@ -1052,10 +1051,13 @@ function departureLayoverLabel(item) {
     ? `<small class="departure-layover" aria-label="${dwellAria}">${dwellText}</small>` : "";
   const turn = schedule?.turnaround;
   if (!turn || data?.meta?.showLayoverTimes === false) return dwellOnly;
-  const live = item.live !== false && !realtime.stale;
+  const live = item.live !== false && !realtime.stale && (!item.scheduleOnly || item.liveTripId);
   const updates = live ? realtime.updates || [] : [];
-  const arrival = updates.find((update) => String(update.tripId) === String(item.tripId) && update.stopId === turn.stopId);
-  const next = updates.find((update) => String(update.tripId) === String(turn.nextTripId) && update.stopId === turn.stopId);
+  const arrivalID = item.liveTripId || schedule.liveTripId || item.tripId;
+  const nextID = turn.nextLiveTripId || data?.tripSchedules?.[turn.nextTripId]?.liveTripId || turn.nextTripId;
+  const incoming = updates.find((update) => String(update.tripId) === String(arrivalID) && update.stopId === turn.stopId);
+  const arrival = incoming && { ...incoming, delaySeconds: incoming.arrivalDelaySeconds ?? incoming.delaySeconds };
+  const next = updates.find((update) => String(update.tripId) === String(nextID) && update.stopId === turn.stopId);
   const fresh = (update) => update?.delaySeconds != null && Number.isFinite(Number(update.delaySeconds));
   const hasLiveTiming = !arrival?.canceled && !next?.canceled && (fresh(arrival) || fresh(next));
   const delay = (update) => fresh(update) ? Math.max(0, Number(update.delaySeconds)) : 0;
@@ -1240,7 +1242,6 @@ async function loadTripConnections(tripId) {
 
 function openTripView(tripId, stopId, seconds) {
   const departure = data?.departures?.find((item) => item.tripId === tripId);
-  if (departure?.holidayOperational) return;
   const sourceTripId = data?.tripSchedules?.[tripId] ? tripId : departure?.liveTripId || tripId;
   const schedule = data?.tripSchedules?.[sourceTripId];
   if (!schedule?.stops?.length || (schedule.stops.length < 2 && !schedule.timetableOnly)) return;

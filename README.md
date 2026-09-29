@@ -8,6 +8,8 @@ See [feed maintenance](docs/data-maintenance.md) for the September 20 refresh an
 
 ## Run
 
+The native iPhone and iPad app is in [`ios/`](ios/README.md). Run `scripts/ios.sh open` on a Mac with Xcode and XcodeGen installed. It shares the API with this web app and keeps its own offline data and preferences.
+
 Requires Node.js 22 or newer.
 
 ```sh
@@ -69,17 +71,22 @@ npm run stamp:bump
 Sukkot cells link to live data only when route, stop, and time identify one operator trip. Fall
 trips link to reissued October ids only when the entire route, stops, and times match. Unmatched
 rows remain scheduled. The Pier C board uses the assignment notes' first pickups, matched to
-the operator's holiday trips. Its times remain approximate Pier C departures; the four crew
-shuttles replace the corresponding afternoon boat departures. Verified last drops add out-of-service
-rows toward Pier C at the arrival landing, except when a shuttle relieves that working. Six
-conflicting return notes remain withheld in `schedules/sukkot-2026-crew.json` until dispatch
-confirms them. Two corrected pickups use the published trip times at `Board!K2` and `Board!C26`
-with the original note times retained in the crew data. `npm run check:nyc-feed` and the daily
-GitHub workflow flag a new operator feed version. The production host can run the same check daily
-with the units in `deploy/systemd/`; their failures appear in
-`journalctl -u nyc-ferry-feed-check.service`. GitHub scheduled workflows run only after this
-workflow reaches the repository's default branch. Shift-end notes that conflict with the timetable
-remain unconfirmed, including Pier C movements.
+the operator's holiday trips. Its times mean first pickup at the destination; the captain chooses
+the Pier C departure. The four crew shuttles replace the corresponding afternoon boat departures.
+Verified last drops add out-of-service rows toward Pier C at the arrival landing, except when a
+shuttle relieves that working. Six conflicting return notes remain withheld in
+`schedules/sukkot-2026-crew.json` until dispatch confirms them. Two corrected pickups use the
+published trip times at `Board!K2` and `Board!C26` with the original note times retained in the
+crew data. `npm run check:nyc-feed` and the daily GitHub workflow flag a new operator feed version.
+The production host can run the same check daily with the units in `deploy/systemd/`; their
+failures appear in `journalctl -u nyc-ferry-feed-check.service`. GitHub scheduled workflows run
+only after this workflow reaches the repository's default branch. Shift-end notes that conflict
+with the timetable remain unconfirmed, including their Pier C movements.
+
+Verified feed stop lists now restore through-trip details and layovers. The separate printed
+Pier 11 arrival/departure pairs restore 65 dwells; realtime retains the original feed arrival
+baseline and separate arrival/departure delays. See [Sukkot verification and the six withheld
+returns](docs/schedule-comparison/sukkot-2026.md).
 
 ## Offline behavior
 

@@ -93,8 +93,8 @@ test('holiday departure columns preserve all printed boarding times without fabr
   assert.ok(has('RWS','16','19:06:00'));
 });
 
-test('holiday rows cannot acquire live estimates, vessels or through-trip connections', () => {
-  const row = pier11.departures.find(r => r.scheduleOnly && r.seconds > 12*3600);
+test('unmatched holiday rows cannot acquire live estimates, vessels or through-trip connections', () => {
+  const row = pier11.departures.find(r => r.scheduleOnly && !r.liveTripId && r.seconds > 12*3600);
   assert.ok(row);
   const result = nextDepartures({ index, stopId:'87', now:new Date('2026-09-28T16:00:00Z'), limit:10000,
     updates:new Map([[`${row.tripId}|87`,{delaySeconds:600}]]),
@@ -107,12 +107,12 @@ test('holiday rows cannot acquire live estimates, vessels or through-trip connec
   assert.equal(tripConnections({index,tripId:row.tripId}),null);
 });
 
-test('crew operations remain absent before confirmation, on holidays and after expiry', async () => {
+test('crew operations remain absent before confirmation and after expiry', async () => {
   for (const landingNumber of [8,16,17,18,22,27]) {
     const data = await buildDisplayData({landingNumber});
     assert.equal(data.meta.crewScheduleStatus.message,'Crew shifts / Pier C shuttles: UNCONFIRMED');
     const local = createConnectionIndex(new Map([[landingNumber,data]]));
-    for (const date of ['2026-09-13','2026-09-28','2026-10-02','2026-11-02']) {
+    for (const date of ['2026-09-13','2026-11-02']) {
       const active = activeServices(local,date);
       const departures = data.departures.filter(r => active.has(r.serviceId));
       assert.equal(departures.some(r => r.crewShuttle || r.tripId.startsWith('oos:') || r.fromHomePort),false,date);
@@ -143,7 +143,7 @@ test('fall weekday crew source restores 42 shifts and four shuttles with the cor
   }
   for (const [landingNumber,time,boats] of [[16,'12:45:00',['RS1','RS4']],[16,'13:45:00',['RS3','RS6']],[8,'13:30:00',['SB1']],[11,'13:15:00',['SB2']]]) {
     const data = await buildDisplayData({landingNumber});
-    const row = data.departures.find(r=>r.crewShuttle && r.departureTime===time);
+    const row = data.departures.find(r=>r.crewShuttle && r.departureTime===time && r.serviceId!=="nyc:sukkot:2026");
     assert.deepEqual(row?.crewBoats,boats);
   }
 });

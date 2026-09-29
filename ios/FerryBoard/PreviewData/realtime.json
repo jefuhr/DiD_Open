@@ -1,0 +1,21 @@
+{
+  "available": true,
+  "stale": false,
+  "fetchedAt": "2026-09-04T12:50:00Z",
+  "updates": [
+    {
+      "tripId": "nine",
+      "stopId": "1",
+      "delaySeconds": 0
+    }
+  ],
+  "vehicles": [
+    {
+      "tripId": "nine",
+      "boat": "ER1",
+      "boatName": "Opportunity",
+      "vesselId": "opportunity",
+      "updatedAtEpochSeconds": 1788526200
+    }
+  ]
+}

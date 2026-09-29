@@ -1,0 +1,79 @@
+{
+  "vessel": {
+    "id": "bay-hopper",
+    "name": "Bay Hopper",
+    "number": "H-120"
+  },
+  "date": "2026-09-04",
+  "timezone": "America/New_York",
+  "generatedAt": "2026-09-04T12:50:00Z",
+  "fetchedAt": "2026-09-04T12:50:00Z",
+  "stale": false,
+  "positionStale": false,
+  "position": {
+    "vesselId": "bay-hopper",
+    "latitude": 40.71,
+    "longitude": -74,
+    "reportedAt": 1788526200000,
+    "speedKnots": 12.3,
+    "status": "in-transit"
+  },
+  "nextStop": {
+    "stopId": "2",
+    "name": "DUMBO",
+    "landingId": 17,
+    "sequence": 2,
+    "arrivalSeconds": 33000,
+    "departureSeconds": 33060,
+    "estimatedArrivalSeconds": 33120,
+    "estimatedDepartureSeconds": 33180,
+    "arrivalAt": 1788527520000,
+    "departureAt": 1788527580000,
+    "skipped": false,
+    "current": true,
+    "past": false
+  },
+  "trips": [
+    {
+      "tripId": "nine",
+      "serviceDate": "2026-09-04",
+      "state": "current",
+      "route": "ER",
+      "routeId": "ER",
+      "destination": "DUMBO",
+      "startAt": 1788526800000,
+      "confirmedAt": 1788526200000,
+      "stops": [
+        {
+          "stopId": "1",
+          "name": "Pier 11",
+          "landingId": 16,
+          "sequence": 1,
+          "arrivalSeconds": 32400,
+          "departureSeconds": 32460,
+          "arrivalAt": 1788526800000,
+          "departureAt": 1788526860000,
+          "skipped": false,
+          "current": false,
+          "past": false
+        },
+        {
+          "stopId": "2",
+          "name": "DUMBO",
+          "landingId": 17,
+          "sequence": 2,
+          "arrivalSeconds": 33000,
+          "departureSeconds": 33060,
+          "estimatedArrivalSeconds": 33120,
+          "estimatedDepartureSeconds": 33180,
+          "arrivalAt": 1788527520000,
+          "departureAt": 1788527580000,
+          "skipped": false,
+          "current": true,
+          "past": false
+        }
+      ]
+    }
+  ],
+  "historyNote": "Confirmed assignments observed during app use. Earlier and future trips may be missing."
+}

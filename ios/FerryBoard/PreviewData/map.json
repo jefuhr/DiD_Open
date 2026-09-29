@@ -1,0 +1,37 @@
+{
+  "bounds": {
+    "minLatitude": 40.5,
+    "maxLatitude": 40.85,
+    "minLongitude": -74.2,
+    "maxLongitude": -73.7
+  },
+  "landings": [
+    {
+      "id": 16,
+      "name": "Pier 11",
+      "displayName": "Pier 11 / Wall St",
+      "latitude": 40.703161,
+      "longitude": -74.006144
+    },
+    {
+      "id": 26,
+      "name": "Pier 79",
+      "displayName": "Midtown West / Pier 79",
+      "latitude": 40.760323,
+      "longitude": -74.004075
+    }
+  ],
+  "routes": [
+    {
+      "id": "ER",
+      "shortName": "ER",
+      "name": "East River",
+      "color": "#0070AB",
+      "paths": []
+    }
+  ],
+  "chart": {
+    "bridges": [],
+    "seamarks": []
+  }
+}

@@ -8,6 +8,10 @@
     "node": ">=22"
   },
   "scripts": {
+    "ios": "bash scripts/ios.sh open",
+    "test:ios-core": "bash scripts/ios.sh core",
+    "test:ios": "bash scripts/ios.sh test",
+    "fixtures:ios": "node scripts/build-ios-fixtures.mjs",
     "build": "node scripts/build-data.js",
     "prestart": "node scripts/build-data.js",
     "start": "node server.js",
