@@ -615,7 +615,6 @@ function routeVisual(routeId, variant) {
 //
 // Home-port runs open the revenue trip they follow; crew shuttles without a stop list stay inert.
 function scheduleForDeparture(item) {
-  if (item?.holidayOperational) return null;
   return data?.tripSchedules?.[item.tripId] || data?.tripSchedules?.[item.liveTripId];
 }
 
@@ -623,7 +622,7 @@ function tripAttrs(item) {
   const schedule = scheduleForDeparture(item);
   const stops = schedule?.stops;
   if (!Array.isArray(stops) || (stops.length < 2 && !schedule.timetableOnly)) return "";
-  const label = `${departureLabel(item)} to ${item.destination || "destination unavailable"} — ${stops.length < 2 ? "show published departure details" : "show this trip's stops"}`;
+  const label = `${departureLabel(item)} to ${item.destination || "destination unavailable"} — ${schedule.timetableOnly ? "show published departure details" : "show this trip's stops"}`;
   // role/tabindex rather than a real <button>: these sit inside a CSS grid and a flex column with
   // overflow and route-colour custom properties on them, and a button's own layout rules are not
   // worth the regression for an affordance the delegated listener provides either way.
@@ -1052,10 +1051,13 @@ function departureLayoverLabel(item) {
     ? `<small class="departure-layover" aria-label="${dwellAria}">${dwellText}</small>` : "";
   const turn = schedule?.turnaround;
   if (!turn || data?.meta?.showLayoverTimes === false) return dwellOnly;
-  const live = item.live !== false && !realtime.stale;
+  const live = item.live !== false && !realtime.stale && (!item.scheduleOnly || item.liveTripId);
   const updates = live ? realtime.updates || [] : [];
-  const arrival = updates.find((update) => String(update.tripId) === String(item.tripId) && update.stopId === turn.stopId);
-  const next = updates.find((update) => String(update.tripId) === String(turn.nextTripId) && update.stopId === turn.stopId);
+  const arrivalID = item.liveTripId || schedule.liveTripId || item.tripId;
+  const nextID = turn.nextLiveTripId || data?.tripSchedules?.[turn.nextTripId]?.liveTripId || turn.nextTripId;
+  const incoming = updates.find((update) => String(update.tripId) === String(arrivalID) && update.stopId === turn.stopId);
+  const arrival = incoming && { ...incoming, delaySeconds: incoming.arrivalDelaySeconds ?? incoming.delaySeconds };
+  const next = updates.find((update) => String(update.tripId) === String(nextID) && update.stopId === turn.stopId);
   const fresh = (update) => update?.delaySeconds != null && Number.isFinite(Number(update.delaySeconds));
   const hasLiveTiming = !arrival?.canceled && !next?.canceled && (fresh(arrival) || fresh(next));
   const delay = (update) => fresh(update) ? Math.max(0, Number(update.delaySeconds)) : 0;
@@ -1240,7 +1242,6 @@ async function loadTripConnections(tripId) {
 
 function openTripView(tripId, stopId, seconds) {
   const departure = data?.departures?.find((item) => item.tripId === tripId);
-  if (departure?.holidayOperational) return;
   const sourceTripId = data?.tripSchedules?.[tripId] ? tripId : departure?.liveTripId || tripId;
   const schedule = data?.tripSchedules?.[sourceTripId];
   if (!schedule?.stops?.length || (schedule.stops.length < 2 && !schedule.timetableOnly)) return;
@@ -1263,9 +1264,9 @@ function openTripView(tripId, stopId, seconds) {
       ? `${route.shortName || ""} to ${departure.destination} · Out of service · Previous stops before ${tripStopName(stopId)}`.trim()
       : `${route.shortName || ""} ${destination ? `to ${destination}` : ""} · ${stops.length} stops · next boats after each call`.trim()
   };
-  if (schedule.timetableOnly && stops.length < 2) {
+  if (schedule.timetableOnly) {
     tripView.summary = `${route.shortName || ""} to ${departure.destination} · Published departure`;
-    tripView.note = "This published departure has no verified trip path. Connections and arrival estimates are unavailable.";
+    tripView.note = "Published holiday departure. Trip connections and arrival estimates are unavailable.";
     renderTripView();
     setTripOpen(true);
     return;

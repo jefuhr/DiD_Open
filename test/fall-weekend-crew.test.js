@@ -41,7 +41,7 @@ test('five afternoon crew shuttles recur on every confirmed weekend, including n
 test('Red Hook passenger shuttle and its Pier C movements appear on exactly ten dates', () => {
   for (let day=new Date('2026-09-19T12:00:00Z'); day<=new Date('2026-11-02T12:00:00Z'); day.setUTCDate(day.getUTCDate()+1)) {
     const date=day.toISOString().slice(0,10), cruise=source.cruiseDates.includes(date);
-    const working = landing => rows(landing,date).filter(r=>r.routeId==='SB' && r.boatAssignment===3);
+    const working = landing => rows(landing,date).filter(r=>r.routeId==='SB' && r.boatAssignment===3 && !r.serviceId.startsWith('nyc:sukkot:'));
     assert.equal(working(17).filter(r=>!r.outOfService).length, cruise?11:0,date);
     assert.equal(working(16).filter(r=>!r.outOfService).length, cruise?10:0,date);
     assert.equal(working(27).length,cruise?1:0,date);
@@ -76,6 +76,6 @@ test('unshuttled changes remain visible, including RS2 at an intermediate Pier 1
     assert.ok(rows(landing,date).some(r=>r.outOfService&&`${r.routeId}${r.boatAssignment}`===boat&&r.departureTime===time),boat);
   }
   const handover=rows(16,date).find(r=>r.outOfService&&r.routeId==='RS'&&r.boatAssignment===2&&r.departureTime==='15:47:00');
-  assert.equal(rows(16,date).find(r=>r.tripId===handover.liveTripId).endsShift,null,'continuing passenger departure is not a final crew segment');
+  assert.equal(rows(16,date).find(r=>r.tripId===handover.sourceTripId || (!r.outOfService && (r.liveTripId || r.tripId)===handover.liveTripId)).endsShift,null,'continuing passenger departure is not a final crew segment');
   assert.ok(rows(27,date).some(r=>r.routeId==='RS'&&r.boatAssignment===2&&r.departureTime==='15:47:00'));
 });

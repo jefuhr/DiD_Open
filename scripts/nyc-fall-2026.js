@@ -1,6 +1,6 @@
 // The holiday PDFs are per-landing timetables, not a source of vehicle trip IDs.
-// Some printed rows run backwards in time. Keep their departure columns exactly;
-// only independently verified GTFS matches can supply a trip path or live status.
+// Some printed rows run backwards in time. Keep their departure columns exactly,
+// without creating through-trip connections or allowing realtime to match them.
 export const HOLIDAY_SERVICE = "nyc:sukkot:2026";
 export const CREW_UNCONFIRMED = "Crew shifts / Pier C shuttles: UNCONFIRMED";
 const DIRECTIONS = { ER: ["1", "0"], SB: ["0", "1"], RS: ["1", "0"], AS: ["1", "0"], SG: ["0", "1"], GI: ["0", "1"], RES: ["0", "1"], RWS: ["0", "1"] };
@@ -47,6 +47,8 @@ export function holidayDepartures({ source, liveMatches = {}, selectedStops, sto
             mode: bus ? "bus" : "ferry", operator: agency,
             endsShift: null, outOfService: false, crewShuttle: false, crewBoats: null,
             departureTimeEnd: null, secondsEnd: null, endsDay: false,
+            scheduledArrivalSeconds: column > 0 && table.stops[column - 1] === stopId && times[column - 1]
+              ? times[column - 1].split(":").map(Number).reduce((total, value) => total * 60 + value, 0) : null,
             scheduleOnly: true, timetableOnly: true,
             sourceUrl: route.url
           });

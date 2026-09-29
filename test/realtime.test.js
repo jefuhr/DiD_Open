@@ -326,3 +326,59 @@ test("a turnaround retains the terminal arrival delay without a departing row th
   assert.equal(updates.find((item) => item.stopId === "origin")?.delaySeconds, 60);
   assert.equal(normalizeTripUpdates(feed, ["origin"], options).some((item) => item.stopId === "terminal"), false);
 });
+
+test("full Sukkot schedules keep verified working and arrival timing when ordinary feed IDs collide", () => {
+  const dates = ["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02"];
+  const published = "nyc:sukkot:ER:0:1:0";
+  const departures = [
+    { tripId: "704", liveTripId: "999", routeId: "ER", boatAssignment: 1, stopId: "origin", seconds: 36000 },
+    { tripId: published, liveTripId: "704", routeId: "ER", boatAssignment: 7, serviceId: "nyc:sukkot:2026",
+      scheduleOnly: true, timetableOnly: false, stopId: "origin", seconds: 43200 }
+  ];
+  const tripSchedules = {
+    "704": { stops: [{ stopId: "origin", departureSeconds: 36000 }, { stopId: "terminal", arrivalSeconds: 36900, departureSeconds: 37200 }] },
+    [published]: { serviceId: "nyc:sukkot:2026", liveTripId: "704", stops: [
+      { stopId: "origin", arrivalSeconds: 43200, departureSeconds: 43200 },
+      { stopId: "terminal", arrivalSeconds: 44100, departureSeconds: 44400 }
+    ], turnaround: { stopId: "terminal", nextTripId: "nyc:sukkot:trip:705", nextLiveTripId: "705" } }
+  };
+  for (const date of dates) {
+    const asOfMs = Date.parse(`${date}T16:00:00Z`);
+    const feed = { entity: [{ tripUpdate: { trip: { tripId: "704" }, stopTimeUpdate: [
+      { stopId: "origin", departure: { time: Date.parse(`${date}T16:02:00Z`) / 1000 } },
+      { stopId: "terminal", arrival: { time: Date.parse(`${date}T16:18:00Z`) / 1000 } }
+    ] } }] };
+    const options = { departures, tripSchedules, holidayDates: dates, asOfMs };
+    const updates = normalizeTripUpdates(feed, ["origin", "terminal"], options);
+    assert.equal(updates.find(row => row.stopId === "origin").delaySeconds, 120, date);
+    assert.equal(updates.find(row => row.stopId === "terminal").delaySeconds, 180, "arrival uses published ARR, not departure after dwell");
+    assert.equal(boatByTrip(departures, options).get("704"), "ER7", date);
+    assert.equal(boatByTrip(departures, options).has("999"), false, "ordinary working is inactive");
+  }
+  const fall = boatByTrip(departures, { holidayDates: dates, asOfMs: Date.parse("2026-10-05T16:00:00Z") });
+  assert.equal(fall.get("999"), "ER1");
+  assert.equal(fall.has("704"), false, "holiday working expires after its five dates");
+});
+
+test("published dwell preserves separate arrival and departure delays with absolute or delay-only feed events", () => {
+  const tripId = "nyc:sukkot:trip:704", liveTripId = "704", stopId = "87";
+  const options = {
+    holidayDates: ["2026-09-28"], asOfMs: Date.parse("2026-09-28T10:00:00Z"),
+    departures: [{ tripId, liveTripId, serviceId: "nyc:sukkot:2026", routeId: "RS", stopId, seconds: 21900 }],
+    tripSchedules: { [tripId]: { liveTripId, serviceId: "nyc:sukkot:2026", stops: [
+      { stopId, sequence: 2, arrivalSeconds: 21600, departureSeconds: 21900, feedArrivalSeconds: 21900 }
+    ] } }
+  };
+  for (const [arrival, expected] of [
+    [{ delay: 0, time: Date.parse("2026-09-28T10:05:00Z") / 1000 }, 300],
+    [{ delay: 0 }, 300],
+    [{ delay: 999, time: Date.parse("2026-09-28T10:02:00Z") / 1000 }, 120]
+  ]) {
+    const feed = { entity: [{ tripUpdate: { trip: { tripId: liveTripId }, stopTimeUpdate: [
+      { stopId, arrival, departure: { delay: 0, time: Date.parse("2026-09-28T10:05:00Z") / 1000 } }
+    ] } }] };
+    const [update] = normalizeTripUpdates(feed, [stopId], options);
+    assert.equal(update.delaySeconds, 0, "board departure remains 06:05");
+    assert.equal(update.arrivalDelaySeconds, expected, "arrival uses the published 06:00 baseline");
+  }
+});

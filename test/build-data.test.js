@@ -379,8 +379,7 @@ test("HTML-escaped feed text is decoded before it reaches the screen", async () 
 
 test("crew boat assignments are attached to NYC Ferry departures", async () => {
   const data = await buildDisplayData({ landingNumber: 16 });
-  // The Governors Island shuttle is crewed off-schedule and has no Boat column in the
-  // workbook, so it is the one ferry route that never carries an assignment.
+  // Ordinary fall GI has no working column; the verified Sukkot board assigns GI1/GI2.
   const scheduled = data.departures.filter((item) =>
     item.operator === "NYC Ferry" && item.mode === "ferry" && item.routeId !== "GI" &&
     ["2", "3", "4", "6", "7", "8"].includes(item.serviceId));
@@ -388,7 +387,7 @@ test("crew boat assignments are attached to NYC Ferry departures", async () => {
   const labeled = scheduled.filter((item) => Number.isInteger(item.boatAssignment) && item.boatAssignment >= 1);
   assert.ok(labeled.length / scheduled.length > 0.95,
     `${scheduled.length - labeled.length} of ${scheduled.length} scheduled ferry departures lack a boat assignment`);
-  assert.ok(data.departures.filter((item) => item.routeId === "GI").every((item) => item.boatAssignment === null));
+  assert.ok(data.departures.filter((item) => item.routeId === "GI" && !item.serviceId.startsWith("nyc:sukkot:")).every((item) => item.boatAssignment === null));
   // NY Waterway publishes no crew schedule, so those rows stay unlabeled.
   assert.ok(data.departures.filter((item) => item.operator === "NY Waterway").every((item) => item.boatAssignment === null));
 });

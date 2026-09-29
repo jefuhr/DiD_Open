@@ -1,0 +1,23 @@
+{
+  "configured": 16,
+  "landings": [
+    {
+      "id": 16,
+      "name": "Pier 11",
+      "displayName": "Pier 11 / Wall St",
+      "latitude": 40.703161,
+      "longitude": -74.006144
+    },
+    {
+      "id": 26,
+      "name": "Pier 79",
+      "displayName": "Midtown West / Pier 79",
+      "latitude": 40.760323,
+      "longitude": -74.004075
+    }
+  ],
+  "operators": [
+    "NYC Ferry",
+    "NY Waterway"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "available": true,
+  "stale": false,
+  "fetchedAt": "2026-09-04T12:50:00Z",
+  "boats": [
+    {
+      "id": "opportunity",
+      "name": "Opportunity",
+      "number": "H-204",
+      "vesselId": "opportunity",
+      "tripId": "nine",
+      "routeId": "ER",
+      "route": "ER",
+      "routeName": "East River",
+      "color": "#0070AB",
+      "latitude": 40.71,
+      "longitude": -74,
+      "destination": "DUMBO",
+      "speedKnots": 12.3,
+      "ageSeconds": 5,
+      "status": "in-transit"
+    },
+    {
+      "id": "bay-hopper",
+      "name": "Bay Hopper",
+      "number": "H-120",
+      "vesselId": "bay-hopper",
+      "tripId": "nine",
+      "routeId": "ER",
+      "route": "ER",
+      "routeName": "East River",
+      "color": "#0070AB",
+      "latitude": 40.72,
+      "longitude": -74,
+      "destination": "DUMBO",
+      "speedKnots": 12.3,
+      "ageSeconds": 5,
+      "status": "in-transit"
+    }
+  ]
+}

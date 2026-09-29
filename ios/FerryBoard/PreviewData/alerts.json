@@ -1,0 +1,13 @@
+{
+  "available": true,
+  "stale": false,
+  "fetchedAt": "2026-09-04T12:50:00Z",
+  "alerts": [
+    {
+      "id": "fixture",
+      "header": "Service update",
+      "description": "Allow extra time when boarding.",
+      "agency": "NYC Ferry"
+    }
+  ]
+}

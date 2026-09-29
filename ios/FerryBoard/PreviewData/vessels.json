@@ -1,0 +1,14 @@
+{
+  "vessels": [
+    {
+      "id": "opportunity",
+      "name": "Opportunity",
+      "number": "H-204"
+    },
+    {
+      "id": "bay-hopper",
+      "name": "Bay Hopper",
+      "number": "H-120"
+    }
+  ]
+}

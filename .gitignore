@@ -7,3 +7,11 @@ state/
 nyf-signage
 
 artifacts/
+
+# Native build products and machine-specific signing.
+ios/**/.build/
+ios/**/.swiftpm/
+ios/DerivedData/
+ios/*.xcodeproj/
+ios/Local.xcconfig
+**/xcuserdata/
