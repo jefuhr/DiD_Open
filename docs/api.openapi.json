@@ -13,7 +13,7 @@
   "paths": {
     "/api/landings": {
       "get": {
-        "summary": "Available landings and operator roster",
+        "summary": "Available landings, operators and route catalog",
         "operationId": "api_landings",
         "responses": {
           "200": {
@@ -786,6 +786,13 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "routes": {
+            "type": "object",
+            "description": "Routes across every landing, keyed by the feed's namespaced route ID, for per-device operator and route filters.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Route"
             }
           },
           "configured": {

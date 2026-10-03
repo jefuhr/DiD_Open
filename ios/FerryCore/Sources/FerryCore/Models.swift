@@ -11,6 +11,7 @@ public struct Landing: Codable, Identifiable, Sendable {
 public struct LandingRoster: Codable, Sendable {
     public var landings: [Landing]
     public var operators: [String]
+    public var routes: [String: FerryRoute]?
     public var configured: Int
 }
 

@@ -41,6 +41,7 @@ struct FerrySheetView: View {
 
 struct LandingPicker: View {
     @EnvironmentObject private var store: FerryStore
+    @Environment(\.dynamicTypeSize) private var textSize
     var dismissOnSelection = true
     /// Called after a sidebar choice, so an overlaid sidebar can close.
     var chosen: () -> Void = {}
@@ -61,24 +62,24 @@ struct LandingPicker: View {
                             Label("Departures", systemImage: "ferry")
                             Spacer()
                             if store.tab == .departures { Image(systemName: "checkmark") }
-                        }.frame(minHeight: 44)
+                        }.font(.footnote.weight(.medium)).frame(minHeight: 44)
                     }.accessibilityIdentifier("sidebarDepartures")
                     Button { store.tab = .map; chosen() } label: {
                         HStack {
                             Label("Harbor map", systemImage: "map")
                             Spacer()
                             if store.tab == .map { Image(systemName: "checkmark") }
-                        }.frame(minHeight: 44)
+                        }.font(.footnote.weight(.medium)).frame(minHeight: 44)
                     }.accessibilityIdentifier("sidebarMap")
                 }
             }
             ForEach(choices) { landing in
-                // The sidebar is narrow: a smaller name keeps most landings to one line.
-                HStack(spacing: dismissOnSelection ? 12 : 6) {
+                HStack(spacing: 4) {
                     Button {
                         if !store.preferences.favorites.insert(landing.id).inserted { store.preferences.favorites.remove(landing.id) }
                     } label: {
-                        Image(systemName: store.preferences.favorites.contains(landing.id) ? "star.fill" : "star").frame(width: dismissOnSelection ? 44 : 30, height: 44)
+                        Image(systemName: store.preferences.favorites.contains(landing.id) ? "star.fill" : "star")
+                            .font(.footnote).frame(width: 44, height: 44).contentShape(Rectangle())
                     }.buttonStyle(.borderless).accessibilityLabel("\(store.preferences.favorites.contains(landing.id) ? "Unfavorite" : "Favorite") \(landing.displayName)")
                         .accessibilityIdentifier("favorite-\(landing.id)")
                     Button {
@@ -88,35 +89,98 @@ struct LandingPicker: View {
                             store.selectLanding(landing.id); chosen()
                         }
                     } label: {
-                        HStack {
-                            Text(landing.displayName).font(dismissOnSelection ? .body : .subheadline)
+                        HStack(spacing: 6) {
+                            Text(landing.displayName).font(.footnote.weight(.medium))
                                 .foregroundStyle(.primary).multilineTextAlignment(.leading)
-                            Spacer()
-                            if store.preferences.landingID == landing.id { Image(systemName: "checkmark").accessibilityLabel("Selected") }
-                            Text(String(landing.id)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                                .lineLimit(textSize.isAccessibilitySize ? nil : 1)
+                            Spacer(minLength: 2)
+                            if store.preferences.landingID == landing.id { Image(systemName: "checkmark").font(.caption2.weight(.semibold)).accessibilityLabel("Selected") }
+                            Text(String(landing.id)).font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: true, vertical: false)
                         }.frame(minHeight: 44).contentShape(Rectangle())
-                    }.buttonStyle(.borderless).accessibilityIdentifier("landing-\(landing.id)")
+                    }.buttonStyle(.borderless).accessibilityLabel(landing.displayName)
+                        .accessibilityValue(store.preferences.landingID == landing.id ? "Selected, landing \(landing.id)" : "Landing \(landing.id)")
+                        .accessibilityIdentifier("landing-\(landing.id)")
                 }
+                .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 12))
             }
             if choices.isEmpty { Text("No matching landings.").foregroundStyle(.secondary) }
-        }.searchable(text: $search, prompt: "Landing name or number").navigationTitle("Choose landing")
+        }.listStyle(.plain).environment(\.defaultMinListRowHeight, 44)
+            .searchable(text: $search, prompt: "Landing name or number").navigationTitle("Landings")
     }
 }
 
 struct OperatorPicker: View {
     @EnvironmentObject private var store: FerryStore
+    @State private var expanded: Set<String> = []
+
     var body: some View {
         List {
-            Section("Show departures from") {
+            Section {
                 ForEach(store.roster?.operators ?? [], id: \.self) { name in
-                    Toggle(name, isOn: Binding(get: { !store.preferences.hiddenOperators.contains(name) }, set: { value in
-                        if value { store.preferences.hiddenOperators.remove(name) } else { store.preferences.hiddenOperators.insert(name) }
-                    })).accessibilityIdentifier("operator-\(name)")
+                    HStack(spacing: 0) {
+                        Button {
+                            if !expanded.insert(name).inserted { expanded.remove(name) }
+                        } label: {
+                            Image(systemName: expanded.contains(name) ? "chevron.down" : "chevron.right")
+                                .font(.caption.weight(.semibold)).frame(width: 44, height: 44).contentShape(Rectangle())
+                        }.buttonStyle(.borderless)
+                            .accessibilityLabel("\(expanded.contains(name) ? "Collapse" : "Expand") \(name) filters")
+                            .accessibilityIdentifier("expandOperator-\(name)")
+                        Toggle(name, isOn: Binding(get: { !store.preferences.hiddenOperators.contains(name) }, set: { value in
+                            if value { store.preferences.hiddenOperators.remove(name) } else { store.preferences.hiddenOperators.insert(name) }
+                        })).font(.footnote.weight(.medium)).frame(minHeight: 44)
+                            .accessibilityIdentifier("operator-\(name)")
+                    }.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 16))
+                    if expanded.contains(name) {
+                        let routes = store.filterRoutes(for: name)
+                        ForEach(routes, id: \.id) { choice in
+                            Toggle(isOn: Binding(get: { !store.preferences.hiddenRoutes.contains(choice.id) }, set: { value in
+                                if value { store.preferences.hiddenRoutes.remove(choice.id) } else { store.preferences.hiddenRoutes.insert(choice.id) }
+                            })) {
+                                HStack(spacing: 6) {
+                                    if let code = choice.route.shortName, code != choice.route.name,
+                                       code.rangeOfCharacter(from: .letters) != nil {
+                                        Text(code).font(.caption2.weight(.semibold)).foregroundStyle(Color(hex: choice.route.color))
+                                    }
+                                    Text(choice.route.name).font(.footnote)
+                                }
+                            }.frame(minHeight: 44).disabled(store.preferences.hiddenOperators.contains(name))
+                                .accessibilityLabel(choice.route.name)
+                                .accessibilityIdentifier("routeFilter-\(choice.id)")
+                                .listRowInsets(EdgeInsets(top: 0, leading: 44, bottom: 0, trailing: 16))
+                        }
+                        if routes.isEmpty {
+                            Text("No routes listed at this landing.").font(.caption).foregroundStyle(.secondary)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 44, bottom: 4, trailing: 16))
+                        }
+                        if name == "NYC Ferry" {
+                            Text("OPERATIONS").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                                .listRowInsets(EdgeInsets(top: 8, leading: 44, bottom: 0, trailing: 16))
+                            ForEach(NYCFerryMovement.allCases, id: \.self) { movement in
+                                Toggle(movementLabel(movement), isOn: Binding(get: { !store.preferences.hiddenNYCMovements.contains(movement) }, set: { value in
+                                    if value { store.preferences.hiddenNYCMovements.remove(movement) } else { store.preferences.hiddenNYCMovements.insert(movement) }
+                                })).font(.footnote).frame(minHeight: 44).disabled(store.preferences.hiddenOperators.contains(name))
+                                    .accessibilityIdentifier("movementFilter-\(movement.rawValue)")
+                                    .listRowInsets(EdgeInsets(top: 0, leading: 44, bottom: 0, trailing: 16))
+                            }
+                        }
+                    }
                 }
+            } footer: {
+                Text("Choices are saved across landings and apply to trip connections. Route and movement filters work together. Pier C returns and crew shuttles have their own switches; Out of service controls other non-passenger movements.").font(.caption2)
             }
-            Button("Show all operators") { store.preferences.hiddenOperators = [] }
-            Text("These choices apply to every landing and to trip connections.").font(.footnote).foregroundStyle(.secondary)
-        }.navigationTitle("Operators")
+            Button("Show all departures") { store.preferences.resetDepartureFilters() }
+                .font(.footnote).accessibilityIdentifier("resetDepartureFilters")
+        }.listStyle(.plain).environment(\.defaultMinListRowHeight, 44).navigationTitle("Operators & routes")
+    }
+
+    private func movementLabel(_ movement: NYCFerryMovement) -> String {
+        switch movement {
+        case .pierC: "Headed to Pier C"
+        case .crewShuttle: "Crew shuttles"
+        case .outOfService: "Out of service boats"
+        }
     }
 }
 
@@ -197,7 +261,7 @@ struct SettingsView: View {
                 Text("Keep screen awake applies while Ferry Board is open. Marine references show bridges and seamarks.")
             }
             Section("Tools") {
-                NavigationLink("Operators", destination: OperatorPicker())
+                NavigationLink("Operators & routes", destination: OperatorPicker())
                 NavigationLink("Landings & favorites", destination: LandingPicker())
                 NavigationLink("Service alerts", destination: AlertsView())
                 Button(store.rideSession == nil ? "Choose your boat" : "Switch boats") {
@@ -280,6 +344,7 @@ struct AlertsView: View {
 
 struct VesselPicker: View {
     @EnvironmentObject private var store: FerryStore
+    @Environment(\.dynamicTypeSize) private var textSize
     let suggestedName: String?
     var select: (Vessel) -> Void
     @State private var search = ""
@@ -293,19 +358,46 @@ struct VesselPicker: View {
     var body: some View {
         List {
             Section {
-                Text("Choose the name or hull number on your boat. Only trips confirmed by the ferry feed appear in its day.").font(.subheadline).foregroundStyle(.secondary)
-            }
-            ForEach(choices) { vessel in
-                Button { select(vessel) } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(vessel.name).font(.headline).foregroundStyle(.primary)
-                        Text([vessel.number, vessel.name == suggestedName ? "Suggested · check your boat" : nil].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
-                    }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
-                }.accessibilityIdentifier("vessel-\(vessel.id)")
+                ForEach(choices) { vessel in
+                    Button { select(vessel) } label: {
+                        if textSize.isAccessibilitySize {
+                            VStack(alignment: .leading, spacing: 2) {
+                                vesselName(vessel)
+                                vesselDetails(vessel)
+                            }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
+                        } else {
+                            HStack(spacing: 6) {
+                                vesselName(vessel)
+                                Spacer(minLength: 4)
+                                vesselDetails(vessel)
+                            }.frame(minHeight: 44).contentShape(Rectangle())
+                        }
+                    }.accessibilityLabel(vessel.name)
+                        .accessibilityValue([vessel.number, vessel.name == suggestedName ? "Suggested, confirm your boat" : nil].compactMap { $0 }.joined(separator: ", "))
+                        .accessibilityIdentifier("vessel-\(vessel.id)")
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                }
+            } footer: {
+                Text("Confirm your boat’s name or hull. Trips shown are feed-confirmed.").font(.caption2)
             }
             if choices.isEmpty { Text(store.vessels.isEmpty ? "Reconnect to load the vessel list." : "No matching vessels.") }
-        }.navigationTitle(store.rideSession == nil ? "Which boat?" : "Switch boats")
+        }.listStyle(.plain).environment(\.defaultMinListRowHeight, 44)
+            .navigationTitle(store.rideSession == nil ? "Choose boat" : "Switch boats")
             .searchable(text: $search, prompt: "Vessel or hull number")
             .task { await store.refreshVessels() }
+    }
+
+    private func vesselName(_ vessel: Vessel) -> some View {
+        Text(vessel.name).font(.footnote.weight(.medium)).foregroundStyle(.primary)
+            .multilineTextAlignment(.leading).lineLimit(textSize.isAccessibilitySize ? nil : 1)
+    }
+
+    private func vesselDetails(_ vessel: Vessel) -> some View {
+        HStack(spacing: 6) {
+            if vessel.name == suggestedName {
+                Text("Suggested").foregroundStyle(.tint)
+            }
+            if let number = vessel.number { Text(number).monospacedDigit().foregroundStyle(.secondary) }
+        }.font(.caption2).fixedSize(horizontal: !textSize.isAccessibilitySize, vertical: false)
     }
 }

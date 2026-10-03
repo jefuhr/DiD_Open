@@ -2,6 +2,27 @@
 
 Checked on this Mac on 2026-09-28 with Xcode 27.0, Node 22.23.3 and XcodeGen 2.46.0.
 
+## Installed operator filters and compact menus — 2026-10-03
+
+This supersedes the compilation, simulator and phone installation blockers recorded below.
+
+- Pulled `mobile` through `b5d2b71`, including four approved Sukkot returns and verified trip connections, while preserving the native changes.
+- iPhone 17 simulator: **9 app unit tests and 2 UI journeys passed**, covering preferences, route limits and lookahead, independent NYC operational filters, operator expansion and reset.
+- FerryCore: **25 tests passed, 1 optional live check skipped**, including movement classification and schedule parity across **30 landings, 546 cases and 45,252 departure projections**.
+- JavaScript: **13 landing/catalog, 40 connection/realtime and 10 Sukkot operation tests passed**. Updated the stale Sukkot expectations to verify the four newly approved published final arrivals and the two remaining withheld returns.
+- Signed Release build and strict code-signature verification passed. Installed over the existing app on Juliet's iPhone; iOS initially blocked launch while locked. After the phone was unlocked, the installed executable was running and a device screenshot showed the populated Pier 11 board with live estimates. Saved preferences before and after installation were identical.
+- The current development signing profile expires **2026-10-06 23:36 UTC**. This remains a development installation.
+- Production `/api/landings` still omits the optional global route catalog. Route switches work for the selected landing; routes at other docks become available when the server update is deployed. No production deployment target is configured in this checkout.
+
+## Operator routes and operational movement filters — 2026-09-30
+
+- Each operator has a separate left chevron and on/off switch. Expanded rows offer route switches; NYC Ferry adds Headed to Pier C, Crew shuttles and Out of service boats. Returns and shuttles remain separate from other non-passenger movements. Existing preferences migrate with all new choices enabled.
+- Both departure sorts and trip connections respect route filters. Movement filters run before route limits, empty groups disappear, and a hidden first movement cannot extend the lookahead window. Show all departures resets every departure filter.
+- `/api/landings` now optionally supplies routes across all docks. The native client merges this catalog with the selected landing and supports older servers without it.
+- **13 Apple XCTest checks passed** using the actual core, store and preference sources compiled for macOS with a local module cache. Coverage includes verified Sukkot returns and shuttles, overlapping movement flags, partner route namespaces, grouped limits, lookahead, connections, saved choices, migration, global catalog fallback and accessibility preferences.
+- **13 JavaScript landing/catalog checks passed.** Native source parsing, XcodeGen, server syntax, API JSON and Git whitespace checks passed. A UI journey for expanding and filtering routes and movements was added.
+- Full iOS compilation, UI execution and phone installation subsequently passed on October 3; see the installation record above. The server catalog remains pending deployment.
+
 ## Compact board and iPad columns
 
 Checked on 2026-09-28 with Xcode 27.0 on the iOS 27.0 **iPhone 17** and **iPad Pro 11-inch (M5)** simulators. This supersedes the pending iPad layout checks below.

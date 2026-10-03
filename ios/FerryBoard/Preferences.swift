@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import FerryCore
 
 enum FerryTextSize: String, Codable, CaseIterable {
     case system, compact, larger
@@ -23,6 +24,8 @@ struct Preferences: Codable {
     var landingID: Int?
     var favorites: Set<Int> = []
     var hiddenOperators: Set<String> = []
+    var hiddenRoutes: Set<String> = []
+    var hiddenNYCMovements: Set<NYCFerryMovement> = []
     var sortByRoute = false
     var twelveHour = false
     var theme = "nyc-ferry"
@@ -40,8 +43,17 @@ struct Preferences: Codable {
 
     init() {}
 
+    var departureFilters: DepartureFilters {
+        DepartureFilters(hiddenOperators: hiddenOperators, hiddenRoutes: hiddenRoutes, hiddenNYCMovements: hiddenNYCMovements)
+    }
+
+    mutating func resetDepartureFilters() {
+        hiddenOperators = []; hiddenRoutes = []; hiddenNYCMovements = []
+    }
+
     private enum CodingKeys: String, CodingKey {
         case landingID, favorites, hiddenOperators, sortByRoute, twelveHour, theme, textSize
+        case hiddenRoutes, hiddenNYCMovements
         case launchLanding, homeLandingID, launchTab, lastTab
         case showDwellTimes, showLayoverTimes, showMarineReferences
         case departuresPerRoute, departureWindowMinutes, keepScreenAwake
@@ -54,6 +66,8 @@ struct Preferences: Codable {
         landingID = try? values.decode(Int.self, forKey: .landingID)
         favorites = (try? values.decode(Set<Int>.self, forKey: .favorites)) ?? []
         hiddenOperators = (try? values.decode(Set<String>.self, forKey: .hiddenOperators)) ?? []
+        hiddenRoutes = (try? values.decode(Set<String>.self, forKey: .hiddenRoutes)) ?? []
+        hiddenNYCMovements = Set(((try? values.decode([String].self, forKey: .hiddenNYCMovements)) ?? []).compactMap(NYCFerryMovement.init(rawValue:)))
         sortByRoute = (try? values.decode(Bool.self, forKey: .sortByRoute)) ?? false
         twelveHour = (try? values.decode(Bool.self, forKey: .twelveHour)) ?? false
         theme = (try? values.decode(String.self, forKey: .theme)) ?? "nyc-ferry"

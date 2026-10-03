@@ -83,7 +83,7 @@ struct BoardView: View {
             }
             ToolbarItem(placement: .principal) { title }
             ToolbarItemGroup(placement: .topBarTrailing) {
-                Button("Filter operators", systemImage: store.preferences.hiddenOperators.isEmpty ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill") { store.sheet = .operators }.accessibilityIdentifier("operatorFilter")
+                Button("Filter operators and routes", systemImage: store.preferences.departureFilters.isActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle") { store.sheet = .operators }.accessibilityIdentifier("operatorFilter")
                 Button("Settings", systemImage: "gearshape") { store.sheet = .settings }.accessibilityIdentifier("settings")
             }
         }
@@ -233,9 +233,9 @@ struct BoardView: View {
     @ViewBuilder private var emptyBoard: some View {
         if let schedule = store.schedule, ScheduleEngine.range(schedule)?.contains(store.currentDate) != true {
             MessageCard(title: "Schedule unavailable", message: "No saved schedule covers this date. Connect to refresh.", symbol: "calendar.badge.exclamationmark")
-        } else if !store.preferences.hiddenOperators.isEmpty {
-            MessageCard(title: "No matching departures", message: "Try showing all operators or another date.", symbol: "line.3.horizontal.decrease.circle")
-            Button("Show all operators") { store.preferences.hiddenOperators = [] }.padding(.horizontal, 12)
+        } else if store.preferences.departureFilters.isActive {
+            MessageCard(title: "No matching departures", message: "Try showing all departures or another date.", symbol: "line.3.horizontal.decrease.circle")
+            Button("Show all departures") { store.preferences.resetDepartureFilters() }.padding(.horizontal, 12)
         } else {
             MessageCard(title: "No scheduled departures", message: store.isToday ? "No more departures are listed for today." : "No boats are scheduled for this date.", symbol: "ferry")
         }

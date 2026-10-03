@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { buildDisplayData } from "../scripts/build-data.js";
-import { landingChoices, loadAllLandingData, mergeDisplayData, operatorRoster, stopIdsForLanding } from "../lib/landing-data.js";
+import { landingChoices, loadAllLandingData, mergeDisplayData, operatorRoster, routeRoster, stopIdsForLanding } from "../lib/landing-data.js";
 
 const root = new URL("..", import.meta.url).pathname;
 const landings = JSON.parse(await readFile(new URL("../config/landings.json", import.meta.url), "utf8"));
@@ -136,6 +136,19 @@ test("a landing's realtime stop set covers its partner operators, prefixes and a
   const stops = stopIdsForLanding(nyuLanding);
   assert.ok(stops.has("nyu:13138"), "NYU updates arrive prefixed and must survive per-landing filtering");
   for (const stopId of nyuLanding.meta.landing.stopIds) assert.ok(stops.has(stopId));
+});
+
+test("the route filter catalog spans docks, keeps feed namespaces and fills operator identity", () => {
+  const local = { meta: { agencyName: "NYC Ferry" }, routes: { ER: { name: "East River" } } };
+  const partner = { meta: { agencyName: "NYC Ferry" }, routes: { "sea:ER": { name: "Highlands", operator: "Seastreak" } } };
+  const otherDock = { meta: { agencyName: "NYC Ferry" }, routes: { ER: { name: "East River" }, SG: { name: "St. George" } } };
+  const routes = routeRoster(new Map([[16, local], [8, partner], [26, otherDock]]));
+  assert.deepEqual(Object.keys(routes).sort(), ["ER", "SG", "sea:ER"]);
+  assert.equal(routes.ER.operator, "NYC Ferry");
+  assert.equal(routes["sea:ER"].operator, "Seastreak");
+  assert.equal(routes["sea:ER"].id, "sea:ER");
+  assert.equal(local.routes.ER.operator, undefined, "adding catalog metadata must not rewrite source schedules");
+  assert.deepEqual(routeRoster(new Map()), {});
 });
 
 test("both realtime services accept a display source instead of a single built file", async () => {

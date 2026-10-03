@@ -63,6 +63,8 @@ The departure board also offers dwell/layover visibility, one to five departures
 
 Settings links to operators, landings/favorites, alerts, the vessel picker and manual refresh. Older saved preferences migrate without losing favorites, filters or theme choices.
 
+**Operators & routes** uses a left chevron to expand each operator's route switches. NYC Ferry also has independent switches for boats headed to Pier C, crew shuttles and other out-of-service movements. Route and movement filters combine; hiding an operator hides all of its departures while keeping its saved route choices. Filters apply to both board sorts and trip connections, and **Show all departures** resets them together. The landing roster supplies a route catalog across all docks; older servers still offer the current landing's routes.
+
 ## Data and freshness
 
 `FerryCore` models schema 11 of [the shared API](../docs/api.openapi.json), ignores unknown additive fields, validates landing/vessel identity, and preserves original response bytes in the cache. Invalid or incomplete replacement responses cannot overwrite a valid saved schedule. Cache keys include the deployment, endpoint, and selected landing/vessel.

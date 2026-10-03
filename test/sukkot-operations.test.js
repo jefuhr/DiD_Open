@@ -118,17 +118,36 @@ test('verified last drops create correctly identified return-to-Pier-C rows and 
 });
 
 test('withheld and unresolved final drops remain explicit and never become invented Pier C returns', () => {
-  assert.equal(Object.values(crew.shifts.holiday).flat().filter(shift => shift.endTripId).length, 40);
-  // Dispatch withheld these six on 2026-09-28, including RS4's otherwise exact 21:30 Pier 11 drop.
+  assert.equal(Object.values(crew.shifts.holiday).flat().filter(shift => shift.endTripId).length, 44);
+  // Four published finals were approved September 29; these two remain withheld.
   assert.deepEqual(crew.withheldDrops.map(note => note.source).sort(),
-    ['Board!A10','Board!A26','Board!C26','Board!D10','Board!F26','Board!L10']);
-  assert.deepEqual(crew.withheldDrops.map(note => note.boat).sort(), ['ER1','ER3','ER6','GI1','RS1','RS4']);
+    ['Board!D10','Board!L10']);
+  assert.deepEqual(crew.withheldDrops.map(note => note.boat).sort(), ['GI1','RS4']);
   assert.deepEqual(crew.unresolvedEnds, []);
   const rows = [...boards.keys()].flatMap(holidayRows);
   for (const note of [...crew.withheldDrops, ...crew.unresolvedEnds]) {
     assert.equal(rows.some(row => working(row) === note.boat && row.outOfService && row.endsDay), false, note.boat);
   }
-  assert.match(boards.get(27).meta.crewScheduleStatus.confirmedHolidays.message, /^6 Pier C returns await dispatch confirmation\.$/);
+  assert.match(boards.get(27).meta.crewScheduleStatus.confirmedHolidays.message, /^2 Pier C returns await dispatch confirmation\.$/);
+});
+
+test('approved published finals create four returns at the confirmed arrival and landing', () => {
+  const rows = [...boards.keys()].flatMap(holidayRows);
+  for (const [boat, time, stopId, tripId] of [
+    ['ER1','21:20:00','17','917'], ['ER3','21:46:00','17','932'],
+    ['ER6','21:37:00','87','1094'], ['RS1','21:35:00','87','1110']
+  ]) {
+    const returns = rows.filter(row => working(row) === boat && row.outOfService && row.endsDay);
+    assert.equal(returns.length, 1, boat);
+    const row = returns[0];
+    assert.equal(row.departureTime, time, boat);
+    assert.equal(row.stopId, stopId, boat);
+    assert.equal(row.liveTripId, tripId, boat);
+    assert.equal(row.destination, 'Pier C', boat);
+    const shift = crew.shifts.holiday[boat].find(shift => shift.endTripId === tripId);
+    assert.ok(shift.endNoteTime && shift.endNotePlace, `${boat} retains the original workbook note`);
+    assert.match(shift.endConfirmedSource, /User approved published GTFS final/);
+  }
 });
 
 test('holiday turnarounds use verified adjacent workings and preserve actual realtime IDs', () => {

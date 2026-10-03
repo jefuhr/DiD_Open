@@ -328,7 +328,7 @@ struct TripView: View {
     }
 
     @ViewBuilder private func connectingDepartures(_ stop: ConnectionStop) -> some View {
-        let visible = stop.connections.filter { !store.preferences.hiddenOperators.contains($0.operator ?? "NYC Ferry") }
+        let visible = stop.connections.filter { store.visible($0) }
         if !visible.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
                 Text("CONNECT").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
@@ -337,7 +337,7 @@ struct TripView: View {
                 }
             }.padding(.top, 3)
         } else {
-            Text(stop.connections.isEmpty ? "No connecting departures listed" : "Connections hidden by operator filter")
+            Text(stop.connections.isEmpty ? "No connecting departures listed" : "Connections hidden by departure filters")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

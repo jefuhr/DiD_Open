@@ -10,6 +10,8 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(preferences.landingID, 26)
         XCTAssertEqual(preferences.favorites, [16, 26])
         XCTAssertEqual(preferences.hiddenOperators, ["NY Waterway"])
+        XCTAssertTrue(preferences.hiddenRoutes.isEmpty)
+        XCTAssertTrue(preferences.hiddenNYCMovements.isEmpty)
         XCTAssertTrue(preferences.sortByRoute)
         XCTAssertTrue(preferences.twelveHour)
         XCTAssertEqual(preferences.theme, "night")
@@ -42,6 +44,19 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(FerryTextSize.compact.resolved(.large), .medium)
         XCTAssertEqual(FerryTextSize.larger.resolved(.large), .xxLarge)
         XCTAssertEqual(FerryTextSize.larger.resolved(.xxxLarge), .xxxLarge)
+    }
+
+    func testRouteAndMovementFiltersRoundTripAndIgnoreUnknownFutureMovements() throws {
+        let data = Data(#"{"hiddenRoutes":["ER","wtr:10225"],"hiddenNYCMovements":["pierC","crewShuttle","future-movement"],"favorites":[26]}"#.utf8)
+        let preferences = try JSONDecoder().decode(Preferences.self, from: data)
+        XCTAssertEqual(preferences.hiddenRoutes, ["ER", "wtr:10225"])
+        XCTAssertEqual(preferences.hiddenNYCMovements, [.pierC, .crewShuttle])
+        var restored = try JSONDecoder().decode(Preferences.self, from: JSONEncoder().encode(preferences))
+        XCTAssertEqual(restored.hiddenRoutes, preferences.hiddenRoutes)
+        XCTAssertEqual(restored.hiddenNYCMovements, preferences.hiddenNYCMovements)
+        restored.resetDepartureFilters()
+        XCTAssertFalse(restored.departureFilters.isActive)
+        XCTAssertEqual(restored.favorites, [26])
     }
 
     @MainActor func testLaunchChoicesAndDisplayOptionsPersistWithoutChangingSourceSchedule() throws {

@@ -110,15 +110,36 @@ final class FerryStore: ObservableObject {
     }
     var rows: [ScheduledDeparture] {
         guard let schedule = displaySchedule else { return [] }
-        return ScheduleEngine.timeline(data: schedule, realtime: realtime, viewDate: viewDate, now: now).filter { visible($0.departure.routeId) }
+        return ScheduleEngine.timeline(data: schedule, realtime: realtime, viewDate: viewDate, now: now).filter { visible($0.departure) }
     }
     var groups: [DepartureGroup] {
         guard let schedule = displaySchedule else { return [] }
-        return ScheduleEngine.groups(data: schedule, realtime: realtime, viewDate: viewDate, now: now,
-            limitPerGroup: schedule.meta.departuresShown).filter { visible($0.routeId) }
+        let live = ScheduleEngine.frame(schedule, viewDate: viewDate, now: now).live
+        let window = Double(schedule.meta.departureWindowMinutes == 0 ? 180 : schedule.meta.departureWindowMinutes) * 60
+        // Filter before the route limit, so hidden movements don't consume a slot.
+        return ScheduleEngine.groups(data: schedule, realtime: realtime, viewDate: viewDate, now: now).compactMap { original in
+            var group = original
+            group.departures = group.departures.filter { visible($0.departure) }
+            guard let first = group.departures.first, !live || first.delta <= window else { return nil }
+            group.departures = Array(group.departures.prefix(max(0, schedule.meta.departuresShown)))
+            return group.departures.isEmpty ? nil : group
+        }
     }
     func operatorName(_ routeID: String) -> String { schedule?.routes[routeID]?.operator ?? schedule?.meta.agencyName ?? "NYC Ferry" }
-    func visible(_ routeID: String) -> Bool { !preferences.hiddenOperators.contains(operatorName(routeID)) }
+    func visible(_ departure: Departure) -> Bool {
+        preferences.departureFilters.allows(departure, operatorName: departure.operator ?? operatorName(departure.routeId))
+    }
+    func visible(_ connection: Connection) -> Bool {
+        preferences.departureFilters.allows(routeID: connection.routeId, operatorName: connection.operator ?? operatorName(connection.routeId))
+    }
+    func filterRoutes(for operatorName: String) -> [(id: String, route: FerryRoute)] {
+        let routes = (roster?.routes ?? [:]).merging(schedule?.routes ?? [:]) { _, current in current }
+        return routes.compactMap { id, route in
+            guard (route.operator ?? schedule?.meta.agencyName ?? "NYC Ferry") == operatorName,
+                  !(operatorName == "NYC Ferry" && id == "CREW") else { return nil }
+            return (id: id, route: route)
+        }.sorted { $0.route.name.localizedStandardCompare($1.route.name) == .orderedAscending }
+    }
     func time(_ seconds: Double) -> String { ServiceClock.time(seconds: seconds, twelveHour: preferences.twelveHour) }
     func time(_ date: Date?, timezone: String? = nil) -> String {
         guard let date else { return "—" }

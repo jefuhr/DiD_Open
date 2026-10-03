@@ -4,7 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
-import { landingChoices, loadAllLandingData, operatorRoster, stopIdsForLanding } from "./lib/landing-data.js";
+import { landingChoices, loadAllLandingData, operatorRoster, routeRoster, stopIdsForLanding } from "./lib/landing-data.js";
 import { clampLimit, createConnectionIndex, tripConnections, vesselsByBoat } from "./lib/connections.js";
 import { createCounterService } from "./lib/counters.js";
 import { openStatsStore } from "./lib/stats-store.js";
@@ -32,6 +32,7 @@ const displayDataJson = new Map([...landingData.byLanding].map(([id, data]) => [
 // The filter panel is per device and spans every landing, so it needs the whole roster rather
 // than whatever the landing on screen happens to carry.
 const OPERATORS = operatorRoster(landingData.byLanding);
+const ROUTES = routeRoster(landingData.byLanding);
 const realtimeStopsByLanding = new Map([...landingData.byLanding].map(([id, data]) => [id, stopIdsForLanding(data)]));
 // The departure board also shows the pause at the far terminal. Keep just the two timing keys
 // needed for each turn, alongside this landing's updates, rather than sending the whole feed.
@@ -202,7 +203,7 @@ async function handle(request, response) {
       return json(response, 200, { entries: [] });
     }
   }
-  if (url.pathname === "/api/landings") return json(response, 200, { landings: landingData.available, operators: OPERATORS, configured: displayConfig.landingNumber });
+  if (url.pathname === "/api/landings") return json(response, 200, { landings: landingData.available, operators: OPERATORS, routes: ROUTES, configured: displayConfig.landingNumber });
   if (url.pathname === "/api/display-data") {
     const requested = url.searchParams.get("landingId");
     const landingNumber = requested === null ? Number(displayConfig.landingNumber) : Number(requested);
