@@ -77,6 +77,18 @@ final class ScheduleEngineTests: XCTestCase {
         XCTAssertFalse(ScheduleEngine.timeline(data: data, realtime: realtime, now: now).contains { $0.departure.tripId == "nine" })
     }
 
+    func testDatedLiveIdentitySuppliesTimingAndVessel() throws {
+        var data = try fixture().schedule
+        data.departures[0].liveTripId = "nyc:unmapped:nine"
+        data.departures[0].liveTripIdsByDate = ["2026-09-04": "friday-nine", "2026-09-07": "monday-nine"]
+        let realtime = try JSONDecoder().decode(Realtime.self, from: Data(#"{"stale":false,"updates":[{"tripId":"monday-nine","stopId":"1","delaySeconds":999},{"tripId":"friday-nine","stopId":"1","delaySeconds":180}],"vehicles":[{"tripId":"friday-nine","boatName":"Friday vessel"}]}"#.utf8))
+        let row = try XCTUnwrap(ScheduleEngine.timeline(data: data, realtime: realtime,
+            now: ServiceClock.instant("2026-09-04T12:50:00Z")!).first { $0.departure.tripId == "nine" })
+        XCTAssertEqual(row.departure.liveTripId, "friday-nine")
+        XCTAssertEqual(row.delay, 180)
+        XCTAssertEqual(row.boatName, "Friday vessel")
+    }
+
     func testConfirmedHolidayOverridesOrdinaryWeekdayExclusion() throws {
         var data = try fixture().schedule
         data.meta.crewScheduleStatus = try JSONDecoder().decode(CrewStatus.self, from: Data(#"{"status":"unconfirmed","confirmedWeekdays":{"startDate":"2026-09-14","endDate":"2026-11-01","excludedDates":["2026-09-28","2026-09-29"]},"confirmedHolidays":{"dates":["2026-09-28"]}}"#.utf8))

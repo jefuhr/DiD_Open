@@ -312,7 +312,9 @@ test("every bundled feed is still in service, so no operator is silently empty",
     const earliestStart = new Map();
     const covered = new Set();
     for (const calendar of data.calendars) {
-      const operator = calendar.serviceId.includes(":") ? calendar.serviceId.split(":")[0] : "nycf";
+      // Holiday and crew calendars are portions of NYC Ferry's season, not separate operators.
+      const prefix = calendar.serviceId.split(":")[0];
+      const operator = !calendar.serviceId.includes(":") || ["nyc", "crew"].includes(prefix) ? "nycf" : prefix;
       if (!latestEnd.has(operator) || calendar.endDate > latestEnd.get(operator)) latestEnd.set(operator, calendar.endDate);
       if (!earliestStart.has(operator) || calendar.startDate < earliestStart.get(operator)) earliestStart.set(operator, calendar.startDate);
       if (today >= calendar.startDate && today <= calendar.endDate) covered.add(operator);

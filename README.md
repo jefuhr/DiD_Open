@@ -57,19 +57,22 @@ After updating feeds or configuration, run `npm run build` and restart the serve
 The September 28–October 2 timetable remains in `schedules/sukkot-2026.json`. NYC Ferry's
 GTFS version `20260928` gives its departures real trip ids, archived in
 `schedules/fall-2026-sources/nycferry-20260928.zip`. The supplied assignment board is retained
-as operational notes without crew names. Regenerate the reviewed maps after a feed change:
+as operational notes without crew names. Ordinary October service uses the separately reviewed
+`20261003` feed. Rebuild each mapping from its own archive:
 
 ```sh
 python3 scripts/import-sukkot-board.py /path/to/sukkot.xlsx
 python3 scripts/import-sukkot-live.py schedules/fall-2026-sources/nycferry-20260928.zip
 python3 scripts/import-sukkot-crew.py
-python3 scripts/import-post-sukkot-live.py schedules/fall-2026-sources/nycferry-20260928.zip
+python3 scripts/import-post-sukkot-live.py schedules/fall-2026-sources/nycferry-20261003.zip
 npm run build
 npm run stamp:bump
 ```
 
 Sukkot cells link to live data only when route, stop, and time identify one operator trip. Fall
-trips link to reissued October ids only when the entire route, stops, and times match. Unmatched
+trips link to reissued October ids only when the route, working, stops, and times match on the
+service date. Cruise-day identities are date-specific; dates without a verified match stay
+scheduled. The feed freshness check excludes completed historical supplements. Unmatched
 rows remain scheduled. The Pier C board uses the assignment notes' first pickups, matched to
 the operator's holiday trips. Its times mean first pickup at the destination; the captain chooses
 the Pier C departure. The four crew shuttles replace the corresponding afternoon boat departures.

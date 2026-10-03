@@ -59,6 +59,21 @@ test("confirmed assignments survive refresh/restart without including predicted 
   assert.equal(result.stale, true);
 });
 
+test("dated cruise identities resolve only on their reviewed service date", async t => {
+  const { options } = await service(t);
+  const dated = structuredClone(data);
+  dated.departures[0].liveTripId = 'nyc:unmapped:t1';
+  dated.departures[0].liveTripIdsByDate = {'2026-09-24':'current-t1','2026-09-25':'other-t1'};
+  const ride = await createRideService({...options,byLanding:new Map([[16,dated]])});
+  await ride.observe({vehicleFeed:feed('H204',now,'current-t1'),now});
+  const trip = ride.describe('opportunity',now).trips[0];
+  assert.equal(trip.routeId,'ER');
+  assert.equal(trip.stops.length,2);
+  await ride.observe({vehicleFeed:feed('H120',now,'other-t1'),now});
+  const wrongDay = ride.describe('bay-hopper',now).trips;
+  assert.ok(wrongDay.every(trip=>trip.stops.length===0),'another date must not borrow the reviewed stop list');
+});
+
 test("a vessel swap removes the old upcoming assignment and preserves the vessel identity", async t => {
   const { ride } = await service(t);
   await ride.observe({ vehicleFeed: feed("H204", now, "t2"), now });

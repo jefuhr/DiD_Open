@@ -40,7 +40,7 @@ def source(read):
     for row in read('stop_times.txt'):
         calls[row['trip_id']].append((int(row['stop_sequence']), row['stop_id'],
                                       row['arrival_time'], row['departure_time']))
-    signatures = {trip_id: (trip['route_id'], tuple(sorted(calls[trip_id])))
+    signatures = {trip_id: (trip['route_id'], trip['trip_short_name'], tuple(sorted(calls[trip_id])))
                   for trip_id, trip in trips.items()}
     return trips, signatures, read('calendar.txt'), read('calendar_dates.txt')
 
@@ -58,7 +58,9 @@ def main(path):
         old_trips, old_signatures, old_calendar, old_exceptions = source(old)
         new_trips, new_signatures, new_calendar, new_exceptions = source(new)
 
-    matches = collections.defaultdict(set)
+    matches = collections.defaultdict(dict)
+    unmatched_dates = collections.defaultdict(list)
+    ambiguous_dates = collections.defaultdict(list)
     seen = set()
     day = START
     while day <= END:
@@ -72,24 +74,36 @@ def main(path):
             if trip['service_id'] not in old_services:
                 continue
             seen.add(trip_id)
-            for candidate in current[old_signatures[trip_id]]:
-                matches[trip_id].add(candidate)
+            candidates = current[old_signatures[trip_id]]
+            if len(candidates) == 1:
+                matches[trip_id][day.isoformat()] = next(iter(candidates))
+            elif candidates:
+                ambiguous_dates[trip_id].append(day.isoformat())
+            else:
+                unmatched_dates[trip_id].append(day.isoformat())
         day += dt.timedelta(days=1)
 
-    confirmed = {old_id: next(iter(candidates)) for old_id, candidates in matches.items()
-                 if len(candidates) == 1}
+    confirmed = {old_id: next(iter(set(by_date.values()))) for old_id, by_date in matches.items()
+                 if len(set(by_date.values())) == 1 and old_id not in unmatched_dates
+                 and old_id not in ambiguous_dates}
+    dated = {old_id: by_date for old_id, by_date in matches.items() if old_id not in confirmed}
     result = {
         'source': str(path.relative_to(ROOT)),
         'sourceSha256': hashlib.sha256(path.read_bytes()).hexdigest(),
         'feedVersion': version, 'startDate': START.isoformat(), 'endDate': END.isoformat(),
-        'counts': {'oldTrips': len(seen), 'matched': len(confirmed),
+        'counts': {'oldTrips': len(seen), 'matched': len(matches), 'dated': len(dated),
                    'unmatched': len(seen - matches.keys()),
-                   'ambiguous': sum(len(candidates) > 1 for candidates in matches.values())},
-        'matches': dict(sorted(confirmed.items(), key=lambda item: int(item[0])))
+                   'unmatchedTripDates': sum(map(len, unmatched_dates.values())),
+                   'ambiguous': len(ambiguous_dates)},
+        'matches': dict(sorted(confirmed.items(), key=lambda item: int(item[0]))),
+        'datedMatches': dict(sorted(dated.items(), key=lambda item: int(item[0]))),
+        'unmatchedDates': dict(sorted(unmatched_dates.items(), key=lambda item: int(item[0]))),
+        'ambiguousDates': dict(sorted(ambiguous_dates.items(), key=lambda item: int(item[0])))
     }
     OUTPUT.write_text(json.dumps(result, indent=2) + '\n')
-    print(f"Mapped {len(confirmed)} of {len(seen)} fall trips to GTFS {version} "
-          f"({result['counts']['unmatched']} unmatched).")
+    print(f"Mapped {len(matches)} of {len(seen)} fall trips to GTFS {version} "
+          f"({len(dated)} date-specific; {result['counts']['unmatchedTripDates']} unmatched trip dates; "
+          f"{len(ambiguous_dates)} ambiguous trips).")
 
 
 if __name__ == '__main__':

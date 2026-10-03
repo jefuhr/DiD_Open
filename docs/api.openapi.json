@@ -1014,6 +1014,20 @@
               },
               "additionalProperties": true
             }
+          },
+          "liveTripIdsByDate": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Verified live trip IDs keyed by YYYY-MM-DD service date. Select this date before falling back to the ordinary ID. A nyc:unmapped: fallback intentionally matches no live feed entity."
+          },
+          "predictTripIdsByDate": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Verified live trip IDs keyed by YYYY-MM-DD service date. Select this date before falling back to the ordinary ID. A nyc:unmapped: fallback intentionally matches no live feed entity."
           }
         },
         "required": [
@@ -1097,6 +1111,13 @@
                   "string",
                   "null"
                 ]
+              },
+              "nextLiveTripIdsByDate": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Verified live trip IDs keyed by YYYY-MM-DD service date. Select this date before falling back to the ordinary ID. A nyc:unmapped: fallback intentionally matches no live feed entity."
               }
             },
             "additionalProperties": true
@@ -1121,6 +1142,13 @@
           },
           "timetableOnly": {
             "type": "boolean"
+          },
+          "liveTripIdsByDate": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Verified live trip IDs keyed by YYYY-MM-DD service date. Select this date before falling back to the ordinary ID. A nyc:unmapped: fallback intentionally matches no live feed entity."
           }
         },
         "required": [

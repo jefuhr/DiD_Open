@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { buildDisplayData } from '../scripts/build-data.js';
 import { activeServices, createConnectionIndex } from '../lib/connections.js';
+import { tripIdentityForDate } from '../public/assets/schedule.js';
 
 const source = JSON.parse(await readFile(new URL('../schedules/fall-2026-weekend-crew.json', import.meta.url)));
 const boards = new Map(await Promise.all([8,9,11,16,17,26,27].map(async landing => [landing, await buildDisplayData({ landingNumber: landing })])));
@@ -55,7 +56,9 @@ test('Red Hook passenger shuttle and its Pier C movements appear on exactly ten 
     assert.equal(working(17).some(r=>r.crewShuttle),false);
     assert.ok(activeServices(index,date).has(working(27)[0].serviceId));
     assert.ok(working(27)[0].predictTripId);
-    assert.equal(rows(17,date)[0].tripId, working(27)[0].predictTripId);
+    const first = working(17)[0];
+    assert.equal(tripIdentityForDate(first,date) || first.tripId,
+      tripIdentityForDate(working(27)[0],date,'predictTripId'));
   }
 });
 

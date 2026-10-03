@@ -44,7 +44,8 @@ const turnaroundKeysByLanding = new Map([...landingData.byLanding].map(([id, dat
   return [id, new Set(Object.entries(data.tripSchedules || {}).flatMap(([tripId, schedule]) => {
     const turn = schedule.turnaround;
     if (!turn) return [];
-    return [schedule.liveTripId || turnaroundLiveID(tripId), turn.nextLiveTripId || turnaroundLiveID(turn.nextTripId)]
+    return [schedule.liveTripId || turnaroundLiveID(tripId), turn.nextLiveTripId || turnaroundLiveID(turn.nextTripId),
+      ...Object.values(schedule.liveTripIdsByDate || {}), ...Object.values(turn.nextLiveTripIdsByDate || {})]
       .filter(value => value != null).map(value => `${value}|${turn.stopId}`);
   }))];
 }));

@@ -153,7 +153,9 @@ public enum ScheduleEngine {
               let scheduled = turn.scheduledLayoverSeconds, scheduled.isFinite else { return result }
         let updates = row.live && !realtime.stale && !(departure.scheduleOnly == true && departure.liveTripId == nil) ? realtime.updates ?? [] : []
         let arrivingID = departure.liveTripId ?? trip?.liveTripId ?? departure.tripId
-        let leavingID = turn.nextLiveTripId ?? turn.nextTripId.flatMap { data.tripSchedules[$0]?.liveTripId } ?? turn.nextTripId
+        let leavingID = turn.nextLiveTripIdsByDate?[row.serviceDate] ?? turn.nextLiveTripId
+            ?? turn.nextTripId.flatMap { data.tripSchedules[$0]?.liveTripIdsByDate?[row.serviceDate] ?? data.tripSchedules[$0]?.liveTripId }
+            ?? turn.nextTripId
         let arrival = updates.first { $0.tripId == arrivingID && $0.stopId == turn.stopId }
         let next = updates.first { $0.tripId == leavingID && $0.stopId == turn.stopId }
         func delay(_ update: TripUpdate?, arrival: Bool = false) -> Double? {
@@ -215,6 +217,8 @@ public enum ScheduleEngine {
             let active = activeServices(data, date: serviceDate)
             for original in data.departures where active.contains(original.serviceId) {
                 var departure = original
+                departure.liveTripId = original.liveTripIdsByDate?[serviceDate] ?? original.liveTripId
+                departure.predictTripId = original.predictTripIdsByDate?[serviceDate] ?? original.predictTripId
                 guard ServiceClock.addDays(serviceDate, Int(floor(departure.seconds / 86400))) == frame.dateKey else { continue }
                 let timetableOnly = departure.scheduleOnly == true && departure.liveTripId == nil
                 let liveTripID = departure.liveTripId ?? departure.tripId

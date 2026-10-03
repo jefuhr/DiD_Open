@@ -1,7 +1,7 @@
 import { createScheduleStore, validSchedule } from "./assets/schedule-store.js";
 import { cacheKey, landingKey, landingsKey, sortKey, clockKey, hiddenOperatorsKey, operatorsKey, favouriteLandingsKey, themeKey, THEMES, changelogSeenKey, nearestKey, nearestMaxAgeMs } from "./assets/preferences.js";
 import { bindSheet, setSheetOpen } from "./assets/panels.js";
-import { zonedParts, addDays, scheduleRange as scheduleBounds, viewFrame as scheduleFrame, routeDirectionGroups as scheduleGroups, timelineDepartures as scheduleTimeline, confirmedCrewCoverage as scheduleCrewCoverage } from "./assets/schedule.js";
+import { zonedParts, addDays, tripIdentityForDate, scheduleRange as scheduleBounds, viewFrame as scheduleFrame, routeDirectionGroups as scheduleGroups, timelineDepartures as scheduleTimeline, confirmedCrewCoverage as scheduleCrewCoverage } from "./assets/schedule.js";
 import { createViewLifecycle } from "./assets/view-lifecycle.js";
 
 export function mountBoard(root, { header = document.querySelector("#boardHeading"), setTheme, onRide = () => {} } = {}) {
@@ -1054,7 +1054,8 @@ function departureLayoverLabel(item) {
   const live = item.live !== false && !realtime.stale && (!item.scheduleOnly || item.liveTripId);
   const updates = live ? realtime.updates || [] : [];
   const arrivalID = item.liveTripId || schedule.liveTripId || item.tripId;
-  const nextID = turn.nextLiveTripId || data?.tripSchedules?.[turn.nextTripId]?.liveTripId || turn.nextTripId;
+  const nextID = tripIdentityForDate(turn, item.serviceDate, "nextLiveTripId")
+    || tripIdentityForDate(data?.tripSchedules?.[turn.nextTripId], item.serviceDate) || turn.nextTripId;
   const incoming = updates.find((update) => String(update.tripId) === String(arrivalID) && update.stopId === turn.stopId);
   const arrival = incoming && { ...incoming, delaySeconds: incoming.arrivalDelaySeconds ?? incoming.delaySeconds };
   const next = updates.find((update) => String(update.tripId) === String(nextID) && update.stopId === turn.stopId);
@@ -1137,7 +1138,8 @@ function vesselForTrip(tripId) {
   const vehicles = realtime.vehicles || [];
   const departure = (data?.departures || []).find((item) => String(item.tripId) === String(tripId));
   if (departure?.scheduleOnly && !departure.liveTripId) return null;
-  const working = vehicles.find((item) => String(item.tripId) === String(departure?.liveTripId || tripId) && item.boatName);
+  const liveTripId = tripIdentityForDate(departure, viewFrame(new Date()).dateKey) || tripId;
+  const working = vehicles.find((item) => String(item.tripId) === String(liveTripId) && item.boatName);
   if (working) return { name: working.boatName, number: working.vesselNumber, vesselId: working.vesselId, predicted: false };
   if (!Number.isInteger(departure?.boatAssignment)) return null;
   const boat = `${departure.routeId}${departure.boatAssignment}`;

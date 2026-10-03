@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import { buildDisplayData } from "../lib/schedule-builder.js";
-import { activeServices, confirmedCrewCoverage, timelineDepartures } from "../public/assets/schedule.js";
+import { activeServices, confirmedCrewCoverage, timelineDepartures, tripIdentityForDate } from "../public/assets/schedule.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const output = path.resolve(root, process.argv[2] || "ios/DerivedData/ServiceParity");
@@ -26,7 +26,7 @@ const fields = ["tripId", "routeId", "stopId", "serviceDate", "seconds", "delay"
   "boatName", "predictedBoatName", "endsShift", "endsDay", "fromHomePort", "outOfService", "crewShuttle", "arrival",
   "approximate", "scheduleOnly", "timetableOnly", "liveTripId", "predictTripId", "secondsEnd", "crewBoats"];
 const controls = new Set([8, 11, 13, 16, 17, 18, 26, 27]);
-const controlDates = ["2026-09-25", "2026-09-27", "2026-10-03", "2026-10-05"];
+const controlDates = ["2026-09-25", "2026-09-27", "2026-10-03", "2026-10-05", "2026-10-10", "2026-10-17", "2026-10-24"];
 const manifest = { holidayDates: holiday.dates, sourceNote: holiday.note, schedules: [], cases: 0, departures: 0 };
 await mkdir(output, { recursive: true });
 for (const landingID of Object.keys(landings).map(Number).filter(id => !landings[id].unused).sort((a, b) => a - b)) {
@@ -36,18 +36,19 @@ for (const landingID of Object.keys(landings).map(Number).filter(id => !landings
   schedule.meta.showLayoverTimes = true;
   const updates = new Map(), vehicles = [];
   for (const [index, departure] of schedule.departures.entries()) {
-    const tripId = departure.liveTripId || departure.tripId;
-    updates.set(`${tripId}|${departure.stopId}`, { tripId, stopId: departure.stopId,
-      delaySeconds: index % 3 === 0 ? -60 : 480,
-      arrivalDelaySeconds: index % 4 === 0 ? 300 : index % 3 === 0 ? -120 : 60,
-      canceled: index % 11 === 0 });
-    if (!departure.outOfService && !departure.fromHomePort && !departure.crewShuttle) {
-      vehicles.push({ tripId, boat: departure.boatAssignment == null ? null : `${departure.routeId}${departure.boatAssignment}`,
-        boatName: `Fixture vessel ${index}`, updatedAtEpochSeconds: index + 1 });
+    for (const tripId of new Set([departure.liveTripId || departure.tripId, ...Object.values(departure.liveTripIdsByDate || {})])) {
+      updates.set(`${tripId}|${departure.stopId}`, { tripId, stopId: departure.stopId,
+        delaySeconds: index % 3 === 0 ? -60 : 480,
+        arrivalDelaySeconds: index % 4 === 0 ? 300 : index % 3 === 0 ? -120 : 60,
+        canceled: index % 11 === 0 });
+      if (!departure.outOfService && !departure.fromHomePort && !departure.crewShuttle) {
+        vehicles.push({ tripId, boat: departure.boatAssignment == null ? null : `${departure.routeId}${departure.boatAssignment}`,
+          boatName: `Fixture vessel ${index}`, updatedAtEpochSeconds: index + 1 });
+      }
     }
   }
   const realtime = { available: true, stale: false, updates: [...updates.values()], vehicles };
-  const context = vm.createContext({ data: schedule, realtime, Math, Number });
+  const context = vm.createContext({ data: schedule, realtime, tripIdentityForDate, Math, Number });
   vm.runInContext(pauseFunctions, context);
   const project = row => {
     context.item = row;

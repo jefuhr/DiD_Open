@@ -1,5 +1,11 @@
 // Platform-independent schedule rules. All times and snapshots are supplied by the caller.
 
+// Cruise-day IDs can differ between Saturdays even when the published sailing is identical.
+// A reviewed mapping's fallback is namespaced so an unverified date cannot hit a reused feed ID.
+export function tripIdentityForDate(item, date, field = "liveTripId") {
+  return item?.[`${field}sByDate`]?.[date] ?? item?.[field];
+}
+
 export function zonedParts(date = new Date(), timeZone = "America/New_York") {
   const values = Object.fromEntries(
     new Intl.DateTimeFormat("en-CA", {
@@ -84,7 +90,10 @@ export function routeDirectionGroups({ data, realtime, viewDate = null, now, lim
   for (let offset = -1; offset <= 0; offset += 1) {
     const serviceDate = addDays(current.dateKey, offset);
     const active = activeServices(data, serviceDate);
-    for (const departure of data.departures || []) {
+    for (const original of data.departures || []) {
+      const departure = { ...original,
+        liveTripId: tripIdentityForDate(original, serviceDate),
+        predictTripId: tripIdentityForDate(original, serviceDate, "predictTripId") };
       if (!active.has(departure.serviceId)) continue;
       const calendarDate = addDays(serviceDate, Math.floor(departure.seconds / 86400));
       if (calendarDate !== current.dateKey) continue;

@@ -118,6 +118,8 @@ public struct Departure: Codable, Sendable {
     public var servesGovernorsIsland: Bool?
     public var liveTripId: String?
     public var predictTripId: String?
+    public var liveTripIdsByDate: [String: String]?
+    public var predictTripIdsByDate: [String: String]?
     public var departureTimeEnd: String?
     public var secondsEnd: Double?
     public var crewBoats: [String]?
@@ -140,6 +142,7 @@ public struct Turnaround: Codable, Sendable {
     public var stopId: String?
     public var nextTripId: String?
     public var nextLiveTripId: String?
+    public var nextLiveTripIdsByDate: [String: String]?
     public var scheduledLayoverSeconds: Double?
     public var scheduledSeconds: Double?
     public var estimatedSeconds: Double?
@@ -149,6 +152,7 @@ public struct Turnaround: Codable, Sendable {
 public struct TripSchedule: Codable, Sendable {
     public var stops: [TripCall]
     public var liveTripId: String?
+    public var liveTripIdsByDate: [String: String]?
     public var serviceId: String?
     public var routeId: String?
     public var boatAssignment: Int?

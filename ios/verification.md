@@ -2,6 +2,12 @@
 
 Checked on this Mac on 2026-09-28 with Xcode 27.0, Node 22.23.3 and XcodeGen 2.46.0.
 
+## October 3 feed rollover — source update
+
+The shared native models and schedule engine now resolve date-specific live IDs for cruise trips, Pier C predictions, and the next trip's layover. The web/server suite passed 451 tests and six mobile/desktop browser scenarios. The expanded parity generator completed 30 landings, 618 cases, and 48,702 departure projections, including October 10, 17, and 24.
+
+These native source changes have not been compiled or installed: the Linux workspace has neither Swift nor Xcode. Run the native tests and rebuild the installed app on the Mac to pick up date-specific cruise identities. The installed build described below can consume the 534 ordinary refreshed aliases, but cannot resolve the new date-specific fields.
+
 ## Installed operator filters and compact menus — 2026-10-03
 
 This supersedes the compilation, simulator and phone installation blockers recorded below.
