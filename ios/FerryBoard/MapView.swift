@@ -30,7 +30,11 @@ struct HarborMapView: View {
                         Button { store.selectLanding(landing.id) } label: {
                             Image(systemName: "mappin.circle.fill").font(.title2).foregroundStyle(store.theme.accent).background(.background, in: Circle()).frame(width: 44, height: 44)
                         }
-                        .contextMenu { Button("Open \(landing.displayName)") { store.selectLanding(landing.id) } }
+                        .contextMenu {
+                            Button { store.selectLanding(landing.id) } label: {
+                                Text("Open ") + Text(landing.displayName).fontWeight(store.preferences.favorites.contains(landing.id) ? .bold : .regular)
+                            }
+                        }
                         .accessibilityLabel("\(landing.displayName), open departure board")
                     }
                 }

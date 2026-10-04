@@ -120,6 +120,7 @@ struct BoardView: View {
                 NearestLandingButton()
                 ForEach(favorites) { landing in
                     let button = Button { store.selectLanding(landing.id) } label: { Label(landing.displayName, systemImage: "star.fill") }
+                        .font(.footnote.bold())
                         .accessibilityIdentifier("quickLanding-\(landing.id)")
                     if store.preferences.landingID == landing.id {
                         button.buttonStyle(.borderedProminent).accessibilityAddTraits(.isSelected)

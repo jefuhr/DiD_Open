@@ -214,7 +214,8 @@ button.trip-stop-head{cursor:pointer}
 .landing-star:active{color:var(--muted)}.landing-star[aria-pressed="true"]:active{color:#d99a1c}
 .landing-star:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
 .landing-option{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0;min-height:48px;padding:9px 14px 9px 10px;color:var(--ink);background:transparent;border:0;font:inherit;text-align:left;cursor:pointer}.landing-option:active{background:var(--sunken)}
-.landing-option-name{min-width:0;font-size:15px;font-weight:800;line-height:1.15}
+.landing-option-name{min-width:0;font-size:15px;font-weight:500;line-height:1.15}
+.landing-row.is-favourite .landing-option-name{font-weight:800}
 .landing-row:has(.landing-option.is-current){background:var(--card)}.landing-option.is-current .landing-option-name{color:var(--navy)}
 body.menu-open{overflow:hidden}
 @keyframes menu-in{from{transform:translateX(-12px);opacity:.4}to{transform:none;opacity:1}}

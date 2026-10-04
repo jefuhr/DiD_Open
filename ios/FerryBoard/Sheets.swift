@@ -90,7 +90,7 @@ struct LandingPicker: View {
                         }
                     } label: {
                         HStack(spacing: 6) {
-                            Text(landing.displayName).font(.footnote.weight(.medium))
+                            Text(landing.displayName).font(.footnote.weight(store.preferences.favorites.contains(landing.id) ? .bold : .medium))
                                 .foregroundStyle(.primary).multilineTextAlignment(.leading)
                                 .lineLimit(textSize.isAccessibilitySize ? nil : 1)
                             Spacer(minLength: 2)
@@ -234,11 +234,15 @@ struct SettingsView: View {
                 Picker("Home landing", selection: $store.preferences.homeLandingID) {
                     Text("Server default").tag(nil as Int?)
                     ForEach((store.roster?.landings ?? []).sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }) { landing in
-                        Text(landing.displayName).tag(Optional(landing.id))
+                        Text(landing.displayName)
+                            .fontWeight(store.preferences.favorites.contains(landing.id) ? .bold : .regular)
+                            .tag(Optional(landing.id))
                     }
                 }.pickerStyle(.navigationLink).accessibilityIdentifier("homeLanding")
                 if let id = store.preferences.landingID, id != store.preferences.homeLandingID {
-                    Button("Use \(store.landingTitle) as home") { store.preferences.homeLandingID = id }
+                    Button { store.preferences.homeLandingID = id } label: {
+                        Text("Use ") + Text(store.landingTitle).fontWeight(store.preferences.favorites.contains(id) ? .bold : .regular) + Text(" as home")
+                    }
                 }
                 Picker("Opening screen", selection: $store.preferences.launchTab) {
                     Text("Departures").tag(LaunchTab.departures)
