@@ -7,13 +7,14 @@ const mapFixture = require('./map-browser-fixture.cjs');
 
 async function main() {
   const { buildDisplayData } = await import('../lib/schedule-builder.js');
-  const { activeServices } = await import('../public/assets/schedule.js');
+  const { activeServices, tripIdentityForDate } = await import('../public/assets/schedule.js');
   const { THEMES } = await import('../public/assets/preferences.js');
   const schedule = await buildDisplayData({ landingNumber: 16 });
   const anotherLanding = await buildDisplayData({ landingNumber: 17 });
   const active = activeServices(schedule, '2026-09-24');
   const sailing = schedule.departures.find(d => active.has(d.serviceId) && d.seconds >= 36000 && d.seconds < 40000 && d.routeId === 'ER' && !d.outOfService);
   assert(sailing);
+  const liveTripId = tripIdentityForDate(sailing, "2026-09-24") ?? sailing.tripId;
   const { harbor } = await mapFixture();
   const vessel = { id: 'opportunity', name: 'Opportunity', number: 'H-204' };
   const other = { id: 'bay-hopper', name: 'Bay Hopper', number: 'H-120' };
@@ -25,12 +26,12 @@ async function main() {
     position: { latitude: 40.703, longitude: -74.006, reportedAt: now, speedKnots: 12.3, status: 'in-transit' }, nextStop: calls[1],
     trips: [{ tripId: sailing.tripId, serviceDate: '2026-09-24', route: 'ER', destination: 'DUMBO', state: 'current', startAt: now, stops: calls }, { tripId: 'earlier', serviceDate: '2026-09-24', route: 'ER', destination: 'Pier 11', state: 'past', startAt: now - 3600000, stops: calls }],
     historyNote: 'Confirmed assignments observed during app use. Earlier and future trips may be missing.' });
-  const boats = [vessel,other].map((v,i) => ({ id: String(i+1), vesselId: v.id, ...v, name:v.name, routeId:'ER', route:'ER', routeName:'East River', tripId:sailing.tripId, latitude:40.703 + i * .015, longitude:-74.006, speedKnots:12.3, ageSeconds:5, status:'in-transit' }));
+  const boats = [vessel,other].map((v,i) => ({ id: String(i+1), vesselId: v.id, ...v, name:v.name, routeId:'ER', route:'ER', routeName:'East River', tripId:liveTripId, latitude:40.703 + i * .015, longitude:-74.006, speedKnots:12.3, ageSeconds:5, status:'in-transit' }));
   const site = await serve({ api: {
     '/api/display-data': url => url.searchParams.get('landingId') === '17' ? anotherLanding : schedule, '/api/landings': { landings: [{id:16, displayName:'Pier 11'}, {id:17, displayName:anotherLanding.meta.landing.displayName}] },
     '/api/alerts': { available:true, alerts:[] }, '/api/changelog': { entries:[] }, '/api/map':harbor,
     '/api/boats': {available:true,stale:false,boats}, '/api/vessels':{vessels:[vessel,other]},
-    '/api/realtime': () => ({available:true,stale:false,updates:[],vehicles:confirmed ? [{tripId:sailing.tripId,boatName:vessel.name,vesselNumber:vessel.number,vesselId:vessel.id}] : []}),
+    '/api/realtime': () => ({available:true,stale:false,updates:[],vehicles:confirmed ? [{tripId:liveTripId,boatName:vessel.name,vesselNumber:vessel.number,vesselId:vessel.id}] : []}),
     '/api/connections': () => ({ generatedAt:new Date(now).toISOString(), stops:[] }),
     '/api/ride': async url => { rides++; if (delayed) await new Promise(resolve => setTimeout(resolve, 500)); return payload(url.searchParams.get('vesselId')); }
   } });

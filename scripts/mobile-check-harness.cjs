@@ -95,10 +95,13 @@ async function check(name, { api = {}, context = {} } = {}, body) {
   const { chromium } = require(path.join(ROOT, "node_modules/playwright"));
   const site = await serve({ api });
   const errors = [];
-  let browser;
+  let browser, page;
+  const artifactName = name.replace(/[^a-zA-Z0-9_-]+/g, "-");
+  await fs.mkdir(ARTIFACTS, { recursive: true });
   try {
     browser = await chromium.launch();
-    const page = await browser.newPage({ ...PHONE, ...context });
+    page = await browser.newPage({ ...PHONE, ...context });
+    await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true });
     page.on("pageerror", (error) => errors.push(error.message));
     const save = async (file, data) => {
       await fs.mkdir(ARTIFACTS, { recursive: true });
@@ -112,6 +115,10 @@ async function check(name, { api = {}, context = {} } = {}, body) {
     if (errors.length) throw new Error(`Uncaught page errors: ${errors.join(", ")}`);
     console.log(`${name}: ok`);
   } finally {
+    if (page) {
+      await page.screenshot({ path: path.join(ARTIFACTS, `${artifactName}.png`) }).catch(() => {});
+      await page.context().tracing.stop({ path: path.join(ARTIFACTS, `${artifactName}.zip`) }).catch(() => {});
+    }
     await browser?.close();
     await site.close();
   }

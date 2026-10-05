@@ -1,0 +1,90 @@
+name: Critical browser E2E
+
+on:
+  pull_request:
+  push:
+    branches: [mobile]
+  schedule:
+    - cron: '45 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    name: ${{ matrix.suite }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: Live times and connections
+            scripts: scripts/check-post-sukkot-browser.cjs
+            artifact: live-connections
+          - suite: Riding mode
+            scripts: scripts/check-riding-mode.cjs
+            artifact: riding-mode
+          - suite: Map interactions
+            scripts: scripts/check-map-selection.cjs scripts/check-map-rendering.cjs
+            artifact: map-interactions
+    env:
+      HOST: 127.0.0.1
+      PORT: 8094
+      MOBILE_TEST_ORIGIN: http://127.0.0.1:8094
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium and system dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Build schedules and start local server
+        shell: bash
+        run: |
+          mkdir -p artifacts/browser
+          npm run build > artifacts/browser/build.log 2>&1
+          node server.js > artifacts/browser/server.log 2>&1 &
+          echo "$!" > "$RUNNER_TEMP/ferry-server.pid"
+          for attempt in {1..60}; do
+            if curl --fail --silent "$MOBILE_TEST_ORIGIN/api/landings" > /dev/null; then
+              exit 0
+            fi
+            if ! kill -0 "$(cat "$RUNNER_TEMP/ferry-server.pid")" 2>/dev/null; then
+              cat artifacts/browser/server.log
+              exit 1
+            fi
+            sleep 1
+          done
+          cat artifacts/browser/server.log
+          exit 1
+      - name: Run browser checks
+        shell: bash
+        env:
+          CHECK_SCRIPTS: ${{ matrix.scripts }}
+        run: |
+          set -o pipefail
+          for script in $CHECK_SCRIPTS; do
+            node "$script" 2>&1 | tee "artifacts/browser/$(basename "$script" .cjs).log"
+          done
+      - name: Stop local server
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/ferry-server.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/ferry-server.pid")" 2>/dev/null || true
+          fi
+      - name: Save browser traces, screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-${{ matrix.artifact }}-${{ github.run_attempt }}
+          path: artifacts/browser/
+          if-no-files-found: warn
+          retention-days: 14

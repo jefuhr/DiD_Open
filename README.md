@@ -127,3 +127,19 @@ docker compose up --build -d
 Compose persists `./state`, binds port 8090 to loopback, and checks `/healthz`. Keep the existing reverse-proxy forwarding for `/ferryTimesMobile/`, `/api/`, `/assets/`, `/app.js`, `/styles.css`, and `/sw.js`. The deployed web manifest retains its existing prefix and installation identity. See [Deployment](docs/deployment.md).
 
 Product changes are maintained in `content/changelog.json`.
+
+### Browser checks in GitHub Actions
+
+`Critical browser E2E` runs on pull requests, pushes to `mobile`, daily at
+12:45 UTC, and manually from the Actions tab. Three independent jobs cover live
+boat names/delays and trip connections at mobile/desktop widths, riding mode on
+both deployment paths, and map vessel selection/rendering. Each job installs the
+lockfile dependencies and Chromium, builds schedules, and starts a local server.
+Live timing and vessel assertions use fixtures rather than the operator's live API.
+
+Each job uploads logs, screenshots, and Playwright traces for 14 days, including
+failed runs. Download its `browser-*` artifact and open a trace with
+`npx playwright show-trace path/to/trace.zip`. To reproduce locally, start
+`HOST=127.0.0.1 PORT=8094 node server.js`, then run the corresponding scripts from
+`.github/workflows/browser-e2e.yml` in another terminal. These Chromium checks do
+not replace native iOS or Safari testing.
