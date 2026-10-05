@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreLocation
 import FerryCore
+import WidgetKit
 
 @MainActor
 final class NearestLanding: NSObject, ObservableObject, @preconcurrency CLLocationManagerDelegate {
@@ -38,15 +39,14 @@ final class NearestLanding: NSObject, ObservableObject, @preconcurrency CLLocati
         }
     }
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let fix = locations.last, fix.horizontalAccuracy >= 0 else { fail("No usable location was reported."); return }
-        let ranked = landings.compactMap { landing -> (Landing, Double)? in
-            guard let lat = landing.latitude, let lon = landing.longitude else { return nil }
-            return (landing, fix.distance(from: CLLocation(latitude: lat, longitude: lon)))
-        }.sorted { $0.1 < $1.1 }
-        guard let nearest = ranked.first else { fail("Connect to download landing locations first."); return }
-        let value = Saved(id: nearest.0.id, name: nearest.0.name, distance: nearest.1, at: Date())
+        guard let fix = locations.last, fix.horizontalAccuracy >= 0,
+              abs(Date().timeIntervalSince(fix.timestamp)) <= 15 * 60 else { fail("No current location was reported."); return }
+        guard let nearest = NearbyWidgetBoard.nearest(in: landings, latitude: fix.coordinate.latitude, longitude: fix.coordinate.longitude),
+              let lat = nearest.latitude, let lon = nearest.longitude else { fail("Connect to download landing locations first."); return }
+        let value = Saved(id: nearest.id, name: nearest.displayName, distance: fix.distance(from: CLLocation(latitude: lat, longitude: lon)), at: Date())
         saved = value; locating = false; timeout?.cancel(); manager.stopUpdatingLocation()
         if let raw = try? JSONEncoder().encode(value) { UserDefaults.standard.set(raw, forKey: "nearest-landing") }
+        WidgetCenter.shared.reloadTimelines(ofKind: "NearbyFerries")
     }
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) { fail("Your location could not be determined. Try again or choose a landing manually.") }
     private func fail(_ message: String) { error = message; locating = false; timeout?.cancel(); manager.stopUpdatingLocation() }

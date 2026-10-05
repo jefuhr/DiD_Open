@@ -42,6 +42,7 @@ struct FerryRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var systemTextSize
     @State private var sidebar: NavigationSplitViewVisibility = .automatic
+    @State private var widgetLandingID: Int?
     var body: some View {
         GeometryReader { window in
             if UIDevice.current.userInterfaceIdiom == .pad && window.size.width >= 760 {
@@ -80,6 +81,28 @@ struct FerryRootView: View {
         .onChange(of: store.preferences.keepScreenAwake) { _, _ in updateScreenAwake() }
         .onChange(of: store.tab) { _, _ in store.viewChanged() }
         .onChange(of: store.showingRide) { _, _ in store.viewChanged() }
+        .onOpenURL { url in
+            guard let link = FerryWidgetLink(url) else { return }
+            store.showingRide = false
+            store.tab = .departures
+            store.viewDate = nil
+            switch link {
+            case .nearby:
+                widgetLandingID = nil
+                store.sheet = .widgetSetup
+            case .landing(let id):
+                store.sheet = nil
+                widgetLandingID = id
+                openWidgetLanding()
+            }
+        }
+        .onChange(of: store.roster?.landings.map(\.id)) { _, _ in openWidgetLanding() }
+    }
+    private func openWidgetLanding() {
+        guard let id = widgetLandingID, let roster = store.roster else { return }
+        widgetLandingID = nil
+        if roster.landings.contains(where: { $0.id == id }) { store.selectLanding(id) }
+        else { store.sheet = .landings }
     }
     private var mainTabs: some View {
         TabView(selection: $store.tab) {

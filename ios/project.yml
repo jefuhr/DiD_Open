@@ -27,8 +27,11 @@ targets:
     platform: iOS
     sources:
       - path: FerryBoard
+      - path: Shared
     dependencies:
       - package: FerryCore
+      - target: FerryBoardWidget
+        embed: true
     info:
       path: Config/Info.plist
       properties:
@@ -49,18 +52,57 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        NSLocationWhenInUseUsageDescription: Find the ferry landing nearest to you when you tap Nearest.
+        NSLocationWhenInUseUsageDescription: Find the nearest ferry landing in the app and your Ferry Board widget. Your location stays on this device.
+        CFBundleURLTypes:
+          - CFBundleURLName: nyc.juliet.ferryboard
+            CFBundleURLSchemes: [ferryboard]
         FerryAPIBaseURL: $(FERRY_API_BASE_URL)
+        FerryWidgetKeychainGroup: $(AppIdentifierPrefix)nyc.juliet.ferryboard.widgets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: nyc.juliet.ferryboard
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: Config/WidgetShared.entitlements
+  FerryBoardWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: FerryBoardWidget
+      - path: Shared
+      - path: FerryBoard/Theme.swift
+    dependencies:
+      - package: FerryCore
+    info:
+      path: Config/Widget-Info.plist
+      properties:
+        CFBundleDisplayName: Nearby Ferries
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        NSWidgetWantsLocation: true
+        FerryAPIBaseURL: $(FERRY_API_BASE_URL)
+        FerryWidgetKeychainGroup: $(AppIdentifierPrefix)nyc.juliet.ferryboard.widgets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: nyc.juliet.ferryboard.nearby
+        GENERATE_INFOPLIST_FILE: NO
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        CODE_SIGN_ENTITLEMENTS: Config/WidgetShared.entitlements
   FerryBoardTests:
     type: bundle.unit-test
     platform: iOS
-    sources: [FerryBoardTests]
+    sources:
+      - path: FerryBoardTests
+      - path: FerryBoardWidget/NearbyWidgetView.swift
+      - path: FerryBoardWidget/NearbyProvider.swift
+      - path: FerryBoardWidget/WidgetLocation.swift
+      - path: FerryBoardWidget/WidgetConfiguration.swift
+      - path: FerryBoard/Theme.swift
+      - path: Shared/WidgetSettingsBridge.swift
     dependencies:
       - target: FerryBoard
       - package: FerryCore

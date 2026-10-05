@@ -43,9 +43,24 @@ If Xcode reports **No Accounts** or **missing Xcode-Username**, resolve the acco
 - Apple Maps with vessel and landing selection, search, route filters, bridge and marine references.
 - A physical-vessel picker, riding dashboard, confirmed trip history, minimize/switch/exit, and foreground restoration.
 - A one-shot **Nearest** location request. Riding mode does not request location access.
+- **Nearby Ferries** Home Screen widget for iPhone and iPad: nearest or fixed landing, operator filters, and configurable boat, assignment, dwell and layover details.
 - Atomic disk snapshots of previously downloaded schedules and API responses. Preferences and ride state belong to this app and do not import browser storage.
 
 Native departure push notifications are deferred. The web client's notification support remains available separately. Apple Maps' basemap needs a connection or Apple's cached map data.
+
+## Nearby ferry widget
+
+In Ferry Board, open **Settings → Nearby ferry widget**. Choose **Automatic nearest landing**, or turn it off and select a fixed landing. Fixed landings need no location permission. For automatic selection, tap **Enable location / find nearest** and allow location access. Touch and hold the Home Screen, choose **Edit → Add Widget**, and search for **Ferry Board** or **Nearby Ferries**. Small, medium and large sizes are supported on iPhone and iPad. Approve location access for the widget when iOS asks; this approval is separate from the app's permission. If access is off, tapping the widget opens its setup screen.
+
+The setup screen saves shared widget defaults: operators, boat names, route assignments, dwells, layovers, countdowns, clock format, sorting, theme, text size, lookahead and departures per route. **Copy main app settings** takes a snapshot of the current landing, operator/route/NYC movement filters, appearance and departure display preferences. It preserves the widget-only boat-name, assignment and countdown choices. Changing widget defaults does not change the main app's settings; later main app changes require copying again. Copied route and movement filters can be cleared independently.
+
+Touch and hold a widget and choose **Edit Widget**. **Use app widget defaults** starts enabled. Turn it off to give that particular widget its own automatic/fixed landing, hidden operators, detail switches, clock and sorting. These independent choices are not replaced when app widget defaults change. Route badges and operational crew/Pier C/status flags remain visible when boat names or numeric assignments are hidden.
+
+The widget checks location whenever WidgetKit requests a new timeline and selects the closest landing with valid coordinates from the landing roster. It requests a refresh every 15 minutes, but iOS chooses actual refresh times. It does not track location continuously, so moving between docks does not guarantee an immediate change. Coordinates stay on the device; the API receives only the selected landing ID. Temporary GPS failure uses a clearly labeled last landing for at most six hours; denied permission never uses a saved location.
+
+Scheduled departures advance through precomputed minute entries for two hours without another network download. The widget uses the app's service calendars, operational movement and dwell/turnaround rules. Live timing and vessel names expire after five minutes based on both download time and feed timestamp, with **≈** marking estimates and **Pred.** marking predicted boats. When a timeline expires, a refresh message replaces departures. The footer shows when the schedule was downloaded and identifies cached schedules as **Saved**. Tap the widget to open that landing's current board.
+
+The extension uses its own API client and offline cache. The app shares widget defaults, landing choices and favorite markers through an explicit Keychain access group; App Groups and paid-account capabilities are not required by this setup. If shared defaults cannot be read, the widget asks you to open its settings rather than silently replacing your choices. Widget configuration follows [Apple's configurable widget guidance](https://developer.apple.com/documentation/widgetkit/making-a-configurable-widget), and location support follows [Apple's WidgetKit location guidance](https://developer.apple.com/documentation/widgetkit/accessing-location-information-in-widgets).
 
 ## iPad workspace
 

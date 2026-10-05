@@ -11,6 +11,7 @@ struct FerrySheetView: View {
                 case .landings: LandingPicker()
                 case .operators: OperatorPicker()
                 case .settings: SettingsView()
+                case .widgetSetup: WidgetSetupView()
                 case .alerts: AlertsView()
                 case .vessels(let suggestion): VesselPicker(suggestedName: suggestion) { vessel in store.afterSheet { store.startRide(vessel) } }
                 case .trip(let row):
@@ -265,6 +266,7 @@ struct SettingsView: View {
                 Text("Keep screen awake applies while Ferry Board is open. Marine references show bridges and seamarks.")
             }
             Section("Tools") {
+                NavigationLink("Nearby ferry widget", destination: WidgetSetupView()).accessibilityIdentifier("settingsWidget")
                 NavigationLink("Operators & routes", destination: OperatorPicker())
                 NavigationLink("Landings & favorites", destination: LandingPicker())
                 NavigationLink("Service alerts", destination: AlertsView())
