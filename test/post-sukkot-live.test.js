@@ -13,7 +13,7 @@ const pier11 = await buildDisplayData({ landingNumber: 16 });
 const now = new Date('2026-10-03T13:00:00Z');
 
 test('October feed identities replace reused September IDs', () => {
-  assert.equal(mapping.feedVersion, '20261003');
+  assert.equal(mapping.feedVersion, '20261004');
   assert.equal(mapping.matches['36'], '1698');
   const row = pier11.departures.find(row => row.tripId === '36');
   assert.equal(row.liveTripId, '1698');
@@ -28,7 +28,7 @@ test('October feed identities replace reused September IDs', () => {
 });
 
 test('cruise-day mappings are unique per date and do not guess later unpublished IDs', () => {
-  assert.equal(mapping.datedMatches['820']['2026-10-03'], '2009');
+  assert.equal(mapping.datedMatches['820']['2026-10-03'], undefined);
   assert.equal(mapping.datedMatches['820']['2026-10-10'], '2065');
   assert.equal(mapping.datedMatches['820']['2026-10-17'], '2092');
   assert.equal(mapping.datedMatches['820']['2026-10-24'], undefined);
@@ -39,7 +39,7 @@ test('cruise-day mappings are unique per date and do not guess later unpublished
 test('cruise departures and boat assignments follow the live ID for their service date', () => {
   const row = pier11.departures.find(row => row.tripId === '820');
   assert.ok(row, 'SB3 has a Pier 11 departure');
-  for (const [date,id] of [['2026-10-03','2009'],['2026-10-10','2065'],['2026-10-17','2092']]) {
+  for (const [date,id] of [['2026-10-10','2065'],['2026-10-11','2065'],['2026-10-17','2092']]) {
     const realtime = {stale:false,updates:[{tripId:id,stopId:row.stopId,delaySeconds:180}],vehicles:[{tripId:id,boatName:'Cruise boat'}]};
     const dateNow = new Date(`${date}T04:00:00Z`);
     const visible = timelineDepartures({data:pier11,realtime,now:dateNow,limitPerGroup:1000})
@@ -97,7 +97,7 @@ test('feed freshness checks current service without requiring archived Sukkot ID
   const result = JSON.parse(execFileSync('python3',['-c',`
 import json,runpy
 m=runpy.run_path('scripts/check-nyc-feed-freshness.py')
-print(json.dumps([m['stale_mappings']('20261003','2026-10-03'),m['stale_mappings']('20261004','2026-10-03')]))
+print(json.dumps([m['stale_mappings']('20261004','2026-10-05'),m['stale_mappings']('20261005','2026-10-05')]))
 `],{cwd:new URL('../',import.meta.url),encoding:'utf8'}));
   assert.deepEqual(result[0],[]);
   assert.equal(result[1].length,1);

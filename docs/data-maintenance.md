@@ -2,6 +2,10 @@
 
 The server builds every active landing at startup. Changes to bundled inputs require a restart. The default landing does not limit which operators are polled.
 
+## October 4, 2026 feed refresh
+
+Reviewed `schedules/fall-2026-sources/nycferry-20261004.zip` (SHA-256 `b5345307d5365ccdcc293ed381933bc75f50400e6955a970162814d40af1c026`). Regenerate the current mapping with `python3 scripts/import-post-sukkot-live.py schedules/fall-2026-sources/nycferry-20261004.zip`. Current trip identities are unchanged; the publisher removed the expired October 3 cruise service. All 555 seasonal trips still match on supported dates, with 21 date-specific trips and zero ambiguous matches. The 84 unmatched trip dates include 21 expired October 3 trips and the existing October 24, October 31, and November 1 cruise gaps. Those dates retain scheduled times without a direct live identity.
+
 ## October 3, 2026 live identities and NY Waterway refresh
 
 NYC Ferry's `20261003` feed reused 437 September live IDs for different sailings. The reviewed archive is `schedules/fall-2026-sources/nycferry-20261003.zip` (SHA-256 `9f0db6181c999960782d67ee84f9b368f128086caa9d9784558d5558ce74cda9`). Regenerate `schedules/fall-2026-post-sukkot-live.json` with `python3 scripts/import-post-sukkot-live.py schedules/fall-2026-sources/nycferry-20261003.zip`.
