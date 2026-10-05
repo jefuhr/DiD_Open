@@ -1,16 +1,18 @@
 import Foundation
 import SwiftUI
 import FerryCore
+import WidgetKit
 
 enum FerryTab: String, Codable { case departures, map }
 
 enum FerrySheet: Identifiable {
-    case landings, operators, settings, alerts, vessels(String?), trip(ScheduledDeparture), boat(Boat), bridge(Bridge), seamark(Seamark)
+    case landings, operators, settings, widgetSetup, alerts, vessels(String?), trip(ScheduledDeparture), boat(Boat), bridge(Bridge), seamark(Seamark)
     var id: String {
         switch self {
         case .landings: "landings"
         case .operators: "operators"
         case .settings: "settings"
+        case .widgetSetup: "widgetSetup"
         case .alerts: "alerts"
         case .vessels: "vessels"
         case .trip(let row): "trip-" + row.id
@@ -29,12 +31,14 @@ struct RideSession: Codable {
 
 @MainActor
 final class FerryStore: ObservableObject {
-    @Published var preferences: Preferences { didSet { save(preferences, key: "preferences") } }
+    @Published var preferences: Preferences { didSet { save(preferences, key: "preferences"); syncWidgetSettings() } }
+    @Published var widgetOptions: WidgetOptions { didSet { save(widgetOptions, key: "widget-options"); syncWidgetSettings() } }
+    @Published var widgetSharingError: String?
     @Published var tab: FerryTab = .departures {
         didSet { if preferences.lastTab != tab { preferences.lastTab = tab } }
     }
     @Published var sheet: FerrySheet?
-    @Published var roster: LandingRoster?
+    @Published var roster: LandingRoster? { didSet { syncWidgetSettings() } }
     @Published var schedule: DisplayData?
     @Published var scheduleSaved = false
     @Published var realtime: Realtime = .empty
@@ -73,12 +77,14 @@ final class FerryStore: ObservableObject {
     private let fixedNow: Date?
     private var pendingSheetAction: (() -> Void)?
     private var requests: Set<String> = []
+    private var sharedWidgetRoster: LandingRoster?
 
     init(repository: FerryRepository, defaults: UserDefaults = .standard, fixedNow: Date? = nil) {
         self.repository = repository; self.defaults = defaults; self.fixedNow = fixedNow
         var savedPreferences = defaults.data(forKey: "preferences").flatMap { try? JSONDecoder().decode(Preferences.self, from: $0) } ?? Preferences()
         if savedPreferences.launchLanding == .home { savedPreferences.landingID = savedPreferences.homeLandingID }
         self.preferences = savedPreferences
+        self.widgetOptions = defaults.data(forKey: "widget-options").flatMap { try? JSONDecoder().decode(WidgetOptions.self, from: $0) } ?? WidgetOptions()
         switch savedPreferences.launchTab {
         case .lastUsed: self.tab = savedPreferences.lastTab
         case .departures: self.tab = .departures
@@ -86,6 +92,40 @@ final class FerryStore: ObservableObject {
         }
         self.rideSession = defaults.data(forKey: "ride-session").flatMap { try? JSONDecoder().decode(RideSession.self, from: $0) }
         now = fixedNow ?? Date()
+        if defaults === UserDefaults.standard {
+            sharedWidgetRoster = WidgetSettingsBridge.read()?.roster
+            syncWidgetSettings()
+        }
+    }
+
+    func syncWidgetSettings() {
+        // Isolated test suites must not publish their fixture settings to real widgets.
+        guard defaults === UserDefaults.standard else { return }
+        if let roster { sharedWidgetRoster = roster }
+        let status = WidgetSettingsBridge.write(WidgetSettingsRecord(options: widgetOptions, roster: sharedWidgetRoster, favorites: preferences.favorites))
+        widgetSharingError = status == 0 ? nil : "Widget settings could not be shared. Unlock your device and try Refresh widget settings."
+        if status == 0 { WidgetCenter.shared.reloadTimelines(ofKind: "NearbyFerries") }
+    }
+
+    func copyMainSettingsToWidget() {
+        var options = widgetOptions
+        if let id = preferences.landingID {
+            options.automaticLanding = false
+            options.landingID = id
+            options.landingName = roster?.landings.first { $0.id == id }?.displayName ?? schedule?.meta.landing.displayName
+        }
+        options.hiddenOperators = preferences.hiddenOperators
+        options.hiddenRoutes = preferences.hiddenRoutes
+        options.hiddenNYCMovements = preferences.hiddenNYCMovements
+        options.twelveHour = preferences.twelveHour
+        options.sortByRoute = preferences.sortByRoute
+        options.showDwells = preferences.showDwellTimes
+        options.showLayovers = preferences.showLayoverTimes
+        options.departureWindowMinutes = preferences.departureWindowMinutes
+        options.departuresPerRoute = preferences.departuresPerRoute
+        options.theme = preferences.theme
+        options.textSize = preferences.textSize.rawValue
+        widgetOptions = options
     }
 
     private func save<T: Encodable>(_ value: T, key: String) {

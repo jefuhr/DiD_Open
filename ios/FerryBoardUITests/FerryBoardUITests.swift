@@ -68,6 +68,66 @@ final class FerryBoardUITests: XCTestCase {
         XCTAssertTrue(app.switches["clockFormat"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.switches["clockFormat"].value as? String, "1")
     }
+    func testWidgetLinksOpenSetupAndCurrentLandingAfterColdLaunch() {
+        app.terminate()
+        app.open(URL(string: "ferryboard://landing/26")!)
+        waitForLabel(app.buttons["landingTitle"], containing: "79")
+        app.buttons["nextDay"].tap()
+        app.open(URL(string: "ferryboard://landing/16")!)
+        waitForLabel(app.buttons["landingTitle"], containing: "Pier 11")
+        XCTAssertTrue(app.buttons["departure-nine"].waitForExistence(timeout: 10))
+        app.open(URL(string: "ferryboard://nearby")!)
+        XCTAssertTrue(app.buttons["widgetEnableLocation"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["widgetEnableLocation"].isEnabled)
+        capture("Nearby ferry widget location setup")
+    }
+    func testWidgetDefaultsCopyVisibilityAndIndependentPersistence() {
+        app.buttons["chooseLanding"].tap()
+        XCTAssertTrue(app.buttons["landing-26"].waitForExistence(timeout: 10))
+        app.buttons["landing-26"].tap()
+        app.buttons["operatorFilter"].tap()
+        flip(app.switches["operator-NY Waterway"])
+        XCTAssertEqual(app.switches["operator-NY Waterway"].value as? String, "0")
+        app.buttons["dismissSheet"].tap()
+        app.launchEnvironment["FERRY_RESET"] = "0"
+        openWidgetSettings()
+        XCTAssertTrue(app.buttons["widgetCopySettings"].waitForExistence(timeout: 10))
+        app.buttons["widgetCopySettings"].tap()
+        XCTAssertEqual(app.switches["widgetAutomaticLanding"].value as? String, "0")
+        XCTAssertTrue(app.buttons["widgetFixedLanding"].exists)
+        XCTAssertEqual(app.switches["widgetOperator-NY Waterway"].value as? String, "0")
+        flip(app.switches["widgetOperator-NYC Ferry"])
+        for id in ["widgetBoatNames", "widgetAssignments", "widgetDwells", "widgetLayovers"] {
+            let toggle = app.switches[id]
+            for _ in 0..<5 where !toggle.isHittable { app.swipeUp() }
+            flip(toggle)
+        }
+        capture("Widget visibility settings")
+        app.navigationBars["Nearby ferry widget"].buttons.firstMatch.tap()
+        app.buttons["dismissSheet"].tap()
+        app.buttons["operatorFilter"].tap()
+        XCTAssertEqual(app.switches["operator-NYC Ferry"].value as? String, "1")
+        XCTAssertEqual(app.switches["operator-NY Waterway"].value as? String, "0")
+        app.buttons["dismissSheet"].tap()
+        app.terminate()
+        app.launch()
+        openWidgetSettings()
+        XCTAssertTrue(app.switches["widgetAutomaticLanding"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.switches["widgetAutomaticLanding"].value as? String, "0")
+        XCTAssertEqual(app.switches["widgetOperator-NYC Ferry"].value as? String, "0")
+        for id in ["widgetBoatNames", "widgetAssignments", "widgetDwells", "widgetLayovers"] {
+            let toggle = app.switches[id]
+            for _ in 0..<5 where !toggle.isHittable { app.swipeUp() }
+            XCTAssertEqual(toggle.value as? String, "0")
+        }
+    }
+    private func openWidgetSettings() {
+        app.buttons["settings"].tap()
+        let link = app.buttons["settingsWidget"]
+        for _ in 0..<6 where !link.isHittable { app.swipeUp() }
+        XCTAssertTrue(link.waitForExistence(timeout: 10))
+        link.tap()
+    }
     func testTripMapRideAndOfflineRestoration() {
         XCTAssertTrue(app.buttons["departure-nine"].waitForExistence(timeout: 15))
         app.buttons["departure-nine"].tap()
