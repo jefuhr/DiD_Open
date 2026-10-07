@@ -15,6 +15,15 @@ public struct WidgetDeparture: Identifiable, Sendable {
 public enum NearbyWidgetBoard {
     public static let liveLifetime: TimeInterval = 5 * 60
     public static let locationLifetime: TimeInterval = 6 * 3600
+    /// Enough rows for the tallest widget to fill its height; the view measures how many fit.
+    public static let maximumRows = 12
+
+    /// Try the most rows first; the view keeps the first candidate that fits. Every
+    /// candidate tried costs a layout pass per timeline entry, so callers keep `maximum` near capacity.
+    public static func fitCandidates(available: Int, maximum: Int) -> [Int] {
+        let limit = max(1, min(available, maximum))
+        return Array(stride(from: limit, through: 1, by: -1))
+    }
 
     public static func usableLocation(at: Date, now: Date) -> Bool {
         (0...locationLifetime).contains(now.timeIntervalSince(at))
@@ -67,7 +76,7 @@ public enum NearbyWidgetBoard {
         } else {
             rows = ScheduleEngine.timeline(data: data, realtime: live, now: now).filter(visible)
         }
-        return rows.prefix(7).map { row in
+        return rows.prefix(maximumRows).map { row in
             let departure = row.departure
             let route = data.routes[departure.routeId]?.shortName ?? departure.routeId
             var details: [String] = []

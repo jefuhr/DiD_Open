@@ -73,6 +73,27 @@ final class NearbyWidgetTests: XCTestCase {
         XCTAssertFalse(later.contains { $0.id.contains("|nine|") })
     }
 
+    func testLargeWidgetsReceiveEnoughRowsToFillTheirHeight() throws {
+        var data = try schedule()
+        let template = data.departures[0]
+        data.departures = (0..<20).map { index in
+            var departure = template
+            departure.tripId = "fill-\(index)"
+            departure.seconds = 32400 + Double(index) * 120
+            return departure
+        }
+        let rows = NearbyWidgetBoard.departures(data: data, realtime: .empty, receivedAt: nil, now: now)
+        XCTAssertEqual(rows.count, NearbyWidgetBoard.maximumRows)
+        XCTAssertGreaterThan(NearbyWidgetBoard.maximumRows, 7)
+    }
+
+    func testFitCandidatesTryTheMostRowsTheSizeAndBoardAllow() {
+        XCTAssertEqual(NearbyWidgetBoard.fitCandidates(available: 12, maximum: 3), [3, 2, 1])
+        XCTAssertEqual(NearbyWidgetBoard.fitCandidates(available: 2, maximum: 4), [2, 1])
+        XCTAssertEqual(NearbyWidgetBoard.fitCandidates(available: 0, maximum: 4), [1])
+        XCTAssertEqual(NearbyWidgetBoard.fitCandidates(available: 5, maximum: 0), [1])
+    }
+
     func testWidgetLinksOnlyAcceptSupportedActions() {
         XCTAssertEqual(FerryWidgetLink(URL(string: "ferryboard://landing/16")!), .landing(16))
         XCTAssertEqual(FerryWidgetLink(URL(string: "ferryboard://nearby")!), .nearby)
