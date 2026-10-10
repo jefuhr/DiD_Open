@@ -128,6 +128,53 @@ final class FerryBoardUITests: XCTestCase {
         XCTAssertTrue(link.waitForExistence(timeout: 10))
         link.tap()
     }
+    func testCompactMapMarkerSearchAndSelection() {
+        app.tabBars.buttons["Map"].tap()
+        let search = app.textFields["vesselSearch"]
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        app.buttons["Fit harbor"].tap()
+        capture("Compact hull markers")
+
+        let marker = app.buttons["mapBoatMarker-opportunity"]
+        for hull in ["H204", "H-204"] {
+            search.tap()
+            search.typeText(hull)
+            waitForLabel(marker, containing: "Opportunity, H-204")
+            XCTAssertFalse(app.buttons["mapBoatMarker-bay-hopper"].exists, "Hull search excludes other boats")
+            if hull == "H204" { app.buttons["Clear search"].tap() }
+        }
+        search.typeText("\n")
+        XCTAssertGreaterThanOrEqual(marker.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(marker.frame.height, 44)
+        // Tap outside the visible circle, inside its larger touch target.
+        marker.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertTrue(app.navigationBars["Opportunity"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["rideThisBoat"].waitForExistence(timeout: 10))
+        capture("Compact marker opens the matching boat")
+        app.buttons["dismissSheet"].tap()
+        capture("Selected compact hull marker")
+
+        app.terminate()
+        app.launchArguments = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        app.tabBars.buttons["Map"].tap()
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        app.buttons["mapBoat-opportunity"].tap()
+        XCTAssertTrue(app.navigationBars["Opportunity"].waitForExistence(timeout: 10))
+        app.buttons["dismissSheet"].tap()
+        capture("Compact hull markers with accessibility text")
+
+        app.terminate()
+        app.launchArguments = []
+        app.launchEnvironment["FERRY_RESET"] = "0"
+        app.launchEnvironment["FERRY_OFFLINE"] = "1"
+        app.launch()
+        app.tabBars.buttons["Map"].tap()
+        XCTAssertTrue(app.staticTexts["Saved / unavailable"].waitForExistence(timeout: 10))
+        XCTAssertTrue(marker.waitForExistence(timeout: 10))
+        app.buttons["Fit harbor"].tap()
+        capture("Saved compact hull markers")
+    }
     func testTripMapRideAndOfflineRestoration() {
         XCTAssertTrue(app.buttons["departure-nine"].waitForExistence(timeout: 15))
         app.buttons["departure-nine"].tap()
