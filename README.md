@@ -143,3 +143,7 @@ failed runs. Download its `browser-*` artifact and open a trace with
 `HOST=127.0.0.1 PORT=8094 node server.js`, then run the corresponding scripts from
 `.github/workflows/browser-e2e.yml` in another terminal. These Chromium checks do
 not replace native iOS or Safari testing.
+
+## Automated deployment
+
+Production pushes and manual runs deploy through the self-hosted Mac runner. See [GitHub Actions deployment](docs/github-actions-deploy.md) for triggers, dry runs, runner management, backups, and verification.
