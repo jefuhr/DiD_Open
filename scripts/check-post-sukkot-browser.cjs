@@ -26,7 +26,7 @@ const { serve, ARTIFACTS } = require('./mobile-check-harness.cjs');
   await fs.mkdir(ARTIFACTS,{recursive:true});
   try {
     for (const width of [390,1440]) for (const [date,tripId,liveId] of [
-      ['2026-10-03','36','1698'], ['2026-10-17','820','2092'], ['2026-10-10','820','2065']
+      ['2026-10-03','36','1698'], ['2026-10-17','820','2092'], ['2026-10-10','820','2065'], ['2026-10-24','820','2113']
     ]) {
       const row = boards.get(16).departures.find(row=>row.tripId===tripId);
       now = new Date(`${date}T04:00:00Z`);
