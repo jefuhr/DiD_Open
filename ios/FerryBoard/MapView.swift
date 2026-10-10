@@ -8,10 +8,14 @@ struct HarborMapView: View {
     @State private var camera: MapCameraPosition = .region(MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 40.69, longitude: -74.02), span: MKCoordinateSpan(latitudeDelta: 0.30, longitudeDelta: 0.25)))
     @State private var showVessels = true
 
+    private func compactHullNumber(_ number: String?) -> String {
+        (number ?? "").replacingOccurrences(of: "-", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var boats: [Boat] {
         (store.boats?.boats ?? []).filter {
             (store.routeFilter == nil || $0.routeId == store.routeFilter) &&
-            (store.mapSearch.isEmpty || [$0.name, $0.number ?? "", $0.destination ?? "", $0.stop?.name ?? ""].joined(separator: " ").localizedCaseInsensitiveContains(store.mapSearch))
+            (store.mapSearch.isEmpty || [$0.name, $0.number ?? "", compactHullNumber($0.number), $0.destination ?? "", $0.stop?.name ?? ""].joined(separator: " ").localizedCaseInsensitiveContains(store.mapSearch))
         }
     }
     var body: some View {
@@ -40,21 +44,27 @@ struct HarborMapView: View {
                 }
             }
             ForEach(boats) { boat in
+                let hull = compactHullNumber(boat.number)
                 Annotation(boat.name, coordinate: .init(latitude: boat.latitude, longitude: boat.longitude)) {
                     Button {
                         store.selectedBoatID = boat.id; store.wantedVesselName = nil; store.sheet = .boat(boat)
                     } label: {
-                        VStack(spacing: 1) {
-                            Image(systemName: boat.status == "stopped" || boat.bearing == nil ? "ferry.fill" : "location.north.fill")
-                                .rotationEffect(.degrees(boat.status == "stopped" ? 0 : boat.bearing ?? 0))
-                            if let hull = boat.number { Text(hull).font(.caption2.bold()) }
-                        }.padding(8).foregroundStyle(.white)
-                            .background(Color(hex: boat.color), in: RoundedRectangle(cornerRadius: 12))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(store.selectedBoatID == boat.id ? Color.primary : .clear, lineWidth: 3))
-                            .frame(minWidth: 44, minHeight: 44)
+                        Text(hull.isEmpty ? "?" : hull)
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                            .padding(.horizontal, 3)
+                            .frame(width: 32, height: 32)
+                            .foregroundStyle(.white)
+                            .background(Color(hex: boat.color), in: Circle())
+                            .overlay(Circle().strokeBorder(store.selectedBoatID == boat.id ? Color.primary : .clear, lineWidth: 2))
                             .opacity(store.boats?.stale == true || (boat.ageSeconds ?? 0) > 180 ? 0.6 : 1)
-                    }.accessibilityLabel("\(boat.name), \(boat.number ?? ""), \(boat.destination ?? "vessel details")")
+                            .frame(width: 44, height: 44)
+                            .contentShape(Circle())
+                    }.buttonStyle(.plain)
+                        .accessibilityLabel("\(boat.name), \(boat.number ?? ""), \(boat.destination ?? "vessel details")")
+                        .accessibilityIdentifier("mapBoatMarker-\(boat.id)")
                 }
+                .annotationTitles(.hidden)
             }
             if store.preferences.showMarineReferences {
                 ForEach(store.harbor?.chart?.bridges ?? []) { bridge in
