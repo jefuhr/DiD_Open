@@ -58,3 +58,7 @@ bash -n deploy/deploy-did.sh
 ```
 
 Before the first automatic deployment, run a dry run from a fresh production-branch checkout with `DID_REPO` set to that checkout and `--branch` set to its full commit SHA. After publication, inspect the first deployment log, the public endpoints checked by the script, and the recorded `DEPLOYED_SHA`. Publishing this workflow to `mobile` immediately triggers a real deployment.
+
+## Current production URLs and startup
+
+Health checks use `https://ferrytimesmobile.juliet.nyc` (`DID_SITE` can override it). Each required endpoint has up to 12 attempts, five seconds apart, because systemd reports active before the application finishes loading its schedules. Legacy `/ferryTimesMobile/` redirects are not used as readiness gates.

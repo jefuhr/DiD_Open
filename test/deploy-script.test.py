@@ -40,7 +40,10 @@ if name == 'curl':
 	url = args[-1]
 	event('https', url=url)
 	if '-w' in args:
-		print('500' if fail == 'https' else '200', end=''); finish()
+		count_file = root / 'http-attempts'
+		count = int(count_file.read_text()) if count_file.exists() else 0
+		count_file.write_text(str(count + 1))
+		print('500' if fail == 'https' or (fail == 'warming' and count < 2) else '200', end=''); finish()
 	if url.endswith('/api/v1/health'):
 		print(json.dumps({'feeds': [{'id': 'fixture', 'timestamp': 1, 'age': 1}], 'stationCount': 1, 'status': 'healthy'}))
 	elif app == 'sfn':
@@ -182,6 +185,14 @@ class DeploymentTests(unittest.TestCase):
 		self.assertFalse(list(self.backups.glob('*.partial.*')))
 		with tarfile.open(archives[0]) as archive:
 			self.assertEqual(archive.extractfile('fixture/config').read(), b'private fixture configuration')
+
+	def test_health_checks_wait_for_startup_and_use_current_site(self):
+		result = self.run_script(fail='warming')
+		self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+		urls = [event['url'] for event in self.events() if event['kind'] == 'https']
+		self.assertTrue(urls)
+		self.assertTrue(all(url.startswith('https://ferrytimesmobile.juliet.nyc/') for url in urls))
+		self.assertFalse(any('/ferryTimesMobile/' in url or '/subwaysForNerds/' in url for url in urls))
 
 	def test_git_worktree_is_accepted(self):
 		linked = self.root / 'linked'
