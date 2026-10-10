@@ -25,7 +25,7 @@ HOST="${DID_HOST:-ubuntu@52.5.187.46}"
 KEY="${DID_KEY:-$HOME/julie.pem}"
 APP_DIR="/opt/nyc-ferry-did"
 SERVICE="nyc-ferry-did"
-SITE="https://juliet.nyc"
+SITE="${DID_SITE:-https://ferrytimesmobile.juliet.nyc}"
 KEEP_BACKUPS=5
 BACKUP_DIR="${BACKUP_DIR:-$HOME/backups}"
 
@@ -126,12 +126,10 @@ fi
 # --- verify -------------------------------------------------------------------
 say "verifying from the outside"
 FAILED=0
-for path in /ferryTimesMobile/ /app.js /styles.css /api/landings /api/realtime /api/alerts /; do
-  code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "${SITE}${path}" || echo 000)
-  printf '  %-22s %s\n' "$path" "$code"
-  [[ "$code" == "200" ]] || FAILED=1
+for path in / /app.js /styles.css /api/landings /api/realtime /api/alerts; do
+  verify_http "$path" "${SITE}${path}" || FAILED=1
 done
-printf '  %-22s %s\n' "assets" "$(curl -sS --max-time 15 "${SITE}/ferryTimesMobile/" | grep -oE 'app\.js\?v=[0-9]+' | head -1)"
+printf '  %-22s %s\n' "assets" "$(curl -sS --max-time 15 "${SITE}/" | grep -oE 'app\.js\?v=[0-9]+' | head -1)"
 
 if [[ "$FAILED" == 1 ]]; then
   die "something is not answering 200 — restore from this machine with: $ROLLBACK"
