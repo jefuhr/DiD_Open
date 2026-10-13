@@ -58,6 +58,14 @@ targets:
             CFBundleURLSchemes: [ferryboard]
         FerryAPIBaseURL: $(FERRY_API_BASE_URL)
         FerryWidgetKeychainGroup: $(AppIdentifierPrefix)nyc.juliet.ferryboard.widgets
+        # Settings > Server > Other may name a development server on the local network over http.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+          # Ferry RT serves plain http on the internal network; the app reads boarding slips from it.
+          NSExceptionDomains:
+            nycf-web.dc-west.hornblower.com:
+              NSExceptionAllowsInsecureHTTPLoads: true
+        NSLocalNetworkUsageDescription: Reach a Ferry Board test server on your network when one is chosen in Settings > Server.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: nyc.juliet.ferryboard

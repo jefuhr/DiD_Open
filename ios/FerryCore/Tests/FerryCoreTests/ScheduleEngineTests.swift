@@ -62,6 +62,16 @@ final class ScheduleEngineTests: XCTestCase {
         XCTAssertNil(row.predictedBoatName)
     }
 
+    func testFerryRTSlipRidesOnTheDepartureOnlyWhileFresh() throws {
+        let f = try fixture()
+        var realtime = try JSONDecoder().decode(Realtime.self, from: Data(#"{"stale":false,"updates":[{"tripId":"nine","stopId":"1","delaySeconds":0,"slip":{"id":"NYCF_1_SLIP_2","name":"Slip 2"}}]}"#.utf8))
+        let now = ServiceClock.instant(f.cases[0].now)!
+        let row = { try XCTUnwrap(ScheduleEngine.timeline(data: f.schedule, realtime: realtime, now: now).first { $0.departure.tripId == "nine" }) }
+        XCTAssertEqual(try row().slipName, "Slip 2")
+        realtime.stale = true
+        XCTAssertNil(try row().slipName)
+    }
+
     func testVerifiedHolidayLiveAliasSuppliesTimingVesselAndCancellation() throws {
         var data = try fixture().schedule
         data.departures[0].scheduleOnly = true

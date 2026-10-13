@@ -341,7 +341,7 @@ struct DepartureButton: View {
                         vessel.map { $0.font(.subheadline) }.lineLimit(1)
                     }
                     Spacer(minLength: 4)
-                    status
+                    VStack(alignment: .trailing, spacing: 1) { status; slipText }
                 }
             }
             if (showRoute && !countdownLabel.isEmpty) || hasFlags || details != nil {
@@ -365,6 +365,7 @@ struct DepartureButton: View {
                 }
             } else if let vessel { vessel.font(.subheadline) }
             HStack(spacing: 4) { status; flags }
+            slipText.frame(maxWidth: .infinity, alignment: .trailing)
             details.map { $0.font(.caption).foregroundStyle(.secondary) }
         }
     }
@@ -436,6 +437,18 @@ struct DepartureButton: View {
         guard let end = departure.endsShift, departure.outOfService != true, departure.crewShuttle != true else { return nil }
         return end == "unsure" ? "FINAL?" : "FINAL"
     }
+    /// "Slip 2" stays as is; a side such as "North" reads as "North slip".
+    private var slip: String? {
+        guard let name = row.slipName, !name.isEmpty else { return nil }
+        return name.localizedCaseInsensitiveContains("slip") ? name : name + " slip"
+    }
+    /// Sits under the ON TIME / late status, right-aligned.
+    @ViewBuilder private var slipText: some View {
+        if let slip {
+            Text(slip).font(.caption2.weight(.semibold)).foregroundStyle(store.theme.accent).lineLimit(1).fixedSize()
+                .accessibilityIdentifier("departureSlip")
+        }
+    }
     private var hasFlags: Bool { row.isLastOfDay || row.isLastGovernorsIsland || final != nil }
     @ViewBuilder private var flags: some View {
         if row.isLastOfDay || row.isLastGovernorsIsland { StatusPill(text: "LAST", color: .red) }
@@ -453,6 +466,7 @@ struct DepartureButton: View {
             if let name = otherOperator ?? RouteBadge.partnerMark(departure.routeId).map({ _ in store.operatorName(departure.routeId) }) { parts.append(name) }
         }
         parts.append(statusLabel.text == "SCHED" ? "scheduled" : statusLabel.text.lowercased())
+        if let slip { parts.append("boards at \(slip)") }
         if row.isLastOfDay { parts.append("last departure") } else if row.isLastGovernorsIsland { parts.append("last to Governors Island") }
         if let final { parts.append(final == "FINAL" ? "final, no return trip" : "final, return trip unconfirmed") }
         if let working { parts.append("working \(working)") }

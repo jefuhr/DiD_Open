@@ -31,9 +31,16 @@ struct RideSession: Codable {
 
 @MainActor
 final class FerryStore: ObservableObject {
-    @Published var preferences: Preferences { didSet { save(preferences, key: "preferences"); syncWidgetSettings() } }
+    @Published var preferences: Preferences {
+        didSet {
+            save(preferences, key: "preferences"); syncWidgetSettings()
+            if oldValue.apiServer != preferences.apiServer || oldValue.customAPIURL != preferences.customAPIURL { serverChanged() }
+        }
+    }
     @Published var widgetOptions: WidgetOptions { didSet { save(widgetOptions, key: "widget-options"); syncWidgetSettings() } }
     @Published var widgetSharingError: String?
+    /// Why slips are missing while Ferry RT is chosen, or nil.
+    @Published var ferryRTStatus: String?
     @Published var tab: FerryTab = .departures {
         didSet { if preferences.lastTab != tab { preferences.lastTab = tab } }
     }
@@ -62,7 +69,13 @@ final class FerryStore: ObservableObject {
     @Published var wantedVesselName: String?
     @Published var mapSearch = ""
 
-    let repository: FerryRepository
+    private(set) var repository: FerryRepository
+    /// The build's server (Info.plist), which Prod and Ferry RT both read.
+    let productionURL: URL
+    private let makeRepository: ((URL) -> FerryRepository)?
+    private let ferryRT: FerryRT.Client?
+    private var slipCatalog: (catalog: FerryRT.SlipCatalog, loadedAt: Date)?
+    private var repositoryURL: URL
     private let defaults: UserDefaults
     private var polling: Task<Void, Never>?
     private var selectionTask: Task<Void, Never>?
@@ -79,9 +92,17 @@ final class FerryStore: ObservableObject {
     private var requests: Set<String> = []
     private var sharedWidgetRoster: LandingRoster?
 
-    init(repository: FerryRepository, defaults: UserDefaults = .standard, fixedNow: Date? = nil) {
-        self.repository = repository; self.defaults = defaults; self.fixedNow = fixedNow
+    /// With `makeRepository`, Settings > Server can move the app to another server; without it the
+    /// given repository is used throughout (tests and fixtures).
+    init(repository: FerryRepository, defaults: UserDefaults = .standard, fixedNow: Date? = nil,
+         productionURL: URL = URL(string: "https://juliet.nyc")!, makeRepository: ((URL) -> FerryRepository)? = nil,
+         ferryRT: FerryRT.Client? = nil) {
+        self.defaults = defaults; self.fixedNow = fixedNow; self.ferryRT = ferryRT
         var savedPreferences = defaults.data(forKey: "preferences").flatMap { try? JSONDecoder().decode(Preferences.self, from: $0) } ?? Preferences()
+        self.productionURL = productionURL; self.makeRepository = makeRepository
+        let url = savedPreferences.apiBaseURL(production: productionURL)
+        self.repository = url != productionURL ? makeRepository?(url) ?? repository : repository
+        self.repositoryURL = makeRepository == nil ? productionURL : url
         if savedPreferences.launchLanding == .home { savedPreferences.landingID = savedPreferences.homeLandingID }
         self.preferences = savedPreferences
         self.widgetOptions = defaults.data(forKey: "widget-options").flatMap { try? JSONDecoder().decode(WidgetOptions.self, from: $0) } ?? WidgetOptions()
@@ -126,6 +147,19 @@ final class FerryStore: ObservableObject {
         options.theme = preferences.theme
         options.textSize = preferences.textSize.rawValue
         widgetOptions = options
+    }
+
+    var apiBaseURL: URL { repositoryURL }
+
+    /// A new server's schedules and boats replace the old one's; saved copies stay keyed by server.
+    private func serverChanged() {
+        let url = preferences.apiBaseURL(production: productionURL)
+        if let makeRepository, url != repositoryURL {
+            repository = makeRepository(url); repositoryURL = url
+            landingGeneration += 1; rideGeneration += 1
+        }
+        realtime = .empty; ferryRTStatus = nil
+        Task { await refreshAll() }
     }
 
     private func save<T: Encodable>(_ value: T, key: String) {
@@ -310,12 +344,33 @@ final class FerryStore: ObservableObject {
         let requestKey = "realtime-\(id)-\(generation)-\(lifecycle)"
         guard requests.insert(requestKey).inserted else { return }
         defer { requests.remove(requestKey) }
+        async let slips = ferryRTSlips()
         do {
             let response = try await repository.fetch(Realtime.self, endpoint: .init("api/realtime", ["landingId":String(id)]))
+            let confirmed = await slips
             guard !Task.isCancelled, lifecycle == lifecycleGeneration, generation == landingGeneration, preferences.landingID == id else { return }
-            realtime = response.value
+            realtime = response.value.withSlips(confirmed)
             if response.saved { realtime.stale = true }
         } catch { if generation == landingGeneration { realtime.stale = true } }
+    }
+
+    /// Read straight from Ferry RT beside each realtime poll. A failure hides slips rather than
+    /// leaving an old one up: a boat's slip can change between polls.
+    private func ferryRTSlips() async -> [String: Slip] {
+        guard preferences.apiServer == .ferryRT, let ferryRT else { ferryRTStatus = nil; return [:] }
+        do {
+            // The catalog is configuration; ten minutes old is still right.
+            if slipCatalog.map({ Date().timeIntervalSince($0.loadedAt) > 600 }) ?? true {
+                slipCatalog = (try FerryRT.SlipCatalog(json: await ferryRT.data("api/slips")), Date())
+            }
+            let slips = try FerryRT.slips(tripUpdates: await ferryRT.data("gtfs-rt/tripupdate"), catalog: slipCatalog!.catalog)
+            ferryRTStatus = nil
+            return slips
+        } catch {
+            if error is CancellationError { return [:] }
+            ferryRTStatus = "Ferry RT can’t be reached, so slips are hidden. It answers only on the Hornblower network."
+            return [:]
+        }
     }
 
     func refreshAlerts() async {

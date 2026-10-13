@@ -35,6 +35,21 @@
 	<string>$(FERRY_API_BASE_URL)</string>
 	<key>FerryWidgetKeychainGroup</key>
 	<string>$(AppIdentifierPrefix)nyc.juliet.ferryboard.widgets</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>nycf-web.dc-west.hornblower.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Reach a Ferry Board test server on your network when one is chosen in Settings &gt; Server.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Find the nearest ferry landing in the app and your Ferry Board widget. Your location stays on this device.</string>
 	<key>UIApplicationSceneManifest</key>

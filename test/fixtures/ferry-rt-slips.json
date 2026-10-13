@@ -1,0 +1,59 @@
+{
+  "comment": "A captured Ferry RT trip-update feed (base64 GTFS-Realtime), the slips it names, and the trip|landing -> slip name the reference protobuf decoder (gtfs-realtime-bindings) reads from it.",
+  "capturedAt": "2026-10-13",
+  "feed": "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",
+  "slips": {
+    "slips": [
+      {
+        "id": "NYCF_17_B1",
+        "name": "Slip B1",
+        "platformCode": "B1",
+        "landingStopId": "17"
+      },
+      {
+        "id": "NYCF_20_SLIP_2",
+        "name": "Slip 2",
+        "platformCode": "2",
+        "landingStopId": "20"
+      },
+      {
+        "id": "NYCF_23_SOUTH",
+        "name": "West",
+        "platformCode": "W",
+        "landingStopId": "23"
+      },
+      {
+        "id": "NYCF_111_NORTH",
+        "name": "North",
+        "platformCode": "N",
+        "landingStopId": "111"
+      },
+      {
+        "id": "NYCF_115_NORTH",
+        "name": "East",
+        "platformCode": "E",
+        "landingStopId": "115"
+      },
+      {
+        "id": "NYCF_138_SLIP_2",
+        "name": "Slip 2",
+        "platformCode": "2",
+        "landingStopId": "138"
+      },
+      {
+        "id": "87",
+        "name": "Pier 11",
+        "platformCode": null,
+        "landingStopId": "87"
+      }
+    ]
+  },
+  "expected": {
+    "759|138": "Slip 2",
+    "929|23": "West",
+    "1500|20": "Slip 2",
+    "1902|17": "Slip B1",
+    "1969|115": "East",
+    "1983|111": "North"
+  }
+}
