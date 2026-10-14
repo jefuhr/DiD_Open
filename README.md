@@ -10,6 +10,8 @@ See [feed maintenance](docs/data-maintenance.md) for the September 20 refresh an
 
 The native iPhone and iPad app is in [`ios/`](ios/README.md). Run `scripts/ios.sh open` on a Mac with Xcode and XcodeGen installed. It shares the API with this web app and keeps its own offline data and preferences.
 
+The native Android app is in [`android/`](android/README.md). It supports Android 12 and later with Jetpack Compose, an offline harbor chart, and configurable Home Screen widgets. Use `scripts/android.sh build` for local checks and `scripts/android.sh test` for isolated emulator journeys.
+
 Requires Node.js 22 or newer.
 
 ```sh

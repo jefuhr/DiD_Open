@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+	android:minWidth="180dp" android:minHeight="180dp"
+	android:minResizeWidth="180dp" android:minResizeHeight="180dp"
+	android:targetCellWidth="3" android:targetCellHeight="3"
+	android:initialLayout="@layout/widget_board"
+	android:previewLayout="@layout/widget_board"
+	android:resizeMode="horizontal|vertical"
+	android:widgetCategory="home_screen"
+	android:widgetFeatures="reconfigurable"
+	android:configure="nyc.juliet.ferryboard.platform.FerryWidgetConfigurationActivity"
+	android:description="@string/widget_description"
+	android:updatePeriodMillis="0" />
