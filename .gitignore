@@ -15,3 +15,11 @@ ios/DerivedData/
 ios/*.xcodeproj/
 ios/Local.xcconfig
 **/xcuserdata/
+
+# Native Android build products and local SDK/signing configuration.
+android/.gradle/
+android/.kotlin/
+android/**/build/
+android/local.properties
+android/*.jks
+android/*.keystore
