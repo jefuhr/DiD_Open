@@ -80,6 +80,7 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -101,6 +102,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.first
 import nyc.juliet.ferryboard.contract.FerryAction
@@ -236,8 +238,8 @@ fun HarborMapScreen(state: FerryUiState, ui: FerryUi, camera: HarborCameraState,
 
 	BoxWithConstraints(modifier.fillMaxSize().background(colors.background)
 		.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)).padding(contentPadding)) {
-		val wide = maxWidth >= 600.dp && maxHeight >= 480.dp
-		val panelWidth = if (maxWidth >= 840.dp) 360.dp else 300.dp
+		// Decided from this screen's own content area, after the shell, system bars and padding.
+		val sidePanel = MapLayout.sidePanelWidth(maxWidth.value, maxHeight.value, density.density)
 		val short = maxHeight < 480.dp
 		val header: @Composable () -> Unit = {
 			MapHeader(state, ui, routes, compact = short, reporting = MapText.reporting(routeLabel, boats.size), feed = MapText.feed(state.boats),
@@ -263,14 +265,14 @@ fun HarborMapScreen(state: FerryUiState, ui: FerryUi, camera: HarborCameraState,
 				modifier = panelModifier,
 			)
 		}
-		if (wide) {
+		if (sidePanel != null) {
 			Row(Modifier.fillMaxSize()) {
 				Column(Modifier.weight(1f).fillMaxHeight()) {
 					header()
 					area(Modifier.weight(1f).fillMaxWidth())
 				}
-				VerticalDivider(color = colors.line)
-				panel(Modifier.width(panelWidth).fillMaxHeight(), false, null)
+				VerticalDivider(thickness = MapLayout.DIVIDER_DP.dp, color = colors.line)
+				panel(Modifier.width(sidePanel.dp).fillMaxHeight(), false, null)
 			}
 		} else {
 			val listHeight = (maxHeight * 0.32f).coerceIn(140.dp, 300.dp)
@@ -452,9 +454,10 @@ private fun MapArea(
 	onCloseCallout: () -> Unit,
 ) {
 	val scope = rememberCoroutineScope()
+	val overlays = remember { MapOverlays() }
 	BoxWithConstraints(modifier.clipToBounds().background(scene.colors.water)) {
 		val areaWidth = maxWidth
-		HarborCanvas(scene, camera, summary, onTap, onBoat, onLanding, Modifier.fillMaxSize())
+		HarborCanvas(scene, camera, summary, overlays, onTap, onBoat, onLanding, Modifier.fillMaxSize())
 		// Controls stay clear of the map's vertical center, where a horizontal swipe starts.
 		val vertical = maxHeight >= 360.dp
 		val buttons: @Composable () -> Unit = {
@@ -462,9 +465,10 @@ private fun MapArea(
 			MapButton(Icons.Filled.Remove, "Zoom out", "mapZoomOut") { camera.zoomBy(scope, 1f / MapCamera.ZOOM_STEP) }
 			MapButton(Icons.Filled.ZoomOutMap, "Fit harbor", "mapFitHarbor") { camera.fitHarbor(scope) }
 		}
-		if (vertical) Column(Modifier.align(Alignment.TopEnd).padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { buttons() }
-		else Row(Modifier.align(Alignment.TopEnd).padding(8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) { buttons() }
-		MapFooter(camera, scene.colors, wide = maxWidth >= 480.dp, onAttribution = { ui.send(FerryAction.OpenUrl(ChartGeometry.ATTRIBUTION_URL)) },
+		val controls = Modifier.align(Alignment.TopEnd).padding(8.dp).coversMap(overlays, "zoom")
+		if (vertical) Column(controls, verticalArrangement = Arrangement.spacedBy(6.dp)) { buttons() }
+		else Row(controls, horizontalArrangement = Arrangement.spacedBy(6.dp)) { buttons() }
+		MapFooter(camera, scene.colors, overlays, wide = maxWidth >= 480.dp, onAttribution = { ui.send(FerryAction.OpenUrl(ChartGeometry.ATTRIBUTION_URL)) },
 			modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth())
 		if (callout != null) {
 			val point = HarborFeatures.landingPoint(callout)
@@ -485,13 +489,15 @@ private fun MapArea(
 
 /**
  * The chart canvas. Camera reads happen only while drawing and placing, so gestures and easing never recompose it.
- * Invisible nodes over every vessel and landing give TalkBack and tests a target for each marker.
+ * Invisible nodes over every vessel and landing give TalkBack and tests a target for each marker. Labels keep clear of
+ * the controls registered in [overlays].
  */
 @Composable
 private fun HarborCanvas(
 	scene: MapScene,
 	camera: HarborCameraState,
 	summary: String,
+	overlays: MapOverlays,
 	onTap: (Offset) -> Unit,
 	onBoat: (Boat) -> Unit,
 	onLanding: (Landing) -> Unit,
@@ -507,8 +513,12 @@ private fun HarborCanvas(
 	Box(
 		modifier
 			.onSizeChanged { camera.setViewport(ViewportSize(it.width.toFloat(), it.height.toFloat())) }
+			.onGloballyPositioned { overlays.chartPlaced(it) }
 			.testTag("harborMap")
-			.semantics { contentDescription = summary }
+			.semantics {
+				contentDescription = summary
+				this[MapOverlaysKey] = overlays
+			}
 			.pointerInput(camera) {
 				detectHarborGestures(
 					onDown = { camera.stop() },
@@ -529,7 +539,7 @@ private fun HarborCanvas(
 					drawRect(scene.colors.water)
 					return@drawBehind
 				}
-				drawHarbor(scene, position, camera.fit?.zoom ?: position.zoom, text, painter)
+				drawHarbor(scene, position, camera.fit?.zoom ?: position.zoom, text, painter, overlays.areas)
 			},
 	) {
 		for (mark in scene.vessels) key("vessel-${mark.boat.id}") {
@@ -588,9 +598,9 @@ private fun MapButton(icon: ImageVector, label: String, tag: String, onClick: ()
 	}
 }
 
-/** The scale bar and the chart attribution, which opens the OpenStreetMap copyright page. */
+/** The scale bar and the chart attribution, which opens the OpenStreetMap copyright page. Labels keep clear of both. */
 @Composable
-private fun MapFooter(camera: HarborCameraState, colors: MapColors, wide: Boolean, onAttribution: () -> Unit, modifier: Modifier) {
+private fun MapFooter(camera: HarborCameraState, colors: MapColors, overlays: MapOverlays, wide: Boolean, onAttribution: () -> Unit, modifier: Modifier) {
 	val ink = ferryColors.ink
 	val imperial = remember { LocaleData.getMeasurementSystem(ULocale.getDefault()) == LocaleData.MeasurementSystem.US }
 	val attribution: @Composable (Modifier) -> Unit = { attributionModifier ->
@@ -601,6 +611,7 @@ private fun MapFooter(camera: HarborCameraState, colors: MapColors, wide: Boolea
 			textAlign = TextAlign.End,
 			maxLines = 2,
 			modifier = attributionModifier
+				.coversMap(overlays, "attribution")
 				.testTag("mapAttribution")
 				.clickable(onClickLabel = "Open the OpenStreetMap copyright page", role = Role.Button, onClick = onAttribution)
 				.heightIn(min = 32.dp)
@@ -610,13 +621,13 @@ private fun MapFooter(camera: HarborCameraState, colors: MapColors, wide: Boolea
 	}
 	if (wide) {
 		Row(modifier.padding(start = 10.dp, end = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.Bottom) {
-			MapScaleBar(camera, colors, imperial, Modifier.padding(bottom = 8.dp))
+			MapScaleBar(camera, colors, imperial, Modifier.padding(bottom = 8.dp).coversMap(overlays, "scale"))
 			Spacer(Modifier.weight(1f))
 			attribution(Modifier.padding(start = 8.dp))
 		}
 	} else {
 		Column(modifier.padding(start = 10.dp, end = 6.dp, bottom = 4.dp)) {
-			MapScaleBar(camera, colors, imperial, Modifier.padding(bottom = 2.dp))
+			MapScaleBar(camera, colors, imperial, Modifier.padding(bottom = 2.dp).coversMap(overlays, "scale"))
 			attribution(Modifier.align(Alignment.End))
 		}
 	}
@@ -627,9 +638,12 @@ private fun MapFooter(camera: HarborCameraState, colors: MapColors, wide: Boolea
 private fun MapScaleBar(camera: HarborCameraState, colors: MapColors, imperial: Boolean, modifier: Modifier) {
 	val measurer = rememberTextMeasurer()
 	val style = remember { TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+	val density = LocalDensity.current
+	// Tall enough for its label at any text size, so the space it holds on the chart covers everything it draws.
+	val labelHeight = remember(measurer, density) { with(density) { measurer.measure("0", style).size.height.toDp() } }
 	Spacer(
 		modifier
-			.size(width = 112.dp, height = 24.dp)
+			.size(width = 112.dp, height = max(24.dp, labelHeight + 11.dp))
 			.clearAndSetSemantics { }
 			.drawBehind {
 				val position = camera.position ?: return@drawBehind

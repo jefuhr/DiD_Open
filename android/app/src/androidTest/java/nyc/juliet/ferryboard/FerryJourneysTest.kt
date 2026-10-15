@@ -4,8 +4,12 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.view.KeyEvent
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -15,6 +19,8 @@ import nyc.juliet.ferryboard.platform.AndroidRuntime
 import nyc.juliet.ferryboard.platform.PreferenceCodec
 import nyc.juliet.ferryboard.platform.TestLaunchPolicy
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -66,7 +72,7 @@ class FerryJourneysTest {
 		InstrumentationRegistry.getInstrumentation().waitForIdleSync()
 		android.os.SystemClock.sleep(350)
 		val directory = screenshotDirectory()
-		val bitmap = checkNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot())
+		val bitmap = settledScreenshot()
 		File(directory, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
 		bitmap.recycle()
 	}
@@ -276,6 +282,37 @@ class FerryJourneysTest {
 		compose.onNodeWithTag("widgetBoatNames").assertIsOff()
 	}
 
+	/**
+	 * Every shown [text] (inside [within], when given) renders whole on one line inside the window: no wrapped, clipped
+	 * or offscreen clock. The semantics text layout is re-measured at the node's maximum width, so its overflow flags
+	 * are not used; the line's own extent is compared with the node instead.
+	 */
+	private fun assertWholeOnOneLine(text: String, within: String? = null) {
+		val matcher = hasText(text) and if (within != null) hasAnyAncestor(hasTestTag(within)) else hasText(text)
+		val nodes = compose.onAllNodes(matcher, useUnmergedTree = true).fetchSemanticsNodes()
+		assertTrue("$text is shown", nodes.isNotEmpty())
+		val width = context.resources.displayMetrics.widthPixels
+		for (node in nodes) {
+			val layouts = mutableListOf<TextLayoutResult>()
+			node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+			val layout = layouts.single()
+			val bounds = node.boundsInWindow
+			assertEquals("$text wraps at $bounds", 1, layout.lineCount)
+			val line = layout.getLineRight(0) - layout.getLineLeft(0)
+			assertTrue("$text is clipped: a $line x ${layout.getLineBottom(0)} px line in ${node.size}",
+				line <= node.size.width + 1f && layout.getLineBottom(0) <= node.size.height + 1f)
+			assertTrue("$text runs off screen at $bounds", bounds.left >= 0f && bounds.right <= width)
+		}
+	}
+	private fun bounds(tag: String) = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
+	private fun statusBarHeight(): Int {
+		var height = 0
+		scenario?.onActivity { activity ->
+			height = ViewCompat.getRootWindowInsets(activity.window.decorView)?.getInsets(WindowInsetsCompat.Type.statusBars())?.top ?: 0
+		}
+		return height
+	}
+
 	@Test fun largeTextAndTabletWorkspaceKeepPrimaryActionsReachable() {
 		waitTag("departure-nine")
 		try {
@@ -291,11 +328,25 @@ class FerryJourneysTest {
 			tap("departure-nine")
 			reveal("tripRide")
 			compose.onNodeWithTag("tripRide").assertIsDisplayed()
+			compose.onNodeWithTag("tripMap").assertIsDisplayed()
 			shot("large-text-trip")
+			// Whole 12-hour times with their estimate marker, at the wider clock spacing.
+			for (text in listOf("9:00 AM", "9:01 AM", "9:12 AM", "9:11 AM", "EST", "sched 9:10 AM")) assertWholeOnOneLine(text, within = "tripStops")
+			tap("tripMap")
+			waitTag("harborMap")
+			compose.waitUntil(20_000) {
+				!exists("dismissSheet") && compose.onAllNodesWithTag("mapBoatMarker-opportunity", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+			}
+			compose.onNodeWithTag("mapBoatMarker-opportunity", useUnmergedTree = true).assertIsSelected()
+			shot("large-text-trip-map")
+			tap("navigation-departures")
+			tap("departure-nine")
+			reveal("tripRide")
 			tap("tripRide")
 			waitTag("rideArrival")
 			compose.onNodeWithTag("rideArrival").assertIsDisplayed()
 			shot("large-text-ride")
+			for (text in listOf("9:12 AM", "9:13 AM", "estimated")) assertWholeOnOneLine(text)
 			tap("exitRide")
 			shell("settings put system font_scale 1.0")
 			shell("wm size 1600x2560")
@@ -303,10 +354,25 @@ class FerryJourneysTest {
 			launch(reset = false)
 			waitTag("tabletWorkspace")
 			waitTag("departure-nine")
+			// The sidebar's surface runs under the status bar; its content, from the title down, stays below it.
+			assertEquals("Sidebar top", 0f, bounds("landingSidebar").top, 0.5f)
+			val title = compose.onNode(hasText("Ferry Board") and hasAnyAncestor(hasTestTag("landingSidebar"))).fetchSemanticsNode().boundsInRoot
+			assertTrue("Sidebar title at ${title.top} clears the ${statusBarHeight()} px status bar", title.top >= statusBarHeight())
 			shot("tablet-departures")
 			tap("navigation-map")
 			waitTag("harborMap")
+			assertTrue("Portrait: the lists stack below the chart", bounds("mapPanel").top >= bounds("harborMap").bottom)
 			shot("tablet-map")
+			shell("wm size 2560x1600")
+			launch(reset = false)
+			waitTag("tabletWorkspace")
+			if (!exists("harborMap")) tap("navigation-map")
+			waitTag("harborMap")
+			val chart = bounds("harborMap")
+			assertTrue("Landscape: the lists sit beside the chart", bounds("mapPanel").left >= chart.right)
+			val density = context.resources.displayMetrics.density
+			assertTrue("Landscape: the chart keeps ${chart.width / density} dp", chart.width / density >= 480f)
+			shot("tablet-map-landscape")
 		} finally {
 			shell("settings put system font_scale 1.0")
 			shell("wm size reset")

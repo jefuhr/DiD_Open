@@ -18,6 +18,7 @@ data class UnitRect(val left: Float, val top: Float, val right: Float, val botto
 	val centerX: Float get() = (left + right) / 2f
 	val centerY: Float get() = (top + bottom) / 2f
 	fun intersects(other: UnitRect): Boolean = left <= other.right && right >= other.left && top <= other.bottom && bottom >= other.top
+	fun contains(other: UnitRect): Boolean = left <= other.left && top <= other.top && right >= other.right && bottom >= other.bottom
 	fun union(other: UnitRect): UnitRect = UnitRect(min(left, other.left), min(top, other.top), max(right, other.right), max(bottom, other.bottom))
 	fun inflate(amount: Float): UnitRect = UnitRect(left - amount, top - amount, right + amount, bottom + amount)
 

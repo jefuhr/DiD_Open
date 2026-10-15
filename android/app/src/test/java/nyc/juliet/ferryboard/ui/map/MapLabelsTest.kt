@@ -44,6 +44,33 @@ class MapLabelsTest {
 		assertTrue("Names are forgotten on reset", placer.place(200f, 10f, 250f, 30f, name = "Broadway"))
 	}
 
+	@Test fun areasKeptClearForControlsRefuseLabelsUntilReset() {
+		val placer = LabelPlacer()
+		placer.reset(400f, 300f)
+		placer.keepClear(300f, 0f, 400f, 60f)
+		assertFalse("Under the zoom controls", placer.place(250f, 10f, 350f, 30f))
+		assertTrue("Beside the zoom controls", placer.place(150f, 10f, 299f, 30f))
+		assertTrue(placer.obstructed(290f, 50f, 310f, 70f))
+		assertFalse("Other labels are not controls", placer.obstructed(150f, 10f, 299f, 30f))
+		placer.reset(400f, 300f)
+		assertFalse(placer.obstructed(290f, 50f, 310f, 70f))
+		assertTrue("Reset forgets the controls", placer.place(250f, 10f, 350f, 30f))
+	}
+
+	@Test fun alwaysShownLabelsTakeTheSideClearOfControls() {
+		val placer = LabelPlacer()
+		placer.reset(400f, 300f)
+		placer.keepClear(300f, 0f, 400f, 60f)
+		assertTrue("The right side would run under the controls", placer.flipsLeft(x = 250f, y = 30f, gap = 9f, labelWidth = 80f, labelHeight = 16f))
+		assertFalse("Below the controls the label stays right", placer.flipsLeft(x = 250f, y = 150f, gap = 9f, labelWidth = 80f, labelHeight = 16f))
+		assertTrue("Near the right edge it flips left as before", placer.flipsLeft(x = 380f, y = 150f, gap = 9f, labelWidth = 80f, labelHeight = 16f))
+		assertFalse("The left side would leave the viewport", placer.flipsLeft(x = 60f, y = 30f, gap = 9f, labelWidth = 280f, labelHeight = 16f))
+		assertTrue("The right side would leave the viewport", placer.flipsLeft(x = 330f, y = 30f, gap = 9f, labelWidth = 200f, labelHeight = 16f))
+		placer.keepClear(0f, 0f, 120f, 60f)
+		assertFalse("Both sides covered: the usual side, which the caller then leaves out", placer.flipsLeft(x = 200f, y = 30f, gap = 9f, labelWidth = 150f, labelHeight = 16f))
+		assertTrue(placer.obstructed(209f, 22f, 359f, 38f))
+	}
+
 	@Test fun manyLabelsStillPlaceCorrectly() {
 		val placer = LabelPlacer()
 		placer.reset(10_000f, 100f)

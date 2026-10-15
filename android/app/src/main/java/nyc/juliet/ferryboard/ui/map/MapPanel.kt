@@ -83,7 +83,7 @@ internal enum class MapPanelTab(val label: String, val tag: String) {
 
 /**
  * The map's companion lists: every vessel, landing and marine reference on the chart, plus Your boat. Collapsible
- * under the map on phones; always open beside it on wide screens.
+ * under the map; always open beside it in landscape space wide enough for both (see [MapLayout]).
  */
 @Composable
 internal fun MapPanel(
@@ -115,7 +115,7 @@ internal fun MapPanel(
 		MapPanelTab.LANDINGS to landings.size,
 		MapPanelTab.MARINE to if (marine) bridges.size + seamarks.size else 0,
 	)
-	BoxWithConstraints(modifier.background(colors.card)) {
+	BoxWithConstraints(modifier.background(colors.card).testTag("mapPanel")) {
 		val inlineTabs = maxWidth >= 420.dp
 		Column(if (listHeight == null) Modifier.fillMaxWidth().fillMaxHeight() else Modifier.fillMaxWidth()) {
 			Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = TouchTarget).padding(end = 4.dp)) {

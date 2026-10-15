@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -163,11 +165,14 @@ private fun LandingRow(landing: Landing, favorite: Boolean, current: Boolean, on
 	}
 }
 
-/** The tablet sidebar: workspace destinations, then the landing list beside the board, as on iPad. */
+/**
+ * The tablet sidebar: workspace destinations, then the landing list beside the board, as on iPad. Like a navigation
+ * rail, its surface runs under the system bars beside it and only its content keeps clear of [windowInsets].
+ */
 @Composable
-fun LandingSidebar(state: FerryUiState, ui: FerryUi, modifier: Modifier = Modifier) {
+fun LandingSidebar(state: FerryUiState, ui: FerryUi, windowInsets: WindowInsets, modifier: Modifier = Modifier) {
 	Surface(color = ferryColors.card, contentColor = ferryColors.ink, modifier = modifier) {
-		Column {
+		Column(Modifier.windowInsetsPadding(windowInsets)) {
 			Text(
 				"Ferry Board",
 				style = MaterialTheme.typography.titleLarge,

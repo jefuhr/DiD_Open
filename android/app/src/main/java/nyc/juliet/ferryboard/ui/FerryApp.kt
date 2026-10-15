@@ -193,10 +193,8 @@ private fun WorkspaceShell(state: FerryUiState, ui: FerryUi, camera: HarborCamer
 		LandingSidebar(
 			state = state,
 			ui = ui,
-			modifier = Modifier
-				.width(300.dp)
-				.fillMaxHeight()
-				.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.Start)),
+			windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.Start),
+			modifier = Modifier.width(300.dp).fillMaxHeight().testTag("landingSidebar"),
 		)
 		VerticalDivider(thickness = 0.5.dp, color = ferryColors.line)
 		ShellContent(state, ui, camera, showLandingButton = false, modifier = Modifier.weight(1f))

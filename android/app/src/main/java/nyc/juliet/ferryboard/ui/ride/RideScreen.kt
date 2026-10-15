@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -279,6 +281,7 @@ private fun NextStop(state: FerryUiState, ride: Ride) {
 		verticalArrangement = Arrangement.spacedBy(6.dp),
 		modifier = Modifier
 			.fillMaxWidth()
+			.testTag("rideNextStop")
 			.background(ferryColors.card, RoundedCornerShape(12.dp))
 			.padding(12.dp),
 	) {
@@ -326,7 +329,7 @@ private fun StopClocks(stop: RideStop, stale: Boolean, timezone: String, twelveH
 		if (stop.departureSeconds != null || stop.departureAt != null) Clock(stop, arrival = false, stale, timezone, twelveHour, fullWords, null)
 	}
 	if (accessibilityText) Column(verticalArrangement = Arrangement.spacedBy(3.dp)) { clocks() }
-	else Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) { clocks() }
+	else FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) { clocks() }
 }
 
 @Composable
@@ -336,8 +339,10 @@ private fun Clock(stop: RideStop, arrival: Boolean, stale: Boolean, timezone: St
 	val quality = if (fullWords) (if (estimated) "estimated" else "scheduled") else (if (estimated) "est" else "sched")
 	Row(
 		verticalAlignment = Alignment.CenterVertically,
-		horizontalArrangement = Arrangement.spacedBy(4.dp),
+		horizontalArrangement = Arrangement.spacedBy(6.dp),
 		modifier = Modifier
+			// Keep each complete clock together; StopClocks wraps the group when space runs out.
+			.width(IntrinsicSize.Max)
 			.then(if (tag != null) Modifier.testTag(tag) else Modifier)
 			.semantics(mergeDescendants = true) {
 				contentDescription = "${if (arrival) "Arrival" else "Departure"} $time, ${if (estimated) "estimated" else "scheduled"}"

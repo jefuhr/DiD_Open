@@ -2,11 +2,14 @@ package nyc.juliet.ferryboard.ui.map
 
 /**
  * Greedy, collision-free label placement in screen pixels, reused frame to frame without allocating. Labels placed
- * earlier win, every label stays inside the viewport and a named label (a street) is drawn once.
+ * earlier win, every label stays inside the viewport and a named label (a street) is drawn once. Areas kept clear for
+ * the map's own controls refuse every label.
  */
 class LabelPlacer {
 	private var boxes = FloatArray(256)
 	private var count = 0
+	private var clear = FloatArray(16)
+	private var clearCount = 0
 	private val names = HashSet<String>()
 	private var width = 0f
 	private var height = 0f
@@ -17,7 +20,45 @@ class LabelPlacer {
 		this.width = width
 		this.height = height
 		count = 0
+		clearCount = 0
 		names.clear()
+	}
+
+	/** Keeps every later label out of an area the map's controls cover, until the next [reset]. */
+	fun keepClear(left: Float, top: Float, right: Float, bottom: Float) {
+		if (clearCount * 4 + 4 > clear.size) clear = clear.copyOf(clear.size * 2)
+		clear[clearCount * 4] = left
+		clear[clearCount * 4 + 1] = top
+		clear[clearCount * 4 + 2] = right
+		clear[clearCount * 4 + 3] = bottom
+		clearCount++
+		reserve(left, top, right, bottom)
+	}
+
+	/** True when the box overlaps an area kept clear for the map's controls; other labels do not count. */
+	fun obstructed(left: Float, top: Float, right: Float, bottom: Float): Boolean {
+		for (index in 0 until clearCount) {
+			val offset = index * 4
+			if (left < clear[offset + 2] && right > clear[offset] && top < clear[offset + 3] && bottom > clear[offset + 1]) return true
+		}
+		return false
+	}
+
+	/**
+	 * The side for a name beside its marker at ([x], [y]): the right unless it would run past the viewport's right edge,
+	 * as [MapLabels.flipsLeft], but the other side when only that one is clear of the controls and inside the viewport.
+	 */
+	fun flipsLeft(x: Float, y: Float, gap: Float, labelWidth: Float, labelHeight: Float): Boolean {
+		val usual = MapLabels.flipsLeft(x, gap, labelWidth, width)
+		val top = y - labelHeight / 2f
+		val bottom = y + labelHeight / 2f
+		val right = x + gap
+		val left = x - gap - labelWidth
+		val usualStart = if (usual) left else right
+		val otherStart = if (usual) right else left
+		val switch = obstructed(usualStart, top, usualStart + labelWidth, bottom) &&
+			!obstructed(otherStart, top, otherStart + labelWidth, bottom) && otherStart >= 0f && otherStart + labelWidth <= width
+		return if (switch) !usual else usual
 	}
 
 	/** Claims space without testing it, for labels that always show, such as the selected vessel's name. */

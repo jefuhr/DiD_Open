@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -277,9 +277,15 @@ private fun StopRow(state: FerryUiState, ui: FerryUi, facts: TripFacts, call: Tr
 			nameLabel()
 			times()
 		} else {
-			Row(verticalAlignment = Alignment.CenterVertically) {
-				Box(Modifier.weight(1f)) { nameLabel() }
-				Box(Modifier.widthIn(min = 0.dp)) { times() }
+			// Measure the complete name and clock groups before deciding whether they share a line.
+			// A weighted name would receive only the clocks' leftover width and split ordinary words.
+			FlowRow(
+				modifier = Modifier.fillMaxWidth(),
+				horizontalArrangement = Arrangement.SpaceBetween,
+				verticalArrangement = Arrangement.spacedBy(3.dp),
+			) {
+				Box(Modifier.width(IntrinsicSize.Max).padding(end = 12.dp).align(Alignment.CenterVertically)) { nameLabel() }
+				Box(Modifier.width(IntrinsicSize.Max).align(Alignment.CenterVertically)) { times() }
 			}
 		}
 		facts.restriction(call)?.let { Text(it, style = FerryText.captionStrong, color = ferryColors.warning) }
@@ -295,7 +301,8 @@ private fun CallTime(label: String, seconds: Double, estimate: Double?, twelveHo
 	Column(Modifier.semantics(mergeDescendants = true) {
 		contentDescription = "${if (label == "ARR") "Arrival" else "Departure"} $shown, ${if (estimate != null) "estimated, scheduled $scheduled" else "scheduled"}"
 	}) {
-		Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+		// Room between ARR or DEP, the time and EST keeps them apart at large text in 12-hour time ("9:12 AM EST").
+		Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
 			Text(label, style = FerryText.overline, color = ferryColors.muted)
 			Text(shown, style = FerryText.clock, color = ferryColors.ink)
 			if (estimate != null) Text("EST", style = FerryText.overline, color = ferryColors.accent)

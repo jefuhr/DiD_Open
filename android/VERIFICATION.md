@@ -2,7 +2,53 @@
 
 Implementation base: `origin/mobile` at `7a7709d86b93ac8525b8aa21a9cde6b84c363b65`, checked on October 14, 2026. Verification uses the integrated application source, not worker support stubs. Evidence below is retained locally under ignored `artifacts/android/`.
 
-## Completed Checks
+## UX Polish Follow-up
+
+The follow-up starts from `c9e5bc02edff4de393397e951689ead2c6e4d0d4`. It improves the tablet sidebar's full-height surface, measured map/list placement, chart boundary, label clearance, and 6 dp clock spacing. Stop names and complete clock groups now move onto another line when needed; both trip actions remain available.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Integrated JVM tests | 209 passed: 156 app and 53 core. Zero failures/errors; one opt-in live test skipped. Repository service-parity fixtures were supplied. | `ux-polish-integrated/jvm-results/` |
+| Build and lint | Debug and R8-optimized unsigned release built successfully. Debug lint: zero errors, 36 advisory warnings. Release vital lint passed. | `ux-polish-integrated/build.log`, `ux-polish-integrated/lint/` |
+| APK contents | Both APKs contain all three chart assets. Debug contains 12 preview fixtures; release contains none. | `ux-polish-integrated/debug-artifact.json`, `ux-polish-integrated/release-artifact.json` |
+| Android 12 / API 31 | All 35 test cases covered successfully across two runs: 34 passed in the full run; its remaining theme screenshot test passed in a focused rerun after a test-only frame-readiness correction. This was not a single 35/35 run. | `20261015T014817Z-api31/`, `20261015T020027Z-api31/` |
+| Android 16 / API 36 | All 10 focused tests passed: trip/ride wrapping, actual map-label metrics, all five map-layout checks, large-text/tablet journeys, and trip/ride/offline restoration. | `20261015T020340Z-api36/` |
+| Physical update | The tested debug APK updated the existing Nothing A001 installation in place. Installed APK hash matched exactly; activity launch succeeded. The phone remained locked, so physical screen acceptance is unverified. | `ux-polish-physical-device/` |
+| Source identity | All 130 source/build files hashed. Production source and the debug APK are unchanged between the successful full build, API 31 full run, and focused rerun. Only two instrumentation files changed for screenshot readiness. | `ux-polish-integrated/source-manifest.json`, `ux-polish-integrated/source-manifest-final.json` |
+| Review | Bounded Astra source review found no verified P0/P1/P2 blocker in its snapshot. The coordinator reviewed the final wrapping, native metric checks, and screenshot readiness changes. | `ux-polish-review-v1/ux-polish-review-v1.txt`, `ux-polish-integrated/coordinator-review.md` |
+
+Native wrapping tests inspect line boundaries, ellipsis, glyph extents, and horizontal containment at 320/360 dp with font scales 1.2, 1.49, and 1.8, plus the regular 411 dp trip layout. They verify complete 12-hour clocks, estimate labels, stop names, and displayed trip actions. The map tests cover measured portrait/landscape placement, the 480 dp minimum chart width, camera continuity and gestures, all nine themes' chart boundaries, and actual text bounds around measured controls. The API 31 label sweep checked 3,670 accepted labels, including 1,299 rotated streets and 494 labels within 16 dp of a control, with zero overlaps.
+
+The three runs retained 63, nine, and 37 screenshots respectively. The coordinator inspected original narrow/large-text trip and ride screens, tablet departures and map layouts, and the corrected theme rendering. All 109 images, including the preserved stale-theme failure, were additionally scanned for system error dialogs; none were detected. The scanner correctly detected the saved System UI ANR as a positive control. Logs from these three runs contained no fatal-exception or ANR marker. This supplemental OCR check does not turn the stale-theme image into passing color evidence; the focused rerun supplies that evidence. Results are in `ux-polish-integrated/native-results-summary.json` and `ux-polish-integrated/screenshot-audit-summary.json`.
+
+Both owned emulators were stopped after testing. The final API 36 run uses the same production APK as the API 31 runs. Its focused scope covers all changed layouts and the added native regressions; it does not claim a new complete API 36 suite run. The earlier pre-wrapping phase passed 32/32 tests on each API and is retained separately under `ux-polish-phase1/`.
+
+### Preserved Failures and Test Readiness
+
+The clean pre-fix native run is retained in `ux-polish-followup/quota-checkpoint/clean-red-api36/`. It exposed the trip/ride wrapping failures before the coordinator's fix; its third failure was a null Android screenshot capture. The earlier source and worker artifacts remain intact.
+
+In the integrated API 31 full run, the Kuromi screenshot contained the entire preceding Pompompurin frame. The test now waits for the independent header text color before asserting the chart veil. The original veil assertions and tolerances remain unchanged. A bounded timeout preserves the failed image if the theme never reaches the screen. The focused rerun passed all nine themes; the production APK did not change.
+
+Two initial emulator attempts were rejected as environment failures. `20261015T012150Z-api36/` developed a System UI ANR and was deliberately aborted; its reported process crash is the induced abort, not an application crash. `20261015T012725Z-api31/` failed package installation with `Broken pipe (32)` before instrumentation. The host was heavily loaded. Subsequent sessions used the existing AVDs with hardware GPU rendering, two emulator CPU cores, and a minute of healthy package/window checks before testing. No AVD configuration or package version changed, and unrelated project processes were left running. Startup logs and exact launch commands are in `ux-polish-integrated/warm-api31/` and `ux-polish-integrated/warm-api36/`.
+
+### Follow-up Commands and Artifact Identity
+
+The recorded commands below used the dedicated emulator serials shown; those sessions have since stopped. The local PATH included `artifacts/android/ux-polish-tools`, which exposes the already-installed ripgrep binary. No package was installed or upgraded.
+
+```sh
+FERRY_SERVICE_CONTRACT="$PWD/artifacts/android/service-parity/fixtures" scripts/android.sh build --max-workers=1 --offline
+FERRY_ANDROID_API=31 FERRY_ANDROID_SERIAL=emulator-5554 scripts/android.sh test --max-workers=1 --offline
+FERRY_ANDROID_API=31 FERRY_ANDROID_SERIAL=emulator-5554 FERRY_ANDROID_TEST_CLASS='nyc.juliet.ferryboard.MapLayoutTest#everyThemeMarksTheAreaBeyondTheChartApartFromWater' scripts/android.sh test --max-workers=1 --offline
+FERRY_ANDROID_API=36 FERRY_ANDROID_SERIAL=emulator-5556 FERRY_ANDROID_TEST_CLASS='nyc.juliet.ferryboard.TripWrappingTest,nyc.juliet.ferryboard.MapLabelMetricsTest,nyc.juliet.ferryboard.MapLayoutTest,nyc.juliet.ferryboard.FerryJourneysTest#largeTextAndTabletWorkspaceKeepPrimaryActionsReachable,nyc.juliet.ferryboard.FerryJourneysTest#tripRideAndCachedOfflineRestoration' scripts/android.sh test --max-workers=1 --offline
+```
+
+The debug APK SHA-256 is `09daa3018d937a5fefed2a853a9838782b2392b558a1c64391cc908f9b8b7197`. The final test APK is `5da4bf1015ef644d4d977198e112da6a17c92218ca25452086ac9dd4ee80987e`; the unsigned release APK is `2727fb90430b31a8c96fac652b2291615725047867a6e3f788f09e9a800ecf69`.
+
+At 22:06 Eastern on October 14, `adb install -r` returned `Success` for the debug update. An explicit `am start -W -n nyc.juliet.ferryboard/.MainActivity` returned `Status: ok`, with a running process and resumed activity. The installed `base.apk` SHA-256 matched the tested debug APK. Version 1.0.0/code 1 and the original first-install time were retained. No uninstall, data clearing, fixture instrumentation, permission grant, or device setting change was performed. Keyguard remained visible and the phone was dozing; no physical-screen or real-device workflow claim is made. The captured app-process log contained no fatal-exception or ANR marker. Exact commands and package/launch/hash evidence are in `ux-polish-physical-device/`.
+
+The initial app acceptance below records the earlier implementation and remains useful historical evidence. Current UX acceptance is recorded in this follow-up section.
+
+## Initial Acceptance (Before UX Polish)
 
 | Check | Result | Evidence |
 | --- | --- | --- |
