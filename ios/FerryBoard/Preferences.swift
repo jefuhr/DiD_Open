@@ -18,6 +18,22 @@ enum FerryTextSize: String, Codable, CaseIterable {
 }
 
 enum LaunchLanding: String, Codable { case lastUsed, home }
+
+/// Where the app reads its data. Ferry RT is the prod server plus each departure's boarding slip,
+/// read straight from Ferry RT (internal network only); Ferry RT does not serve the board itself.
+enum APIServer: String, Codable, CaseIterable {
+    case production, ferryRT, custom
+    var label: String {
+        switch self { case .production: "Prod"; case .ferryRT: "Ferry RT"; case .custom: "Other" }
+    }
+    /// An http(s) address with a host, or nil.
+    static func customURL(_ text: String) -> URL? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: trimmed), let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme),
+              url.host?.isEmpty == false else { return nil }
+        return url
+    }
+}
 enum LaunchTab: String, Codable { case lastUsed, departures, map }
 
 struct Preferences: Codable {
@@ -40,8 +56,15 @@ struct Preferences: Codable {
     var departuresPerRoute = 0
     var departureWindowMinutes = 0
     var keepScreenAwake = false
+    var apiServer: APIServer = .production
+    var customAPIURL = ""
 
     init() {}
+
+    /// Other with an unusable address falls back to prod rather than leaving the app with no server.
+    func apiBaseURL(production: URL) -> URL {
+        apiServer == .custom ? APIServer.customURL(customAPIURL) ?? production : production
+    }
 
     var departureFilters: DepartureFilters {
         DepartureFilters(hiddenOperators: hiddenOperators, hiddenRoutes: hiddenRoutes, hiddenNYCMovements: hiddenNYCMovements)
@@ -57,6 +80,7 @@ struct Preferences: Codable {
         case launchLanding, homeLandingID, launchTab, lastTab
         case showDwellTimes, showLayoverTimes, showMarineReferences
         case departuresPerRoute, departureWindowMinutes, keepScreenAwake
+        case apiServer, customAPIURL
     }
 
     // Each new setting has a default so upgrading preserves the user's existing choices.
@@ -84,5 +108,7 @@ struct Preferences: Codable {
         let window = (try? values.decode(Int.self, forKey: .departureWindowMinutes)) ?? 0
         departureWindowMinutes = [0, 30, 60, 120, 240].contains(window) ? window : 0
         keepScreenAwake = (try? values.decode(Bool.self, forKey: .keepScreenAwake)) ?? false
+        apiServer = (try? values.decode(APIServer.self, forKey: .apiServer)) ?? .production
+        customAPIURL = (try? values.decode(String.self, forKey: .customAPIURL)) ?? ""
     }
 }

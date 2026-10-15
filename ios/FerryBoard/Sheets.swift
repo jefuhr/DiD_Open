@@ -189,6 +189,23 @@ struct SettingsView: View {
     @EnvironmentObject private var store: FerryStore
     @State private var refreshing = false
     @State private var refreshNote: String?
+    @State private var customURL = ""
+
+    private var trimmedCustomURL: String { customURL.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private func useCustomURL() {
+        guard APIServer.customURL(trimmedCustomURL) != nil else { return }
+        store.preferences.customAPIURL = trimmedCustomURL
+    }
+    private var serverFooter: String {
+        switch store.preferences.apiServer {
+        case .production: "Reading \(store.apiBaseURL.absoluteString)."
+        case .ferryRT: store.ferryRTStatus ?? "Reading \(store.apiBaseURL.absoluteString), with each departure’s boarding slip from Ferry RT. Slips need the Hornblower network."
+        case .custom:
+            APIServer.customURL(store.preferences.customAPIURL) == nil
+                ? "Enter an http or https address. Until then Ferry Board reads \(store.productionURL.absoluteString)."
+                : "Reading \(store.apiBaseURL.absoluteString). Plain http works only for servers on your local network."
+        }
+    }
 
     var body: some View {
         Form {
@@ -265,6 +282,24 @@ struct SettingsView: View {
             } footer: {
                 Text("Keep screen awake applies while Ferry Board is open. Marine references show bridges and seamarks.")
             }
+            Section {
+                Picker("API", selection: $store.preferences.apiServer) {
+                    ForEach(APIServer.allCases, id: \.self) { Text($0.label).tag($0) }
+                }.accessibilityIdentifier("apiServer")
+                if store.preferences.apiServer == .custom {
+                    TextField("https://example.com", text: $customURL)
+                        .keyboardType(.URL).textContentType(.URL)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .submitLabel(.done).onSubmit(useCustomURL)
+                        .accessibilityIdentifier("customAPIURL")
+                    Button("Use this server", action: useCustomURL)
+                        .disabled(APIServer.customURL(trimmedCustomURL) == nil || trimmedCustomURL == store.preferences.customAPIURL)
+                }
+            } header: {
+                Text("Server")
+            } footer: {
+                Text(serverFooter)
+            }
             Section("Tools") {
                 NavigationLink("Nearby ferry widget", destination: WidgetSetupView()).accessibilityIdentifier("settingsWidget")
                 NavigationLink("Operators & routes", destination: OperatorPicker())
@@ -292,6 +327,7 @@ struct SettingsView: View {
                 Text("Marine references: OpenStreetMap / OpenSeaMap contributors, ODbL. Reference information only.").font(.footnote).foregroundStyle(.secondary)
             }
         }.navigationTitle("Settings")
+        .onAppear { customURL = store.preferences.customAPIURL }
     }
 }
 

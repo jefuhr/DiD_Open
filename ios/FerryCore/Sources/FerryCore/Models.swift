@@ -192,6 +192,13 @@ public struct TripUpdate: Codable, Sendable {
     public var delaySeconds: Double?
     public var arrivalDelaySeconds: Double?
     public var canceled: Bool?
+    /// The exact boarding slip Ferry RT confirmed; filled in on the device, never by the board's server.
+    public var slip: Slip?
+}
+
+public struct Slip: Codable, Sendable, Hashable {
+    public var id: String
+    public var name: String
 }
 
 public struct VehicleAssignment: Codable, Sendable {

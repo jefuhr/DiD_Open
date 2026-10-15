@@ -22,6 +22,76 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(preferences.departuresPerRoute, 0)
         XCTAssertEqual(preferences.departureWindowMinutes, 0)
         XCTAssertFalse(preferences.keepScreenAwake)
+        XCTAssertEqual(preferences.apiServer, .production)
+        XCTAssertEqual(preferences.customAPIURL, "")
+    }
+
+    func testAPIServerFallsBackToProductionUntilOtherHasAUsableAddress() throws {
+        let production = URL(string: "https://juliet.nyc")!
+        var preferences = Preferences()
+        preferences.apiServer = .ferryRT
+        XCTAssertEqual(preferences.apiBaseURL(production: production), production)
+        preferences.apiServer = .custom
+        for bad in ["", "juliet.nyc", "ftp://example.com", "https://"] {
+            preferences.customAPIURL = bad
+            XCTAssertEqual(preferences.apiBaseURL(production: production), production, bad)
+        }
+        preferences.customAPIURL = "  http://192.168.1.20:8090 "
+        XCTAssertEqual(preferences.apiBaseURL(production: production).absoluteString, "http://192.168.1.20:8090")
+        let unknown = try JSONDecoder().decode(Preferences.self, from: Data(#"{"apiServer":"future-server","customAPIURL":"https://x.example"}"#.utf8))
+        XCTAssertEqual(unknown.apiServer, .production)
+        XCTAssertEqual(unknown.customAPIURL, "https://x.example")
+    }
+
+    @MainActor func testChangingServerRebuildsTheRepositoryAndReadsSlipsFromFerryRT() async throws {
+        let suite = "PreferencesTests-" + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let cache = SnapshotCache(directory: FileManager.default.temporaryDirectory.appendingPathComponent(suite))
+        let production = URL(string: "https://juliet.nyc")!
+        var built: [URL] = []
+        let make = { (url: URL) -> FerryRepository in
+            built.append(url)
+            return FerryRepository(transport: RealtimeOnlyTransport(), cache: cache, namespace: url.absoluteString)
+        }
+        // The captured Ferry RT feed in test/fixtures, which puts trip 1500 at Slip 2 of stop 20.
+        var root = URL(fileURLWithPath: #filePath)
+        for _ in 0..<3 { root.deleteLastPathComponent() }
+        let capture = try JSONSerialization.jsonObject(with: Data(contentsOf: root.appendingPathComponent("test/fixtures/ferry-rt-slips.json"))) as! [String: Any]
+        let feed = try XCTUnwrap(Data(base64Encoded: capture["feed"] as! String))
+        let catalog = try JSONSerialization.data(withJSONObject: capture["slips"]!)
+        let reachable = LockedFlag(true)
+        let client = FerryRT.Client { path in
+            guard reachable.value else { throw URLError(.cannotFindHost) }
+            return path == "api/slips" ? catalog : feed
+        }
+        let store = FerryStore(repository: make(production), defaults: defaults, productionURL: production, makeRepository: make, ferryRT: client)
+        store.preferences.apiServer = .custom
+        store.preferences.customAPIURL = "http://localhost:8090"
+        XCTAssertEqual(store.apiBaseURL.absoluteString, "http://localhost:8090")
+        store.preferences.apiServer = .ferryRT
+        XCTAssertEqual(store.apiBaseURL, production)
+        XCTAssertEqual(built.map(\.absoluteString), ["https://juliet.nyc", "http://localhost:8090", "https://juliet.nyc"])
+
+        let source = try Data(contentsOf: XCTUnwrap(Bundle.main.url(forResource: "schedule-16", withExtension: "json")))
+        store.preferences.landingID = 16
+        store.schedule = try JSONDecoder().decode(DisplayData.self, from: source)
+        await store.refreshRealtime()
+        XCTAssertEqual(store.realtime.updates?.map(\.slip?.name), ["Slip 2", nil])
+        XCTAssertNil(store.ferryRTStatus)
+
+        // Off the internal network: no stale slip stays up, and Settings says why.
+        reachable.value = false
+        await store.refreshRealtime()
+        XCTAssertEqual(store.realtime.updates?.map(\.slip?.name), [nil, nil])
+        XCTAssertNotNil(store.ferryRTStatus)
+
+        // Prod never asks Ferry RT.
+        reachable.value = true
+        store.preferences.apiServer = .production
+        await store.refreshRealtime()
+        XCTAssertEqual(store.realtime.updates?.map(\.slip?.name), [nil, nil])
+        XCTAssertNil(store.ferryRTStatus)
     }
 
     func testInvalidNewValuesDoNotDiscardOldPreferences() throws {
@@ -99,4 +169,21 @@ final class PreferencesTests: XCTestCase {
 
 private struct OfflinePreferencesTransport: FerryTransport {
     func data(for endpoint: FerryEndpoint) async throws -> Data { throw URLError(.notConnectedToInternet) }
+}
+
+private struct RealtimeOnlyTransport: FerryTransport {
+    func data(for endpoint: FerryEndpoint) async throws -> Data {
+        guard endpoint.path == "api/realtime" else { throw URLError(.notConnectedToInternet) }
+        return Data(#"{"stale":false,"updates":[{"tripId":"1500","stopId":"20","delaySeconds":0},{"tripId":"1500","stopId":"87","delaySeconds":0}]}"#.utf8)
+    }
+}
+
+private final class LockedFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: Bool
+    init(_ value: Bool) { stored = value }
+    var value: Bool {
+        get { lock.withLock { stored } }
+        set { lock.withLock { stored = newValue } }
+    }
 }

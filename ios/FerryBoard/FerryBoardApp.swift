@@ -32,8 +32,10 @@ enum AppConfiguration {
             return FerryStore(repository: repository, defaults: defaults, fixedNow: ServiceClock.instant("2026-09-04T12:50:00Z"))
         }
         #endif
-        let repository = FerryRepository(transport: HTTPTransport(baseURL: baseURL), cache: SnapshotCache(directory: root), namespace: baseURL.absoluteString)
-        return FerryStore(repository: repository)
+        let makeRepository = { (url: URL) in
+            FerryRepository(transport: HTTPTransport(baseURL: url), cache: SnapshotCache(directory: root), namespace: url.absoluteString)
+        }
+        return FerryStore(repository: makeRepository(baseURL), productionURL: baseURL, makeRepository: makeRepository, ferryRT: .live)
     }
 }
 

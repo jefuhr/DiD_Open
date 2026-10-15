@@ -58,6 +58,8 @@ public struct ScheduledDeparture: Identifiable, Sendable {
     public var hasLiveTiming: Bool
     public var boatName: String?
     public var predictedBoatName: String?
+    /// The slip a current Ferry RT feed confirmed for this call.
+    public var slipName: String?
     public var isLastOfDay: Bool = false
     public var isLastGovernorsIsland: Bool = false
     public var id: String { "\(serviceDate)|\(departure.tripId)|\(departure.stopId)|\(departure.seconds)" }
@@ -250,7 +252,8 @@ public enum ScheduleEngine {
                     }
                 }
                 groups[groupKey]!.departures.append(ScheduledDeparture(departure: departure, serviceDate: serviceDate, delay: delay,
-                    delta: delta, live: frame.live, hasLiveTiming: fresh, boatName: boatName, predictedBoatName: prediction))
+                    delta: delta, live: frame.live, hasLiveTiming: fresh, boatName: boatName, predictedBoatName: prediction,
+                    slipName: realtime.stale ? nil : update?.slip?.name))
             }
         }
         let window = Double(data.meta.departureWindowMinutes == 0 ? 180 : data.meta.departureWindowMinutes) * 60
