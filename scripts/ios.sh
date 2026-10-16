@@ -19,14 +19,14 @@ if ! command -v xcodegen >/dev/null; then
   exit 1
 fi
 xcodegen generate --spec ios/project.yml
-args=(-project ios/FerryBoard.xcodeproj -scheme FerryBoard -derivedDataPath ios/DerivedData)
+args=(-project ios/FerryKitty.xcodeproj -scheme FerryKitty -derivedDataPath ios/DerivedData)
 case "$action" in
   generate) ;;
-  open) open ios/FerryBoard.xcodeproj ;;
+  open) open ios/FerryKitty.xcodeproj ;;
   build) xcodebuild "${args[@]}" -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO ARCHS=arm64 build "$@" ;;
   test)
     if [[ -z "${IOS_SIMULATOR_ID:-}" ]]; then
-      IOS_SIMULATOR_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((v["udid"] for group in d["devices"].values() for v in group if v["name"] == "FerryBoard iPhone"), ""))')
+      IOS_SIMULATOR_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((v["udid"] for group in d["devices"].values() for v in group if v["name"] == "FerryKitty iPhone"), ""))')
       if [[ -z "$IOS_SIMULATOR_ID" ]]; then
         runtime=$(xcrun simctl list runtimes -j | python3 -c 'import json,sys; r=[x for x in json.load(sys.stdin)["runtimes"] if x.get("isAvailable") and ".iOS-" in x["identifier"]]; r.sort(key=lambda x:tuple(map(int,x["version"].split(".")))); print(r[-1]["identifier"] if r else "")')
         if [[ -z "$runtime" ]]; then
@@ -34,7 +34,7 @@ case "$action" in
           exit 1
         fi
         device_type=$(xcrun simctl list devicetypes -j | python3 -c 'import json,sys; d=[x for x in json.load(sys.stdin)["devicetypes"] if x["name"].startswith("iPhone")]; print(next((x["identifier"] for x in d if x["name"] == "iPhone 17e"),d[-1]["identifier"]))')
-        IOS_SIMULATOR_ID=$(xcrun simctl create 'FerryBoard iPhone' "$device_type" "$runtime")
+        IOS_SIMULATOR_ID=$(xcrun simctl create 'FerryKitty iPhone' "$device_type" "$runtime")
       fi
     fi
     xcodebuild "${args[@]}" -destination "platform=iOS Simulator,id=$IOS_SIMULATOR_ID" -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test "$@"
@@ -46,7 +46,7 @@ case "$action" in
     fi
     device_id="$1"; shift
     xcodebuild "${args[@]}" -destination "id=$device_id" -allowProvisioningUpdates -allowProvisioningDeviceRegistration build "$@"
-    xcrun devicectl device install app --device "$device_id" ios/DerivedData/Build/Products/Debug-iphoneos/FerryBoard.app
+    xcrun devicectl device install app --device "$device_id" ios/DerivedData/Build/Products/Debug-iphoneos/FerryKitty.app
     xcrun devicectl device process launch --device "$device_id" nyc.juliet.ferryboard
     ;;
   *) echo "Usage: scripts/ios.sh {open|generate|core|build|test|device IPHONE_UDID}" >&2; exit 1 ;;

@@ -1,4 +1,4 @@
-name: FerryBoard
+name: FerryKitty
 options:
   bundleIdPrefix: nyc.juliet
   deploymentTarget:
@@ -22,20 +22,20 @@ configFiles:
   Debug: Config/Debug.xcconfig
   Release: Config/Release.xcconfig
 targets:
-  FerryBoard:
+  FerryKitty:
     type: application
     platform: iOS
     sources:
-      - path: FerryBoard
+      - path: FerryKitty
       - path: Shared
     dependencies:
       - package: FerryCore
-      - target: FerryBoardWidget
+      - target: FerryKittyWidget
         embed: true
     info:
       path: Config/Info.plist
       properties:
-        CFBundleDisplayName: Ferry Board
+        CFBundleDisplayName: Ferry Kitty
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
@@ -52,7 +52,7 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        NSLocationWhenInUseUsageDescription: Find the nearest ferry landing in the app and your Ferry Board widget. Your location stays on this device.
+        NSLocationWhenInUseUsageDescription: Find the nearest ferry landing in the app and your Ferry Kitty widget. Your location stays on this device.
         CFBundleURLTypes:
           - CFBundleURLName: nyc.juliet.ferryboard
             CFBundleURLSchemes: [ferryboard]
@@ -65,27 +65,28 @@ targets:
           NSExceptionDomains:
             nycf-web.dc-west.hornblower.com:
               NSExceptionAllowsInsecureHTTPLoads: true
-        NSLocalNetworkUsageDescription: Reach a Ferry Board test server on your network when one is chosen in Settings > Server.
+        NSLocalNetworkUsageDescription: Reach a Ferry Kitty test server on your network when one is chosen in Settings > Server.
     settings:
       base:
+        # Preserve installed app data and the shared widget settings identity.
         PRODUCT_BUNDLE_IDENTIFIER: nyc.juliet.ferryboard
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_ENTITLEMENTS: Config/WidgetShared.entitlements
-  FerryBoardWidget:
+  FerryKittyWidget:
     type: app-extension
     platform: iOS
     sources:
-      - path: FerryBoardWidget
+      - path: FerryKittyWidget
       - path: Shared
-      - path: FerryBoard/Theme.swift
+      - path: FerryKitty/Theme.swift
     dependencies:
       - package: FerryCore
     info:
       path: Config/Widget-Info.plist
       properties:
-        CFBundleDisplayName: Nearby Ferries
+        CFBundleDisplayName: Ferry Kitty
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
@@ -100,44 +101,44 @@ targets:
         APPLICATION_EXTENSION_API_ONLY: YES
         SKIP_INSTALL: YES
         CODE_SIGN_ENTITLEMENTS: Config/WidgetShared.entitlements
-  FerryBoardTests:
+  FerryKittyTests:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - path: FerryBoardTests
-      - path: FerryBoardWidget/NearbyWidgetView.swift
-      - path: FerryBoardWidget/NearbyProvider.swift
-      - path: FerryBoardWidget/WidgetLocation.swift
-      - path: FerryBoardWidget/WidgetConfiguration.swift
-      - path: FerryBoard/Theme.swift
+      - path: FerryKittyTests
+      - path: FerryKittyWidget/NearbyWidgetView.swift
+      - path: FerryKittyWidget/NearbyProvider.swift
+      - path: FerryKittyWidget/WidgetLocation.swift
+      - path: FerryKittyWidget/WidgetConfiguration.swift
+      - path: FerryKitty/Theme.swift
       - path: Shared/WidgetSettingsBridge.swift
     dependencies:
-      - target: FerryBoard
+      - target: FerryKitty
       - package: FerryCore
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-  FerryBoardUITests:
+  FerryKittyUITests:
     type: bundle.ui-testing
     platform: iOS
-    sources: [FerryBoardUITests]
+    sources: [FerryKittyUITests]
     dependencies:
-      - target: FerryBoard
+      - target: FerryKitty
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
 schemes:
-  FerryBoard:
+  FerryKitty:
     build:
       targets:
-        FerryBoard: all
+        FerryKitty: all
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - FerryBoardTests
-        - FerryBoardUITests
+        - FerryKittyTests
+        - FerryKittyUITests
       gatherCoverageData: true
     archive:
       config: Release

@@ -2,7 +2,7 @@
 
 `Deploy production` runs on pushes to `mobile` and manual dispatches of that branch. A manual run on another branch is skipped. Set `dry_run` to inspect the host without backing up, building, restarting, or recording a release. The workflow deploys the exact triggering SHA, including on reruns.
 
-The workflow uses `deploy/deploy-did.sh` from the checked-out commit, with `DID_REPO` pointing to its isolated Actions workspace. It does not deploy uncommitted files from the existing local app folder. Tests and builds remain enabled on real deployments. The existing hosted CI workflows continue independently; deployment uses the script's own test/build gates.
+The workflow uses `deploy/deploy-ferry-kitty.sh` from the checked-out commit, with `FERRY_KITTY_REPO` pointing to its isolated Actions workspace. It does not deploy uncommitted files from the existing local app folder. Tests and builds remain enabled on real deployments. The existing hosted CI workflows continue independently; deployment uses the script's own test/build gates.
 
 ## Runner on this Mac
 
@@ -31,8 +31,8 @@ Extract into a new empty runner directory, then register it using an expiring to
 
 ```sh
 export PATH="/opt/homebrew/bin:$PATH"
-task_registration_token=$(gh api --method POST repos/jefuhr/DiD_Open/actions/runners/registration-token --jq .token)
-./config.sh --unattended --url https://github.com/jefuhr/DiD_Open \
+task_registration_token=$(gh api --method POST repos/jefuhr/ferryKitty/actions/runners/registration-token --jq .token)
+./config.sh --unattended --url https://github.com/jefuhr/ferryKitty \
   --token "$task_registration_token" --name mamdani-did \
   --labels production-deploy --work _work
 unset task_registration_token
@@ -54,11 +54,11 @@ The deployment fixtures use temporary repositories and simulated SSH, npm, Docke
 
 ```sh
 python3 test/deploy-script.test.py
-bash -n deploy/deploy-did.sh
+bash -n deploy/deploy-ferry-kitty.sh
 ```
 
-Before the first automatic deployment, run a dry run from a fresh production-branch checkout with `DID_REPO` set to that checkout and `--branch` set to its full commit SHA. After publication, inspect the first deployment log, the public endpoints checked by the script, and the recorded `DEPLOYED_SHA`. Publishing this workflow to `mobile` immediately triggers a real deployment.
+Before the first automatic deployment, run a dry run from a fresh production-branch checkout with `FERRY_KITTY_REPO` set to that checkout and `--branch` set to its full commit SHA. After publication, inspect the first deployment log, the public endpoints checked by the script, and the recorded `DEPLOYED_SHA`. Publishing this workflow to `mobile` immediately triggers a real deployment.
 
 ## Current production URLs and startup
 
-Health checks use `https://ferrytimesmobile.juliet.nyc` (`DID_SITE` can override it). Each required endpoint has up to 12 attempts, five seconds apart, because systemd reports active before the application finishes loading its schedules. Legacy `/ferryTimesMobile/` redirects are not used as readiness gates.
+Health checks use `https://ferrytimesmobile.juliet.nyc` (`FERRY_KITTY_SITE` can override it). Each required endpoint has up to 12 attempts, five seconds apart, because systemd reports active before the application finishes loading its schedules. Legacy `/ferryTimesMobile/` redirects are not used as readiness gates.

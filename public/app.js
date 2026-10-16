@@ -1356,7 +1356,7 @@ function renderServiceAlerts() {
     : first.header || first.description || "NYC Ferry service alert";
   // The bar is a ferry bar, and the server puts ferry alerts first, so the only way something else
   // leads is that the ferry has nothing wrong with it. Say whose service it is in that case: an
-  // unlabelled subway closure sitting under the words SERVICE ALERTS on a ferry board reads as a
+  // unlabelled subway closure sitting under the words SERVICE ALERTS on a ferry display reads as a
   // boat problem, which is exactly the wrong thing to tell someone waiting for one.
   const agency = first.agency && first.agency !== "NYC Ferry" ? `${first.agency}: ` : "";
   elements.serviceAlertSummary.textContent = alerts.length > 1
@@ -1438,7 +1438,7 @@ let scheduleSaved = false;
 
 function applySchedule(payload) {
   data = payload;
-  if (lifecycle.active) document.title = `${data.meta.landing.displayName} Departures`;
+  if (lifecycle.active) document.title = `${data.meta.landing.displayName} Departures · Ferry Kitty`;
   elements.landing.textContent = data.meta.landing.displayName;
   renderLandingList();
   renderFilterMenu();
@@ -1833,7 +1833,7 @@ return {
     if (landing > 0 && Number.isInteger(landing)) void selectLanding(landing);
     applyRail();
     updateClock();
-    document.title = data ? `${data.meta.landing.displayName} Departures` : "NYC Ferry Staff Board";
+    document.title = data ? `${data.meta.landing.displayName} Departures · Ferry Kitty` : "Ferry Kitty";
     lifecycle.activate();
     render();
   },

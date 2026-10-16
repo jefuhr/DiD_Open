@@ -39,7 +39,7 @@ case "$ACTION" in
 	test)
 		API="${FERRY_ANDROID_API:-31}"
 		case "$API" in 31|36) ;; *) printf 'Use installed test API 31 or 36.\n' >&2; exit 1 ;; esac
-		AVD="FerryBoard_API${API}"
+		AVD="FerryKitty_API${API}"
 		[[ -d "$SDK/system-images/android-$API/default/arm64-v8a" ]] || {
 			printf 'Missing API %s ARM64 image; install it separately before testing.\n' "$API" >&2
 			exit 1
@@ -112,6 +112,6 @@ case "$ACTION" in
 		;;
 	*)
 		printf 'Usage: scripts/android.sh doctor|core|parity|build|test [Gradle arguments]\n'
-		printf 'Test API: FERRY_ANDROID_API=31 or 36. Tests use only a dedicated FerryBoard emulator.\n'
+		printf 'Test API: FERRY_ANDROID_API=31 or 36. Tests use only a dedicated FerryKitty emulator.\n'
 		;;
 esac

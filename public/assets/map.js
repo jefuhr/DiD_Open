@@ -1617,7 +1617,7 @@ return {
     root.hidden = false;
     root.inert = false;
     if (url.searchParams.has("boat")) wanted = url.searchParams.get("boat");
-    document.title = "NYC Ferry Staff Board · Map";
+    document.title = "Ferry Kitty · Map";
     setFeedStatus(boats.length ? "Refreshing" : "Connecting", "loading");
     lifecycle.activate();
     resizeViewport();

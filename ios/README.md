@@ -1,4 +1,8 @@
-# Ferry Board for iPhone and iPad
+# Ferry Kitty for iPhone and iPad
+
+Native iOS client in [Ferry Kitty](https://github.com/jefuhr/ferryKitty).
+
+The project, scheme, source folders and build products use `FerryKitty`. The installed bundle identifiers (`nyc.juliet.ferryboard` and `nyc.juliet.ferryboard.nearby`), shared Keychain group, widget kind, `ferryboard://` links and existing storage keys/directories remain stable so an in-place update can retain saved settings and Home Screen widgets. Physical-device upgrade behavior still requires verification.
 
 Universal SwiftUI app for iOS and iPadOS 17 or later, using the existing HTTPS API at `https://juliet.nyc`. The web app and deployment continue to work independently. There is no WebView, JavaScript bridge, CocoaPods, or third-party iOS SDK.
 
@@ -16,14 +20,14 @@ Universal SwiftUI app for iOS and iPadOS 17 or later, using the existing HTTPS A
    scripts/ios.sh open
    ```
 
-XcodeGen creates the ignored `ios/FerryBoard.xcodeproj` from `project.yml`. Edit the YAML for shared project changes. The helper selects Xcode for its own process, so it does not change the machine's global command line tools selection.
+XcodeGen creates the ignored `ios/FerryKitty.xcodeproj` from `project.yml`. Edit the YAML for shared project changes. The helper selects Xcode for its own process, so it does not change the machine's global command line tools selection.
 
 ## Install on your iPhone or iPad
 
 1. In **Xcode → Settings → Apple Accounts**, sign in with your Apple account.
 2. Copy `ios/Local.xcconfig.example` to `ios/Local.xcconfig`. Set `DEVELOPMENT_TEAM` to your team's ID. This file is ignored by Git. Alternatively choose the team in the generated target's **Signing & Capabilities** settings (regeneration replaces project-only changes).
 3. Connect and trust the iPhone or iPad, enable **Settings → Privacy & Security → Developer Mode**, and select it in Xcode's destination menu.
-4. Choose the **FerryBoard** scheme and press **Run**. Complete any Apple signing/trust prompts.
+4. Choose the **FerryKitty** scheme and press **Run**. Complete any Apple signing/trust prompts.
 
 After the account is ready, the same installation can be run from the terminal:
 
@@ -50,7 +54,7 @@ Native departure push notifications are deferred. The web client's notification 
 
 ## Nearby ferry widget
 
-In Ferry Board, open **Settings → Nearby ferry widget**. Choose **Automatic nearest landing**, or turn it off and select a fixed landing. Fixed landings need no location permission. For automatic selection, tap **Enable location / find nearest** and allow location access. Touch and hold the Home Screen, choose **Edit → Add Widget**, and search for **Ferry Board** or **Nearby Ferries**. Small, medium and large sizes are supported on iPhone and iPad. Approve location access for the widget when iOS asks; this approval is separate from the app's permission. If access is off, tapping the widget opens its setup screen.
+In Ferry Kitty, open **Settings → Nearby ferry widget**. Choose **Automatic nearest landing**, or turn it off and select a fixed landing. Fixed landings need no location permission. For automatic selection, tap **Enable location / find nearest** and allow location access. Touch and hold the Home Screen, choose **Edit → Add Widget**, and search for **Ferry Kitty** or **Nearby Ferries**. Small, medium and large sizes are supported on iPhone and iPad. Approve location access for the widget when iOS asks; this approval is separate from the app's permission. If access is off, tapping the widget opens its setup screen.
 
 The setup screen saves shared widget defaults: operators, boat names, route assignments, dwells, layovers, countdowns, clock format, sorting, theme, text size, lookahead and departures per route. **Copy main app settings** takes a snapshot of the current landing, operator/route/NYC movement filters, appearance and departure display preferences. It preserves the widget-only boat-name, assignment and countdown choices. Changing widget defaults does not change the main app's settings; later main app changes require copying again. Copied route and movement filters can be cleared independently.
 
@@ -70,7 +74,7 @@ On iPad windows at least 760 points wide, a sidebar provides Departures/Harbor m
 
 The departure board uses two columns whenever it is at least 600 points wide, including iPad portrait and iPhone landscape. Departures fill left to right, so the next two sailings share the top row; route groups tile the same way. Each departure takes two lines: time, route, destination and status, then the countdown, working vessel, flags, and dwell or layover. Accessibility text sizes keep one column. On wide screens riding mode shows the next landing and position beside the confirmed trips.
 
-Choose an iPad destination in Xcode with the same **FerryBoard** scheme. To run the helper against an iPad simulator, set `IOS_SIMULATOR_ID` to its device identifier.
+Choose an iPad destination in Xcode with the same **FerryKitty** scheme. To run the helper against an iPad simulator, set `IOS_SIMULATOR_ID` to its device identifier.
 
 ## Settings for a shift
 
@@ -101,7 +105,7 @@ scripts/ios.sh test                  # Store tests and native UI journeys
 FERRY_LIVE_SMOKE=1 scripts/ios.sh core --filter LiveContractTests
 ```
 
-`test` creates/reuses a dedicated **FerryBoard iPhone** simulator. Install an iOS runtime first; the helper prints the command if missing. Set `IOS_SIMULATOR_ID` to use another simulator. The tablet layout journey runs only on an iPad simulator, and the other journeys use the iPhone tab bar. Xcode test results and coverage are under ignored `ios/DerivedData/Logs/Test/`.
+`test` creates/reuses a dedicated **FerryKitty iPhone** simulator. Install an iOS runtime first; the helper prints the command if missing. Set `IOS_SIMULATOR_ID` to use another simulator. The tablet layout journey runs only on an iPad simulator, and the other journeys use the iPhone tab bar. Xcode test results and coverage are under ignored `ios/DerivedData/Logs/Test/`.
 
 UI tests use bundled fixtures and a fixed clock, with an isolated defaults suite and cache. `FERRY_UI_TESTS`, `FERRY_RESET`, and `FERRY_OFFLINE` only affect Debug builds. Rebuild fixtures with `npm run fixtures:ios` after an intentional contract change; the generator reads the canonical shared schedule fixture. Release builds use the live API.
 

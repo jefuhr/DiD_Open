@@ -187,7 +187,7 @@ async function serve(response, file) {
 async function handle(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
   if (await handleRidePush(request, response, ridePush)) return;
-  if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"nyc-ferry-did", now:new Date().toISOString(), counters: buildStats() });
+  if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"ferry-kitty", now:new Date().toISOString(), counters: buildStats() });
   // Public aggregate request statistics.
   if (url.pathname === "/api/stats") return json(response, 200, buildStats());
   // The change log, written by hand in content/changelog.json. Read off disk on every request
@@ -343,7 +343,7 @@ const server = http.createServer((request, response) => {
   return handle(request, response).catch((error) => { console.error(error); if (!response.headersSent) json(response, 500, { error:"Internal server error" }); });
 });
 server.listen(PORT, HOST, () => {
-  console.log(`NYC Ferry DiD ready at http://${HOST}:${PORT}`);
+  console.log(`Ferry Kitty ready at http://${HOST}:${PORT}`);
   counters.start();
   ridePush?.start();
 });

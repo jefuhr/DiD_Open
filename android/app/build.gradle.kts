@@ -5,9 +5,10 @@ plugins {
 }
 
 android {
-	namespace = "nyc.juliet.ferryboard"
+	namespace = "nyc.juliet.ferrykitty"
 	compileSdk = 37
 	defaultConfig {
+		// Preserve installed app data across branding and source namespace changes.
 		applicationId = "nyc.juliet.ferryboard"
 		minSdk = 31
 		targetSdk = 37
@@ -32,7 +33,7 @@ android {
 	}
 	sourceSets {
 		getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/harborAssets").get().asFile)
-		getByName("debug").assets.srcDir("../../ios/FerryBoard/PreviewData")
+		getByName("debug").assets.srcDir("../../ios/FerryKitty/PreviewData")
 	}
 	packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
 }

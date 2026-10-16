@@ -1,6 +1,8 @@
-# Ferry Board for Android
+# Ferry Kitty for Android
 
-Native Kotlin and Jetpack Compose client for Android 12 and later, using the existing Ferry Board HTTPS API. The Android project lives beside the iOS and web clients and shares their service-day fixtures and API contract.
+Native Kotlin and Jetpack Compose client for Android 12 and later, using the existing Ferry Kitty HTTPS API. The Android project lives beside the iOS and web clients and shares their service-day fixtures and API contract.
+
+Source: [jefuhr/ferryKitty](https://github.com/jefuhr/ferryKitty). The local repository entry point is `~/ferryKitty`; run the commands below from that repository root.
 
 ## Build
 
@@ -18,7 +20,7 @@ The helper respects `JAVA_HOME` and `ANDROID_HOME`/`ANDROID_SDK_ROOT`. On macOS 
 `parity` uses the existing Node generator to compare Android with the web schedule engine across the repository's actual landing and service-date data. It preserves the generated inputs and logs under `artifacts/android/service-parity`. Ordinary `core` tests remain deterministic; a deployment check is explicitly opt-in:
 
 ```sh
-FERRY_LIVE_SMOKE=1 scripts/android.sh core --tests nyc.juliet.ferryboard.core.LiveContractTest
+FERRY_LIVE_SMOKE=1 scripts/android.sh core --tests nyc.juliet.ferrykitty.core.LiveContractTest
 ```
 
 You can also open the `android` directory in Android Studio, or run Gradle directly:
@@ -28,7 +30,7 @@ cd android
 ./gradlew :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
 ```
 
-The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. Release compilation produces an unsigned APK; supply your own signing configuration separately for distribution. Application ID: `nyc.juliet.ferryboard`.
+The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. Release compilation produces an unsigned APK; supply your own signing configuration separately for distribution. Application ID: `nyc.juliet.ferryboard` (retained for installed app data). The Gradle namespace and non-component Kotlin packages use `nyc.juliet.ferrykitty`; installed activity, widget receiver, and job-service class names remain in `nyc.juliet.ferryboard` for compatibility.
 
 ## Native behavior
 
@@ -50,6 +52,8 @@ The smallest widget requires 180 × 180 dp. At large text sizes it prioritizes t
 
 Links `ferryboard://nearby` and `ferryboard://landing/16` open widget setup and a landing's current departure board respectively.
 
+The legacy link scheme, widget refresh action `nyc.juliet.ferryboard.REFRESH_WIDGETS`, widget component names, job IDs, and `ferry-production` preferences / `ferry-cache` storage are intentional compatibility identifiers. Renaming the project and source packages does not migrate or reset stored app or widget choices. The instrumentation APK remains `nyc.juliet.ferryboard.test`, even though test classes use `nyc.juliet.ferrykitty`.
+
 ## Repeatable verification
 
 Install ARM64 default emulator images for API 31 and/or API 36 separately, then run:
@@ -59,7 +63,7 @@ scripts/android.sh test
 FERRY_ANDROID_API=36 scripts/android.sh test
 ```
 
-The helper creates/reuses only `FerryBoard_API31` or `FerryBoard_API36`, installs APKs using an explicit emulator serial, and saves APK hashes, a preflight window dump/screenshot, build logs, instrumentation output, logcat, and screenshots under ignored `artifacts/android/`. It rejects an active Android application-error or ANR dialog before instrumentation; restart the dedicated emulator if that preflight fails. It stops emulators it started unless `FERRY_KEEP_EMULATOR=1` is set. To reuse a running dedicated emulator, provide `FERRY_ANDROID_SERIAL=emulator-5554`; the helper verifies its AVD name and rejects physical devices.
+The helper creates/reuses only `FerryKitty_API31` or `FerryKitty_API36`, installs APKs using an explicit emulator serial, and saves APK hashes, a preflight window dump/screenshot, build logs, instrumentation output, logcat, and screenshots under ignored `artifacts/android/`. It rejects an active Android application-error or ANR dialog before instrumentation; restart the dedicated emulator if that preflight fails. It stops emulators it started unless `FERRY_KEEP_EMULATOR=1` is set. To reuse a running dedicated emulator, provide `FERRY_ANDROID_SERIAL=emulator-5554`; the helper verifies its AVD name and rejects physical devices.
 
 For a focused rerun, set `FERRY_ANDROID_TEST_CLASS` to a fully qualified test class or `class#method`. The saved `command.txt` records the exact instrumentation selection.
 

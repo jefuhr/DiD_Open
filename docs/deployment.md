@@ -2,6 +2,10 @@
 
 Run the existing Node service or Docker Compose stack. The process builds all active landings at startup; bundled feed, fleet, or configuration changes require a restart. Keep `state/` persistent for feed caches and statistics.
 
+## Production compatibility
+
+Ferry Kitty deploys with `deploy/deploy-ferry-kitty.sh`, using `FERRY_KITTY_REPO` (default `~/ferryKitty`). The existing production service `nyc-ferry-did` and directory `/opt/nyc-ferry-did` are intentionally retained, including the feed-check unit working directory. The existing Actions runner name `mamdani-did` and its `~/.local/share/github-actions/did` installation also stay in place. Renaming the repository does not migrate these operational identities.
+
 ## Existing URL contract
 
 The public deployment uses `/ferryTimesMobile/` for the board, with map and stats links beneath it. Static assets and APIs retain their existing root paths. The proxy must forward the board prefix, `/assets/`, `/api/`, `/app.js`, `/styles.css`, and `/sw.js`. It may strip the board prefix; the Node server also handles prefixed map and stats routes.

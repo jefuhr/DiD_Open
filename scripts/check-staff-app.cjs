@@ -3,6 +3,11 @@ const { chromium } = require("playwright");
 const { serve, fromApp } = require("./mobile-check-harness.cjs");
 
 async function main() {
+  for (const path of ["/healthz", "/api/health"]) {
+    const health = JSON.parse(await fromApp(path));
+    assert.equal(health.ok, true, path);
+    assert.equal(health.service, "ferry-kitty", path);
+  }
   const [pier11, midtown, landings, harbor] = await Promise.all([
     "/api/display-data?landingId=16", "/api/display-data?landingId=26", "/api/landings", "/api/map"
   ].map(async path => JSON.parse(await fromApp(path))));
@@ -46,9 +51,16 @@ async function main() {
         });
         await page.goto(site.origin + base);
         await page.waitForSelector(".timeline-row");
+        assert.equal(await page.title(), `${pier11.meta.landing.displayName} Departures · Ferry Kitty`);
+        assert.equal(await page.locator('meta[name="apple-mobile-web-app-title"]').getAttribute("content"), "Ferry Kitty");
+        const manifestURL = await page.locator('link[rel="manifest"]').getAttribute("href");
+        const manifest = await (await page.request.get(site.origin + manifestURL)).json();
+        assert.equal(manifest.name, "Ferry Kitty");
+        assert.equal(manifest.short_name, "Ferry Kitty");
         assert.equal(await page.locator("html").getAttribute("data-theme"), "hello-kitty");
-        await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+        // Follow the app's first-controller reload rather than awaiting a promise in the old page.
         await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+        await page.waitForSelector(".timeline-row");
         assert.equal(await page.evaluate(() => document.querySelector("#boardView").classList.contains("sidebar-docked")), width >= 821);
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
         await page.locator(".timeline-row[data-trip-id]").first().click();
@@ -83,6 +95,7 @@ async function main() {
         const documentsBefore = navigations;
         await page.locator("#mapButton").click();
         await page.waitForSelector("#chart path");
+        assert.equal(await page.title(), "Ferry Kitty · Map");
         assert.deepEqual(await page.locator(".app-header .product-nav").boundingBox(), headerBox);
         assert.equal(await page.locator(".map-heading h1").textContent(), "Map");
         assert.equal(await page.locator(".map-heading .eyebrow").count(), 0);
@@ -95,6 +108,7 @@ async function main() {
         const camera = await page.locator("#chart").getAttribute("viewBox");
         await page.evaluate(() => { window.retainedGeometry = document.querySelector("#chart").firstChild; });
         await page.locator("#boardButton").click();
+        assert.equal(await page.title(), `${midtown.meta.landing.displayName} Departures · Ferry Kitty`);
         assert.equal(await page.locator("#dateCurrent").textContent(), retainedDate);
         assert.equal(await page.locator("#departures").evaluate(node => node.scrollTop), scroll);
         assert.deepEqual(await page.locator(".app-header .product-nav").boundingBox(), headerBox);

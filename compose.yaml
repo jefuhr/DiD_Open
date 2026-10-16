@@ -1,7 +1,7 @@
 services:
   display:
     build: .
-    image: nyc-ferry-did-reborn:local
+    image: ferry-kitty:local
     restart: unless-stopped
     ports:
       - "127.0.0.1:8090:8090"

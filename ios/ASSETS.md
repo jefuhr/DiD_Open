@@ -2,7 +2,7 @@
 
 Partner logos are unchanged copies from `public/assets/`.
 
-`FerryBoard/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` is the native app icon. It was created using the built-in imagegen tool with `public/assets/app-icon-512.png` as its edit reference, then sized for the asset catalog. The web icon is unchanged.
+`FerryKitty/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` is the native app icon. It was created using the built-in imagegen tool with `public/assets/app-icon-512.png` as its edit reference, then sized for the asset catalog. The web icon is unchanged.
 
 Final generation prompt:
 

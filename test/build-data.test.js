@@ -1442,7 +1442,7 @@ test("a landing with no NYC Ferry stop and no coordinates is rejected rather tha
   // A real root, with only config/landings.json swapped: everything else is symlinked to this
   // repository's own files, so the build runs exactly as it does in production and the only thing
   // under test is the missing position.
-  const root = await mkdtemp(path.join(tmpdir(), "did-landing-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ferry-kitty-landing-"));
   const repo = fileURLToPath(new URL("..", import.meta.url));
   for (const name of ["gtfs", "content", "public", "schedules"]) await symlink(path.join(repo, name), path.join(root, name));
   await mkdir(path.join(root, "config"));
@@ -1557,7 +1557,7 @@ test("the Statue of Liberty loops name the island they are bound for, not where 
 // config, and a missing switch read as false hid the new operator on the very deploy that shipped
 // it — silently, with the landings present and the boats absent.
 test("an operator whose switch is missing from display.json is on, not off", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "did-switch-"));
+  const root = await mkdtemp(path.join(tmpdir(), "ferry-kitty-switch-"));
   const repo = fileURLToPath(new URL("..", import.meta.url));
   for (const name of ["gtfs", "content", "public", "schedules"]) await symlink(path.join(repo, name), path.join(root, name));
   await mkdir(path.join(root, "config"));

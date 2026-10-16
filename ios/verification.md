@@ -1,6 +1,17 @@
-# Native implementation verification
+# Ferry Kitty native implementation verification
 
-Checked on this Mac on 2026-09-28 with Xcode 27.0, Node 22.23.3 and XcodeGen 2.46.0.
+The current project and build products use `FerryKitty`. Historical results below retain their original artifact paths, simulator names and product names so the evidence remains traceable; those names describe older builds.
+
+## Ferry Kitty project rename — 2026-10-16
+
+- `node --test test/ios-project.test.js`: **5 passed** after all five checks failed against the original branding. Checks cover source/helper/fixture paths, target and scheme names, display names, installed identifiers, shared settings, storage and existing deep links.
+- `bash scripts/ios.sh core --scratch-path /tmp/ferry-kitty-ios-core-baseline`: **43 tests, 2 skipped, 0 failures** before and after the rename. The optional live API smoke check and generated service-data parity check were skipped.
+- XcodeGen and `xcodebuild -list -json -project ios/FerryKitty.xcodeproj` passed. The generated project lists `FerryKitty`, `FerryKittyWidget`, `FerryKittyTests` and `FerryKittyUITests`.
+- Generic arm64 iOS Simulator `build-for-testing` passed with signing disabled, compiling the app, embedded widget and both test bundles. Built app/widget metadata shows `Ferry Kitty`, the renamed executables and the original installed bundle identifiers and Keychain group.
+- Fixture regeneration, shell syntax, Info.plist, entitlement and privacy manifest checks passed. Eleven fixture payloads remain byte-identical; the changelog title is the only changed fixture content.
+- No physical-device installation or in-place upgrade was performed. Saved-data retention and installed Home Screen widget behavior still need physical-device verification.
+
+The earlier baseline below was checked on this Mac on 2026-09-28 with Xcode 27.0, Node 22.23.3 and XcodeGen 2.46.0.
 
 ## Configurable widget settings — 2026-10-05
 

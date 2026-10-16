@@ -125,7 +125,7 @@ export function mountRide(root, { header, ride, getGeometry, navigate, base }) {
     ready: Promise.resolve(),
     activate() {
       active = true; root.hidden = false; root.inert = false; header.hidden = false; header.inert = false;
-      document.title = `${session?.name || "Your boat"} · Riding · NYC Ferry`;
+      document.title = `${session?.name || "Your boat"} · Riding · Ferry Kitty`;
       render();
       if (!geometry && !geometryJob) geometryJob = getGeometry().then(r => r.json()).then(data => { geometry = data; if (active) drawMap(); }).catch(() => {}).finally(() => { geometryJob = null; });
     },

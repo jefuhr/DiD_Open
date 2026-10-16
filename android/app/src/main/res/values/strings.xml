@@ -1,5 +1,5 @@
 <resources>
-	<string name="app_name">Ferry Board</string>
+	<string name="app_name">Ferry Kitty</string>
 	<string name="widget_description">Nearby or fixed-landing ferry departures with optional boat, assignment, dwell and layover details.</string>
 	<string name="widget_refresh">Refresh widget</string>
 	<string name="widget_settings">Edit widget</string>
