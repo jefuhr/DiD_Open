@@ -11,9 +11,10 @@
 		android:icon="@drawable/ferry_icon"
 		android:label="@string/app_name"
 		android:supportsRtl="true"
-		android:theme="@style/Theme.FerryBoard"
+		android:theme="@style/Theme.FerryKitty"
 		android:usesCleartextTraffic="false">
-		<activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop">
+		<!-- Keep installed component identities stable when the source namespace changes. -->
+		<activity android:name="nyc.juliet.ferryboard.MainActivity" android:exported="true" android:launchMode="singleTop">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
@@ -26,15 +27,15 @@
 				<data android:scheme="ferryboard" android:host="landing" />
 			</intent-filter>
 		</activity>
-		<activity android:name=".platform.FerryWidgetConfigurationActivity" android:exported="true">
+		<activity android:name="nyc.juliet.ferryboard.platform.FerryWidgetConfigurationActivity" android:exported="true">
 			<intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" /></intent-filter>
 		</activity>
-		<receiver android:name=".platform.FerryWidgetProvider" android:exported="false">
+		<receiver android:name="nyc.juliet.ferryboard.platform.FerryWidgetProvider" android:exported="false">
 			<intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
 			<meta-data android:name="android.appwidget.provider" android:resource="@xml/ferry_widget" />
 		</receiver>
-		<service android:name=".platform.FerryWidgetJobService" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true" />
-		<receiver android:name=".platform.FerryWidgetBootReceiver" android:exported="false">
+		<service android:name="nyc.juliet.ferryboard.platform.FerryWidgetJobService" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true" />
+		<receiver android:name="nyc.juliet.ferryboard.platform.FerryWidgetBootReceiver" android:exported="false">
 			<intent-filter>
 				<action android:name="android.intent.action.BOOT_COMPLETED" />
 				<action android:name="android.intent.action.MY_PACKAGE_REPLACED" />

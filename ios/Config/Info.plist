@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Ferry Board</string>
+	<string>Ferry Kitty</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -49,9 +49,9 @@
 		</dict>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Reach a Ferry Board test server on your network when one is chosen in Settings &gt; Server.</string>
+	<string>Reach a Ferry Kitty test server on your network when one is chosen in Settings &gt; Server.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Find the nearest ferry landing in the app and your Ferry Board widget. Your location stays on this device.</string>
+	<string>Find the nearest ferry landing in the app and your Ferry Kitty widget. Your location stays on this device.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

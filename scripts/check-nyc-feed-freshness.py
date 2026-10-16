@@ -31,7 +31,7 @@ def stale_mappings(version, date, root=ROOT):
 
 
 def main():
-    request = urllib.request.Request(URL, headers={'User-Agent': 'NYC-Ferry-DiD-Reborn/1.0'})
+    request = urllib.request.Request(URL, headers={'User-Agent': 'Ferry-Kitty/1.0'})
     with urllib.request.urlopen(request, timeout=20) as response:
         content = response.read(10 * 1024 * 1024 + 1)
     if len(content) > 10 * 1024 * 1024:

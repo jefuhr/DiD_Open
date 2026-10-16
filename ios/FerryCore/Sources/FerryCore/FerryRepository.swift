@@ -4,7 +4,7 @@ public enum FerryError: Error, LocalizedError {
     case unsupportedSchedule(Int), wrongIdentity, invalidResponse, http(Int), noSavedData
     public var errorDescription: String? {
         switch self {
-        case .unsupportedSchedule: return "This schedule needs a newer version of Ferry Board."
+        case .unsupportedSchedule: return "This schedule needs a newer version of Ferry Kitty."
         case .wrongIdentity: return "The server returned data for a different selection."
         case .invalidResponse: return "The ferry server returned an unreadable response."
         case .http(let code): return "The ferry server could not answer (\(code))."

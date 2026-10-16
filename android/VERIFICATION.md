@@ -1,5 +1,9 @@
 # Android Verification
 
+## Ferry Kitty Branding Rename
+
+The Gradle project is now `FerryKitty`, the app and widget preview label is `Ferry Kitty`, and the source namespace is `nyc.juliet.ferrykitty`. The installed application ID, manifest components, legacy deep links and widget refresh action, preference and cache names, and widget job IDs remain unchanged for compatibility. This rename does not claim a new physical-device or emulator acceptance run. The dated commands, class names, APK hashes, and results below describe the original builds and remain unchanged as historical evidence; current instrumentation class filters use `nyc.juliet.ferrykitty`.
+
 Implementation base: `origin/mobile` at `7a7709d86b93ac8525b8aa21a9cde6b84c363b65`, checked on October 14, 2026. Verification uses the integrated application source, not worker support stubs. Evidence below is retained locally under ignored `artifacts/android/`.
 
 ## UX Polish Follow-up
@@ -91,7 +95,7 @@ Use JDK 17, SDK platform 37, build tools 36.0.0, and the pinned Gradle wrapper/d
 
 ```sh
 scripts/android.sh parity
-FERRY_LIVE_SMOKE=1 scripts/android.sh core --tests nyc.juliet.ferryboard.core.LiveContractTest
+FERRY_LIVE_SMOKE=1 scripts/android.sh core --tests nyc.juliet.ferrykitty.core.LiveContractTest
 FERRY_SERVICE_CONTRACT="$PWD/artifacts/android/service-parity/fixtures" scripts/android.sh build --max-workers=2
 scripts/android.sh test --max-workers=2
 FERRY_ANDROID_API=36 scripts/android.sh test --max-workers=2

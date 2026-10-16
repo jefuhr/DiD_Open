@@ -13,7 +13,10 @@ def main():
 	parser.add_argument("--variant", choices=("debug", "release"), required=True)
 	args = parser.parse_args()
 	root = pathlib.Path(__file__).resolve().parent.parent
-	fixtures = {"assets/" + p.name for p in (root / "ios/FerryBoard/PreviewData").glob("*.json")}
+	fixture_directory = root / "ios/FerryKitty/PreviewData"
+	fixtures = {"assets/" + p.name for p in fixture_directory.glob("*.json")}
+	if not fixtures:
+		raise SystemExit("Preview fixtures are missing: " + str(fixture_directory))
 	geometry = {"assets/harbor-chart.json", "assets/harbor-shoreline.json", "assets/manhattan-details.json"}
 	with zipfile.ZipFile(args.apk) as apk:
 		entries = set(apk.namelist())

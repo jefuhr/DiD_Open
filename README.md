@@ -1,4 +1,4 @@
-# NYC Ferry Staff Board
+# Ferry Kitty
 
 An offline-capable staff app for ferry departures, crew assignments, trip connections, service alerts, and vessel positions. One responsive interface serves phones, tablets, and desktops.
 
@@ -7,6 +7,8 @@ The [fall schedule](docs/schedule-comparison/fall-2026-update.md) and
 See [feed maintenance](docs/data-maintenance.md) for the September 20 refresh and preserved calendar corrections.
 
 ## Run
+
+Clone [jefuhr/ferryKitty](https://github.com/jefuhr/ferryKitty) into `~/ferryKitty`.
 
 The native iPhone and iPad app is in [`ios/`](ios/README.md). Run `scripts/ios.sh open` on a Mac with Xcode and XcodeGen installed. It shares the API with this web app and keeps its own offline data and preferences.
 

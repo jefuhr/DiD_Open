@@ -1226,8 +1226,9 @@ test("the web app manifest names a real icon for every size it claims", async ()
   assert.ok(manifest.start_url.startsWith(manifest.scope), "start_url has to sit inside the scope");
   // The label under the icon. It matches what iOS is told in apple-mobile-web-app-title, so the
   // same board does not land on two phones under two different names.
-  assert.equal(manifest.short_name, "Ferry Board");
-  assert.match(index, /name="apple-mobile-web-app-title" content="Ferry Board"/);
+  assert.equal(manifest.name, "Ferry Kitty");
+  assert.equal(manifest.short_name, "Ferry Kitty");
+  assert.match(index, /name="apple-mobile-web-app-title" content="Ferry Kitty"/);
   // The theme colour is the board's navy, and it agrees with the meta tag the browser reads first.
   assert.match(index, new RegExp(`name="theme-color" content="${manifest.theme_color}"`));
 

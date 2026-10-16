@@ -9,7 +9,7 @@ import tarfile
 import tempfile
 import unittest
 
-APP = 'did'
+APP = 'ferry-kitty'
 SCRIPT = Path(__file__).resolve().parents[1] / f'deploy/deploy-{APP}.sh'
 
 STUB = r"""
@@ -119,7 +119,7 @@ class DeploymentTests(unittest.TestCase):
 			file.parent.mkdir(parents=True, exist_ok=True)
 			file.write_text(body)
 		(self.repo / 'node_modules').mkdir()
-		self.git('init', '-q', '-b', 'mobile' if APP == 'did' else 'main')
+		self.git('init', '-q', '-b', 'mobile' if APP == 'ferry-kitty' else 'main')
 		self.git('add', '.')
 		self.git('-c', 'user.name=Deploy Test', '-c', 'user.email=deploy@example.invalid', 'commit', '-qm', 'previous')
 		self.previous = self.git('rev-parse', 'HEAD').stdout.strip()
@@ -145,10 +145,11 @@ class DeploymentTests(unittest.TestCase):
 		env = dict(os.environ, PATH=str(self.bin) + ':' + os.environ['PATH'],
 				   BACKUP_DIR=str(self.backups), DEPLOY_TEST_ROOT=str(self.root),
 				   DEPLOY_TEST_APP=APP, DEPLOY_TEST_FAIL=fail, DEPLOY_TEST_OLD_SHA=self.previous)
-		env[APP.upper() + '_REPO'] = str(self.repo)
-		env.pop(APP.upper() + '_BRANCH', None)
+		env[APP.upper().replace('-', '_') + '_REPO'] = str(self.repo)
+		env.pop(APP.upper().replace('-', '_') + '_BRANCH', None)
 		return subprocess.run(['/bin/bash', str(SCRIPT), '--branch', self.sha, *args],
-							  env=env, stdin=subprocess.DEVNULL, text=True, capture_output=True, timeout=20)
+							  # The HTTP failure case launches stubs for all 12 attempts at each endpoint.
+							  env=env, stdin=subprocess.DEVNULL, text=True, capture_output=True, timeout=60)
 
 	def events(self):
 		file = self.root / 'events.jsonl'
@@ -168,9 +169,11 @@ class DeploymentTests(unittest.TestCase):
 		sync = next(event for event in events if event['kind'] == 'sync')
 		self.assertEqual(sync['code'], 'committed release')
 		self.assertNotIn('.env', sync['members'])
-		if APP == 'did':
+		if APP == 'ferry-kitty':
+			self.assertTrue(sync['command'].startswith('cd /opt/nyc-ferry-did && tar -x '))
 			self.assertIn('--exclude=config/display.json', sync['command'])
 			self.assertIn('--exclude=public/data/display-data.json', sync['command'])
+			self.assertTrue(any(event.get('command') == 'sudo systemctl restart nyc-ferry-did' for event in events))
 		else:
 			build = next(event for event in events if event['kind'] == 'build')
 			self.assertEqual(build['code'], 'committed release')

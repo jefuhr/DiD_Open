@@ -14,5 +14,5 @@ dependencyResolutionManagement {
 	}
 }
 
-rootProject.name = "FerryBoard"
+rootProject.name = "FerryKitty"
 include(":core", ":app")

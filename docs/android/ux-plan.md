@@ -1,14 +1,14 @@
 # Android UX plan
 
-This is the design and parity plan for the native Android Ferry Board app. It ports the shipping iOS app
-(`ios/FerryBoard`, `ios/FerryBoardWidget`) to Kotlin and Jetpack Compose, using the web map
+This is the design and parity plan for the native Android Ferry Kitty app. It ports the shipping iOS app
+(`ios/FerryKitty`, `ios/FerryKittyWidget`) to Kotlin and Jetpack Compose, using the web map
 (`public/assets/map.js`, `public/assets/map.css`) as the reference for native harbor cartography. Android shows the
 same data as iOS from the same HTTPS API (schema 11); it never uses a WebView.
 
-All presentation lives in `android/app/src/main/java/nyc/juliet/ferryboard/ui/`. The UI reads
+All presentation lives in `android/app/src/main/java/nyc/juliet/ferrykitty/ui/`. The UI reads
 `FerryUiState` and emits `FerryAction` (see `contract/FerryContract.kt`); it never performs networking or persists
 preferences. Pure presentation rules sit in plain Kotlin objects with JVM unit tests under
-`android/app/src/test/java/nyc/juliet/ferryboard/ui/`.
+`android/app/src/test/java/nyc/juliet/ferrykitty/ui/`.
 
 ## Layout
 
@@ -27,7 +27,7 @@ preferences. Pure presentation rules sit in plain Kotlin objects with JVM unit t
 
 ## Theme and text
 
-- Nine themes from `ios/FerryBoard/Theme.swift`, in iOS order: NYC Ferry, Night, Hello Kitty, Cinnamoroll,
+- Nine themes from `ios/FerryKitty/Theme.swift`, in iOS order: NYC Ferry, Night, Hello Kitty, Cinnamoroll,
   Pompompurin, Kuromi, Windows XP, Hacker and Burger King. Accent, background and light/dark come from iOS; surfaces,
   ink, muted text and lines come from the web board palettes. Status colors (on time, delayed or no pickup, last)
   are chosen per theme so every text color passes WCAG AA on its surface, including tinted status pills. The NYC Ferry
@@ -166,7 +166,7 @@ markers and one position marker: accent when live, muted with "Last reported" wh
 ## Widget visual guidance
 
 The widget is rendered with RemoteViews by the platform code; this is its design, mirroring
-`ios/FerryBoardWidget/NearbyWidgetView.swift`.
+`ios/FerryKittyWidget/NearbyWidgetView.swift`.
 
 - Sizes: small, medium and large size-mapped RemoteViews with 12–16 dp padding. The advertised minimum is
   180 × 180 dp (a 3×3 placement hint); launcher cell dimensions vary. Small widgets open the board when tapped and

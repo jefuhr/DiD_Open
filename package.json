@@ -1,9 +1,9 @@
 {
-  "name": "nyc-ferry-did-reborn",
+  "name": "ferry-kitty",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Offline-first NYC Ferry landing departure display.",
+  "description": "Ferry Kitty, an offline-first departure display for NYC Ferry landings.",
   "engines": {
     "node": ">=22"
   },

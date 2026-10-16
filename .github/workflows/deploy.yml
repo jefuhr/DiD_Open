@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 30
     env:
       CI: 'true'
-      DID_REPO: ${{ github.workspace }}
+      FERRY_KITTY_REPO: ${{ github.workspace }}
       DEPLOY_SHA: ${{ github.sha }}
       DEPLOY_DRY_RUN: ${{ inputs.dry_run || false }}
     steps:
@@ -52,7 +52,7 @@ jobs:
       - name: Test deployment gates without contacting production
         shell: bash
         run: |
-          bash -n deploy/deploy-did.sh
+          bash -n deploy/deploy-ferry-kitty.sh
           python3 test/deploy-script.test.py
       - name: Deploy the triggering commit
         shell: bash
@@ -62,4 +62,4 @@ jobs:
           if [[ "$DEPLOY_DRY_RUN" == true ]]; then
             task_args+=(--dry-run)
           fi
-          bash deploy/deploy-did.sh "${task_args[@]}"
+          bash deploy/deploy-ferry-kitty.sh "${task_args[@]}"

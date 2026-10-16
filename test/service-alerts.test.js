@@ -159,7 +159,7 @@ test("GTFS and website alerts are returned together with GTFS first", async () =
   assert.equal(snapshot.sourceStatus.website, "updated");
 });
 
-// This is a ferry board. Whatever else ends up on it, the boat leads — the bar above the list can
+// This is a ferry display. Whatever else ends up on it, the boat leads — the bar above the list can
 // only ever show whichever alert comes first, so the order is the feature, not a detail of it.
 test("NYC Ferry alerts always come before the other services", async (t) => {
   const subwayFeed = {

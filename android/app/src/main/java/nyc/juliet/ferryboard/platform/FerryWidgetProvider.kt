@@ -13,7 +13,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.SizeF
 import kotlinx.coroutines.*
-import nyc.juliet.ferryboard.core.*
+import nyc.juliet.ferrykitty.platform.*
+import nyc.juliet.ferrykitty.core.*
 import java.time.Instant
 
 class FerryWidgetProvider : AppWidgetProvider() {

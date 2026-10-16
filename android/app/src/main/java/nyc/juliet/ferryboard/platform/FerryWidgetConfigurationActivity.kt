@@ -19,11 +19,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
-import nyc.juliet.ferryboard.BuildConfig
+import nyc.juliet.ferrykitty.platform.*
+import nyc.juliet.ferrykitty.BuildConfig
 import nyc.juliet.ferryboard.MainActivity
-import nyc.juliet.ferryboard.contract.FerryAction
-import nyc.juliet.ferryboard.ui.WidgetSettingsContent
-import nyc.juliet.ferryboard.ui.theme.FerryTheme
+import nyc.juliet.ferrykitty.contract.FerryAction
+import nyc.juliet.ferrykitty.ui.WidgetSettingsContent
+import nyc.juliet.ferrykitty.ui.theme.FerryTheme
 
 class FerryWidgetConfigurationActivity : ComponentActivity() {
 	private lateinit var model: FerryViewModel
@@ -47,7 +48,7 @@ class FerryWidgetConfigurationActivity : ComponentActivity() {
 			FerryTheme(themeId = state.preferences.theme, textSize = state.preferences.textSize) {
 				Surface(modifier = Modifier.fillMaxSize()) {
 					Column(Modifier.safeDrawingPadding()) {
-						Text("Edit Ferry Board widget", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
+						Text("Edit Ferry Kitty widget", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
 						WidgetSettingsContent(state, model::dispatch, Modifier.weight(1f))
 						Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
 							OutlinedButton(onClick = { finish() }, modifier = Modifier.weight(1f)) { Text("Cancel") }
@@ -63,8 +64,8 @@ class FerryWidgetConfigurationActivity : ComponentActivity() {
 					FerryAction.EnableWidgetLocation -> {
 						if (model.runtime.fixtures) model.store.widgetStatus("Fixture sessions do not change location permissions.")
 						else AlertDialog.Builder(this@FerryWidgetConfigurationActivity).setTitle("Optional widget location")
-							.setMessage("Automatic nearest landings need separately enabled background location. Open Ferry Board to enable it, or keep a fixed landing without any location access. Your draft stays here until you apply it.")
-							.setNegativeButton("Keep editing", null).setPositiveButton("Open Ferry Board") { _, _ -> startActivity(Intent(this@FerryWidgetConfigurationActivity, MainActivity::class.java).setAction(Intent.ACTION_VIEW).setData(Uri.parse("ferryboard://nearby"))) }.show()
+							.setMessage("Automatic nearest landings need separately enabled background location. Open Ferry Kitty to enable it, or keep a fixed landing without any location access. Your draft stays here until you apply it.")
+							.setNegativeButton("Keep editing", null).setPositiveButton("Open Ferry Kitty") { _, _ -> startActivity(Intent(this@FerryWidgetConfigurationActivity, MainActivity::class.java).setAction(Intent.ACTION_VIEW).setData(Uri.parse("ferryboard://nearby"))) }.show()
 					}
 					FerryAction.RefreshWidgets -> model.store.widgetStatus("Apply your choices to refresh this widget.")
 					else -> Unit

@@ -1,13 +1,14 @@
 # Android Implementation Contract
 
-Ferry Board targets Android 12 and later (minimum SDK 31, target/compile SDK 37). The Android app consumes the same API and schema 11 as the iOS app. Kotlin code uses tabs where practical.
+Ferry Kitty targets Android 12 and later (minimum SDK 31, target/compile SDK 37). The Android app consumes the same API and schema 11 as the iOS app. Kotlin code uses tabs where practical.
 
 ## Modules and ownership
 
-- `:core`, package `nyc.juliet.ferryboard.core`: serializable wire models, schedule engine, filters, clock, network/cache repository, and widget projection. No Android dependencies.
-- `:app`, package `nyc.juliet.ferryboard`: Android lifecycle, preferences, permission flows, widgets, and Compose presentation.
+- `:core`, package `nyc.juliet.ferrykitty.core`: serializable wire models, schedule engine, filters, clock, network/cache repository, and widget projection. No Android dependencies.
+- `:app`, package `nyc.juliet.ferrykitty`: Android lifecycle, preferences, permission flows, widgets, and Compose presentation.
+- Installed Android identity remains `nyc.juliet.ferryboard`. `MainActivity` and the widget configuration activity, provider, job service, and boot receiver retain their original fully qualified class names in three compatibility source files under `nyc/juliet/ferryboard/`. Keep their manifest names explicit; relative names resolve against the new Gradle namespace.
 - `contract/FerryContract.kt` is coordinator-owned. UI reads `FerryUiState` and emits `FerryAction`; it does not perform networking or persist preferences.
-- The Compose entry point is `nyc.juliet.ferryboard.ui.FerryApp(state: FerryUiState, onAction: (FerryAction) -> Unit)`. Widget setup also exposes `WidgetSettingsContent(state: FerryUiState, onAction: (FerryAction) -> Unit, modifier: Modifier = Modifier)` for the configuration activity.
+- The Compose entry point is `nyc.juliet.ferrykitty.ui.FerryApp(state: FerryUiState, onAction: (FerryAction) -> Unit)`. Widget setup also exposes `WidgetSettingsContent(state: FerryUiState, onAction: (FerryAction) -> Unit, modifier: Modifier = Modifier)` for the configuration activity.
 
 ## Core API conventions
 
@@ -28,7 +29,7 @@ Port the public iOS FerryCore types and behavior, retaining wire field names. Ko
 
 ## Assets and fixtures
 
-Gradle copies the repository's bundled harbor geometry into production assets. The debug variant also includes `ios/FerryBoard/PreviewData`; the release variant must never include test fixtures or honor fixture launch flags. Debug fixture behavior uses the existing fixed clock `2026-09-04T12:50:00Z` and isolated storage. Tests must use deterministic transport and clock injection.
+Gradle copies the repository's bundled harbor geometry into production assets. The debug variant also includes `ios/FerryKitty/PreviewData`; the release variant must never include test fixtures or honor fixture launch flags. Debug fixture behavior uses the existing fixed clock `2026-09-04T12:50:00Z` and isolated storage. Tests must use deterministic transport and clock injection.
 
 ## Verification
 

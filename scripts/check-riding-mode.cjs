@@ -52,12 +52,15 @@ async function main() {
       await page.clock.setFixedTime(new Date(now));
       await page.goto(site.origin + base);
       await page.waitForSelector(`[data-trip-id="${sailing.tripId}"]`);
-      await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+      // The first controller claims the page and the app reloads it. A plain evaluate waiting on
+      // serviceWorker.ready loses its execution context; Playwright's polling follows the reload.
       await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+      await page.waitForSelector(`[data-trip-id="${sailing.tripId}"]`);
       await page.locator(`[data-trip-id="${sailing.tripId}"]`).first().click();
       await page.locator('#tripRide').click();
       await page.waitForSelector('#rideView:not([hidden])');
       await page.waitForFunction(() => document.querySelector('#rideSpeed').textContent === '12.3 kn');
+      assert.equal(await page.title(), `${vessel.name} · Riding · Ferry Kitty`);
       await page.waitForSelector('#rideMiniMap:not([hidden]) circle');
       assert.match(await page.locator('#rideETA').textContent(), /10:12 estimated/);
       assert.equal(await page.locator('#ridePicker').evaluate(n=>n.open),false);
@@ -82,6 +85,7 @@ async function main() {
       await page.reload();
       await page.waitForSelector('#rideView:not([hidden])');
       assert.equal(await page.locator('#rideHeading h1').textContent(),vessel.name);
+      assert.equal(await page.title(), `${vessel.name} · Riding · Ferry Kitty`);
       await page.locator('#rideMinimize').click();
       await page.locator('#mapButton').click();
       await page.locator('.boat-row').last().click();

@@ -2,7 +2,7 @@
 // This is a development command; neither the app nor the server invokes it at runtime.
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 const fixture = JSON.parse(await readFile(new URL('../test/fixtures/schedule-contract.json', import.meta.url)));
-const output = new URL('../ios/FerryBoard/PreviewData/', import.meta.url);
+const output = new URL('../ios/FerryKitty/PreviewData/', import.meta.url);
 await mkdir(output, { recursive: true });
 const at = '2026-09-04T12:50:00Z', now = Date.parse(at);
 const landings = [
@@ -22,7 +22,7 @@ const data = {
   boats: { available: true, stale: false, fetchedAt: at, boats: vessels.map((vessel, i) => ({ ...vessel, vesselId: vessel.id, tripId: 'nine', routeId: 'ER', route: 'ER', routeName: 'East River', color: '#0070AB', latitude: 40.71 + i * 0.01, longitude: -74.00, destination: 'DUMBO', speedKnots: 12.3, ageSeconds: 5, status: 'in-transit' })) },
   vessels: { vessels },
   alerts: { available: true, stale: false, fetchedAt: at, alerts: [{ id: 'fixture', header: 'Service update', description: 'Allow extra time when boarding.', agency: 'NYC Ferry' }] },
-  changelog: { entries: [{ version: '1', date: '4 September 2026', title: 'Ferry Board', notes: ['Native iPhone preview.'] }] },
+  changelog: { entries: [{ version: '1', date: '4 September 2026', title: 'Ferry Kitty', notes: ['Native iPhone preview.'] }] },
   connections: { tripId: 'nine', generatedAt: at, serviceDate: '2026-09-04', stale: false, stops: stops.map(stop => ({ ...stop, limit: 3, connections: [] })) }
 };
 for (const landing of landings) {

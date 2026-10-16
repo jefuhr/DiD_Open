@@ -22,9 +22,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import nyc.juliet.ferryboard.contract.*
-import nyc.juliet.ferryboard.platform.*
-import nyc.juliet.ferryboard.ui.FerryApp
+import nyc.juliet.ferryboard.platform.FerryWidgetProvider
+import nyc.juliet.ferrykitty.BuildConfig
+import nyc.juliet.ferrykitty.contract.*
+import nyc.juliet.ferrykitty.platform.*
+import nyc.juliet.ferrykitty.ui.FerryApp
 
 class MainActivity : ComponentActivity() {
 	private lateinit var model: FerryViewModel
@@ -106,7 +108,7 @@ class MainActivity : ComponentActivity() {
 				if (manager.isRequestPinAppWidgetSupported) {
 					val accepted = manager.requestPinAppWidget(ComponentName(this, FerryWidgetProvider::class.java), null, null)
 					model.store.widgetStatus(if (accepted) "Widget pin requested. Confirm it in your launcher." else "Your launcher could not pin the widget.")
-				} else model.store.widgetStatus("Add Ferry Board from your launcher's widget picker.")
+				} else model.store.widgetStatus("Add Ferry Kitty from your launcher's widget picker.")
 			}
 			is FerryAction.OpenUrl -> {
 				val uri = runCatching { Uri.parse(action.url) }.getOrNull()
@@ -121,7 +123,7 @@ class MainActivity : ComponentActivity() {
 		val location = AndroidLocation(this)
 		if (!location.foregroundGranted()) {
 			AlertDialog.Builder(this).setTitle("Nearest-landing widgets")
-				.setMessage("Location is optional. First allow location while using Ferry Board. You can separately enable background location afterward, or choose a fixed landing without location access.")
+				.setMessage("Location is optional. First allow location while using Ferry Kitty. You can separately enable background location afterward, or choose a fixed landing without location access.")
 				.setNegativeButton("Use a fixed landing", null)
 				.setPositiveButton("Allow while using the app") { _, _ ->
 					pendingWidgetForeground = true
@@ -130,7 +132,7 @@ class MainActivity : ComponentActivity() {
 		} else if (!location.backgroundGranted()) {
 			val label = packageManager.backgroundPermissionOptionLabel
 			AlertDialog.Builder(this).setTitle("Allow nearest widgets in the background")
-				.setMessage("To update the nearest landing while Ferry Board is closed, open Permissions → Location and choose $label. Widgets take a brief location fix when Android runs an update, never continuously, and coordinates stay on your device. Fixed landings need no location permission.")
+				.setMessage("To update the nearest landing while Ferry Kitty is closed, open Permissions → Location and choose $label. Widgets take a brief location fix when Android runs an update, never continuously, and coordinates stay on your device. Fixed landings need no location permission.")
 				.setNegativeButton("Keep fixed landing", null)
 				.setPositiveButton("Open app settings") { _, _ -> settingsRequest.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }.show()
 		} else { model.store.widgetStatus("Background location is enabled for nearest-landing widgets."); FerryWidgetProvider.requestRefresh(this) }
